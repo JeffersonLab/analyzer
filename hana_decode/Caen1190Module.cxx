@@ -33,7 +33,7 @@ namespace Decoder {
   }
 
   void Caen1190Module::Init() {
-    Module::Init();
+    VmeModule::Init();
     fNumHits.resize(NTDCCHAN);
     fTdcData.resize(NTDCCHAN*MAXHIT);
     fTdcOpt.resize(NTDCCHAN*MAXHIT);

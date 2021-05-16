@@ -33,7 +33,7 @@ Caen775Module::Caen775Module( UInt_t crate, UInt_t slot ) :
 }
 
 void Caen775Module::Init() {
-  Module::Init();
+  VmeModule::Init();
 #ifdef DEBUG
   cout << endl << "Initializing v" << MyModName() << "!" << endl << endl;
 #endif

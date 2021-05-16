@@ -22,9 +22,9 @@ FastbusModule::FastbusModule( UInt_t crate, UInt_t slot )
 }
 
 void FastbusModule::Init() {
+  Module::Init();
   fSlotMask = 0xf8000000;
   fSlotShift = 27;
-  fDebugFile=nullptr;
 }
 
 Int_t FastbusModule::Decode(const UInt_t *evbuffer) {

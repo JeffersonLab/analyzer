@@ -21,6 +21,7 @@ Lecroy1877Module::Lecroy1877Module( UInt_t crate, UInt_t slot )
 
 void Lecroy1877Module::Init()
 {
+  FastbusModule::Init();
   fChanMask = 0xfe0000;
   fDataMask = 0xffff;
   fWdcntMask = 0x7ff;
@@ -30,7 +31,6 @@ void Lecroy1877Module::Init()
   fHasHeader = true;
   fHeader = 0;
   fModelNum = 1877;
-  FastbusModule::Init();
 }
 
 }

@@ -28,7 +28,7 @@ SkeletonModule::~SkeletonModule() = default;
 
 void SkeletonModule::Init()
 {
-  Module::Init();
+  VmeModule::Init();
   fNumChan = 32;
   fData.resize(fNumChan);
   fDebugFile = nullptr;
