@@ -184,7 +184,7 @@ Int_t THaRun::ReadInitInfo()
   Int_t status = READ_OK;
   if( fMaxScan > 0 ) {
     if( fSegment == 0 ) {
-      auto* evdata = static_cast<THaEvData*>(gHaDecoder->New());
+      unique_ptr<THaEvData> evdata{static_cast<THaEvData*>(gHaDecoder->New())};
       // Disable advanced processing
       evdata->EnableScalers(false);
       evdata->EnableHelicity(false);
@@ -209,7 +209,7 @@ Int_t THaRun::ReadInitInfo()
 	}
 
 	// Inspect event and extract run parameters if appropriate
-	Int_t st = Update( evdata );
+	Int_t st = Update( evdata.get() );
 	//FIXME: debug
 	if( st == 1 )
 	  cout << "Prestart at " << nev << endl;
@@ -220,7 +220,6 @@ Int_t THaRun::ReadInitInfo()
 	  break;
 	}
       }//end while
-      delete evdata;
 
       if( status != READ_OK && status != READ_EOF ) {
 	Error( here, "Error %d reading CODA file %s. Check file type & "
