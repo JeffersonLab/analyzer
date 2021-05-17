@@ -42,13 +42,12 @@ THaSlotData::THaSlotData() :
 THaSlotData::THaSlotData(UInt_t cra, UInt_t slo) :
   crate(cra), slot(slo), fModule(nullptr), numhitperchan(0), numraw(0), numchanhit(0),
   firstfreedataidx(0), numholesdataidx(0), fDebugFile(nullptr),
-  didini(false), fNchan(0) {}
-
+  didini(false), fNchan(0)
+{
+}
 
 //_____________________________________________________________________________
-THaSlotData::~THaSlotData() {
-  delete fModule;
-}
+THaSlotData::~THaSlotData() = default;
 
 //_____________________________________________________________________________
 void THaSlotData::define(UInt_t cra, UInt_t slo, UInt_t nchan,
@@ -110,8 +109,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
     if (fDebugFile) *fDebugFile << "THaSlotData:: Creating fModule"<<endl;
     if( !fModule || fModule->IsA() != loctype.fTClass ) {
-      delete fModule;
-      fModule= static_cast<Module*>( loctype.fTClass->New() );
+      fModule.reset(static_cast<Module*>( loctype.fTClass->New() ));
     } else if (fDebugFile) {
       *fDebugFile << "THaSlotData:: Reusing existing fModule" << endl;
     }
@@ -163,7 +161,7 @@ UInt_t THaSlotData::LoadIfSlot( const UInt_t* evbuffer, const UInt_t *pstop) {
                 << dec << crate << "  " << slot
                 << "   p " << hex << evbuffer << "  " << *evbuffer
                 << "  " << dec << ((UInt_t(*evbuffer)) >> 27)
-                << hex << "  " << pstop << "  " << fModule
+                << hex << "  " << pstop << "  " << fModule.get()
                 << dec << endl;
   if ( !fModule->IsSlot( *evbuffer ) ) {
     if(fDebugFile) *fDebugFile << "THaSlotData:: Not slot ... return ... "<<endl;
@@ -187,7 +185,10 @@ UInt_t THaSlotData::LoadBank( const UInt_t* p, UInt_t pos, UInt_t len) {
     cerr << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl;
     return 0;
   }
-  if (fDebugFile) *fDebugFile << "THaSlotData::LoadBank:  " << dec<<crate<<"  "<<slot<<"  pos "<<pos<<"   len "<<len<<"   start word "<<hex<<*p<<"  module ptr  "<<fModule<<dec<<endl;
+  if (fDebugFile)
+    *fDebugFile << "THaSlotData::LoadBank:  " << dec << crate << "  "<<slot
+                << "  pos " << pos << "   len " << len << "   start word "
+                << hex << *p << "  module ptr  " << fModule.get() << dec << endl;
   if (fDebugFile) fModule->DoPrint();
   fModule->Clear("");
   UInt_t wordseen = fModule->LoadSlot(this, p, pos, len);

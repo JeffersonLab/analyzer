@@ -112,8 +112,8 @@ int THaVDCSimDecoder::LoadEvent(const UInt_t* evbuffer )
   }
   if( fDoBench ) fBench->Begin("clearEvent");
   Clear();
-  for( UInt_t i=0; i<fNSlotClear; i++ )
-    crateslot[fSlotClear[i]]->clearEvent();
+  for( auto i : fSlotClear )
+    crateslot[i]->clearEvent();
   if( fDoBench ) fBench->Stop("clearEvent");
 
   evscaler = 0;

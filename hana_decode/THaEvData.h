@@ -17,6 +17,8 @@
 #include <cassert>
 #include <iostream>
 #include <cstdio>
+#include <vector>
+#include <memory>
 
 class THaBenchmark;
 
@@ -175,7 +177,7 @@ public:
   virtual Bool_t IsLoadedEpics(const char* /*tag*/ ) const
   { return false; }
 
-  UInt_t GetNslots() const { return fNSlotUsed; };
+  UInt_t GetNslots() const { return fSlotUsed.size(); };
   virtual void PrintSlotData( UInt_t crate, UInt_t slot ) const;
   virtual void PrintOut() const;
   virtual void SetRunTime( ULong64_t tloc );
@@ -193,7 +195,7 @@ public:
   UInt_t  GetInstance() const { return fInstance; }
   static UInt_t GetInstances() { return fgInstances.CountBits(); }
 
-  Decoder::THaCrateMap* GetCrateMap() const { return fMap; }
+  Decoder::THaCrateMap* GetCrateMap() const { return fMap.get(); }
 
   // Reporting level
   void SetVerbose( Int_t level );
@@ -206,6 +208,12 @@ public:
   static void SetDefaultCrateMapName( const char* name );
 
 protected:
+  // Control bits in TObject::fBits used by decoders
+  enum {
+    kHelicityEnabled = BIT(14),
+    kScalersEnabled  = BIT(15),
+  };
+
   // Initialization routines
   virtual Int_t init_cmap();
   virtual Int_t init_cmap_openfile( FILE*&, TString& ) { return 0; }
@@ -220,28 +228,19 @@ protected:
   Bool_t GoodIndex( UInt_t crate, UInt_t slot ) const;
 
   // Data
-  Decoder::THaCrateMap* fMap;      // Pointer to active crate map
+  std::unique_ptr<Decoder::THaCrateMap> fMap;  // Pointer to active crate map
 
   class RocDat_t {            // ROC raw data descriptor
   public:
     RocDat_t() : pos(0), len(0) {}
+    void clear() { pos = len = 0; }
     UInt_t pos;               // position in evbuffer[]
     UInt_t len;               // length of data
-  } rocdat[Decoder::MAXROC];
-
-  // Control bits in TObject::fBits used by decoders
-  enum {
-    kHelicityEnabled = BIT(14),
-    kScalersEnabled  = BIT(15),
   };
+  std::vector<RocDat_t> rocdat;
+  std::vector<RocDat_t> bankdat;
 
-  class BankDat_t {            // Bank raw data descriptor
-  public:
-    BankDat_t() : pos(0), len(0) {}
-    UInt_t pos;                // position in evbuffer[]
-    UInt_t len;                // length of data
-  } bankdat[Decoder::MAXBANK * Decoder::MAXROC];
-  Decoder::THaSlotData** crateslot;
+  std::vector<std::unique_ptr<Decoder::THaSlotData>> crateslot;
 
   Bool_t first_decode;
   Bool_t fTrigSupPS;
@@ -263,13 +262,11 @@ protected:
   UInt_t recent_event;
   Bool_t buffmode,synchmiss,synchextra;
 
-  UInt_t    fNSlotUsed;   // Number of elements of crateslot[] actually used
-  UInt_t    fNSlotClear;  // Number of elements of crateslot[] to clear
-  UShort_t* fSlotUsed;    // [fNSlotUsed] Indices of crateslot[] used
-  UShort_t* fSlotClear;   // [fNSlotClear] Indices of crateslot[] to clear
+  std::vector<UShort_t> fSlotUsed;    // Indices of crateslot[] used
+  std::vector<UShort_t> fSlotClear;   // Indices of crateslot[] to clear
 
   Bool_t fDoBench;
-  THaBenchmark *fBench;
+  std::unique_ptr<THaBenchmark> fBench;
 
   UInt_t fInstance;            // My instance
   static TBits fgInstances;    // Number of instances of this object
@@ -309,11 +306,11 @@ inline Bool_t THaEvData::GoodCrateSlot( UInt_t crate, UInt_t slot ) {
 }
 
 inline Bool_t THaEvData::GoodIndex( UInt_t crate, UInt_t slot ) const {
-  return (GoodCrateSlot(crate, slot) && crateslot[idx(crate, slot)] != nullptr);
+  return (GoodCrateSlot(crate,slot) && crateslot[idx(crate,slot)] );
 }
 
 inline UInt_t THaEvData::GetRocLength( UInt_t crate ) const {
-  assert(crate < Decoder::MAXROC);
+  assert( crate < rocdat.size() );
   return rocdat[crate].len;
 }
 
@@ -321,7 +318,7 @@ inline UInt_t THaEvData::GetNumHits( UInt_t crate, UInt_t slot,
                                      UInt_t chan ) const {
   // Number hits in crate, slot, channel
   assert( GoodCrateSlot(crate,slot) );
-  if( crateslot[idx(crate,slot)] != nullptr )
+  if( crateslot[idx(crate,slot)] )
     return crateslot[idx(crate,slot)]->getNumHits(chan);
   return 0;
 }
@@ -336,7 +333,7 @@ inline UInt_t THaEvData::GetData( UInt_t crate, UInt_t slot, UInt_t chan,
 inline UInt_t THaEvData::GetNumRaw( UInt_t crate, UInt_t slot ) const {
   // Number of raw words in crate, slot
   assert( GoodCrateSlot(crate,slot) );
-  if( crateslot[idx(crate,slot)] != nullptr )
+  if( crateslot[idx(crate,slot)] )
     return crateslot[idx(crate,slot)]->getNumRaw();
   return 0;
 }
@@ -363,20 +360,20 @@ inline UInt_t THaEvData::GetRawData( UInt_t i ) const {
 
 inline UInt_t THaEvData::GetRawData( UInt_t crate, UInt_t i ) const {
   // Raw words in evbuffer within crate #crate.
-  assert( crate < Decoder::MAXROC );
+  assert( crate < rocdat.size() );
   return GetRawData(rocdat[crate].pos + i);
 }
 
 inline const UInt_t* THaEvData::GetRawDataBuffer( UInt_t crate ) const {
   // Direct access to the event buffer for the given crate,
   // e.g. for fast header word searches
-  assert( crate < Decoder::MAXROC );
+  assert( crate < rocdat.size() );
   return buffer+rocdat[crate].pos;
 }
 
 inline Bool_t THaEvData::InCrate( UInt_t crate, UInt_t i ) const {
   // To tell if the index "i" poInt_ts to a word inside crate #crate.
-  assert( crate < Decoder::MAXROC );
+  assert( crate < rocdat.size() );
   // Used for crawling through whole event
   if (crate == 0) return (i < GetEvLength());
   if (rocdat[crate].pos == 0 || rocdat[crate].len == 0) return false;
@@ -387,7 +384,7 @@ inline Bool_t THaEvData::InCrate( UInt_t crate, UInt_t i ) const {
 inline UInt_t THaEvData::GetNumChan( UInt_t crate, UInt_t slot ) const {
   // Get number of unique channels hit
   assert( GoodCrateSlot(crate,slot) );
-  if( crateslot[idx(crate,slot)] != nullptr )
+  if( crateslot[idx(crate,slot)] )
     return crateslot[idx(crate,slot)]->getNumChan();
   return 0;
 }

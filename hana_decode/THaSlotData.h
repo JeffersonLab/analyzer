@@ -26,6 +26,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <memory>
 
 const int SD_WARN = -2;
 const int SD_ERR = -1;
@@ -55,6 +56,7 @@ public:
        UInt_t getData(UInt_t chan, UInt_t hit) const;// Data (adc,tdc,scaler) on 1 chan
        UInt_t getCrate() const { return crate; }
        UInt_t getSlot()  const { return slot; }
+       UInt_t getNchan() const { return fNchan; }
        void   clearEvent();                          // clear event counters
        Int_t  loadData( const char* type, UInt_t chan, UInt_t dat, UInt_t raw );
        Int_t  loadData( UInt_t chan, UInt_t dat, UInt_t raw );
@@ -67,7 +69,7 @@ public:
        Bool_t BlockIsDone() { if (fModule) return fModule->BlockIsDone(); return false; };
 
        void SetDebugFile(std::ofstream *file) { fDebugFile = file; };
-       Module* GetModule() { return fModule; };
+       Module* GetModule() { return fModule.get(); };
 
        // Define crate, slot
        void define( UInt_t crate, UInt_t slot, UInt_t nchan = DEFNCHAN,
@@ -85,7 +87,7 @@ private:
        UInt_t crate;
        UInt_t slot;
        std::string device;
-       Module *fModule;
+       std::unique_ptr<Module> fModule;
        UInt_t numhitperchan; // expected number of hits per channel
        UInt_t numraw;        // Hit counters (numraw, numHits, numchanhit)
        UInt_t numchanhit;    // can be zero'd by clearEvent each event.

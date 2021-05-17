@@ -25,15 +25,18 @@
 #include "THaCrateMap.h"
 #include "THaBenchmark.h"
 #include "TError.h"
-#include <cstring>
 #include <cstdio>
 #include <cctype>
 #include <iostream>
 #include <iomanip>
 #include <ctime>
+#include <algorithm>
+#include <cassert>
 
 using namespace std;
 using namespace Decoder;
+
+#define ALL(c) (c).begin(), (c).end()
 
 // Instances of this object
 TBits THaEvData::fgInstances;
@@ -52,7 +55,10 @@ TString THaEvData::fgDefaultCrateMapName = "cratemap";
 //_____________________________________________________________________________
 THaEvData::THaEvData() :
   fMap{nullptr},
-  crateslot{new THaSlotData*[MAXROC*MAXSLOT]},  // FIXME: allocate dynamically
+  // FIXME: allocate dynamically?
+  rocdat(MAXROC),
+  bankdat(MAXBANK * MAXROC),
+  crateslot(MAXROC * MAXSLOT),
   first_decode{true},
   fTrigSupPS{true},
   fMultiBlockMode{false},
@@ -77,21 +83,16 @@ THaEvData::THaEvData() :
   buffmode{false},
   synchmiss{false},
   synchextra{false},
-  fNSlotUsed{0},
-  fNSlotClear{0},
-  fSlotUsed{new UShort_t[MAXROC*MAXSLOT]},
-  fSlotClear{new UShort_t[MAXROC*MAXSLOT]},
   fDoBench{false},
-  fBench{nullptr},
   fInstance{fgInstances.FirstNullBit()},
   fNeedInit{true},
   fDebug{0},
   fExtra{nullptr}
 {
+  fSlotUsed.reserve(MAXROC*MAXSLOT/4);  // Generous space for a typical setup
+  fSlotClear.reserve(MAXROC*MAXSLOT/4);
   fgInstances.SetBitNumber(fInstance);
   fInstance++;
-  memset(bankdat,0,MAXBANK*MAXROC*sizeof(BankDat_t));
-  memset(crateslot,0,MAXROC*MAXSLOT*sizeof(void*));
 }
 
 //_____________________________________________________________________________
@@ -100,14 +101,7 @@ THaEvData::~THaEvData() {
     Float_t a,b;
     fBench->Summary(a,b);
   }
-  delete fBench;
-  // We must delete every array element since not all may be in fSlotUsed.
-  for( UInt_t i = 0; i < MAXROC*MAXSLOT; i++ )
-    delete crateslot[i];
-  delete [] crateslot;
-  delete [] fSlotUsed;
-  delete [] fSlotClear;
-  delete fMap;
+  delete fExtra;
   fInstance--;
   fgInstances.ResetBitNumber(fInstance);
 }
@@ -155,10 +149,14 @@ void THaEvData::EnableBenchmarks( Bool_t enable )
   // Enable/disable run time reporting
   fDoBench = enable;
   if( fDoBench ) {
-    if( !fBench )
-      fBench = new THaBenchmark;
+    if( !fBench ) {
+#if __cplusplus >= 201402L
+      fBench = make_unique<THaBenchmark>();
+#else
+      fBench.reset(new THaBenchmark);
+#endif
+    }
   } else {
-    delete fBench;
     fBench = nullptr;
   }
 }
@@ -283,9 +281,12 @@ void THaEvData::SetCrateMapName( const char* name )
 int THaEvData::init_cmap()  {
   if( fCrateMapName.IsNull() )
     fCrateMapName = fgDefaultCrateMapName;
-  if( !fMap || fNeedInit || fCrateMapName != fMap->GetName() ) {
-    delete fMap;
-    fMap = new THaCrateMap( fCrateMapName );
+  if( !fMap || fCrateMapName != fMap->GetName() ) {
+#if __cplusplus >= 201402L
+    fMap = make_unique<THaCrateMap>(fCrateMapName);
+#else
+    fMap.reset(new THaCrateMap(fCrateMapName));
+#endif
   }
   if( fDebug>0 )
     cout << "Initializing crate map " << endl;
@@ -293,7 +294,7 @@ int THaEvData::init_cmap()  {
   if( init_cmap_openfile(fi,fname) != 0 ) {
     // A derived class implements a special method to open the crate map
     // database file. Call THaCrateMap's file-based init method.
-    ret = fMap->init(fi,fname);
+    ret = fMap->init(fi,fname.Data());
   } else {
     // Use the default behavior of THaCrateMap for initializing the map
     // (currently that means opening a database file named fCrateMapName)
@@ -309,19 +310,36 @@ int THaEvData::init_cmap()  {
 void THaEvData::makeidx( UInt_t crate, UInt_t slot )
 {
   // Activate crate/slot
-  UInt_t idx = slot+MAXSLOT*crate;
-  delete crateslot[idx];  // just in case
-  crateslot[idx] = new THaSlotData(crate,slot);
+  UShort_t idx = slot + MAXSLOT*crate;
+  if( !crateslot[idx] ) {
+#if __cplusplus >= 201402L
+    crateslot[idx] = make_unique<THaSlotData>(crate, slot);
+#else
+    crateslot[idx].reset(new THaSlotData(crate, slot));
+#endif
+  }
+#ifndef NDEBUG
+  else {
+    // Slot already defined
+    assert(crateslot[idx]->getCrate() == crate &&
+           crateslot[idx]->getSlot() == slot);
+  }
+#endif
   if (fDebugFile) crateslot[idx]->SetDebugFile(fDebugFile);
   if( !fMap ) return;
   if( fMap->crateUsed(crate) && fMap->slotUsed(crate,slot)) {
     crateslot[idx]
-      ->define( crate, slot, fMap->getNchan(crate,slot),
-		fMap->getNdata(crate,slot) );
-    fSlotUsed[fNSlotUsed++] = idx;
-    if( fMap->slotClear(crate,slot))
-      fSlotClear[fNSlotClear++] = idx;
-    crateslot[idx]->loadModule(fMap);
+      ->define( crate, slot, fMap->getNchan(crate,slot) );
+// ndata no longer used
+//    ->define( crate, slot, fMap->getNchan(crate,slot),
+//		fMap->getNdata(crate,slot) );
+    // Prevent duplicates in fSlotUsed and fSlotClear
+    if( find(ALL(fSlotUsed), idx) == fSlotUsed.end() )
+      fSlotUsed.push_back(idx);
+    if( fMap->slotClear(crate,slot) &&
+        find(ALL(fSlotClear), idx) == fSlotClear.end() )
+      fSlotClear.push_back(idx);
+    crateslot[idx]->loadModule(fMap.get());
   }
 }
 
@@ -348,26 +366,22 @@ int THaEvData::init_slotdata()
 {
   // Update lists of used/clearable slots in case crate map changed
   if(!fMap) return HED_ERR;
-  for( UInt_t i=0; i<fNSlotUsed; i++ ) {
-    THaSlotData* module = crateslot[fSlotUsed[i]];
-    UInt_t crate = module->getCrate();
-    UInt_t slot  = module->getSlot();
-    if( !fMap->crateUsed(crate) || !fMap->slotUsed(crate,slot) ||
-	!fMap->slotClear(crate,slot)) {
-      for( UInt_t k = 0; k < fNSlotClear; k++ ) {
-	if( module == crateslot[fSlotClear[k]] ) {
-	  for( UInt_t j=k+1; j<fNSlotClear; j++ )
-	    fSlotClear[j-1] = fSlotClear[j];
-	  fNSlotClear--;
-	  break;
-	}
-      }
+  for( auto it = fSlotUsed.begin(); it != fSlotUsed.end(); ) {
+    THaSlotData* pSlotData = crateslot[*it].get();
+    UInt_t crate = pSlotData->getCrate();
+    UInt_t slot  = pSlotData->getSlot();
+    if( !fMap->crateUsed(crate) || !fMap->slotUsed(crate, slot) ||
+        !fMap->slotClear(crate, slot) ) {
+      auto jt = find(ALL(fSlotClear), *it);
+      if( jt != fSlotClear.end() )
+        fSlotClear.erase(jt);
     }
     if( !fMap->crateUsed(crate) || !fMap->slotUsed(crate, slot) ) {
-      for( UInt_t j = i+1; j < fNSlotUsed; j++ )
-        fSlotUsed[j-1] = fSlotUsed[j];
-      fNSlotUsed--;
-    }
+      assert( find(ALL(fSlotClear), *it) == fSlotClear.end() );
+      crateslot[*it].reset();  // Release unused resources
+      it = fSlotUsed.erase(it);
+    } else
+      ++it;
   }
   return HED_OK;
 }
@@ -392,8 +406,8 @@ void THaEvData::FindUsedSlots() {
 //_____________________________________________________________________________
 Module* THaEvData::GetModule( UInt_t roc, UInt_t slot) const
 {
-  THaSlotData *sldat = crateslot[idx(roc,slot)];
-  if (sldat) return sldat->GetModule();
+  if( crateslot[idx(roc,slot)] )
+    return crateslot[idx(roc,slot)]->GetModule();
   return nullptr;
 }
 

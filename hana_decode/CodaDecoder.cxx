@@ -14,14 +14,13 @@
 #include "TError.h"
 #include <iostream>
 #include <stdexcept>
-#include <sstream>
+#include <algorithm>
 
 using namespace std;
 
-namespace Decoder {
+#define ALL(c) (c).begin(), (c).end()
 
-//   static const Int_t MAX_EVTYPES = 200;
-//   static const Int_t MAX_PHYS_EVTYPES = 14;
+namespace Decoder {
 
 //_____________________________________________________________________________
 CodaDecoder::CodaDecoder() :
@@ -166,32 +165,39 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
    // Decode each ROC
    // From this point onwards there is no diff between CODA 2.* and CODA 3.*
 
-    for( UInt_t i=0; i<nroc; i++ ) {
+    for( UInt_t i = 0; i < nroc; i++ ) {
 
       UInt_t iroc = irn[i];
-      const RocDat_t* proc = rocdat+iroc;
-      UInt_t ipt = proc->pos + 1;
-      UInt_t iptmax = proc->pos + proc->len;
+      const RocDat_t& ROC = rocdat[iroc];
+      UInt_t ipt = ROC.pos + 1;
+      UInt_t iptmax = ROC.pos + ROC.len;
 
-      if (fMap->isFastBus(iroc)) {  // checking that slots found = expected
-	  if (GetEvNum() > 200 && chkfbstat < 3) chkfbstat=2;
-	  if (chkfbstat == 1) ChkFbSlot(iroc, evbuffer, ipt, iptmax);
-	  if (chkfbstat == 2) {
-	      ChkFbSlots();
-	      chkfbstat = 3;
-	  }
+      if( fMap->isFastBus(iroc) ) {  // checking that slots found = expected
+        if( GetEvNum() > 200 && chkfbstat < 3 ) chkfbstat = 2;
+        if( chkfbstat == 1 ) ChkFbSlot(iroc, evbuffer, ipt, iptmax);
+        if( chkfbstat == 2 ) {
+          ChkFbSlots();
+          chkfbstat = 3;
+        }
       }
 
- // If at least one module is in a bank, must split the banks for this roc
+      // If at least one module is in a bank, must split the banks for this roc
 
-      if (fMap->isBankStructure(iroc)) {
-	  if (fDebugFile) *fDebugFile << "\nCodaDecode::Calling bank_decode "<<i<<"   "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;
-	  /*status =*/ bank_decode(iroc,evbuffer,ipt,iptmax);
+      if( fMap->isBankStructure(iroc) ) {
+        if( fDebugFile )
+          *fDebugFile << "\nCodaDecode::Calling bank_decode "
+                      << i << "   " << iroc << "  " << ipt << "  " << iptmax
+                      << endl;
+        /*status =*/
+        bank_decode(iroc, evbuffer, ipt, iptmax);
       }
 
-      if (fDebugFile) *fDebugFile << "\nCodaDecode::Calling roc_decode "<<i<<"   "<<evbuffer<<"  "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;
+      if( fDebugFile )
+        *fDebugFile << "\nCodaDecode::Calling roc_decode " << i << "   "
+                    << evbuffer << "  " << iroc << "  " << ipt
+                    << "  " << iptmax << endl;
 
-      Int_t status = roc_decode(iroc,evbuffer, ipt, iptmax);
+      Int_t status = roc_decode(iroc, evbuffer, ipt, iptmax);
 
       // do something with status
       if( status )
@@ -307,26 +313,32 @@ Int_t CodaDecoder::LoadFromMultiBlock()
       return ret;
   }
 
-  for( UInt_t i=0; i<fNSlotClear; i++ ) {
-    if (crateslot[fSlotClear[i]]->GetModule()->IsMultiBlockMode()) crateslot[fSlotClear[i]]->clearEvent();
+  for( auto i : fSlotClear ) {
+    if( crateslot[i]->GetModule()->IsMultiBlockMode() )
+      crateslot[i]->clearEvent();
   }
 
-  for( UInt_t i=0; i<nroc; i++ ) {
-
-      UInt_t roc = irn[i];
-      UInt_t minslot = fMap->getMinSlot(roc);
-      UInt_t maxslot = fMap->getMaxSlot(roc);
-      for (UInt_t slot = minslot; slot <= maxslot; slot++) {
- // for CODA3, cross-check the block size (found in trigger bank and, separately, in modules)
-        if(fDebugFile) *fDebugFile << "cross chk blk size "<<roc<<"  "<<slot<<"  "<<crateslot[idx(roc,slot)]->GetModule()->GetBlockSize()<<"   "<<block_size<<endl;
-        if (fDataVersion > 2 && (crateslot[idx(roc,slot)]->GetModule()->GetBlockSize() != block_size)) {
-	  cout << "ERROR::CodaDecoder:: inconsistent block size between trig. bank and module"<<endl;
-	}
-	if (fMap->slotUsed(roc,slot) && crateslot[idx(roc,slot)]->GetModule()->IsMultiBlockMode()) {
-	  crateslot[idx(roc,slot)]->LoadNextEvBuffer();
-	  if (crateslot[idx(roc,slot)]->BlockIsDone()) fBlockIsDone = true;
-	}
+  for( UInt_t i = 0; i < nroc; i++ ) {
+    UInt_t roc = irn[i];
+    UInt_t minslot = fMap->getMinSlot(roc);
+    UInt_t maxslot = fMap->getMaxSlot(roc);
+    for( UInt_t slot = minslot; slot <= maxslot; slot++ ) {
+      // for CODA3, cross-check the block size (found in trigger bank and, separately, in modules)
+      if( fDebugFile )
+        *fDebugFile << "cross chk blk size " << roc << "  " << slot << "  "
+                    << crateslot[idx(roc, slot)]->GetModule()->GetBlockSize()
+                    << "   " << block_size << endl;
+      if( fDataVersion > 2 &&
+          (crateslot[idx(roc, slot)]->GetModule()->GetBlockSize() != block_size) ) {
+        cout << "ERROR::CodaDecoder:: inconsistent block size between trig. bank and module" << endl;
       }
+      if( fMap->slotUsed(roc, slot) &&
+          crateslot[idx(roc, slot)]->GetModule()->IsMultiBlockMode() ) {
+        crateslot[idx(roc, slot)]->LoadNextEvBuffer();
+        if( crateslot[idx(roc, slot)]->BlockIsDone() )
+          fBlockIsDone = true;
+      }
+    }
   }
   return HED_OK;
 }
@@ -584,7 +596,7 @@ Int_t CodaDecoder::FindRocs(const UInt_t *evbuffer) {
   // The following line is not meaningful for CODA3
   if( (evbuffer[1]&0xffff) != 0x10cc ) std::cout<<"Warning, header error"<<std::endl;
   if( event_type > MAX_PHYS_EVTYPE ) std::cout<<"Warning, Event type makes no sense"<<std::endl;
-  memset(rocdat,0,MAXROC*sizeof(RocDat_t));
+  for_each(ALL(rocdat), []( RocDat_t& ROC ) { ROC.clear(); });
   // Set pos to start of first ROC data bank
   UInt_t pos = evbuffer[2]+3;  // should be 7
   nroc = 0;
@@ -697,9 +709,6 @@ int CodaDecoder::init_slotdata()
   // with each crate/slot. Of course, that could be done via database
   // parameters as well. Presumably the resource waste is minor on today's
   // computers, so fine.
-  // Also note that all crateslots and modules will be deleted and recreated
-  // right away every time this routine is called, even if there are no
-  // changes to the map. This should be fixed.
 
   if(!fMap) return HED_ERR;
 
@@ -715,7 +724,8 @@ int CodaDecoder::init_slotdata()
     }
   }
 
-  if (fDebugFile) *fDebugFile << "CodaDecode:: fNSlotUsed "<<fNSlotUsed<<endl;
+  if (fDebugFile)
+    *fDebugFile << "CodaDecode:: fNSlotUsed "<<fSlotUsed.size()<<endl;
 
   // Update lists of used/clearable slots in case crate map changed
   return THaEvData::init_slotdata();
