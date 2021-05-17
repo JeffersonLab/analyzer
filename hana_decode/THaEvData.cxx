@@ -50,7 +50,6 @@ Bool_t THaEvData::fgAllowUnimpl = true;
 TString THaEvData::fgDefaultCrateMapName = "cratemap";
 
 //_____________________________________________________________________________
-
 THaEvData::THaEvData() :
   fMap{nullptr},
   crateslot{new THaSlotData*[MAXROC*MAXSLOT]},  // FIXME: allocate dynamically
@@ -124,9 +123,14 @@ const char* THaEvData::DevType( UInt_t crate, UInt_t slot) const {
 Int_t THaEvData::Init()
 {
   Int_t ret = init_cmap();
+  if( ret != HED_OK ) return ret;
+  if( fDebugFile ) {
+    *fDebugFile << endl << " THaEvData:: Print of Crate Map" << endl;
+    fMap->print(*fDebugFile);
+  }
   //  if (fMap) fMap->print();
-  if (ret != HED_OK) return ret;
   ret = init_slotdata();
+  if( ret != HED_OK ) return ret;
   first_decode = false;
   fNeedInit = false;
   fMsgPrinted.ResetAllBits();

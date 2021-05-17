@@ -21,6 +21,8 @@ public:
   CodaDecoder();
   virtual ~CodaDecoder();
 
+  virtual Int_t  Init();
+
   virtual Int_t  LoadEvent(const UInt_t* evbuffer);
   virtual Int_t  LoadFromMultiBlock();
 

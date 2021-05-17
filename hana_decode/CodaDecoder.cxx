@@ -29,7 +29,7 @@ CodaDecoder::CodaDecoder() :
   psfact(MAX_PSFACT, kMaxUInt), fdfirst(true), chkfbstat(1), evcnt_coda3(0)
 {
   fNeedInit=true;
-  first_decode=false;
+  first_decode=true;
   fMultiBlockMode=false;
   fBlockIsDone=false;
   // Please leave these 3 lines for me to debug if I need to.  thanks, Bob
@@ -66,51 +66,45 @@ UInt_t CodaDecoder::GetPrescaleFactor( UInt_t trigger_type) const
 }
 
 //_____________________________________________________________________________
-Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
+Int_t CodaDecoder::Init()
+{
+  Int_t ret = THaEvData::Init();
+  if( ret != HED_OK ) return ret;
+  FindUsedSlots();
+  return ret;
+}
+
+//_____________________________________________________________________________
+Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
 {
   // Main engine for decoding, called by public LoadEvent() methods
 
-  if (fDataVersion <= 0) {
-     cout << "CODA version not set (="<<fDataVersion<<"). "
-          << "Do SetCodaVersion(codaData->getCodaVersion()) first"<<endl;
-     return HED_FATAL;
-  }
-  if (fDataVersion != 2 && fDataVersion != 3) {
-     cout << "Unsupported CODA version = "<<fDataVersion<<"). Need 2 or 3."
-          << "Cannot analyze these data. Twonk."<<endl;
-     return HED_FATAL;
+  assert(evbuffer);
+
+  if (fDebugFile) {
+    *fDebugFile << "CodaDecode:: Loading event  ... " << endl
+                << "evbuffer ptr " << hex << evbuffer << dec << endl;
   }
 
+  if (fDataVersion <= 0) {
+    cerr << "CODA version not set (=" << fDataVersion << "). "
+         << "Do SetCodaVersion(codaData->getCodaVersion()) first" << endl;
+    return HED_FATAL;
+  }
+  if (fDataVersion != 2 && fDataVersion != 3) {
+    cerr << "Unsupported CODA version = " << fDataVersion << "). Need 2 or 3."
+         << "Cannot analyze these data. Twonk."<<endl;
+    return HED_FATAL;
+  }
+
+  buffer = evbuffer;
   event_length = evbuffer[0]+1;  // in longwords (4 bytes)
   event_num = 0;
   event_type = 0;
-  if (fDebugFile) *fDebugFile << "CodaDecode:: Loading event  ... "<<endl;
-  if (fDebugFile) *fDebugFile << "evbuffer ptr "<<hex<<evbuffer<<dec<<endl;
-  assert( evbuffer );
-  assert( fMap || fNeedInit );
-  Int_t ret = HED_OK;
-  buffer = evbuffer;
-  if (first_decode || fNeedInit) {
-     ret = init_cmap();
-     if (fDebugFile) {
-	 *fDebugFile << endl << " CodaDecode:: Print of Crate Map"<<endl;
-	 fMap->print(*fDebugFile);
-     } else {
-      //      fMap->print();
-     }
-     if( ret != HED_OK ) return ret;
-     ret = init_slotdata();
-     if( ret != HED_OK ) return ret;
-     FindUsedSlots();
-     first_decode=false;
-  }
-  if( fDoBench ) fBench->Begin("clearEvent");
-  for( UInt_t i=0; i<fNSlotClear; i++ )
-    crateslot[fSlotClear[i]]->clearEvent();
-  if( fDoBench ) fBench->Stop("clearEvent");
+
+  // Determine event type
   if (fDataVersion == 2) {
     event_type = evbuffer[1]>>16;
-    //if(event_type < 0) return HED_ERR; // can never happen 8-)
   } else {  // CODA version 3
     interpretCoda3(evbuffer);
   }
@@ -118,38 +112,56 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
       *fDebugFile << "CodaDecode:: dumping "<<endl;
       dump(evbuffer);
   }
- 
+
+  Int_t ret = HED_OK;
   if (event_type == PRESTART_EVTYPE ) {
     // Usually prestart is the first 'event'.  Call SetRunTime() to
     // re-initialize the crate map since we now know the run time.
     // This won't happen for split files (no prestart). For such files,
     // the user should call SetRunTime() explicitly.
-    // For CODA3 these are set in interpretCoda3 above.
-    if( fDataVersion == 2 ) {
-      SetRunTime(static_cast<ULong64_t>(evbuffer[2]));
-      run_num  = evbuffer[3];
-      run_type = evbuffer[4];
-      evt_time = fRunTime;
+    SetRunTime(evbuffer[2]);
+    run_num  = evbuffer[3];
+    run_type = evbuffer[4];
+    evt_time = fRunTime;
+    if (fDebugFile) {
+      *fDebugFile << "Prestart Event : run_num " << run_num
+                  << "  run type "   << run_type
+                  << "  event_type " << event_type
+                  << "  run time "   << fRunTime
+                  << endl;
     }
-  } else if( event_type == PRESCALE_EVTYPE || event_type == TS_PRESCALE_EVTYPE ) {
-    ret = prescale_decode(evbuffer);
-    if( ret != HED_OK )
+  }
+
+  else if( event_type == PRESCALE_EVTYPE || event_type == TS_PRESCALE_EVTYPE ) {
+    if( (ret = prescale_decode(evbuffer)) != HED_OK )
       return ret;
   }
-  if (event_type <= MAX_PHYS_EVTYPE) {
-     if (fDataVersion == 3) {
-         event_num = ++evcnt_coda3;
-         FindRocsCoda3(evbuffer);
-     } else {
-         event_num = evbuffer[4];
-         FindRocs(evbuffer);
-     }
-     recent_event = event_num;
 
-     if (fdfirst && fDebugFile) {
-       fdfirst=false;
-       CompareRocs();
-     }
+  else if( event_type <= MAX_PHYS_EVTYPE ) {
+    assert(fMap || fNeedInit);
+    if( first_decode || fNeedInit ) {
+      if( (ret = Init()) != HED_OK )
+        return ret;
+    }
+    assert(fMap);
+    if( fDoBench ) fBench->Begin("clearEvent");
+    for( auto i : fSlotClear )
+      crateslot[i]->clearEvent();
+    if( fDoBench ) fBench->Stop("clearEvent");
+
+    if( fDataVersion == 3 ) {
+      event_num = ++evcnt_coda3;
+      FindRocsCoda3(evbuffer);
+    } else {
+      event_num = evbuffer[4];
+      FindRocs(evbuffer);
+    }
+    recent_event = event_num;
+
+    if( fdfirst && fDebugFile ) {
+      fdfirst = false;
+      CompareRocs();
+    }
 
    // Decode each ROC
    // From this point onwards there is no diff between CODA 2.* and CODA 3.*
@@ -193,8 +205,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
 
 
 //_____________________________________________________________________________
-Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer)
-{
+Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer) {
 
   event_type = 0;
   bank_tag   = (evbuffer[1] & 0xffff0000) >> 16;
@@ -203,44 +214,37 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer)
 
   if( bank_tag >= 0xff00 ) { /* CODA Reserved bank type */
 
-    switch (bank_tag) {
+    switch( bank_tag ) {
 
-     case 0xffd1:
-
-        event_type = PRESTART_EVTYPE;
-        SetRunTime(static_cast<ULong64_t>(evbuffer[2]));
-        run_num  = evbuffer[3];
-        run_type = evbuffer[4];
-        evt_time = fRunTime;
-        if (fDebugFile) {
-	  *fDebugFile << "Prestart Event : run_num "<<run_num<<"  run type "<<run_type<<"   event_type "<<event_type<<"  run time "<<fRunTime<<endl;
-        }
-        break;
-     case 0xffd2:
-  	    event_type = GO_EVTYPE;
- 	    break;
-     case 0xffd4:
-  	    event_type = END_EVTYPE;
-	    break;
-     case 0xff50:
-     case 0xff58: // Physics event with sync bit
-     case 0xff70:
-  	    event_type = 1;  // Physics event type
-	    break;
-      default:
-	    cout << "CodaDecoder:: WARNING:  Undefined CODA 3 event type"<<endl;
+    case 0xffd1:
+      event_type = PRESTART_EVTYPE;
+      break;
+    case 0xffd2:
+      event_type = GO_EVTYPE;
+      break;
+    case 0xffd4:
+      event_type = END_EVTYPE;
+      break;
+    case 0xff50:
+    case 0xff58: // Physics event with sync bit
+    case 0xff70:
+      event_type = 1;  // Physics event type
+      break;
+    default:
+      cout << "CodaDecoder:: WARNING:  Undefined CODA 3 event type" << endl;
     }
-  }  else { /* User event type */
+  } else { /* User event type */
 
-      event_type = bank_tag;  // need to check this.
+    event_type = bank_tag;  // need to check this.
 
-      if(fDebugFile) *fDebugFile<<" User defined event type "<<event_type<<endl;
+    if( fDebugFile )
+      *fDebugFile << " User defined event type " << event_type << endl;
 
   }
 
-  tbLen = 0;  
-  if (event_type == 1) tbLen = trigBankDecode(&evbuffer[2], block_size);
-   
+  tbLen = 0;
+  if( event_type == 1 ) tbLen = trigBankDecode(&evbuffer[2], block_size);
+
   return HED_OK;
 }
          
@@ -285,9 +289,6 @@ UInt_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize) {
 
 }
 
-
-
-
 //_____________________________________________________________________________
 Int_t CodaDecoder::LoadFromMultiBlock()
 {
@@ -299,6 +300,12 @@ Int_t CodaDecoder::LoadFromMultiBlock()
 
   if (!fMultiBlockMode) return HED_ERR;
   fBlockIsDone = false;
+
+  if( first_decode || fNeedInit ) {
+    Int_t ret = Init();
+    if( ret != HED_OK )
+      return ret;
+  }
 
   for( UInt_t i=0; i<fNSlotClear; i++ ) {
     if (crateslot[fSlotClear[i]]->GetModule()->IsMultiBlockMode()) crateslot[fSlotClear[i]]->clearEvent();
@@ -568,7 +575,7 @@ Int_t CodaDecoder::FindRocs(const UInt_t *evbuffer) {
 // The (old) decoding of CODA 2.* event buffer to find pointers and lengths of ROCs
 // ROC = ReadOut Controller, synonymous with "crate".
 
-  assert( evbuffer && fMap );
+  assert( evbuffer );
 #ifdef FIXME
   if( fDoBench ) fBench->Begin("physics_decode");
 #endif
