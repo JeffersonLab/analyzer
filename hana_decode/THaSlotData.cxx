@@ -79,8 +79,12 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
   UInt_t modelnum = map->getModel(crate, slot);
 
-  for( const auto& loctype : Module::fgModuleTypes() ) {
-    // Get the ROOT class for this type
+  // Search for the model number, which is the sorting key for the std::set
+  auto found = Module::fgModuleTypes().find(Module::ModuleType(nullptr, modelnum));
+
+  if( found != Module::fgModuleTypes().end() ) {
+    const auto& loctype = *found;
+    assert(modelnum == loctype.fMapNum);  // else set::find lied
 
     if (fDebugFile) {
       *fDebugFile << "THaSlotData:: loctype.fClassName  "<< loctype.fClassName<<endl;
@@ -94,44 +98,55 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
       if (fDebugFile) {
 	 *fDebugFile << "defining fTClass ptr =  "<<loctype.fTClass<<endl;
       }
-
+      if (!loctype.fTClass) {
+        if (fDebugFile) {
+          *fDebugFile << "THaSlotData:: SERIOUS problem :  fTClass still zero " << endl;
+        }
+        return SD_OK;
+      }
     }
-
-    if (modelnum == loctype.fMapNum) {
 
     if (fDebugFile) *fDebugFile << "THaSlotData::  Found Module !!!! "<<dec<<modelnum<<endl;
 
-      if (loctype.fTClass) {
-	if (fDebugFile) *fDebugFile << "THaSlotData:: Creating fModule"<<endl;
-	delete fModule;
-	fModule= static_cast<Module*>( loctype.fTClass->New() );
-	if (fDebugFile) *fDebugFile << "fModule return "<<fModule<<endl;
-
-	if (!fModule) {
-	  cout << "ERROR: Failure to make module on crate "<<dec<<crate<<"  slot "<<slot<<endl;
-	  cout << "usually because the module class is abstract; make sure base class methods are defined"<<endl;
-	  if (fDebugFile) *fDebugFile << "failure to make module on crate "<<dec<<crate<<"  slot "<<slot<<endl;
-	  return SD_ERR;
-	}
-	// Init first, then SetSlot
-	fModule->Init();
-	fModule->SetSlot( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot), map->getModel(crate,slot));
-        fModule->SetBank(map->getBank(crate,slot));
-	if (fDebugFile) *fDebugFile << "THaSlotData:: about to init  module   "<<crate<<"  "<<slot<<" mod ptr "<<fModule<<"  header "<<hex<<map->getHeader(crate,slot)<<"  model num "<<dec<<map->getModel(crate,slot)<<"  bank = "<<map->getBank(crate,slot)<<endl;
-	if (fDebugFile) {
-	  fModule->SetDebugFile(fDebugFile);
-	  fModule->DoPrint();
-	}
-      } else {
-	if (fDebugFile) *fDebugFile << "THaSlotData:: SERIOUS problem :  fTClass still zero "<<endl;
-      }
-
+    if (fDebugFile) *fDebugFile << "THaSlotData:: Creating fModule"<<endl;
+    if( !fModule || fModule->IsA() != loctype.fTClass ) {
+      delete fModule;
+      fModule= static_cast<Module*>( loctype.fTClass->New() );
+    } else if (fDebugFile) {
+      *fDebugFile << "THaSlotData:: Reusing existing fModule" << endl;
     }
 
-   }
+    if (!fModule) {
+      cerr << "ERROR: Failure to make module on crate "<<dec<<crate<<"  slot "<<slot<<endl;
+      cerr << "usually because the module class is abstract; make sure base class methods are defined"<<endl;
+      if (fDebugFile)
+        *fDebugFile << "failure to make module on crate "<<dec<<crate<<"  slot "<<slot<<endl;
+      return SD_ERR;
+    }
 
-   return SD_OK;
+    if (fDebugFile) {
+      *fDebugFile << "THaSlotData: fModule successfully created" << endl;
+      *fDebugFile << "THaSlotData:: about to init  module   "
+                  << crate << "  " << slot
+                  << "  header " << hex << map->getHeader(crate, slot)
+                  << "  model num " << dec << map->getModel(crate, slot)
+                  << "  bank = " << map->getBank(crate, slot)
+                  << endl;
+    }
 
+    // Init first, then SetSlot
+    fModule->Init();
+    fModule->SetSlot(crate, slot,
+                     map->getHeader(crate, slot),
+                     map->getMask(crate, slot),
+                     map->getModel(crate, slot));
+    fModule->SetBank(map->getBank(crate, slot));
+    if (fDebugFile) {
+      fModule->SetDebugFile(fDebugFile);
+      fModule->DoPrint();
+    }
+  }
+  return SD_OK;
 }
 
 //_____________________________________________________________________________
