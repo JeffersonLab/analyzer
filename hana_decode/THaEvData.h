@@ -18,6 +18,7 @@
 #include <iostream>
 #include <cstdio>
 #include <vector>
+#include <array>
 #include <memory>
 
 class THaBenchmark;
@@ -230,16 +231,17 @@ protected:
   // Data
   std::unique_ptr<Decoder::THaCrateMap> fMap;  // Pointer to active crate map
 
-  class RocDat_t {            // ROC raw data descriptor
+  class RocDat_t {            // Coordinates of ROC data in raw event
   public:
     RocDat_t() : pos(0), len(0) {}
     void clear() { pos = len = 0; }
     UInt_t pos;               // position in evbuffer[]
     UInt_t len;               // length of data
   };
-  std::vector<RocDat_t> rocdat;
+  std::array<RocDat_t, Decoder::MAXROC> rocdat;
   std::vector<RocDat_t> bankdat;
 
+  // Per-event, per-module hit data extracted from raw event
   std::vector<std::unique_ptr<Decoder::THaSlotData>> crateslot;
 
   Bool_t first_decode;

@@ -56,7 +56,6 @@ TString THaEvData::fgDefaultCrateMapName = "cratemap";
 THaEvData::THaEvData() :
   fMap{nullptr},
   // FIXME: allocate dynamically?
-  rocdat(MAXROC),
   bankdat(MAXBANK * MAXROC),
   crateslot(MAXROC * MAXSLOT),
   first_decode{true},
