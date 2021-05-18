@@ -15,6 +15,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <algorithm>
+#include <utility>
 
 using namespace std;
 
@@ -347,6 +348,8 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
 {
   // Decode a Readout controller
   assert( evbuffer && fMap );
+  if( ipt+1 >= istop )
+    return HED_OK;
   if( fDoBench ) fBench->Begin("roc_decode");
   Int_t retval = HED_OK;
   try {
@@ -366,87 +369,91 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
       }
       return HED_OK;
     }
-    UInt_t minslot = fMap->getMinSlot(roc);
-    UInt_t maxslot = fMap->getMaxSlot(roc);
+    if( istop > event_length )
+      throw invalid_argument("ERROR:: roc_decode:  stop point exceeds event length (?!)");
+
+    if( fDebugFile )
+      *fDebugFile << "CodaDecode:: roc_decode:: roc#  " << dec << roc
+                  << " nslot " << Nslot << endl;
+
     synchmiss = false;
     synchextra = false;
     buffmode = false;
+    fBlockIsDone = false;
     const UInt_t* p = evbuffer + ipt;    // Points to ROC ID word (1 before data)
     const UInt_t* pstop = evbuffer + istop;   // Points to last word of data
-    fBlockIsDone = false;
 
-    if( istop > event_length )
-      throw runtime_error("ERROR:: roc_decode:  stop point exceeds event length (?!)");
+    assert(fMap->GetUsedSlots(roc).size() == Nslot); // else bug in THaCrateMap
 
-    UInt_t firstslot = minslot;
-    Int_t  incrslot = 1;
-    if( fMap->isFastBus(roc) ) { // higher slot # appears first in multiblock mode
-      firstslot = maxslot;       // the decoding order improves efficiency
-      incrslot = -1;
+    // Build the to-do list of slots based on the contents of the crate map
+    vector<pair<UInt_t,THaSlotData*>> slots_todo; slots_todo.reserve(Nslot);
+    for( auto slot : fMap->GetUsedSlots(roc) ) {
+      assert(fMap->slotUsed(roc, slot));   // else bug in THaCrateMap
+      // ignore bank structure slots; they are decoded with bank_decode
+      if( fMap->getBank(roc, slot) >= 0 )
+        continue;
+      slots_todo.emplace_back(slot,crateslot[idx(roc,slot)].get());
     }
 
-    if( fDebugFile ) {
-      *fDebugFile << "CodaDecode:: roc_decode:: roc#  " << dec << roc << " nslot " << Nslot << endl;
-      *fDebugFile << "CodaDecode:: roc_decode:: firstslot " << dec << firstslot << "  incrslot " << incrslot << endl;
-    }
+    // higher slot # appears first in multiblock mode
+    // the decoding order improves efficiency
+    bool is_fastbus = fMap->isFastBus(roc);
+    if( is_fastbus )
+      std::reverse( ALL(slots_todo) );
 
-    fMap->setSlotDone();      // clears the "done" bits
+    // Crawl through this ROC's data block. Each word is tested against all the
+    // defined modules (slots) in the crate for a match with the expected slot
+    // header. If a match is found, this word is the slot header. Zero or more
+    // words following the slot header represent the data for the slot. These
+    // data are loaded into the module's internal storage, and the corresponding
+    // slot is removed from the search list. The search for the remaining slots
+    // then resumes at the first word after the data.
+    UInt_t nextidx = 0;
+    while( p++ < pstop ) {
+      if( fDebugFile )
+        *fDebugFile << "CodaDecode::roc_decode:: evbuff " << (p - evbuffer)
+                    << "  " << hex << *p << dec << endl;
 
-    UInt_t n_slots_done = 0;
-    while( p++ < pstop && n_slots_done < Nslot ) {
+      if( is_fastbus && LoadIfFlagData(p) )
+        continue;
 
-      if( fDebugFile ) {
-        *fDebugFile << "CodaDecode::roc_decode:: evbuff " << (p - evbuffer) << "  " << hex << *p << dec << endl;
-        *fDebugFile << "CodaDecode::roc_decode:: n_slots_done " << n_slots_done << "  " << firstslot << endl;
-      }
-      LoadIfFlagData(p);
-
-      UInt_t n_slots_checked = 0;
-      UInt_t slot = firstslot;
-      Bool_t slotdone = false;
-      // bank structure is decoded with bank_decode
-      if( fMap->getBank(roc, slot) >= 0 ) {
-        n_slots_done++;
-        slotdone = true;
-      }
-
-      while( !slotdone && n_slots_checked < Nslot - n_slots_done && slot < MAXSLOT ) {
-
-
-        if( !fMap->slotUsed(roc, slot) || fMap->slotDone(slot) ) {
-          slot = slot + incrslot;
+      bool update_nextidx = true;
+      for( UInt_t i = nextidx; i < slots_todo.size(); ++i ) {
+        UInt_t slot = slots_todo[i].first;
+        // ignore bank structure slots; they are decoded with bank_decode
+        if( slot == kMaxUInt )
           continue;
-        }
+        auto* sd = slots_todo[i].second;
 
-        ++n_slots_checked;
+        if( fDebugFile )
+          *fDebugFile << "roc_decode:: slot logic " << roc << "  " << slot;
 
-        if( fDebugFile ) {
-          *fDebugFile << "roc_decode:: slot logic " << roc << "  " << slot << "  " << firstslot << "  "
-                      << n_slots_checked << "  " << Nslot - n_slots_done << endl;
-        }
+        // Check if data word at p belongs to the module at the current slot
+        UInt_t nwords = sd->LoadIfSlot(p, pstop);
 
-        UInt_t nwords = crateslot[idx(roc, slot)]->LoadIfSlot(p, pstop);
+        if( sd->IsMultiBlockMode() ) fMultiBlockMode = true;
+        if( sd->BlockIsDone() ) fBlockIsDone = true;
+
+        if( fDebugFile )
+          *fDebugFile << "CodaDecode:: roc_decode:: after LoadIfSlot "
+                      << p + ((nwords > 0) ? nwords - 1 : 0) << "  " << pstop
+                      << "    " << hex << *p << "  " << dec << nwords << endl;
 
         if( nwords > 0 ) {
-          p = p + nwords - 1;
-          fMap->setSlotDone(slot);
-          n_slots_done++;
-          if( fDebugFile ) *fDebugFile << "CodaDecode::  slot " << slot << "  is DONE    " << nwords << endl;
-          slotdone = true;
+          if( fDebugFile )
+            *fDebugFile << "CodaDecode::  slot " << slot << "  is DONE    "
+                        << nwords << endl;
+          // Data for this slot found and loaded. Advance to next data block.
+          p += nwords-1;
+          slots_todo[i].first = kMaxUInt;  // Mark slot as done
+          if( update_nextidx )
+            nextidx = i+1;
+          break;
+        } else if( update_nextidx ) {
+          nextidx = i;
+          update_nextidx = false;
         }
-
-        if( crateslot[idx(roc, slot)]->IsMultiBlockMode() ) fMultiBlockMode = true;
-        if( crateslot[idx(roc, slot)]->BlockIsDone() ) fBlockIsDone = true;
-
-        if( fDebugFile ) {
-          *fDebugFile << "CodaDecode:: roc_decode:: after LoadIfSlot " << p << "  " << pstop << "  " << "  " << hex
-                      << *p << "  " << dec << nwords << endl;
-        }
-
-        slot = slot + incrslot;
-
       }
-
     } //end while(p++<pstop)
   }
   catch( const exception& e ) {
@@ -555,34 +562,55 @@ Int_t CodaDecoder::LoadIfFlagData(const UInt_t* evbuffer)
   // Looks for buffer mode and synch problems.  The latter are recoverable
   // but extremely rare, so I haven't bothered to write recovery a code yet,
   // but at least this warns you.
+  // Returns 0 if no flag data detected, != 0 otherwise
   assert( evbuffer );
-  UInt_t word   = *evbuffer;
-  UInt_t upword = word & 0xffff0000;
-  if (fDebugFile) *fDebugFile << "CodaDecode:: TestBit on :  Flag data ? "<<hex<<word<<dec<<endl;
-  if( word == 0xdc0000ff) synchmiss = true;
-  if( upword == 0xdcfe0000) {
+  UInt_t word = *evbuffer;
+  if (fDebugFile)
+    *fDebugFile << "CodaDecode:: TestBit on :  Flag data ? "
+                << hex << word << dec << endl;
+  UInt_t stdslot = word >> 27;
+  if( stdslot > 0 && stdslot < MAXSLOT_FB )
+    return 0; // non-flag data
+
+  Int_t ret = 1;
+  UInt_t upword = word >> 16;   // upper 16 bits
+  word &= 0xffff;               // lower 16 bits
+  switch( upword ) {
+  case 0xdc00:
+    if( word == 0x00ff )        // word == 0xdc0000ff
+      synchmiss = true;
+    break;
+  case 0xdcfe:
     synchextra = true;
-    if(fDebug>0) {
-      UInt_t slot = (word&0xf800)>>11;
-      UInt_t nhit = (word&0x7ff);
+    if( fDebug > 0 ) {
+      UInt_t slot = word >> 11;
+      UInt_t nhit = word & 0x7ff;
       cout << "CodaDecoder: WARNING: Fastbus slot ";
       cout << slot << "  has extra hits "<<nhit<<endl;
     }
-  }
-  if( upword == 0xfabc0000) {
-    if(fDebug>0 && (synchmiss || synchextra)) {
+    break;
+  case 0xfaaa:
+    break;
+  case 0xfabc:
+    if( fDebug > 0 && (synchmiss || synchextra) ) {
       UInt_t datascan = *(evbuffer+3);
       cout << "CodaDecoder: WARNING: Synch problems !"<<endl;
       cout << "Data scan word 0x"<<hex<<datascan<<dec<<endl;
     }
-  }
-  if( upword == 0xfabb0000 )
+    break;
+  case 0xfabb:
     buffmode = false;
-  if( (word & 0xffffff00) == 0xfafbbf00 ) {
-    buffmode = true;
-    //    synchflag = word&0xff; // not used
+    break;
+  case 0xfafb:
+    if( (word >> 8) == 0xbf ) { // word & 0xffffff00 == 0xfafbbf00
+      buffmode = true;
+      //    synchflag = word&0xff; // not used
+    }
+    break;
+  default:
+    break;
   }
-  return HED_OK;
+  return ret;
 }
 
 
