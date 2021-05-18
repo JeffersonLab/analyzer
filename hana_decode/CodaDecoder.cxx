@@ -253,7 +253,7 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer) {
 
   return HED_OK;
 }
-         
+
 
 //_____________________________________________________________________________
 UInt_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize) {
@@ -266,7 +266,7 @@ UInt_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize) {
   tbank.start = (uint32_t *)evbuffer;
   tbank.blksize = blkSize;
   tbank.len = evbuffer[0] + 1;
-  tbank.tag = (evbuffer[1]&0xffff0000)>>16; 
+  tbank.tag = (evbuffer[1]&0xffff0000)>>16;
   tbank.nrocs = (evbuffer[1]&0xff);
   tbank.evtNum = evbuffer[3];
 
@@ -320,22 +320,20 @@ Int_t CodaDecoder::LoadFromMultiBlock()
 
   for( UInt_t i = 0; i < nroc; i++ ) {
     UInt_t roc = irn[i];
-    UInt_t minslot = fMap->getMinSlot(roc);
-    UInt_t maxslot = fMap->getMaxSlot(roc);
-    for( UInt_t slot = minslot; slot <= maxslot; slot++ ) {
+    for( auto slot : fMap->GetUsedSlots(roc) ) {
+      assert(fMap->slotUsed(roc, slot));
+      auto* sd = crateslot[idx(roc, slot)].get();
+      auto* mod = sd->GetModule();
       // for CODA3, cross-check the block size (found in trigger bank and, separately, in modules)
       if( fDebugFile )
         *fDebugFile << "cross chk blk size " << roc << "  " << slot << "  "
-                    << crateslot[idx(roc, slot)]->GetModule()->GetBlockSize()
-                    << "   " << block_size << endl;
-      if( fDataVersion > 2 &&
-          (crateslot[idx(roc, slot)]->GetModule()->GetBlockSize() != block_size) ) {
-        cout << "ERROR::CodaDecoder:: inconsistent block size between trig. bank and module" << endl;
+                    << mod->GetBlockSize() << "   " << block_size << endl;
+      if( fDataVersion > 2 && mod->GetBlockSize() != block_size ) {
+        cerr << "ERROR::CodaDecoder:: inconsistent block size between trig. bank and module" << endl;
       }
-      if( fMap->slotUsed(roc, slot) &&
-          crateslot[idx(roc, slot)]->GetModule()->IsMultiBlockMode() ) {
-        crateslot[idx(roc, slot)]->LoadNextEvBuffer();
-        if( crateslot[idx(roc, slot)]->BlockIsDone() )
+      if( mod->IsMultiBlockMode() ) {
+        sd->LoadNextEvBuffer();
+        if( sd->BlockIsDone() )
           fBlockIsDone = true;
       }
     }
@@ -401,7 +399,6 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
         *fDebugFile << "CodaDecode::roc_decode:: evbuff " << (p - evbuffer) << "  " << hex << *p << dec << endl;
         *fDebugFile << "CodaDecode::roc_decode:: n_slots_done " << n_slots_done << "  " << firstslot << endl;
       }
-
       LoadIfFlagData(p);
 
       UInt_t n_slots_checked = 0;
@@ -473,7 +470,9 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
     return HED_OK;
 
   if( fDoBench ) fBench->Begin("bank_decode");
-  if (fDebugFile) *fDebugFile << "CodaDecode:: bank_decode  ... "<<roc<<"   "<<ipt<<"  "<<istop<<endl;
+  if (fDebugFile)
+    *fDebugFile << "CodaDecode:: bank_decode  ... " << roc << "   " << ipt
+                << "  " << istop << endl;
 
   fBlockIsDone = false;
   UInt_t pos = ipt+1;  // ipt points to ROC ID word
@@ -481,32 +480,38 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
     UInt_t len = evbuffer[pos];
     UInt_t head = evbuffer[pos+1];
     UInt_t bank = (head >> 16) & 0xffff;
-    if (fDebugFile) *fDebugFile << "bank 0x"<<hex<<bank<<"  head 0x"<<head<<"    len 0x"<<len<<dec<<endl;
+    if( fDebugFile )
+      *fDebugFile << "bank 0x" << hex << bank << "  head 0x" << head
+                  << "    len 0x" << len << dec << endl;
 
     if( bank < MAXBANK ) {
       bankdat[MAXBANK*roc+bank].pos = pos+2;
       bankdat[MAXBANK*roc+bank].len = len-1;
-    } else
+    } else {
+      cerr << "CodaDecoder::ERROR:  bank number out of range " << endl;
       return HED_ERR;
+    }
 
     pos += len+1;
   }
 
-  UInt_t minslot = fMap->getMinSlot(roc);
-  UInt_t maxslot = fMap->getMaxSlot(roc);
-  for (UInt_t slot = minslot; slot <= maxslot; slot++) {
-    if (!fMap->slotUsed(roc,slot)) continue;
-    UInt_t bank=fMap->getBank(roc,slot);
-    if( bank >= Decoder::MAXBANK ) {
+  for( auto slot : fMap->GetUsedSlots(roc) ) {
+    assert(fMap->slotUsed(roc,slot));
+    Int_t bank=fMap->getBank(roc,slot);
+    if( bank < 0 ) continue;  // skip non-bank mode modules in mixed-mode crate
+    if( bank >= static_cast<Int_t>(Decoder::MAXBANK) ) {
       cerr << "CodaDecoder::ERROR:  bank number out of range "<<endl;
       return HED_ERR;
     }
     pos = bankdat[MAXBANK*roc+bank].pos;
     UInt_t len = bankdat[MAXBANK*roc+bank].len;
-    if (fDebugFile) *fDebugFile << "CodaDecode:: loading bank "<<roc<<"  "<<slot<<"   "<<bank<<"  "<<pos<<"   "<<len<<endl;
-    crateslot[idx(roc,slot)]->LoadBank(evbuffer,pos,len);
-    if (crateslot[idx(roc,slot)]->IsMultiBlockMode()) fMultiBlockMode = true;
-    if (crateslot[idx(roc,slot)]->BlockIsDone()) fBlockIsDone = true;
+    if (fDebugFile)
+      *fDebugFile << "CodaDecode:: loading bank " << roc << "  " << slot << "   "
+                  << bank << "  " << pos << "   " << len << endl;
+    auto* sd = crateslot[idx(roc,slot)].get();
+    sd->LoadBank(evbuffer,pos,len);
+    if (sd->IsMultiBlockMode()) fMultiBlockMode = true;
+    if (sd->BlockIsDone()) fBlockIsDone = true;
   }
 
   if( fDoBench ) fBench->Stop("bank_decode");
@@ -524,7 +529,7 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
   if( jk >= MAXROC*MAXBANK ) {
       cerr << "FillBankData::ERROR:  bankdat index out of range "<<endl;
       return;
-  }  
+  }
   UInt_t pos = bankdat[jk].pos;
   UInt_t len = bankdat[jk].len;
   if (fDebug>1) cout << "FillBankData: pos "<<pos<<"  "<<len<<endl;
@@ -539,7 +544,7 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
     ihi = GetEvLength();
   for( UInt_t i = ilo; i < ihi; i++ )
     rdat[i-ilo] = GetRawData(i);
- 
+
 }
 
 //_____________________________________________________________________________
@@ -640,7 +645,7 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
 // Earlier we had decoded the Trigger Bank in method trigBankDecode.
 // This determined tbLen and the tbank structure. 
 // For CODA3, the ROCs start after the Trigger Bank.
-  
+
   UInt_t pos = 2 + tbLen;
   nroc=0;
 
@@ -664,7 +669,7 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
 
   }
 
-  if (fDebugFile) {  // debug   
+  if (fDebugFile) {  // debug
 
     *fDebugFile << endl << "  FindRocsCoda3 :: Starting Event number = " << dec << tbank.evtNum;
     *fDebugFile << endl;
@@ -712,10 +717,10 @@ int CodaDecoder::init_slotdata()
 
   if(!fMap) return HED_ERR;
 
-  for (UInt_t iroc = 0; iroc<MAXROC; iroc++) {
-    if( !fMap->crateUsed(iroc) ) continue;
-    for (UInt_t islot=0; islot < MAXSLOT; islot++) {
-      if( !fMap->slotUsed(iroc,islot) ) continue;
+  for( auto iroc : fMap->GetUsedCrates() ) {
+    assert(fMap->crateUsed(iroc));
+    for( auto islot : fMap->GetUsedSlots(iroc) ) {
+      assert(fMap->slotUsed(iroc, islot));
       makeidx(iroc,islot);
       if (fDebugFile)
 	*fDebugFile << "CodaDecode::  crate, slot " << iroc << "  " << islot
