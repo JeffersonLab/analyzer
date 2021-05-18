@@ -32,6 +32,7 @@
 #include <ctime>
 #include <algorithm>
 #include <cassert>
+#include <utility>
 
 using namespace std;
 using namespace Decoder;
@@ -389,17 +390,23 @@ int THaEvData::init_slotdata()
 void THaEvData::FindUsedSlots() {
   // Disable slots for which no module is defined.
   // This speeds up the decoder.
-  for( UInt_t roc = 0; roc < MAXROC; roc++ ) {
-    for( UInt_t slot = 0; slot < MAXSLOT; slot++ ) {
-      if ( !fMap->slotUsed(roc,slot) ) continue;
+  vector< pair<UInt_t,UInt_t> > to_unset;
+  for( auto roc : fMap->GetUsedCrates() ) {
+    for( auto slot : fMap->GetUsedSlots(roc) ) {
+      assert( fMap->slotUsed(roc,slot) );
       if ( !crateslot[idx(roc,slot)]->GetModule() ) {
 	cout << "WARNING:  No module defined for crate "<<roc<<"   slot "<<slot<<endl;
 	cout << "Check db_cratemap.dat for module that is undefined"<<endl;
 	cout << "This crate, slot will be ignored"<<endl;
-	fMap->setUnused(roc,slot);
+        // To avoid undefined behavior, save the roc/slot numbers here so we
+        // can call setUnused outside of these loops. setUnused modifies the
+        // vectors underlying the loops.
+        to_unset.emplace_back(roc, slot);
       }
     }
   }
+  for( const auto& cs : to_unset )
+    fMap->setUnused(cs.first, cs.second);
 }
 
 //_____________________________________________________________________________

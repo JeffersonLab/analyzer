@@ -28,7 +28,10 @@
 #include <sstream>
 #include <unistd.h>
 #include <cstring>  // for strerror_r
-#include <memory>
+#include <memory>   // for unique_ptr
+#include <algorithm> // for std::find, std::sort
+
+#define ALL(c) (c).begin(), (c).end()
 
 // This is a well-known problem with strerror_r
 #if defined(__linux__) && (defined(_GNU_SOURCE) || !(_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE > 600))
@@ -64,7 +67,6 @@ const Int_t  THaCrateMap::CM_ERR = -1;
 //_____________________________________________________________________________
 THaCrateMap::THaCrateMap( const char* db_filename )
 {
-
   // Construct uninitialized crate map. The argument is the name of
   // the database file to use for initialization
 
@@ -79,12 +81,13 @@ THaCrateMap::THaCrateMap( const char* db_filename )
 //_____________________________________________________________________________
 UInt_t THaCrateMap::getScalerCrate( UInt_t word) const {
   for( UInt_t crate = 0; crate < crdat.size(); crate++ ) {
-    if( !crdat[crate].crate_used ) continue;
+    const auto& cr = crdat[crate];
+    if( !cr.crate_used ) continue;
     if( isScalerCrate(crate) ) {
       UInt_t headtry = word & 0xfff00000;
       UInt_t zero = word & 0x0000ff00;
       if( (zero == 0) &&
-          (headtry == crdat[crate].header[1]) )
+          (headtry == cr.sltdat[1].header) )
         return crate;
     }
   }
@@ -97,7 +100,7 @@ int THaCrateMap::setCrateType( UInt_t crate, const char* type ) {
   string stype(type);
   CrateInfo_t& cr = crdat[crate];
   cr.crate_used = true;
-  cr.crate_type = stype;
+  cr.crate_type_name = stype;
   if( stype == "fastbus" )
     cr.crate_code = kFastbus;
   else if( stype == "vme" )
@@ -108,7 +111,7 @@ int THaCrateMap::setCrateType( UInt_t crate, const char* type ) {
     cr.crate_code = kCamac;
   else {
     cr.crate_used = false;
-    cr.crate_type = "unknown";
+    cr.crate_type_name = "unknown";
     cr.crate_code = kUnknown;
     return CM_ERR;
   }
@@ -118,17 +121,16 @@ int THaCrateMap::setCrateType( UInt_t crate, const char* type ) {
 //_____________________________________________________________________________
 int THaCrateMap::setModel( UInt_t crate, UInt_t slot, Int_t mod,
                            UInt_t nchan, UInt_t ndata ) {
-  assert( crate < crdat.size() && slot < crdat[crate].model.size() );
-  setUsed(crate,slot);
+  setUsed(crate, slot);
   CrateInfo_t& cr = crdat[crate];
-  if( cr.model[slot] == 0 && mod != 0 )
-    cr.nslot++;
-  else if( cr.model[slot] != 0 && mod == 0 && cr.nslot > 0 )
-    cr.nslot--;
-  cr.model[slot] = mod;
+  auto& slt = cr.sltdat[slot];
+  if( slt.model != 0 && mod == 0 ) {
+    setUnused(crate, slot);
+  }
+  slt.model = mod;
   if( !SetModelSize( crate, slot, mod )) {
-    cr.nchan[slot] = nchan;
-    cr.ndata[slot] = ndata;
+    slt.nchan = nchan;
+    slt.ndata = ndata;
   }
   return CM_OK;
 }
@@ -137,7 +139,7 @@ int THaCrateMap::setModel( UInt_t crate, UInt_t slot, Int_t mod,
 int THaCrateMap::SetModelSize( UInt_t crate, UInt_t slot, UInt_t model )
 {
   // Set the max number of channels and data words for some known modules
-  assert( crate < crdat.size() && slot < crdat[crate].nchan.size() );
+  assert( crate < crdat.size() && slot < crdat[crate].sltdat.size() );
   struct ModelPar_t { UInt_t model, nchan, ndata; };
   static const ModelPar_t modelpar[] = {
     { 1875, 64, 512 },  // Detector TDC
@@ -163,8 +165,8 @@ int THaCrateMap::SetModelSize( UInt_t crate, UInt_t slot, UInt_t model )
   const ModelPar_t* item = modelpar;
   while( item->model ) {
     if( model == item->model ) {
-      crdat[crate].nchan[slot] = item->nchan;
-      crdat[crate].ndata[slot] = item->ndata;
+      crdat[crate].sltdat[slot].nchan = item->nchan;
+      crdat[crate].sltdat[slot].ndata = item->ndata;
       return 1;
     }
     item++;
@@ -173,26 +175,57 @@ int THaCrateMap::SetModelSize( UInt_t crate, UInt_t slot, UInt_t model )
 }
 
 //_____________________________________________________________________________
+void THaCrateMap::setUsed( UInt_t crate, UInt_t slot )
+{
+  assert( crate < crdat.size() && slot < crdat[crate].sltdat.size() );
+  auto& cr = crdat[crate];
+  cr.crate_used = true;
+  cr.sltdat[slot].used = true;
+  if( std::find(used_crates.begin(), used_crates.end(), crate) == used_crates.end() )
+    used_crates.push_back(crate);
+  if( std::find(cr.used_slots.begin(), cr.used_slots.end(), slot) == cr.used_slots.end() ) {
+    cr.used_slots.push_back(slot);
+  }
+}
+
+//_____________________________________________________________________________
+void THaCrateMap::setUnused( UInt_t crate, UInt_t slot )
+{
+  assert( crate < crdat.size() && slot < crdat[crate].sltdat.size() );
+  auto& cr = crdat[crate];
+  cr.sltdat[slot].used = false;
+  auto it = std::find(cr.used_slots.begin(), cr.used_slots.end(), slot);
+  if( it != cr.used_slots.end() ) {
+    cr.used_slots.erase(it);
+  }
+  if( cr.used_slots.empty() ) {
+    auto jt = std::find(used_crates.begin(), used_crates.end(), crate);
+    if( jt != used_crates.end() )
+      used_crates.erase(jt);
+  }
+}
+
+//_____________________________________________________________________________
 int THaCrateMap::setHeader( UInt_t crate, UInt_t slot, UInt_t head ) {
-  assert( crate < crdat.size() && slot < crdat[crate].header.size() );
+  assert( crate < crdat.size() && slot < crdat[crate].sltdat.size() );
   setUsed(crate,slot);
-  crdat[crate].header[slot] = head;
+  crdat[crate].sltdat[slot].header = head;
   return CM_OK;
 }
 
 //_____________________________________________________________________________
 int THaCrateMap::setMask( UInt_t crate, UInt_t slot, UInt_t mask ) {
-  assert( crate < crdat.size() && slot < crdat[crate].headmask.size() );
+  assert( crate < crdat.size() && slot < crdat[crate].sltdat.size() );
   setUsed(crate,slot);
-  crdat[crate].headmask[slot] = mask;
+  crdat[crate].sltdat[slot].headmask = mask;
   return CM_OK;
 }
 
 //_____________________________________________________________________________
 int THaCrateMap::setBank( UInt_t crate, UInt_t slot, Int_t bank ) {
-  assert( crate < crdat.size() && slot < crdat[crate].bank.size() );
+  assert( crate < crdat.size() && slot < crdat[crate].sltdat.size() );
   setUsed(crate,slot);
-  crdat[crate].bank[slot] = bank;
+  crdat[crate].sltdat[slot].bank = bank;
   return CM_OK;
 }
 
@@ -209,7 +242,7 @@ int THaCrateMap::init( FILE* fi, const char* fname )
 {
   // Get the crate map definition string from the given database file.
   // The file is read completely into an internal string, which is then
-  // parsed by init(TString).
+  // parsed by init(const std::string&).
 
   const char* const here = "THaCrateMap::init";
 
@@ -303,24 +336,23 @@ int THaCrateMap::init(ULong64_t /*tloc*/) {
 //_____________________________________________________________________________
 void THaCrateMap::print(ostream& os) const {
   // Pretty-print crate map
-  for( UInt_t roc=0; roc<crdat.size(); roc++ ) {
+  for( UInt_t roc = 0; roc < crdat.size(); roc++ ) {
     const CrateInfo_t& cr = crdat[roc];
-    if( !cr.crate_used || cr.nslot == 0 ) continue;
-    os << "==== Crate " << roc << " type " << cr.crate_type;
+    if( !cr.crate_used || cr.used_slots.empty() ) continue;
+    os << "==== Crate " << roc << " type " << cr.crate_type_name;
     if( !cr.scalerloc.empty() )  os << " \"" << cr.scalerloc << "\"";
     os << endl;
     os << "#slot\tmodel\tclear\t  header\t  mask  \tnchan\tndata\n";
-    for( UInt_t slot=0; slot<cr.model.size(); slot++ ) {
-      if( !cr.slot_used[slot] ) continue;
-      os << "  " << slot << "\t" << cr.model[slot]
-         << "\t" << cr.slot_clear[slot];
-      // using this instead of manipulators again for backwards compat with g++-2
+    for( UInt_t slot = 0; slot < cr.sltdat.size(); slot++ ) {
+      const auto& slt = cr.sltdat[slot];
+      if( !slt.used ) continue;
+      os << "  " << slot << "\t" << slt.model << "\t" << slt.clear;
       ios::fmtflags oldf = os.setf(ios::right, ios::adjustfield);
-      os << "\t0x" << hex << setfill('0') << setw(8) << cr.header[slot]
-	   << "\t0x" << hex << setfill('0') << setw(8) << cr.headmask[slot]
+      os << "\t0x" << hex << setfill('0') << setw(8) << slt.header
+	   << "\t0x" << hex << setfill('0') << setw(8) << slt.headmask
 	   << dec << setfill(' ') << setw(0)
-	   << "\t" << cr.nchan[slot]
-	   << "\t" << cr.ndata[slot]
+	   << "\t" << slt.nchan
+	   << "\t" << slt.ndata
 	   << endl;
       os.flags(oldf);
     }
@@ -340,12 +372,11 @@ int THaCrateMap::init(const string& the_map) {
         "Check database." );
   }
 
-  // For the time being, we use simple hardcoded array sizes
-  crdat.resize(MAXROC);
-  for( auto& cr : crdat ) {
-    cr.init(MAXSLOT);
-  }
-  didslot.assign(MAXSLOT, false);
+  // For the time being, we use a simple hardcoded array size
+  UInt_t ncrates = MAXROC;
+  crdat.clear();   // support re-init
+  crdat.resize(ncrates);
+  used_crates.clear(); used_crates.reserve(ncrates/2);
 
   UInt_t crate = kMaxUInt; // current CRATE
   string line; line.reserve(128);
@@ -400,65 +431,45 @@ int THaCrateMap::init(const string& the_map) {
     // must read at least the slot and model numbers
     Int_t nread = sscanf(line.c_str(),"%u %d %d %x %x %u %u",
                          &slot,&imodel,&cword,&iheader,&mask,&ichan,&idata);
-    if( nread >=2 ) {
-      if (nread>=6)
-	setModel(crate,slot,imodel,ichan,idata);
-      else
-	setModel(crate,slot,imodel);
-
-      if (nread==3) 
-        setBank(crate, slot, cword);
-      if (nread>3)
-	setClear(crate,slot,cword);
-      if (nread>=4)
-	setHeader(crate,slot,iheader);
-      if (nread>=5)
-	setMask(crate,slot,mask);
-      continue;
+    if( nread < 2 ) {
+      // unexpected input
+      cout << "THaCrateMap:: fatal ERROR 4   " << endl << "Bad line " << endl << line << endl;
+      cout << "    Warning: a bad line could cause wrong decoding !" << endl;
+      return CM_ERR;
     }
 
-    // unexpected input
-    cout << "THaCrateMap:: fatal ERROR 4   "<<endl<<"Bad line "<<endl<<line<<endl;
-    cout << "    Warning: a bad line could cause wrong decoding !"<<endl;
+    if (nread > 5 )
+      setModel(crate,slot,imodel,ichan,idata);
+    else
+      setModel(crate,slot,imodel);
 
-    return CM_ERR;
+    if( nread == 3 )
+      setBank(crate, slot, cword);
+    else if( nread > 3 ) {
+      setClear(crate, slot, cword);
+      setHeader(crate, slot, iheader);
+      if( nread > 4 )
+        setMask(crate, slot, mask);
+    }
   }
 
   for( auto& cr : crdat ) {
-    UInt_t imin = kMaxUInt;
-    UInt_t imax = 0;
-    for( UInt_t slot = 0; slot < cr.bank.size(); slot++ ) {
-      if( cr.bank[slot] >= 0 ) cr.bank_structure = true;
-      if( cr.slot_used[slot] ) {
-        if( slot < imin ) imin = slot;
-        if( slot > imax ) imax = slot;
-      }
-    }
-    cr.minslot = imin;
-    cr.maxslot = imax;
+    sort(ALL(cr.used_slots));
+    cr.bank_structure =
+      any_of(ALL(cr.sltdat),
+             []( const SlotInfo_t& slt ) { return slt.bank >= 0; } );
   }
+  sort(ALL(used_crates));
 
   return CM_OK;
 }
 
 //_____________________________________________________________________________
-void THaCrateMap::CrateInfo_t::init( UInt_t numslot ) {
-  crate_code = kUnknown;
-  crate_type = "unknown";
-  scalerloc.clear();
-  nslot = 0;
-  minslot = kMaxUInt;
-  maxslot = 0;
-  model.assign(numslot, 0);
-  header.assign(numslot, 0);
-  headmask.assign(numslot, 0xFFFFFFFF);
-  bank.assign(numslot, -1);
-  nchan.assign(numslot, 0);
-  ndata.assign(numslot, 0);
-  slot_used.assign(numslot, false);
-  slot_clear.assign(numslot, true);
-  crate_used = false;
-  bank_structure = false;
+THaCrateMap::CrateInfo_t::CrateInfo_t() :
+  crate_code(kUnknown), crate_type_name("unknown"),
+  crate_used(false), bank_structure(false)
+{
+  used_slots.reserve(sltdat.size()/2);
 }
 
 } // namespace Decoder
