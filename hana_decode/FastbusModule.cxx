@@ -7,6 +7,7 @@
 #include "FastbusModule.h"
 #include "THaSlotData.h"
 #include <iostream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -18,7 +19,7 @@ FastbusModule::FastbusModule( UInt_t crate, UInt_t slot )
     fDataMask(0), fOptMask(0), fOptShift(0),
     fChan(0), fData(0), fRawData(0)
 {
-  FastbusModule::SetSlot(crate, slot);
+  FastbusModule::SetSlot(crate, slot);  //FIXME redundant/useless?
 }
 
 void FastbusModule::Init() {
@@ -34,19 +35,22 @@ Int_t FastbusModule::Decode(const UInt_t *evbuffer) {
   return 1;
 }
 
-UInt_t FastbusModule::LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop) {
-  static int first_load=true;
-  if (first_load) {
-    if( fCrate >= MAXROC ) {
-       cerr << "FastBusModule::ERROR: crate out of bounds"<<endl;
-       fCrate = 0;
-    }
-    if( fSlot > MAXSLOT_FB ) {
-       cerr << "FastBusModule::ERROR: slot out of bounds"<<endl;
-       fSlot = 0;
-    }
-    first_load=false;
-  }
+void FastbusModule::SetSlot( UInt_t crate, UInt_t slot, UInt_t header,
+                             UInt_t mask, Int_t modelnum )
+{
+  // SetSlot function with parameter checks appropriate for Fastbus
+  if( fCrate >= MAXROC )
+    throw invalid_argument("FastBusModule::ERROR: crate out of bounds");
+  if( fSlot > MAXSLOT_FB )
+    throw invalid_argument("FastBusModule::ERROR: slot out of bounds");
+
+  Module::SetSlot(crate, slot, header, mask, modelnum);
+}
+
+
+UInt_t FastbusModule::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
+                                const UInt_t* pstop )
+{
   fWordsSeen = 0;
   fHeader=0;
   const UInt_t *p = evbuffer;
