@@ -41,7 +41,7 @@ void FastbusModule::SetSlot( UInt_t crate, UInt_t slot, UInt_t header,
   // SetSlot function with parameter checks appropriate for Fastbus
   if( fCrate >= MAXROC )
     throw invalid_argument("FastBusModule::ERROR: crate out of bounds");
-  if( fSlot > MAXSLOT_FB )
+  if( fSlot >= MAXSLOT_FB )
     throw invalid_argument("FastBusModule::ERROR: slot out of bounds");
 
   Module::SetSlot(crate, slot, header, mask, modelnum);

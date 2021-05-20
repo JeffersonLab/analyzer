@@ -25,7 +25,7 @@ namespace Decoder {
 
 //_____________________________________________________________________________
 CodaDecoder::CodaDecoder() :
-  nroc(0), irn(MAXROC, 0), fbfound(MAXROC*MAXSLOT, false),
+  nroc(0), irn(MAXROC, 0), fbfound(MAXROC*MAXSLOT_FB, false),
   psfact(MAX_PSFACT, kMaxUInt), fdfirst(true), chkfbstat(1), evcnt_coda3(0)
 {
   fNeedInit=true;
@@ -586,7 +586,7 @@ Int_t CodaDecoder::LoadIfFlagData(const UInt_t* evbuffer)
       UInt_t slot = word >> 11;
       UInt_t nhit = word & 0x7ff;
       cout << "CodaDecoder: WARNING: Fastbus slot ";
-      cout << slot << "  has extra hits "<<nhit<<endl;
+      cout << slot << "  has extra hits " << nhit << endl;
     }
     break;
   case 0xfaaa:
@@ -594,8 +594,8 @@ Int_t CodaDecoder::LoadIfFlagData(const UInt_t* evbuffer)
   case 0xfabc:
     if( fDebug > 0 && (synchmiss || synchextra) ) {
       UInt_t datascan = *(evbuffer+3);
-      cout << "CodaDecoder: WARNING: Synch problems !"<<endl;
-      cout << "Data scan word 0x"<<hex<<datascan<<dec<<endl;
+      cout << "CodaDecoder: WARNING: Synch problems !" << endl;
+      cout << "Data scan word 0x" << hex << datascan << dec << endl;
     }
     break;
   case 0xfabb:
@@ -823,8 +823,10 @@ void CodaDecoder::ChkFbSlot( UInt_t roc, const UInt_t* evbuffer, UInt_t ipt,
   const UInt_t* pstop = evbuffer+istop; // Points to last word of data in roc
   while( p++ < pstop ) {
     UInt_t slot = *p >> 27;  // A "self-reported" slot.
-    UInt_t index = MAXSLOT*roc + slot;
-    if( slot > 0 && index < MAXROC*MAXSLOT )
+    if( slot == 0 || slot >= MAXSLOT_FB )  // Used for diagnostic data words
+      continue;
+    UInt_t index = MAXSLOT_FB*roc + slot;
+    if( slot > 0 && index < MAXROC*MAXSLOT_FB )
       fbfound[index] = true;
   }
 }
@@ -837,8 +839,8 @@ void CodaDecoder::ChkFbSlots()
   // is issued, which usually means the cratemap is wrong.
   for( UInt_t iroc = 0; iroc < MAXROC; iroc++ ) {
     if( !fMap->isFastBus(iroc) ) continue;
-    for( UInt_t islot = 0; islot < MAXSLOT; islot++ ) {
-      UInt_t index = MAXSLOT * iroc + islot;
+    for( UInt_t islot = 0; islot < MAXSLOT_FB; islot++ ) {
+      UInt_t index = MAXSLOT_FB * iroc + islot;
       bool inEvent = fbfound[index], inMap = fMap->slotUsed(iroc, islot);
       if( inEvent ) {
         if( inMap ) {
