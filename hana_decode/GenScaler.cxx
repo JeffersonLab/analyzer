@@ -232,30 +232,33 @@ namespace Decoder {
     /// Get the number of channels in this module from the header and
     /// save so that bank version of LoadSlot can skip over this module if
     /// it is not the correct one.
-    Bool_t result = ((rdata & fHeaderMask)==fHeader);
-    fNumChan = (rdata&fNumChanMask)>>fNumChanShift;
-    if (fNumChan == 0) {
-      fNumChan=fgNumChanDefault;
-      if (firsttime) {
-	firsttime = false;
-	cout << "Warning::GenScaler:: (" << fCrate << "," << fSlot << ") "
-	  "using default num "<<fgNumChanDefault << " channels" << endl;
+    if( (rdata & fHeaderMask) != fHeader )
+      return false;
+    // This is a header word. Try extracting the number of channels.
+    fNumChan = (rdata & fNumChanMask) >> fNumChanShift;
+    if( fNumChan == 0 ) {
+      fNumChan = fgNumChanDefault;
+      if( firsttime ) {
+        firsttime = false;
+        cout << "Warning::GenScaler:: (" << fCrate << "," << fSlot
+             << ") using default num " << fgNumChanDefault << " channels"
+             << endl;
       }
     }
-    if (result && fNumChan != fWordsExpect) {
-      if (fNumChan > fWordsExpect)
-	fNumChan = fWordsExpect;
+    if( fNumChan != fWordsExpect ) {
+      if( fNumChan > fWordsExpect )
+        fNumChan = fWordsExpect;
 
       // Print warning once to alert user to potential problems,
       // or for every suspect event if debugging enabled
-      if( firstwarn && fNumChan!=16 && fNumChan!=fWordsExpect) {
-	cout << "GenScaler:: ERROR:  (" << fCrate << "," << fSlot << ") "
-	     << "inconsistent number of chan."<<endl;
-	//        DoPrint();
-	firstwarn = false;
+      if( firstwarn && fNumChan != 16 && fNumChan != fWordsExpect ) {
+        cout << "GenScaler:: ERROR:  (" << fCrate << "," << fSlot << ") "
+             << "inconsistent number of chan." << endl;
+        //        DoPrint();
+        firstwarn = false;
       }
     }
-    return result;
+    return true;
   }
 
 UInt_t GenScaler::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer, const UInt_t* pstop )
