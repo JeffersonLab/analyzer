@@ -31,7 +31,7 @@ namespace Decoder {
   class Caen1190Module;
 
   static const UInt_t MAXROC = 32;
-  static const UInt_t MAXBANK = 4095;
+  static const Int_t  MAXBANK = (1<<16)-1;   // bank numbers are uint16_t
   static const UInt_t MAXSLOT = 32;
   static const UInt_t MAXSLOT_FB = 26;
 

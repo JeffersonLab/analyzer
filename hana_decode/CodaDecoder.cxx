@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <utility>
+#include <cstring>
 
 using namespace std;
 
@@ -25,13 +26,17 @@ namespace Decoder {
 
 //_____________________________________________________________________________
 CodaDecoder::CodaDecoder() :
-  nroc(0), irn(MAXROC, 0), fbfound(MAXROC*MAXSLOT_FB, false),
-  psfact(MAX_PSFACT, kMaxUInt), fdfirst(true), chkfbstat(1), evcnt_coda3(0)
+  THaEvData(),
+  nroc(0),
+  irn(MAXROC, 0),
+  fbfound(MAXROC*MAXSLOT_FB, false),
+  psfact(MAX_PSFACT, kMaxUInt),
+  fdfirst(true), chkfbstat(1),
+  evcnt_coda3(0),
+  fMultiBlockMode{false},
+  fBlockIsDone{false}
 {
-  fNeedInit=true;
-  first_decode=true;
-  fMultiBlockMode=false;
-  fBlockIsDone=false;
+  bankdat.reserve(128);
   // Please leave these 3 lines for me to debug if I need to.  thanks, Bob
 #ifdef WANTDEBUG
   fDebugFile = new ofstream();
@@ -95,6 +100,15 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
     cerr << "Unsupported CODA version = " << fDataVersion << "). Need 2 or 3."
          << "Cannot analyze these data. Twonk."<<endl;
     return HED_FATAL;
+  }
+
+  if( DataCached() ) {
+    if( evbuffer[0]+1 != event_length ) {
+      throw std::logic_error("Event buffer changed while processing multiblock "
+                             "data. Do not read new events while DataCached() "
+                             "returns true!");
+    }
+    return LoadFromMultiBlock();
   }
 
   buffer = evbuffer;
@@ -299,13 +313,16 @@ UInt_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize) {
 //_____________________________________________________________________________
 Int_t CodaDecoder::LoadFromMultiBlock()
 {
-  // LoadFromMultiBlock : This assumes the data are in multiblock mode.
-
+  // LoadFromMultiBlock : This assumes some of the slots are in multiblock mode.
   // For modules that are in multiblock mode, the next event is loaded.
-  // For other modules not in multiblock mode (e.g. scalers) or other data (e.g. flags)
-  // the data remain "stale" until the next block of events.
+  // For other modules not in multiblock mode (e.g. scalers) or other data
+  // (e.g. flags) the data remain "stale" until the next block of events.
 
-  if (!fMultiBlockMode) return HED_ERR;
+  if (!fMultiBlockMode) {
+    Error("CodaDecoder::LoadFromMultiBlock",
+          "Not in multiblock mode. Logic error. Call expert.");
+    return HED_ERR;
+  }
   fBlockIsDone = false;
 
   if( first_decode || fNeedInit ) {
@@ -482,41 +499,38 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
                 << "  " << istop << endl;
 
   fBlockIsDone = false;
+  bankdat.clear();
   UInt_t pos = ipt+1;  // ipt points to ROC ID word
   while (pos < istop) {
     UInt_t len = evbuffer[pos];
     UInt_t head = evbuffer[pos+1];
-    UInt_t bank = (head >> 16) & 0xffff;
+    UInt_t bank = head >> 16;
     if( fDebugFile )
       *fDebugFile << "bank 0x" << hex << bank << "  head 0x" << head
                   << "    len 0x" << len << dec << endl;
 
-    if( bank < MAXBANK ) {
-      bankdat[MAXBANK*roc+bank].pos = pos+2;
-      bankdat[MAXBANK*roc+bank].len = len-1;
-    } else {
-      cerr << "CodaDecoder::ERROR:  bank number out of range " << endl;
-      return HED_ERR;
-    }
-
+    UInt_t key = (roc << 16) + bank;
+    assert( find(ALL(bankdat), key) == bankdat.end()); // else bug in CODA or corrupt input
+    bankdat.emplace_back(key, pos + 2, len - 1);
     pos += len+1;
   }
 
   for( auto slot : fMap->GetUsedSlots(roc) ) {
     assert(fMap->slotUsed(roc,slot));
     Int_t bank=fMap->getBank(roc,slot);
+    assert( bank < MAXBANK ); // bank numbers are uint16_t
     if( bank < 0 ) continue;  // skip non-bank mode modules in mixed-mode crate
-    if( bank >= static_cast<Int_t>(Decoder::MAXBANK) ) {
-      cerr << "CodaDecoder::ERROR:  bank number out of range "<<endl;
-      return HED_ERR;
-    }
-    pos = bankdat[MAXBANK*roc+bank].pos;
-    UInt_t len = bankdat[MAXBANK*roc+bank].len;
+    UInt_t key = (roc << 16) + bank;
+    auto theBank = find(ALL(bankdat), key);
+    if( theBank == bankdat.end() )
+      // Bank defined in crate map but not present in this event
+      continue;
     if (fDebugFile)
-      *fDebugFile << "CodaDecode:: loading bank " << roc << "  " << slot << "   "
-                  << bank << "  " << pos << "   " << len << endl;
-    auto* sd = crateslot[idx(roc,slot)].get();
-    sd->LoadBank(evbuffer,pos,len);
+      *fDebugFile << "CodaDecoder::bank_decode: loading bank "
+                  << roc << "  " << slot << "   " << bank << "  "
+                  << theBank->pos << "   " << theBank->len << endl;
+    auto* sd = crateslot[idx(roc, slot)].get();
+    sd->LoadBank(evbuffer, theBank->pos, theBank->len);
     if (sd->IsMultiBlockMode()) fMultiBlockMode = true;
     if (sd->BlockIsDone()) fBlockIsDone = true;
   }
@@ -526,32 +540,42 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
 }
 
 //_____________________________________________________________________________
- void CodaDecoder::FillBankData( UInt_t *rdat, UInt_t roc, Int_t bank, UInt_t offset, UInt_t num) const
+ Int_t CodaDecoder::FillBankData( UInt_t *rdat, UInt_t roc, Int_t bank,
+                                  UInt_t offset, UInt_t num ) const
 {
-  UInt_t jk = MAXBANK*roc + bank;
+  if( fDebug > 1 )
+    cout << "Into FillBankData v1 " << dec << roc << "  " << bank << "  "
+         << offset << "  " << num << endl;
+  if( fDebugFile )
+    *fDebugFile << "Check FillBankData " << roc << "  " << bank << endl;
 
-  if (fDebug>1) cout << "Into FillBankData v1 "<<dec<<roc<<"  "<<bank<<"  "<<offset<<"  "<<num<<"   "<<jk<<endl;
-  if(fDebugFile) *fDebugFile << "Check FillBankData "<<roc<<"  "<<bank<<"   "<<jk<<endl;
-
-  if( jk >= MAXROC*MAXBANK ) {
-      cerr << "FillBankData::ERROR:  bankdat index out of range "<<endl;
-      return;
+  if( roc >= MAXROC )
+    return HED_ERR;
+  UInt_t jk = (roc << 16) + bank;
+  auto bankInfo = find(ALL(bankdat), jk);
+  if( bankInfo == bankdat.end() ) {
+    cerr << "FillBankData::ERROR:  bankdat not in current event "<<endl;
+    return HED_ERR;
   }
-  UInt_t pos = bankdat[jk].pos;
-  UInt_t len = bankdat[jk].len;
-  if (fDebug>1) cout << "FillBankData: pos "<<pos<<"  "<<len<<endl;
-  if(fDebugFile) *fDebugFile << "FillBankData  pos, len "<<pos<<"   "<<len<<endl;
-  if( offset > len-2 )
-    return;
+  UInt_t pos = bankInfo->pos;
+  UInt_t len = bankInfo->len;
+  if( fDebug > 1 )
+    cout        << "FillBankData: pos, len " << pos << "   " << len << endl;
+  if( fDebugFile )
+    *fDebugFile << "FillBankData  pos, len " << pos << "   " << len << endl;
+  assert( pos < event_length && pos+len <= event_length ); // else bug in bank_decode
+  if( offset+2 > len )
+    return HED_ERR;
   if( num > len )
     num = len;
   UInt_t ilo = pos + offset;
+  assert( ilo < event_length );  // else offset not correctly checked above
   UInt_t ihi = pos + offset + num;
-  if( ihi > GetEvLength() )
-    ihi = GetEvLength();
-  for( UInt_t i = ilo; i < ihi; i++ )
-    rdat[i-ilo] = GetRawData(i);
+  if( ihi > event_length )
+    ihi = event_length;
+  memcpy(rdat, buffer+ilo, ihi-ilo);
 
+  return HED_OK;
 }
 
 //_____________________________________________________________________________

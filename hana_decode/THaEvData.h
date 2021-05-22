@@ -39,13 +39,7 @@ public:
   // return a pointer to a full event
   const UInt_t*  GetRawDataBuffer() const { return buffer;}
 
-  virtual Bool_t IsMultiBlockMode() { return fMultiBlockMode; };
-  virtual Bool_t BlockIsDone() { return fBlockIsDone; };
-  virtual void   FillBankData( UInt_t* /*rdat*/, UInt_t /*roc*/, Int_t /*bank*/,
-                               UInt_t /*offset*/=0, UInt_t /*num*/=1 ) const {};
-
-  // Derived class to implement this if multiblock mode supported
-  virtual Int_t LoadFromMultiBlock() { assert(fgAllowUnimpl); return HED_ERR;};
+  virtual Bool_t DataCached() { return false; }
 
   virtual Int_t Init();
 
@@ -239,14 +233,12 @@ protected:
     UInt_t len;               // length of data
   };
   std::array<RocDat_t, Decoder::MAXROC> rocdat;
-  std::vector<RocDat_t> bankdat;
 
   // Per-event, per-module hit data extracted from raw event
   std::vector<std::unique_ptr<Decoder::THaSlotData>> crateslot;
 
   Bool_t first_decode;
   Bool_t fTrigSupPS;
-  Bool_t fMultiBlockMode, fBlockIsDone;
   Int_t  fDataVersion;    // Data format version (implementation-defined)
   UInt_t fEpicsEvtType;
 

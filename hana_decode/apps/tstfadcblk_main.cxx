@@ -95,10 +95,7 @@ int main(int /* argc */, char** /* argv */)
     }
 
 
-    Bool_t to_read_file = false;
-    if( !evdata->IsMultiBlockMode() ||
-        (evdata->IsMultiBlockMode() && evdata->BlockIsDone()) )
-      to_read_file = true;
+    Bool_t to_read_file = !evdata->DataCached();
 
     if( to_read_file ) {
 

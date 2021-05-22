@@ -24,20 +24,24 @@ public:
   virtual Int_t  Init();
 
   virtual Int_t  LoadEvent(const UInt_t* evbuffer);
-  virtual Int_t  LoadFromMultiBlock();
 
   virtual UInt_t GetPrescaleFactor( UInt_t trigger ) const;
   virtual void   SetRunTime( ULong64_t tloc );
   virtual Int_t  SetDataVersion( Int_t version ) { return SetCodaVersion(version); }
           Int_t  SetCodaVersion( Int_t version );
 
+  virtual Bool_t DataCached() { return fMultiBlockMode && !fBlockIsDone; }
+  virtual Int_t  LoadFromMultiBlock();
+  virtual Bool_t IsMultiBlockMode() { return fMultiBlockMode; };
+  virtual Bool_t BlockIsDone() { return fBlockIsDone; };
+
+  virtual Int_t  FillBankData( UInt_t* rdat, UInt_t roc, Int_t bank,
+                               UInt_t offset = 0, UInt_t num = 1 ) const;
+
   enum { MAX_PSFACT = 12 };
 
 protected:
   virtual Int_t  LoadIfFlagData(const UInt_t* evbuffer);
-
-  void FillBankData( UInt_t* rdat, UInt_t roc, Int_t bank, UInt_t offset = 0,
-                     UInt_t num = 1 ) const;
 
   Int_t FindRocs(const UInt_t *evbuffer);  // CODA2 version
   Int_t FindRocsCoda3(const UInt_t *evbuffer); // CODA3 version
@@ -65,8 +69,22 @@ protected:
   Bool_t fdfirst;
   Int_t  chkfbstat;
 
+  class BankDat_t {            // Coordinates of bank data in raw event
+  public:
+    BankDat_t() : key(kMaxUInt), pos(0), len(0) {}
+    BankDat_t( UInt_t key, UInt_t pos, UInt_t len ) : key(key), pos(pos), len(len) {}
+    bool operator==( const BankDat_t& rhs ) const { return key == rhs.key; }
+    bool operator==( UInt_t key_to_find )   const { return key == key_to_find; }
+    bool operator< ( const BankDat_t& rhs ) const { return key <  rhs.key; }
+    UInt_t key;   // bank number + (roc << 16)
+    UInt_t pos;   // position in evbuffer[]
+    UInt_t len;   // length of data
+  };
+  std::vector<BankDat_t> bankdat;  //FIXME: make this a map or unordered_map?
+
   // CODA3 stuff
   UInt_t evcnt_coda3;
+  Bool_t fMultiBlockMode, fBlockIsDone;
 
   class TBOBJ {
   public:

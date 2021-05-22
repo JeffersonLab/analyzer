@@ -13,7 +13,7 @@
 #include "THaString.h"
 #include "THaVar.h"
 #include "THaVarList.h"
-#include "THaEvData.h"
+#include "CodaDecoder.h"
 #include "THaGlobals.h"
 #include "Helper.h"
 #include <sstream>
@@ -21,6 +21,7 @@
 
 using namespace std;
 using namespace THaString;
+using namespace Decoder;
 
 //_____________________________________________________________________________
 class BankLoc { // Utility class used by BankData
@@ -54,12 +55,18 @@ Int_t BankData::Process( const THaEvData& evdata )
 
   if( !IsOK() ) return -1;
 
+  const auto* codaevdata = dynamic_cast<const CodaDecoder*>(&evdata);
+  if( !codaevdata )
+    return -1;
+
   Int_t k=0;
   for( const auto& bankloc : banklocs ) {
-    evdata.FillBankData(vardata, bankloc->roc, bankloc->bank,
-        bankloc->offset, bankloc->numwords);
-    for( Int_t j = 0; j < bankloc->numwords; j++, k++ ) {
-      dvars[k] = vardata[j];
+    Int_t ret = codaevdata->FillBankData(vardata, bankloc->roc, bankloc->bank,
+                                         bankloc->offset, bankloc->numwords);
+    if( ret == THaEvData::HED_OK ) {
+      for( Int_t j = 0; j < bankloc->numwords; j++, k++ ) {
+        dvars[k] = vardata[j];
+      }
     }
   }
 

@@ -57,12 +57,9 @@ TString THaEvData::fgDefaultCrateMapName = "cratemap";
 THaEvData::THaEvData() :
   fMap{nullptr},
   // FIXME: allocate dynamically?
-  bankdat(MAXBANK * MAXROC),
   crateslot(MAXROC * MAXSLOT),
   first_decode{true},
   fTrigSupPS{true},
-  fMultiBlockMode{false},
-  fBlockIsDone{false},
   fDataVersion{0},
   fEpicsEvtType{Decoder::EPICS_EVTYPE},  // default for Hall A
   buffer{nullptr},

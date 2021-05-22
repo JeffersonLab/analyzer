@@ -791,24 +791,15 @@ Int_t THaAnalyzer::ReadOneEvent()
 
   if( fDoBench ) fBench->Begin("RawDecode");
 
-  bool to_read_file = false;
-  if( !fEvData->IsMultiBlockMode() ||
-      (fEvData->IsMultiBlockMode() && fEvData->BlockIsDone()) )
-    to_read_file = true;
-
   // Find next event buffer in CODA file. Quit if error.
   Int_t status = THaRunBase::READ_OK;
-  if (to_read_file)
+  if( !fEvData->DataCached() )
     status = fRun->ReadEvent();
 
   switch( status ) {
   case THaRunBase::READ_OK:
     // Decode the event
-    if (to_read_file) {
-      status = fEvData->LoadEvent( fRun->GetEvBuffer() );
-    } else {
-      status = fEvData->LoadFromMultiBlock( );  // load next event in block
-    }
+    status = fEvData->LoadEvent( fRun->GetEvBuffer() );
     switch( status ) {
     case THaEvData::HED_OK:     // fall through
     case THaEvData::HED_WARN:
