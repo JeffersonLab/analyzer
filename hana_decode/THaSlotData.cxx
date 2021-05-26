@@ -169,7 +169,7 @@ UInt_t THaSlotData::LoadIfSlot( const UInt_t* evbuffer, const UInt_t *pstop) {
   }
   if (fDebugFile) fModule->DoPrint();
   fModule->Clear("");
-  UInt_t wordseen = fModule->LoadSlot(this, evbuffer, pstop);  // increments p
+  UInt_t wordseen = fModule->LoadSlot(this, evbuffer, pstop);
   if (fDebugFile)
     *fDebugFile << "THaSlotData:: after LoadIfSlot:  wordseen =  "
                 << dec << "  " << wordseen << endl;

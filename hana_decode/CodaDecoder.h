@@ -80,7 +80,7 @@ protected:
     UInt_t pos;   // position in evbuffer[]
     UInt_t len;   // length of data
   };
-  std::vector<BankDat_t> bankdat;  //FIXME: make this a map or unordered_map?
+  std::vector<BankDat_t> bankdat;
 
   // CODA3 stuff
   UInt_t evcnt_coda3;
