@@ -126,10 +126,11 @@ namespace Decoder {
     if (fDebugFile) *fDebugFile << "is slot 0x"<<hex<<*evbuffer<<dec<<" num chan "<<fNumChan<<endl;
     evbuffer++;
     fIsDecoded = true;
-    for( UInt_t i = 0; i < fNumChan; i++ ) {
-      fDataArray[i] = *(evbuffer++);
-      nfound++;
-      if (fDebugFile) *fDebugFile << "   data["<<i<<"] = 0x"<<hex<<fDataArray[i]<<dec<<endl;
+    fDataArray.assign( evbuffer, evbuffer+fNumChan );
+    nfound += fNumChan;
+    if (fDebugFile) {
+      for( UInt_t i = 0; i < fNumChan; i++ )
+        *fDebugFile << "   data[" << i << "] = 0x" << hex << fDataArray[i] << dec << endl;
     }
     if (doload) LoadRates();
     return nfound;
