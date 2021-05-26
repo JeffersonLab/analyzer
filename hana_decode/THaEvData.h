@@ -86,64 +86,12 @@ public:
   UInt_t    GetNextChan( UInt_t crate, UInt_t slot, UInt_t index ) const;
   const char* DevType( UInt_t crate, UInt_t slot ) const;
 
-  Bool_t HasCapability( Decoder::EModuleType type, UInt_t crate, UInt_t slot ) const
-  {
-    Decoder::Module* module = GetModule(crate, slot);
-    if( !module ) {
-      std::cerr << "No module at crate " << crate << "   slot " << slot << std::endl;
-      return false;
-    }
-    return module->HasCapability(type);
-  }
-  Bool_t IsMultifunction( UInt_t crate, UInt_t slot ) const
-  {
-    Decoder::Module* module = GetModule(crate, slot);
-    if( !module ) {
-      std::cerr << "No module at crate " << crate << "   slot " << slot << std::endl;
-      return false;
-    }
-    return module->IsMultiFunction();
-  }
-
-  UInt_t GetNumEvents( Decoder::EModuleType type, UInt_t crate, UInt_t slot,
-                       UInt_t chan ) const
-  {
-    Decoder::Module* module = GetModule(crate, slot);
-    if( !module ) return 0;
-    if( module->HasCapability(type) ) {
-      return module->GetNumEvents(type, chan);
-    } else {
-      return GetNumHits(crate, slot, chan);
-    }
-  }
-
-  UInt_t GetData( Decoder::EModuleType type, UInt_t crate, UInt_t slot,
-                  UInt_t chan, UInt_t hit ) const
-  {
-    Decoder::Module* module = GetModule(crate, slot);
-    if( !module ) return 0;
-    if( module->HasCapability(type) ) {
-      if( hit >= module->GetNumEvents(type, chan) ) return 0;
-      return module->GetData(type, chan, hit);
-    } else {
-      return GetData(crate, slot, chan, hit);
-    }
-  }
-
-  UInt_t GetLEbit( UInt_t crate, UInt_t slot, UInt_t chan, UInt_t hit ) const
-  { // get the Leading Edge bit (works for fastbus)
-    return GetOpt(crate, slot, chan, hit );
-  }
-
-  UInt_t GetOpt( UInt_t crate, UInt_t slot, UInt_t /*chan*/, UInt_t hit ) const
-  {// get the "Opt" bit (works for fastbus, is otherwise zero)
-    Decoder::Module* module = GetModule(crate, slot);
-    if( !module ) {
-      std::cerr << "No module at crate " << crate << "   slot " << slot << std::endl;
-      return 0;
-    }
-    return module->GetOpt(GetRawData(crate, slot, hit));
-  }
+  Bool_t    HasCapability( Decoder::EModuleType type, UInt_t crate, UInt_t slot ) const;
+  Bool_t    IsMultifunction( UInt_t crate, UInt_t slot ) const;
+  UInt_t    GetNumEvents( Decoder::EModuleType type, UInt_t crate, UInt_t slot, UInt_t chan ) const;
+  UInt_t    GetData( Decoder::EModuleType type, UInt_t crate, UInt_t slot, UInt_t chan, UInt_t hit ) const;
+  UInt_t    GetLEbit( UInt_t crate, UInt_t slot, UInt_t chan, UInt_t hit ) const;
+  UInt_t    GetOpt( UInt_t crate, UInt_t slot, UInt_t chan, UInt_t hit ) const;
 
   // Optional functionality that may be implemented by derived classes
   virtual ULong64_t GetEvTime() const { return evt_time; }
@@ -434,8 +382,7 @@ Bool_t THaEvData::HelicityEnabled() const
 }
 
 inline
-Bool_t THaEvData::ScalersEnabled() const
-{
+Bool_t THaEvData::ScalersEnabled() const {
   // Test if scaler decoding enabled
   return TestBit(kScalersEnabled);
 }
@@ -462,6 +409,67 @@ TString THaEvData::GetEpicsString( const char* /*tag*/, UInt_t /*event*/ ) const
 {
   assert(IsLoadedEpics("") && fgAllowUnimpl);
   return TString("");
+}
+
+inline
+Bool_t THaEvData::HasCapability( Decoder::EModuleType type, UInt_t crate,
+                                 UInt_t slot ) const {
+  Decoder::Module* module = GetModule(crate, slot);
+  if( !module ) {
+    std::cerr << "No module at crate " << crate << "   slot " << slot << std::endl;
+    return false;
+  }
+  return module->HasCapability(type);
+}
+
+inline
+Bool_t THaEvData::IsMultifunction( UInt_t crate, UInt_t slot ) const {
+  Decoder::Module* module = GetModule(crate, slot);
+  if( !module ) {
+    std::cerr << "No module at crate " << crate << "   slot " << slot << std::endl;
+    return false;
+  }
+  return module->IsMultiFunction();
+}
+
+inline
+UInt_t THaEvData::GetNumEvents( Decoder::EModuleType type, UInt_t crate, UInt_t slot, UInt_t chan ) const {
+  Decoder::Module* module = GetModule(crate, slot);
+  if( !module ) return 0;
+  if( module->HasCapability(type) ) {
+    return module->GetNumEvents(type, chan);
+  } else {
+    return GetNumHits(crate, slot, chan);
+  }
+}
+
+inline
+UInt_t THaEvData::GetData( Decoder::EModuleType type, UInt_t crate, UInt_t slot, UInt_t chan, UInt_t hit ) const {
+  Decoder::Module* module = GetModule(crate, slot);
+  if( !module ) return 0;
+  if( module->HasCapability(type) ) {
+    if( hit >= module->GetNumEvents(type, chan) ) return 0;
+    return module->GetData(type, chan, hit);
+  } else {
+    return GetData(crate, slot, chan, hit);
+  }
+}
+
+inline
+UInt_t THaEvData::GetLEbit( UInt_t crate, UInt_t slot, UInt_t chan, UInt_t hit ) const {
+  // get the Leading Edge bit (works for fastbus)
+  return GetOpt(crate, slot, chan, hit );
+}
+
+inline
+UInt_t THaEvData::GetOpt( UInt_t crate, UInt_t slot, UInt_t /*chan*/, UInt_t hit ) const {
+  // get the "Opt" bit (works for fastbus, is otherwise zero)
+  Decoder::Module* module = GetModule(crate, slot);
+  if( !module ) {
+    std::cerr << "No module at crate " << crate << "   slot " << slot << std::endl;
+    return 0;
+  }
+  return module->GetOpt(GetRawData(crate, slot, hit));
 }
 
 #endif
