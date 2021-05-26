@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <utility>
 #include <cstring>
+#include <sstream>
 
 using namespace std;
 
@@ -36,7 +37,7 @@ CodaDecoder::CodaDecoder() :
   fMultiBlockMode{false},
   fBlockIsDone{false}
 {
-  bankdat.reserve(128);
+  bankdat.reserve(32);
   // Please leave these 3 lines for me to debug if I need to.  thanks, Bob
 #ifdef WANTDEBUG
   fDebugFile = new ofstream();
@@ -365,6 +366,14 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
 {
   // Decode a Readout controller
   assert( evbuffer && fMap );
+  if( roc >= MAXROC ) {
+    ostringstream ostr;
+    ostr << "CodaDecoder::bank_decode: ROC number " << roc << " out of range";
+    throw logic_error(ostr.str());
+  }
+  if( istop > event_length )
+    throw logic_error("ERROR:: roc_decode:  stop point exceeds event length (?!)");
+
   if( ipt+1 >= istop )
     return HED_OK;
   if( fDoBench ) fBench->Begin("roc_decode");
@@ -386,8 +395,6 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
       }
       return HED_OK;
     }
-    if( istop > event_length )
-      throw invalid_argument("ERROR:: roc_decode:  stop point exceeds event length (?!)");
 
     if( fDebugFile )
       *fDebugFile << "CodaDecode:: roc_decode:: roc#  " << dec << roc
@@ -490,6 +497,14 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
   // Then loop over slots and decode it from a bank if the slot
   // belongs to a bank.
   assert( evbuffer && fMap );
+  if( roc >= MAXROC ) {
+    ostringstream ostr;
+    ostr << "CodaDecoder::bank_decode: ROC number " << roc << " out of range";
+    throw logic_error(ostr.str());
+  }
+  if( istop > event_length )
+    throw logic_error("ERROR:: bank_decode:  stop point exceeds event length (?!)");
+
   if (!fMap->isBankStructure(roc))
     return HED_OK;
 
@@ -704,6 +719,9 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
   while (pos < event_length) {
     UInt_t len = (evbuffer[pos]+1);               /* total Length of ROC Bank */
     UInt_t iroc = (evbuffer[pos+1]&0x0fff0000)>>16;   /* ID of ROC is 12 bits*/
+    if( iroc >= MAXROC ) {
+      return HED_ERR;
+    }
     rocdat[iroc].len = len;
     rocdat[iroc].pos = pos;
     irn[nroc] = iroc;
