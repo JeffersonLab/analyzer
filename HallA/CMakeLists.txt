@@ -63,7 +63,7 @@ install(TARGETS ${LIBNAME}
 install(FILES ${allheaders} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #----------------------------------------------------------------------------
-# libHallADict
+# ROOT dictionary
 build_root_dictionary(${LIBNAME} ${headers}
   TARGETS ${LIBNAME}
   LINKDEF ${LIBNAME}_LinkDef.h

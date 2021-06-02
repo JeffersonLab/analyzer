@@ -117,7 +117,7 @@ install(TARGETS ${LIBNAME}
 install(FILES ${allheaders} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #----------------------------------------------------------------------------
-# libdcDict dictionary
+# ROOT dictionary
 build_root_dictionary(lib${LIBNAME} ${headers}
   TARGETS ${LIBNAME}
   PCMNAME ${LIBNAME}
