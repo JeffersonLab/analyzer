@@ -416,8 +416,7 @@ int SaveNewT0Data(const TDatime &run_date, Double_t *new_t0, const char *planena
   FILE *db_out = fopen(buff,"r+"); // a new DB file to copy to the final home
   if (db_out) db_file = db_out;
   else {
-    db_file = THaDetectorBase::OpenFile(db_filename, run_date, 
-					"OpenFile()", "r+");
+    db_file = OpenDBFile(db_filename, run_date, "OpenDBFile()", "r+");
     db_out = fopen(buff,"w+");
   }
     

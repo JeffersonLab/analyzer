@@ -39,7 +39,7 @@ SeqCollectionVar::SeqCollectionVar( THaVar* pvar, const void* addr,
       !(fType >= kDoubleP && fType <= kUCharP) ) {
     Error( "SeqCollectionVar::SeqCollectionVar", "Variable %s: "
 	   "Illegal data type = %s. Only basic types or pointers to basic "
-	   "types allowed", pvar->GetName(), THaVar::GetTypeName(fType) );
+	   "types allowed", pvar->GetName(), Vars::GetTypeName(fType) );
     fValueP = nullptr; // Make invalid
     return;
   }

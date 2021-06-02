@@ -67,8 +67,7 @@ Int_t THaG0HelicityReader::ReadDatabase( const char* dbfilename,
 
   static const char* const here = "THaG0HelicityReader::ReadDatabase";
 
-  FILE* file =
-    THaAnalysisObject::OpenFile( dbfilename, date, here, "r", debug_flag );
+  FILE* file = Podd::OpenDBFile(dbfilename, date, here, "r", debug_flag);
   if( !file ) return THaAnalysisObject::kFileError;
 
   Int_t invert_gate = 0;

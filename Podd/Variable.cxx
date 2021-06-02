@@ -61,13 +61,13 @@ const char* Variable::GetName() const
 //_____________________________________________________________________________
 size_t Variable::GetTypeSize() const
 {
-  return THaVar::GetTypeSize( fType );
+  return Vars::GetTypeSize( fType );
 }
 
 //_____________________________________________________________________________
 const char* Variable::GetTypeName() const
 {
-  return THaVar::GetTypeName( fType );
+  return Vars::GetTypeName( fType );
 }
 
 //_____________________________________________________________________________
@@ -178,7 +178,7 @@ Double_t Variable::GetValue( Int_t i ) const
     break;
   default:
     fSelf->Error( here, "Unsupported data type %s, variable %s",
-		  THaVar::GetEnumName(fType), GetName() );
+		  Vars::GetEnumName(fType), GetName() );
     break;
   }
   return kInvalid;
@@ -251,7 +251,7 @@ Long64_t Variable::GetValueInt( Int_t i ) const
     break;
   default:
     fSelf->Error( here, "Unsupported data type %s, variable %s",
-		  THaVar::GetEnumName(fType), GetName() );
+		  Vars::GetEnumName(fType), GetName() );
     break;
   }
 

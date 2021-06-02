@@ -40,6 +40,7 @@
 #endif
 
 using namespace std;
+using namespace Podd;
 
 //_____________________________________________________________________________
 THaDecData::THaDecData( const char* name, const char* descript )
@@ -58,8 +59,8 @@ FILE* THaDecData::OpenFile( const TDatime& date )
 #ifdef DECDATA_LEGACY_DB
   if( fi )
     return fi;
-  fi = THaAnalysisObject::OpenFile("decdata.dat", date,
-				   Here("OpenFile()"), "r", fDebug);
+  fi = OpenDBFile("decdata.dat", date,
+                  Here("OpenDBFile()"), "r", fDebug);
 #endif
   return fi;
 }
@@ -70,7 +71,7 @@ FILE* THaDecData::OpenFile( const TDatime& date )
 inline
 static TString& GetString( const TObjArray* params, Int_t pos )
 {
-  return THaAnalysisObject::GetObjArrayString(params,pos);
+  return GetObjArrayString(params,pos);
 }
 
 //_____________________________________________________________________________
@@ -89,7 +90,7 @@ static Int_t ReadOldFormatDB( FILE* file, map<TString,TString>& configstr_map )
   TString confval[nkeys];
   // Read all non-comment lines
   rewind(file);
-  while( THaAnalysisObject::ReadDBline(file, buf, bufsiz, dbline) != EOF ) {
+  while( ReadDBline(file, buf, bufsiz, dbline) != EOF ) {
     if( dbline.empty() ) continue;
     // Tokenize each line read
     TString line( dbline.c_str() );

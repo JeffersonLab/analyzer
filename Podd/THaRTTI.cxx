@@ -293,7 +293,7 @@ void THaRTTI::Print( Option_t* ) const
     return;
   cout << "Type:         ";
   if( !IsObject() && !(fType == kObjectV || fType == kObjectPV) )
-    cout << THaVar::GetTypeName( fType );
+    cout << Vars::GetTypeName( fType );
   else if( fDataMember )
     cout << fDataMember->GetFullTypeName();
   cout << endl;

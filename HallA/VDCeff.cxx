@@ -33,6 +33,7 @@
 #include <cassert>
 
 using namespace std;
+using namespace Podd;
 
 const TString nhit_suffix( "nhit" );
 const TString eff_suffix(  "eff" );

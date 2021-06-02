@@ -24,6 +24,7 @@
 #include "VarDef.h"
 
 using namespace std;
+using namespace Podd;
 
 //_____________________________________________________________________________
 UserModule::UserModule( const char* name, const char* description,

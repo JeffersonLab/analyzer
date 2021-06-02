@@ -16,7 +16,10 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-// NB: When updating this list, must also update var_type_info[] in THaVar.C
+#include <cstddef>   // for size_t
+#include <typeinfo>
+
+// NB: When updating this list, must also update var_type_info[] in VarType.cxx
 enum VarType { kDouble = 0, kVarTypeBegin = kDouble,
 	       kFloat, kLong, kULong, kInt, kUInt,
 	       kShort, kUShort, kChar, kUChar, kByte = kUChar,
@@ -30,5 +33,14 @@ enum VarType { kDouble = 0, kVarTypeBegin = kDouble,
 	       kShort2P, kUShort2P, kChar2P, kUChar2P, kByte2P = kUChar2P,
 	       kObject2P,
 	       kVarTypeEnd };
+
+namespace Vars {
+// Access to detailed information about types defined above
+void         ClearCache();
+const char*  GetEnumName( VarType type );
+const char*  GetTypeName( VarType type );
+size_t       GetTypeSize( VarType type );
+VarType      FindType( const std::type_info& tinfo );
+}
 
 #endif

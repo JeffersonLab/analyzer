@@ -48,6 +48,9 @@
 #include "TVector3.h"
 #include "VarDef.h"
 
+using namespace std;
+using namespace Podd;
+
 //_____________________________________________________________________________
 THaExtTarCor::THaExtTarCor( const char* name, const char* description,
 			    const char* spectro, const char* vertex ) :

@@ -288,13 +288,14 @@ int THaEvData::init_cmap()  {
   if( fDebug>0 )
     cout << "Initializing crate map " << endl;
   FILE* fi; TString fname; Int_t ret;
-  if( init_cmap_openfile(fi,fname) != 0 ) {
+  if( init_cmap_openfile(fi, fname) != 0 ) {
     // A derived class implements a special method to open the crate map
     // database file. Call THaCrateMap's file-based init method.
-    ret = fMap->init(fi,fname.Data());
+    ret = fMap->init(fi, fname.Data());
   } else {
     // Use the default behavior of THaCrateMap for initializing the map
-    // (currently that means opening a database file named fCrateMapName)
+    // (currently that means opening a database with the name given to the
+    // THaCrateMap constructor (= fCrateMapName, see above)).
     ret = fMap->init(GetRunTime());
   }
   if( ret == THaCrateMap::CM_ERR )

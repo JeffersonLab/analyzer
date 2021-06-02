@@ -2,7 +2,7 @@
 
 //////////////////////////////////////////////////////////////////////////
 //                                                                      //
-// THaTextvars                                                          //
+// Podd::Textvars                                                       //
 //                                                                      //
 // Generic string substitution facility                                 //
 // Contains a dictionary of text variable names and associated values.  //
@@ -18,7 +18,7 @@
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
 
-#include "THaTextvars.h"
+#include "Textvars.h"
 #include "TError.h"
 #include <utility>
 #include <cassert>
@@ -31,18 +31,24 @@ using namespace std;
 typedef string::size_type ssiz_t;
 typedef vector<string>::size_type vssiz_t;
 
-//_____________________________________________________________________________
-static void Tokenize( const string& s, const string& delim,
-		      vector<string>& tokens )
-{
-  // Tokenize string 's' on delimiter(s) in 'delim'. Put results in 'tokens'
+static const string whtspc = " \t\n\v\f\r";
 
+// Text variable definitions. To be assigned by main program.
+Podd::Textvars* gHaTextvars = nullptr;
+
+namespace Podd {
+
+//_____________________________________________________________________________
+void Tokenize( const string& s, const string& delim, vector<string>& tokens )
+{
+  // Tokenize string 's' on delimiter(s) in 'delim'. Put results in 'tokens'.
+
+  tokens.clear();
   if( s.empty() ) {
-    tokens.push_back(s);
     return;
   }
-  ssiz_t start = s.find_first_not_of(delim);
-  ssiz_t pos   = s.find_first_of(delim,start);
+  auto start = s.find_first_not_of(delim);
+  auto pos   = s.find_first_of(delim, start);
 
   while( start != string::npos ) {
     tokens.push_back( s.substr(start,pos-start));
@@ -52,8 +58,32 @@ static void Tokenize( const string& s, const string& delim,
 }
 
 //_____________________________________________________________________________
-static string ValStr( const vector<string>& s )
+void Trim( string& str )
 {
+  // Trim leading and trailing whitespace from string 'str'
+
+  if( str.empty() )
+    return;
+  auto start = str.find_first_not_of(whtspc);
+  if( start == string::npos )
+    str.clear();
+  else {
+    auto end = str.find_last_not_of(whtspc);
+    str = str.substr(start,end-start+1);
+  }
+}
+
+//_____________________________________________________________________________
+vector<string> vsplit( const string& s )
+{
+  // Utility function to split a string into whitespace-separated strings
+  vector<string> tokens;
+  Podd::Tokenize(s, whtspc, tokens);
+  return tokens;
+}
+
+//_____________________________________________________________________________
+static string ValStr( const vector<string>& s ) {
   // Assemble vector of strings into a comma-separated single string.
   // Used by print functions.
 
@@ -95,7 +125,7 @@ static ssiz_t Index( const string& s, ssiz_t& ext, ssiz_t start )
 }
 
 //_____________________________________________________________________________
-Int_t THaTextvars::Add( const string& name, const string& value )
+Int_t Textvars::Add( const string& name, const string& value )
 {
   // Add or Set/Replace text variable with given name and value.
   // Parse value for multiple comma-separated tokens and store them as
@@ -107,6 +137,8 @@ Int_t THaTextvars::Add( const string& name, const string& value )
   static const string delim(",");
   vector<string> tokens;
   Tokenize( value, delim, tokens );
+  if( tokens.empty() )
+    tokens.emplace_back("");
 
   auto it = fVars.find(name);
 
@@ -123,7 +155,7 @@ Int_t THaTextvars::Add( const string& name, const string& value )
 }
 
 //_____________________________________________________________________________
-Int_t THaTextvars::AddVerbatim( const string& name, const string& value )
+Int_t Textvars::AddVerbatim( const string& name, const string& value )
 {
   // Add or Set/Replace text variable with given name and value.
   // Does not scan value for tokens; hence allows values that contain a ","
@@ -148,7 +180,7 @@ Int_t THaTextvars::AddVerbatim( const string& name, const string& value )
 }
 
 //_____________________________________________________________________________
-const char* THaTextvars::Get( const string& name, Int_t idx ) const
+const char* Textvars::Get( const string& name, Int_t idx ) const
 {
   // Get the i-th value of the text variable with the given name.
   // Returns either the value or nullptr if not found.
@@ -166,7 +198,7 @@ const char* THaTextvars::Get( const string& name, Int_t idx ) const
 }
 
 //_____________________________________________________________________________
-UInt_t THaTextvars::GetArray( const string& name, vector<string>& array )
+UInt_t Textvars::GetArray( const string& name, vector<string>& array )
 {
   // Get the array of values for the text variable with the given name.
   // Returns number of values found (size of array), or zero if not found.
@@ -184,13 +216,10 @@ UInt_t THaTextvars::GetArray( const string& name, vector<string>& array )
 }
 
 //_____________________________________________________________________________
-vector<string> THaTextvars::GetArray( const string& name )
+vector<string> Textvars::GetArray( const string& name )
 {
   // Get the values array for the text variable with the given name.
   // If name is not found, the returned array has size zero.
-  // This function is inefficient and provided only for backward
-  // compatibility. Use GetArray( const string&, vector<string>& )
-  // instead.
 
   vector<string> the_array;
   GetArray( name, the_array );
@@ -198,7 +227,7 @@ vector<string> THaTextvars::GetArray( const string& name )
 }
 
 //_____________________________________________________________________________
-UInt_t THaTextvars::GetNvalues( const string& name ) const
+UInt_t Textvars::GetNvalues( const string& name ) const
 {
   // Get the number of values for the text variable with the given name.
 
@@ -213,7 +242,7 @@ UInt_t THaTextvars::GetNvalues( const string& name ) const
 }
 
 //_____________________________________________________________________________
-void THaTextvars::Print( Option_t* /*opt*/ ) const
+void Textvars::Print( Option_t* /*opt*/ ) const
 {
   // Print all text variables
 
@@ -230,7 +259,7 @@ void THaTextvars::Print( Option_t* /*opt*/ ) const
 }
 
 //_____________________________________________________________________________
-Int_t THaTextvars::Substitute( string& line ) const
+Int_t Textvars::Substitute( string& line ) const
 {
   // Substitute text variables in a single string.
   // If any multi-valued variables are encountered, treat it as an error
@@ -245,7 +274,7 @@ Int_t THaTextvars::Substitute( string& line ) const
 }
 
 //_____________________________________________________________________________
-Int_t THaTextvars::Substitute( vector<string>& lines, bool do_multi ) const
+Int_t Textvars::Substitute( vector<string>& lines, bool do_multi ) const
 {
   // Substitute text variables in the given array of strings. 
   // Supports multi-valued text variables, where each instance is
@@ -255,7 +284,7 @@ Int_t THaTextvars::Substitute( vector<string>& lines, bool do_multi ) const
   //
   // Returns 0 if success, 1 on error (name not found)
 
-  static const char* const here = "THaTextvars::Substitute";
+  static const char* const here = "Textvars::Substitute";
 
   bool good = true;
 
@@ -271,9 +300,9 @@ Int_t THaTextvars::Substitute( vector<string>& lines, bool do_multi ) const
 	const vector<string>& repl = (*it).second;
 	assert( !repl.empty() );
 	if( !do_multi && repl.size() > 1 ) {
-	  ::Error( here, "multivalue variable %s = %s not supported in this "
-		   "context: \"%s\"", line.substr(pos,ext).c_str(),
-		   ValStr(repl).c_str(), line.c_str());
+          ::Error(here, "multivalue variable %s = %s not supported in this "
+                        "context: \"%s\"", line.substr(pos, ext).c_str(),
+                  ValStr(repl).c_str(), line.c_str());
 	  good = false;
 	}
 	if( good ) { // stop replacing once an error has been detected
@@ -284,14 +313,14 @@ Int_t THaTextvars::Substitute( vector<string>& lines, bool do_multi ) const
 	    newlines.assign( lines.begin(), li );
 	  }
           for( const auto& jt : repl ) {
-	    newlines.push_back(line);
-	    newlines.back().replace( pos, ext, jt );
-	  }
-	}
+            newlines.push_back(line);
+            newlines.back().replace(pos, ext, jt);
+          }
+        }
       } else {
-	::Error( here, "unknown text variable %s",
-		 line.substr(pos,ext).c_str() );
-	good = false;
+        ::Error(here, "unknown text variable %s",
+                line.substr(pos, ext).c_str());
+        good = false;
       }
     }
   }
@@ -306,6 +335,8 @@ Int_t THaTextvars::Substitute( vector<string>& lines, bool do_multi ) const
   return (good ? 0 : 1);
 }
 
+} // namespace Podd
+
 //_____________________________________________________________________________
 
-ClassImp(THaTextvars)
+ClassImp(Podd::Textvars)

@@ -130,7 +130,7 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
   FILE* file = OpenFile( date );
   if( !file ) {
     // look for more general coincidence-timing database
-    file = OpenFile( "CT", date );
+    file = Podd::OpenDBFile("CT", date);
   }
   if ( !file )
     return kFileError;

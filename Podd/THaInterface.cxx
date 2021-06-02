@@ -25,7 +25,7 @@
 #include "THaGlobals.h"
 #include "THaAnalyzer.h"
 //#include "THaFileDB.h"
-#include "THaTextvars.h"
+#include "Textvars.h"   // for gHaTextars
 #include "ha_compiledata.h"
 #include <cstring>
 #include <sstream>
@@ -43,7 +43,6 @@ TList*       gHaEvtHandlers  = nullptr;  // List of event handlers
 THaRunBase*  gHaRun      = nullptr;  // The currently active run
 TClass*      gHaDecoder  = nullptr;  // Class(!) of decoder to use
 THaDB*       gHaDB       = nullptr;  // Database system to use
-THaTextvars* gHaTextvars = nullptr;  // Text variable definitions
 
 THaInterface* THaInterface::fgAint = nullptr;  // Pointer to this interface
 
@@ -77,7 +76,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   gHaDecoder = Podd::CodaRawDecoder::Class();
   // File-based database by default
   //  gHaDB      = new THaFileDB();
-  gHaTextvars = new THaTextvars;
+  gHaTextvars = new Podd::Textvars;
 
   // Set the maximum size for a file written by Podd contained by the TTree
   //  putting it to 1.5 GB, down from the default 1.9 GB since something odd

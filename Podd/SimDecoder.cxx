@@ -190,7 +190,7 @@ Int_t SimDecoder::init_cmap_openfile( FILE*& fi, TString& fname )
   const char* const here = "SimDecoder::init_cmap";
 
   TDatime date(GetRunTime());    //FIXME: replace with TTimeStamp
-  fi = THaAnalysisObject::OpenFile(fCrateMapName,date,here,"r",0);
+  fi = Podd::OpenDBFile(fCrateMapName, date, here, "r", fDebug);
   fname = "db_" + fCrateMapName + ".dat";
   return 1;
 }

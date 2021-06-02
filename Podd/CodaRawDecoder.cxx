@@ -67,7 +67,7 @@ Int_t CodaRawDecoder::init_cmap_openfile( FILE*& fi, TString& fname )
   const char* const here = "CodaRawDecoder::init_cmap";
 
   TDatime date(GetRunTime());    //FIXME: replace with TTimeStamp
-  fi = THaAnalysisObject::OpenFile(fCrateMapName, date, here, "r", fDebug);
+  fi = Podd::OpenDBFile(fCrateMapName, date, here, "r", fDebug);
   fname = "db_" + fCrateMapName + ".dat";
   return 1;
 }

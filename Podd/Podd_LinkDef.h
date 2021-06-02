@@ -11,7 +11,6 @@
 #pragma link C++ global gHaEvtHandlers;
 #pragma link C++ global gHaRun;
 #pragma link C++ global gHaDB;
-#pragma link C++ global gHaTextvars;
 
 #pragma link C++ nestedclass;
 #pragma link C++ nestedtypedef;
@@ -102,7 +101,6 @@
 #pragma link C++ class THaHelicityDet+;
 #pragma link C++ class THaPhotoReaction+;
 #pragma link C++ class THaSAProtonEP+;
-#pragma link C++ class THaTextvars+;
 #pragma link C++ class THaEvtTypeHandler+;
 #pragma link C++ class THaScalerEvtHandler+;
 #pragma link C++ class THaEpicsEvtHandler+;

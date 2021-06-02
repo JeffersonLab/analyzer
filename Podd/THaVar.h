@@ -41,8 +41,8 @@ public:
   const Int_t* GetDim()                         const { return fImpl->GetDim(); }
 
   VarType      GetType()                        const { return fImpl->GetType(); }
-  size_t       GetTypeSize()                    const { return GetTypeSize(GetType()); }
-  const char*  GetTypeName()                    const { return GetTypeName(GetType()); }
+  size_t       GetTypeSize()                    const { return Vars::GetTypeSize(GetType()); }
+  const char*  GetTypeName()                    const { return Vars::GetTypeName(GetType()); }
 
   std::vector<Double_t>     GetValues()         const { return fImpl->GetValues(); }
   Double_t     GetValue( Int_t i = 0 )          const { return fImpl->GetValue(i); }
@@ -75,12 +75,6 @@ public:
   virtual void         SetName( const char* name )    { fImpl->SetName(name); }
   virtual void         SetNameTitle( const char* name, const char* descript )
 						      { fImpl->SetNameTitle(name,descript); }
-
-  // Access to detailed information about types defined in VarType.h
-  static void          ClearCache();
-  static const char*   GetEnumName( VarType type );
-  static const char*   GetTypeName( VarType type );
-  static size_t        GetTypeSize( VarType type );
 
 protected:
   Podd::Variable* fImpl;   //Pointer to implementation

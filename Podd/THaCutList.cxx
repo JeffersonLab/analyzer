@@ -13,7 +13,7 @@
 #include "THaNamedList.h"
 #include "THaCutList.h"
 #include "THaPrintOption.h"
-#include "THaTextvars.h"
+#include "Textvars.h"
 #include "THaGlobals.h"
 #include "FileInclude.h"
 #include "TError.h"

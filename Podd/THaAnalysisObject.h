@@ -10,7 +10,7 @@
 #include "TNamed.h"
 #include "THaGlobals.h"
 #include "TDatime.h"
-#include "VarDef.h"
+#include "Database.h"
 #include "DataType.h"
 #include "OptionalType.h"
 
@@ -27,8 +27,6 @@ class TVector3;
 class THaRunBase;
 class THaOutput;
 class TObjArray;
-
-const char* Here( const char* here, const char* prefix = nullptr );
 
 class THaAnalysisObject : public TNamed {
   
@@ -69,46 +67,14 @@ public:
   virtual FILE*        OpenRunDBFile( const TDatime& date );
   virtual void         Print( Option_t* opt="" ) const;
 
-  // Static functions to provide easy access to database files
-  // from CINT scripts etc.
-  static  FILE*   OpenFile( const char* name, const TDatime& date,
-			    const char* here = "OpenFile()",
-			    const char* filemode = "r", 
-			    int debug_flag = 1);
-  static Int_t    ReadDBline( FILE* fp, char* buf, Int_t bufsiz,
-			      std::string& line );
-
-  // Access functions for reading tag/value pairs from database files
-  static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
-			       const char* tag, Double_t& value );
-  static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
-			       const char* tag, Int_t& value );
-  static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
-			       const char* tag, std::string& text );
-  static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
-			       const char* tag, TString& text );
-  template <class T>
-  static  Int_t   LoadDBarray( FILE* file, const TDatime& date, 
- 			       const char* tag, std::vector<T>& values );
-  template <class T>
-  static  Int_t   LoadDBmatrix( FILE* file, const TDatime& date, 
-				const char* tag, 
-				std::vector<std::vector<T> >& values,
-				UInt_t ncols );
-  static  Int_t   LoadDB( FILE* file, const TDatime& date, 
-			  const DBRequest* request, const char* prefix,
-			  Int_t search = 0,
-			  const char* here = "THaAnalysisObject::LoadDB" );
-  static  Int_t   SeekDBdate( FILE* file, const TDatime& date,
-			      Bool_t end_on_tag = false );
-  static  Int_t   SeekDBconfig( FILE* file, const char* tag,
-				const char* label = "config",
-				Bool_t end_on_tag = false );
-  static  bool    IsTag( const char* buf );
-
-  // Generic utility functions
-  static std::vector<std::string> vsplit( const std::string& s );
-  static TString& GetObjArrayString( const TObjArray* params, Int_t pos );
+  // For backwards compatibility
+  static Int_t    LoadDB( FILE* file, const TDatime& date,
+                          const DBRequest* request, const char* prefix,
+                          Int_t search = 0,
+                          const char* here = "THaAnalysisObject::LoadDB" )
+  {
+    return Podd::LoadDatabase(file, date, request, prefix, search, here);
+  }
 
   // Geometry utility functions
   static  void    GeoToSph( Double_t  th_geo, Double_t  ph_geo,
@@ -182,11 +148,6 @@ protected:
   virtual Int_t        ReadRunDatabase( const TDatime& date );
           Int_t        RemoveVariables();
 
-  // Support function for reading database files
-  static std::vector<std::string> 
-    GetDBFileList( const char* name, const TDatime& date,
-		   const char* here = "GetDBFileList()" );
-  
 #ifdef WITH_DEBUG
   void DebugPrint( const DBRequest* list ) const;
 

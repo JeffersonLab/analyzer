@@ -96,7 +96,7 @@ Int_t BankData::ReadDatabase( const TDatime& date )
   while( fgets(cbuf, LEN, fi) != nullptr) {
     std::string sinput(cbuf);
     if(fDebug) cout << "database line = " << sinput << endl;
-    dbline = vsplit(sinput);
+    dbline = Podd::vsplit(sinput);
     std::string svar;
     Int_t iroc = 0,  ibank = 0, ioff = 0,  inum = 1;
     if(dbline.size() > 2) {

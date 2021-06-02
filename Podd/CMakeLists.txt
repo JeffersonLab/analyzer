@@ -32,14 +32,14 @@ set(src
   THaSAProtonEP.cxx            THaScalerEvtHandler.cxx      THaScintillator.cxx
   THaSecondaryKine.cxx         THaShower.cxx                THaSpectrometer.cxx
   THaSpectrometerDetector.cxx  THaString.cxx                THaSubDetector.cxx
-  THaTextvars.cxx              THaTotalShower.cxx           THaTrack.cxx
-  THaTrackEloss.cxx            THaTrackID.cxx               THaTrackInfo.cxx
-  THaTrackOut.cxx              THaTrackProj.cxx             THaTrackingDetector.cxx
-  THaTrackingModule.cxx        THaTriggerTime.cxx           THaTwoarmVertex.cxx
-  THaUnRasteredBeam.cxx        THaVar.cxx                   THaVarList.cxx
-  THaVertexModule.cxx          THaVform.cxx                 THaVhist.cxx
-  TimeCorrectionModule.cxx     Variable.cxx                 VariableArrayVar.cxx
-  VectorObjMethodVar.cxx       VectorObjVar.cxx             VectorVar.cxx
+  THaTotalShower.cxx           THaTrack.cxx                 THaTrackEloss.cxx
+  THaTrackID.cxx               THaTrackInfo.cxx             THaTrackOut.cxx
+  THaTrackProj.cxx             THaTrackingDetector.cxx      THaTrackingModule.cxx
+  THaTriggerTime.cxx           THaTwoarmVertex.cxx          THaUnRasteredBeam.cxx
+  THaVar.cxx                   THaVarList.cxx               THaVertexModule.cxx
+  THaVform.cxx                 THaVhist.cxx                 TimeCorrectionModule.cxx
+  Variable.cxx                 VariableArrayVar.cxx         VectorObjMethodVar.cxx
+  VectorObjVar.cxx             VectorVar.cxx
   )
 if(ONLINE_ET)
   list(APPEND src THaOnlRun.cxx)
@@ -47,7 +47,7 @@ endif()
 
 string(REPLACE .cxx .h headers "${src}")
 list(APPEND headers THaGlobals.h)
-set(allheaders ${headers} Helper.h VarDef.h VarType.h DataType.h OptionalType.h)
+set(allheaders ${headers} Helper.h DataType.h OptionalType.h)
 if(CMAKE_CXX_STANDARD LESS 17)
   list(APPEND allheaders optional.hpp)
 endif()
@@ -87,6 +87,7 @@ endif()
 target_link_libraries(${LIBNAME}
   PUBLIC
     ${PROJECT_NAME}::Decode
+    Podd::Database
     ROOT::Libraries
   )
 set_target_properties(${LIBNAME} PROPERTIES

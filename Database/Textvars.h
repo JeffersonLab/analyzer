@@ -1,9 +1,9 @@
-#ifndef Podd_THaTextvars_h_
-#define Podd_THaTextvars_h_
+#ifndef Podd_Textvars_h_
+#define Podd_Textvars_h_
 
 //////////////////////////////////////////////////////////////////////////
 //                                                                      //
-// THaTextvars - generic string substitution facility                   //
+// Textvars - generic string substitution facility                      //
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
 
@@ -12,11 +12,19 @@
 #include <string>
 #include <vector>
 
-class THaTextvars {
+namespace Podd {
+
+// Generic string utility functions
+void  Tokenize( const std::string& s, const std::string& delim,
+                std::vector<std::string>& tokens );
+void  Trim( std::string& str );
+std::vector<std::string> vsplit( const std::string& s );
+
+class Textvars {
 
 public:
-  THaTextvars() = default;
-  virtual ~THaTextvars() = default;
+  Textvars() = default;
+  virtual ~Textvars() = default;
 
   Int_t    Add( const std::string& name, const std::string& value );
   Int_t    AddVerbatim( const std::string& name, const std::string& value );
@@ -46,7 +54,15 @@ private:
   
   Textvars_t fVars;
 
-  ClassDef(THaTextvars,0)
+  ClassDef(Textvars, 0)
 };
+
+} // namespace Podd
+
+// Pick up definition of R__EXTERN
+#ifndef R__EXTERN
+#include "DllImport.h"
+#endif
+R__EXTERN class Podd::Textvars* gHaTextvars;  //List of text variable definitions
 
 #endif

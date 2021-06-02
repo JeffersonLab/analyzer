@@ -16,6 +16,9 @@ R__EXTERN class TList*       gHaEvtHandlers;   //List of event handlers
 R__EXTERN class THaRunBase*  gHaRun;       //The currently active run
 R__EXTERN class TClass*      gHaDecoder;   //Class(!) of decoder to use
 R__EXTERN class THaDB*       gHaDB;        //Database system to use
-R__EXTERN class THaTextvars* gHaTextvars;  //List of text variable definitions
 
+namespace Podd {
+class Textvars;
+}
+R__EXTERN class Podd::Textvars* gHaTextvars;
 #endif

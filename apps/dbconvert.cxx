@@ -51,12 +51,14 @@
 #define kOK        THaAnalysisObject::kOK
 
 using namespace std;
+using namespace Podd;
 
 #define ALL(c) (c).begin(), (c).end()
 
 static bool IsDBdate( const string& line, time_t& date );
 static bool IsDBcomment( const string& line );
 static Int_t IsDBkey( const string& line, string& key, string& text );
+static bool IsTag( const char* buf );
 static bool IsDBSubDir( const string& fname, time_t& date );
 
 // Command line parameter defaults
@@ -2836,6 +2838,22 @@ static bool IsDBcomment( const string& line )
   return ( pos == string::npos || line[pos] == '#' );
 }
 
+//_____________________________________________________________________________
+static bool IsTag( const char* buf )
+{
+  // Return true if the string in 'buf' matches regexp ".*\[.+\].*",
+  // i.e. it is a database section marker.  Generic utility function.
+
+  const char* p = buf;
+  while( *p && *p != '[' ) p++;
+  if( !*p ) return false;
+  p++;
+  if( !*p || *p == ']' ) return false;
+  p++;
+  while( *p && *p != ']' ) p++;
+  return (*p == ']');
+}
+
 //-----------------------------------------------------------------------------
 template <class T>
 Detector::EReadBlockRetval Detector::ReadBlock( FILE* fi, T* data, int nval,
@@ -3051,7 +3069,7 @@ int CopyFile::ReadDB( FILE* fi, time_t date, time_t date_until )
   bool do_ignore = false;
 
   // Extract and save the keys
-  while( THaAnalysisObject::ReadDBline(fi, buf, bufsiz, line) != EOF ) {
+  while( ReadDBline(fi, buf, bufsiz, line) != EOF ) {
     if( line.empty() ) continue;
     string key, value;
     if( !do_ignore && IsDBkey(line, key, value) ) {
@@ -3331,8 +3349,8 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   // ...etc.
   //
   TDatime datime(date);
-  if( THaAnalysisObject::SeekDBdate( fi, datime ) == 0 && fConfig.Length() > 0 &&
-      THaAnalysisObject::SeekDBconfig( fi, fConfig.Data() )) {}
+  if( SeekDBdate( fi, datime ) == 0 && fConfig.Length() > 0 &&
+      SeekDBconfig( fi, fConfig.Data() )) {}
 
   // Read calibration data
 
@@ -3588,8 +3606,8 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
 
     // Search for optional time stamp or configuration section
     TDatime datime(date);
-    if( THaAnalysisObject::SeekDBdate( fi, datime ) == 0 && fConfig.Length() > 0 &&
-	THaAnalysisObject::SeekDBconfig( fi, fConfig.Data() )) {}
+    if( SeekDBdate( fi, datime ) == 0 && fConfig.Length() > 0 &&
+	SeekDBconfig( fi, fConfig.Data() )) {}
   }
 
   // Read calibrations
@@ -3782,7 +3800,7 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
 
   // Find timestamp, if any, for the raster constants
   TDatime datime(date);
-  THaAnalysisObject::SeekDBdate( fi, datime, true );
+  SeekDBdate( fi, datime, true );
 
   // Raster constants: offx/y,amplx/y,slopex/y for BPMA, BPMB, target
   if( fgets(buf,LEN,fi ) == nullptr ) return ErrPrint(fi,here);
@@ -3983,9 +4001,9 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
   // t 0 0 0  ... etc.
   //
   TDatime datime(date);
-  if( (found = THaAnalysisObject::SeekDBdate(file,date)) == 0
+  if( (found = SeekDBdate(file,date)) == 0
       && !fConfig.IsNull()
-      && (found = THaAnalysisObject::SeekDBconfig(file,fConfig.Data())) == 0 ) {
+      && (found = SeekDBconfig(file,fConfig.Data())) == 0 ) {
     // Print warning if a requested (non-empty) config not found
     Warning( Here(here), "Requested configuration section \"%s\" not "
 	     "found in database. Using default (first) section.",
@@ -3996,7 +4014,7 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
   // After a found tag, it must be the comment line. If not found, then it
   // can be either the comment or a non-found tag before the comment...
   if( fgets(buff,LEN,file) == nullptr ) return kInitError;
-  if( !found && THaAnalysisObject::IsTag(buff) )
+  if( !found && IsTag(buff) )
     // Skip one more line if this one was a non-found tag
     if( fgets(buff,LEN,file) == nullptr ) return kInitError;
 

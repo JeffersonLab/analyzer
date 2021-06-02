@@ -34,6 +34,7 @@ endif()
 
 #----------------------------------------------------------------------------
 # Directories in which we build things
+add_subdirectory(Database)
 add_subdirectory(hana_decode)
 add_subdirectory(Podd)
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)

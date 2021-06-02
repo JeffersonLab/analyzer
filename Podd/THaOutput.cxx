@@ -20,7 +20,7 @@
 #include "THaVhist.h"
 #include "THaVarList.h"
 #include "THaVar.h"
-#include "THaTextvars.h"
+#include "Textvars.h"
 #include "THaGlobals.h"
 #include "TH1.h"
 #include "TTree.h"

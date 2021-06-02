@@ -200,7 +200,7 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
   TString sname0 = "Scalevt";
   TString sname  = fName+sname0;
 
-  FILE *fi = OpenFile(sname.Data(), date);
+  FILE *fi = Podd::OpenDBFile(sname.Data(), date);
   if ( !fi ) {
     cout << "Cannot find db file for "<<fName<<" scaler event handler"<<endl;
     return kFileError;
@@ -214,7 +214,7 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
 
   while( fgets(cbuf,LEN,fi) != nullptr) {
     if (fDebugFile) *fDebugFile << "string input "<<cbuf<<endl;
-    dbline = vsplit(cbuf);
+    dbline = Podd::vsplit(cbuf);
     if (!dbline.empty()) {
       auto pos1 = FindNoCase(dbline[0],scomment);
       if (pos1 != string::npos) continue;

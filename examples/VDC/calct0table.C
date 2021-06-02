@@ -73,7 +73,7 @@ int LoadOldT0Data(TDatime &run_date, Double_t *old_t0, const char *planename)
 
   sprintf(db_filename, "%c.vdc.", planename[0]);
 
-  FILE *db_file = THaDetectorBase::OpenFile(db_filename, run_date);
+  FILE *db_file = OpenDBFile(db_filename, run_date);
 
   // Build the search tag and find it in the file. Search tags
   // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
@@ -113,8 +113,7 @@ int SaveNewT0Data(TDatime &run_date, Double_t *new_t0, const char *planename)
 
   sprintf(db_filename, "%c.vdc.", planename[0]);
 
-  FILE *db_file = THaDetectorBase::OpenFile(db_filename, run_date, 
-					    "OpenFile()", "r+");
+  FILE *db_file = OpenDBFile(db_filename, run_date, "OpenDBFile()", "r+");
 
   // Build the search tag and find it in the file. Search tags
   // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].

@@ -21,9 +21,10 @@ import podd_util
 ####### Hall A Build Environment #############
 baseenv.Append(MAIN_DIR = Dir('.').abspath)
 baseenv.Append(HA_DIR = baseenv.subst('$MAIN_DIR'))
-baseenv.Append(HA_Podd = baseenv.subst('$HA_DIR')+'/Podd ')
-baseenv.Append(HA_HallA = baseenv.subst('$HA_DIR')+'/HallA ')
-baseenv.Append(HA_DC = baseenv.subst('$HA_DIR')+'/hana_decode ')
+baseenv.Append(HA_Podd = baseenv.subst('$HA_DIR')+'/Podd')
+baseenv.Append(HA_HallA = baseenv.subst('$HA_DIR')+'/HallA')
+baseenv.Append(HA_DC = baseenv.subst('$HA_DIR')+'/hana_decode')
+baseenv.Append(HA_DB = baseenv.subst('$HA_DIR')+'/Database')
 baseenv.Append(MAJORVERSION = '1')
 baseenv.Append(MINORVERSION = '7')
 baseenv.Append(PATCH = '0')
@@ -39,7 +40,9 @@ ivercode = 65536*int(float(baseenv.subst('$SOVERSION'))) + \
                        int(float(baseenv.subst('$SOVERSION'))))) + \
                        int(float(baseenv.subst('$PATCH')))
 baseenv.Append(VERCODE = ivercode)
-baseenv.Append(CPPPATH = ['$HA_DIR','$HA_HallA','$HA_Podd','$HA_DC'])
+baseenv.Append(CPPPATH=[baseenv.subst('$HA_DIR'),baseenv.subst('$HA_HallA'),
+                        baseenv.subst('$HA_Podd'),baseenv.subst('$HA_DC'),
+                        baseenv.subst('$HA_DB')])
 install_prefix = os.getenv('SCONS_INSTALL_PREFIX')
 if not install_prefix:
     install_prefix = os.path.join(os.getenv('HOME'),'.local')
@@ -110,11 +113,13 @@ Export('baseenv')
 
 ####### Start of main SConstruct ############
 
-baseenv.Append(LIBPATH=['$HA_HallA','$HA_Podd','$HA_DC'])
-baseenv.Prepend(LIBS=['HallA','Podd','dc'])
-baseenv.Append(RPATH = ['$HA_HallA','$HA_Podd','$HA_DC'])
+baseenv.Append(LIBPATH=[baseenv.subst('$HA_HallA'),baseenv.subst('$HA_Podd'),
+                        baseenv.subst('$HA_DC'),baseenv.subst('$HA_DB')])
+baseenv.Prepend(LIBS=['HallA','Podd','dc','PoddDB'])
+baseenv.Append(RPATH = [baseenv.subst('$HA_HallA'),baseenv.subst('$HA_Podd'),
+                        baseenv.subst('$HA_DC'),baseenv.subst('$HA_DB')])
 
-SConscript(dirs = ['Podd', 'HallA', 'hana_decode', 'apps'],
+SConscript(dirs = ['Podd', 'HallA', 'hana_decode', 'Database', 'apps'],
            name='SConscript.py',exports='baseenv')
 
 # Install site_scons so that modules can be built against the installation

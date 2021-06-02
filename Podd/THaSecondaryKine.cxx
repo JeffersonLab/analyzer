@@ -28,6 +28,7 @@
 #include "TRotation.h"
 
 using namespace std;
+using namespace Podd;
 
 ClassImp(THaSecondaryKine)
 

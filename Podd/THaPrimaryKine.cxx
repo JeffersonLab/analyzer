@@ -20,6 +20,7 @@
 #include "TMath.h"
 
 using namespace std;
+using namespace Podd;
 
 ClassImp(THaPrimaryKine)
 

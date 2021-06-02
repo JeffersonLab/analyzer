@@ -1,13 +1,16 @@
 ////////////////////////////////////////////////////////////////////////
 //
-//       THaString.C  (implementation)
+//       THaString.cxx  (implementation)
 //
 ////////////////////////////////////////////////////////////////////////
 
 #include "THaString.h"
+#include "Textvars.h"   // For Podd::vsplit
 #include <algorithm>
 #include <cctype>
 #include <sstream>
+
+#define ALL(c) (c).begin(), (c).end()
 
 using namespace std;
 
@@ -46,13 +49,7 @@ string::size_type FindNoCase( string data, string chunk )
 vector<string> Split( const string& s )
 {
   // Split on whitespace.
-  istringstream ist(s);
-  string w;
-  vector<string> v;
-
-  while (ist >> w)
-    v.push_back(w);
-  return v;
+  return Podd::vsplit(s);
 }
 
 //_____________________________________________________________________________
@@ -60,7 +57,7 @@ unsigned int Hex( const string& s )
 {
   // Conversion to unsigned interpreting as hex.
   istringstream ist(s);
-  unsigned int in;
+  unsigned int in = 0;
   ist >> hex >> in;
   return in;
 }
@@ -72,7 +69,7 @@ string ToLower( const string& s )
 
   string result(s);
   // The bizarre cast here is needed for newer gccs
-  transform( s.begin(), s.end(), result.begin(), (int(*)(int))tolower );
+  transform( ALL(s), result.begin(), (int(*)(int))tolower );
   return result;
 }
 
@@ -81,7 +78,7 @@ string ToUpper( const string& s )
 {
   // Return copy of this string converted to upper case.
   string result(s);
-  transform( s.begin(), s.end(), result.begin(), (int(*)(int))toupper );
+  transform( ALL(s), result.begin(), (int(*)(int))toupper );
   return result;
 }
 
@@ -90,14 +87,14 @@ void Lower( string& s )
 {
   // Convert this string to lower case
 
-  transform( s.begin(), s.end(), s.begin(), (int(*)(int))tolower );
+  transform( ALL(s), s.begin(), (int(*)(int))tolower );
 }
 
 //_____________________________________________________________________________
 void Upper( string& s )
 {
   // Convert this string to upper case
-  transform( s.begin(), s.end(), s.begin(), (int(*)(int))toupper );
+  transform( ALL(s), s.begin(), (int(*)(int))toupper );
 }
 
 //_____________________________________________________________________________

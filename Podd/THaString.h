@@ -12,33 +12,30 @@
 #include <string>
 #include <vector>
 
-using std::string;
-using std::vector;
-
 namespace THaString {
   // case insensitive compare
-  int CmpNoCase( const string&, const string& );
+  int CmpNoCase( const std::string&, const std::string& );
 
   // case insensitive find
-  string::size_type FindNoCase( string data, string chunk );
+  std::string::size_type FindNoCase( std::string data, std::string chunk );
 
   // split on whitespace
-  vector<string> Split( const string& );
+  std::vector<std::string> Split( const std::string& );
 
   // conversion to unsigned interpreting as hex
-  unsigned int Hex( const string& );
+  unsigned int Hex( const std::string& );
 
   // return lower case copy
-  string    ToLower( const string& );
+  std::string  ToLower( const std::string& );
 
   // return upper case copy
-  string    ToUpper( const string& );
+  std::string  ToUpper( const std::string& );
 
   // convert this string to lower case
-  void      Lower( string& );
+  void      Lower( std::string& );
 
   // convert this string to upper case
-  void      Upper( string& );
+  void      Upper( std::string& );
 }
 
 #endif

@@ -72,7 +72,7 @@ public:
    
   // Helper function for parameter parsing
   static TString& GetString( const TObjArray* params, Int_t pos )
-  { return THaAnalysisObject::GetObjArrayString(params,pos); }
+  { return Podd::GetObjArrayString(params, pos); }
 
 protected:
   // Abstract base class constructor

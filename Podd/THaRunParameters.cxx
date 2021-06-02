@@ -78,10 +78,10 @@ Int_t THaRunParameters::ReadDatabase( const TDatime& date )
   //
   // Return 0 if success, <0 if file error, >0 if not all required data found.
 
-#define OPEN THaAnalysisObject::OpenFile
+#define OPEN Podd::OpenDBFile
 #define LOAD THaAnalysisObject::LoadDB
 
-  FILE* f = OPEN( "run", date, "THaRunParameters::ReadDatabase", "r", 1 );
+  FILE* f = OPEN("run", date, "THaRunParameters::ReadDatabase", "r", 1);
   if( !f ) 
     return -1;
 
