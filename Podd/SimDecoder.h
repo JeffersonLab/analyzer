@@ -202,8 +202,6 @@ protected:
   TClonesArray*  fMCPoints;   //-> MC physics track points
   Bool_t         fIsSetup;    // DefineVariables has run
 
-  virtual Int_t init_cmap_openfile( FILE*& fi, TString& fname );
-
   ClassDef(SimDecoder,0) // Generic decoder for simulation data
 };
 

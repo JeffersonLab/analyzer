@@ -19,6 +19,7 @@
 
 
 #include "Decoder.h"
+#include "TDatime.h"
 #include <fstream>
 #include <cstdio>  // for FILE
 #include <cassert>
@@ -77,6 +78,7 @@ class THaCrateMap {
      enum ECrateCode { kUnknown, kFastbus, kVME, kScaler, kCamac };
 
      std::string fDBfileName;       // Database file name
+     TDatime     fInitTime;         // Database time stamp
 
      class SlotInfo_t {
      public:
@@ -112,13 +114,10 @@ class THaCrateMap {
      Int_t  setModel( UInt_t crate, UInt_t slot, Int_t mod,
                       UInt_t nchan= MAXCHAN,
                       UInt_t ndata= MAXDATA );           // set the module type
-     Int_t  setHeader( UInt_t crate, UInt_t slot, UInt_t head );// set the header
-     Int_t  setMask( UInt_t crate, UInt_t slot, UInt_t mask );  // set the header mask
-     Int_t  setBank( UInt_t crate, UInt_t slot, Int_t bank );   // set the bank
-     Int_t  setScalerLoc( UInt_t crate, const char* location ); // Sets the scaler location
      void   setUsed( UInt_t crate, UInt_t slot );
-     void   setClear( UInt_t crate, UInt_t slot, bool clear);
      Int_t  SetModelSize( UInt_t crate, UInt_t slot, UInt_t model );
+
+     static Int_t readFile( FILE* fi, std::string& text );
 
      ClassDef(THaCrateMap,0) // Map of modules in DAQ crates
 };
@@ -268,13 +267,6 @@ const std::vector<UInt_t>& THaCrateMap::GetUsedSlots( UInt_t crate ) const
 {
   assert( crate < crdat.size() );
   return crdat[crate].used_slots;
-}
-
-inline
-void THaCrateMap::setClear( UInt_t crate, UInt_t slot, bool clear)
-{
-  assert( crate < crdat.size() && slot < crdat[crate].sltdat.size() );
-  crdat[crate].sltdat[slot].clear = clear;
 }
 
 }

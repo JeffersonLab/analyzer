@@ -183,18 +183,6 @@ Int_t SimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
 }
 
 //_____________________________________________________________________________
-Int_t SimDecoder::init_cmap_openfile( FILE*& fi, TString& fname )
-{
-  // Use the analyzer file name search logic to find the crate map database file
-
-  const char* const here = "SimDecoder::init_cmap";
-
-  TDatime date(GetRunTime());    //FIXME: replace with TTimeStamp
-  fi = Podd::OpenDBFile(fCrateMapName, date, here, "r", fDebug);
-  fname = "db_" + fCrateMapName + ".dat";
-  return 1;
-}
-//_____________________________________________________________________________
 MCTrack::MCTrack( Int_t number, Int_t pid,
 		  const TVector3& vertex, const TVector3& momentum )
   : fNumber(number), fPID(pid), fOrigin(vertex),

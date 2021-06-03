@@ -21,8 +21,6 @@ public:
   CodaRawDecoder();
   virtual ~CodaRawDecoder();
 
-  virtual Int_t init_cmap_openfile( FILE*& fi, TString& fname );
-
   ClassDef(CodaRawDecoder,0) // CODA event data decoder exporting global vars
 };
 

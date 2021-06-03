@@ -17,6 +17,7 @@
 
 #include "Decoder.h"
 #include "THaCrateMap.h"
+#include "Database.h"
 #include "TError.h"
 #include "TSystem.h"
 #include "TString.h"
@@ -206,35 +207,26 @@ void THaCrateMap::setUnused( UInt_t crate, UInt_t slot )
 }
 
 //_____________________________________________________________________________
-int THaCrateMap::setHeader( UInt_t crate, UInt_t slot, UInt_t head ) {
-  assert( crate < crdat.size() && slot < crdat[crate].sltdat.size() );
-  setUsed(crate,slot);
-  crdat[crate].sltdat[slot].header = head;
-  return CM_OK;
-}
-
-//_____________________________________________________________________________
-int THaCrateMap::setMask( UInt_t crate, UInt_t slot, UInt_t mask ) {
-  assert( crate < crdat.size() && slot < crdat[crate].sltdat.size() );
-  setUsed(crate,slot);
-  crdat[crate].sltdat[slot].headmask = mask;
-  return CM_OK;
-}
-
-//_____________________________________________________________________________
-int THaCrateMap::setBank( UInt_t crate, UInt_t slot, Int_t bank ) {
-  assert( crate < crdat.size() && slot < crdat[crate].sltdat.size() );
-  setUsed(crate,slot);
-  crdat[crate].sltdat[slot].bank = bank;
-  return CM_OK;
-}
-
-//_____________________________________________________________________________
-int THaCrateMap::setScalerLoc( UInt_t crate, const char* location ) {
-  assert( crate < crdat.size() );
-  setCrateType(crate,"scaler");
-  crdat[crate].scalerloc = location;
-  return CM_OK;
+Int_t THaCrateMap::readFile( FILE* fi, string& text ) {
+  // Read contents of opened file 'fi' to 'text'
+  if( !fi )
+    return CM_ERR;
+  Int_t ret = CM_ERR;
+  errno = 0;
+  if( fseek(fi, 0, SEEK_END) == 0 ) {
+    long size = ftell(fi);
+    if( size > 0 ) {
+      rewind(fi);
+      unique_ptr<char[]> fbuf{new char[size]};
+      size_t nread = fread(fbuf.get(), sizeof(char), size, fi);
+      if( nread == static_cast<size_t>(size) ) {
+        text.reserve(nread);
+        text.assign(fbuf.get(), fbuf.get()+nread);
+        ret = CM_OK;
+      }
+    }
+  }
+  return ret;
 }
 
 //_____________________________________________________________________________
@@ -244,7 +236,7 @@ int THaCrateMap::init( FILE* fi, const char* fname )
   // The file is read completely into an internal string, which is then
   // parsed by init(const std::string&).
 
-  const char* const here = "THaCrateMap::init";
+  const char* const here = "THaCrateMap::init(file)";
 
   if ( !fi ) {
     ::Error( here, "Error opening crate map database file %s: %s",
@@ -253,22 +245,7 @@ int THaCrateMap::init( FILE* fi, const char* fname )
   }
   // Build the string to parse
   string db;
-  bool ok = false;
-  errno = 0;
-  if( fseek(fi, 0, SEEK_END) == 0 ) {
-    long size = ftell(fi);
-    if( size > 0 ) {
-      rewind(fi);
-      unique_ptr<char[]> fbuf{new char[size]};
-      size_t nread = fread(fbuf.get(), sizeof(char), size, fi);
-      if( nread == static_cast<size_t>(size) ) {
-        db.reserve(nread);
-        db.assign(fbuf.get(), fbuf.get()+nread);
-        ok = true;
-      }
-    }
-  }
-  if( !ok || ferror(fi) ) {
+  if( readFile(fi, db) != CM_OK || ferror(fi) ) {
     ::Error( here, "Error reading crate map database file %s: %s",
         fname, StrError().c_str() );
     fclose(fi);
@@ -281,56 +258,14 @@ int THaCrateMap::init( FILE* fi, const char* fname )
 }
 
 //_____________________________________________________________________________
-int THaCrateMap::init(ULong64_t /*tloc*/) {
+int THaCrateMap::init(ULong64_t tloc) {
   // Initialize the crate map from the database.
-  //
-  // If a time-dependent or run-number indexed database is available,
-  // (in derived classes), use the given 'tloc' argument as the index.
-  //
-  // If the database file name (fDBfileName) contains any slashes, it is
-  // assumed to be the actual file path.
-  //
-  // If opening fDBfileName fails, no slash is present in the name, and the
-  // name does not already have the format "db_*.dat", the routine will also
-  // try to open "db_<fDBfileName>.dat".
-  //
-  // If the file is still not found, but DB_DIR is defined in the environment,
-  // repeat the search in $DB_DIR.
+  // 'tloc' is the time-stamp/index into the database's periods of validity.
 
-  TString fname(fDBfileName);
-
-  FILE* fi = fopen(fname,"r");
-  if( !fi ) {
-    TString dbfname;
-    Ssiz_t pos = fname.Index('/');
-    bool no_slash = (pos == kNPOS);
-    bool no_abspath = (pos != 0);
-    if( no_slash && !fname.BeginsWith("db_") && !fname.EndsWith(".dat") ) {
-      dbfname = "db_" + fname +".dat";
-      fi = fopen(dbfname,"r");
-    }
-    if( !fi && no_abspath ) {
-      const char* db_dir = gSystem->Getenv("DB_DIR");
-      if( db_dir ) {
-        long int path_max = pathconf(".", _PC_PATH_MAX);
-        if( path_max <= 0 )
-          path_max = 1024;
-        if( strlen(db_dir) <= static_cast<size_t>(path_max) ) {
-          TString dbdir(db_dir);
-          if( !dbdir.EndsWith("/") )
-            dbdir.Append('/');
-          fname.Prepend(dbdir);
-          fi = fopen(fname,"r");
-          if( !fi && !dbfname.IsNull() ) {
-            dbfname.Prepend(dbdir);
-            fi = fopen(dbfname,"r");
-          }
-          // if still !fi here, init(fi,...) below will report error
-        }
-      }
-    }
-  }
-  return init(fi, fname);
+  const char* const here = "THaCrateMap::init(tloc)";
+  fInitTime = tloc;
+  FILE* fi = Podd::OpenDBFile(fDBfileName.c_str(), fInitTime, here, "r", 1);
+  return init(fi, fDBfileName.c_str());
 }
 
 //_____________________________________________________________________________
@@ -443,13 +378,14 @@ int THaCrateMap::init(const string& the_map) {
     else
       setModel(crate,slot,imodel);
 
+    SlotInfo_t& slt = crdat[crate].sltdat[slot];
     if( nread == 3 )
-      setBank(crate, slot, cword);
+      slt.bank = cword;
     else if( nread > 3 ) {
-      setClear(crate, slot, cword);
-      setHeader(crate, slot, iheader);
+      slt.clear = cword;
+      slt.header = iheader;
       if( nread > 4 )
-        setMask(crate, slot, mask);
+        slt.headmask = mask;
     }
   }
 

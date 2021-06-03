@@ -114,7 +114,11 @@ const char* THaEvData::DevType( UInt_t crate, UInt_t slot) const {
 Int_t THaEvData::Init()
 {
   Int_t ret = init_cmap();
-  if( ret != HED_OK ) return ret;
+  if( ret != HED_OK ) {
+    ::Error("THaEvData::init", "Error initializing crate map. "
+                               "Cannot continue. Fix database.");
+    return ret;
+  }
   if( fDebugFile ) {
     *fDebugFile << endl << " THaEvData:: Print of Crate Map" << endl;
     fMap->print(*fDebugFile);
@@ -278,6 +282,7 @@ void THaEvData::SetCrateMapName( const char* name )
 int THaEvData::init_cmap()  {
   if( fCrateMapName.IsNull() )
     fCrateMapName = fgDefaultCrateMapName;
+  // Make a new crate map object unless we already have one
   if( !fMap || fCrateMapName != fMap->GetName() ) {
 #if __cplusplus >= 201402L
     fMap = make_unique<THaCrateMap>(fCrateMapName);
@@ -285,20 +290,10 @@ int THaEvData::init_cmap()  {
     fMap.reset(new THaCrateMap(fCrateMapName));
 #endif
   }
+  // Initialize the newly created crate map
   if( fDebug>0 )
     cout << "Initializing crate map " << endl;
-  FILE* fi; TString fname; Int_t ret;
-  if( init_cmap_openfile(fi, fname) != 0 ) {
-    // A derived class implements a special method to open the crate map
-    // database file. Call THaCrateMap's file-based init method.
-    ret = fMap->init(fi, fname.Data());
-  } else {
-    // Use the default behavior of THaCrateMap for initializing the map
-    // (currently that means opening a database with the name given to the
-    // THaCrateMap constructor (= fCrateMapName, see above)).
-    ret = fMap->init(GetRunTime());
-  }
-  if( ret == THaCrateMap::CM_ERR )
+  if( fMap->init(GetRunTime()) != THaCrateMap::CM_OK )
     return HED_FATAL; // Can't continue w/o cratemap
   fNeedInit = false;
   return HED_OK;

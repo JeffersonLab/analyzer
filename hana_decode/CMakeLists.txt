@@ -101,6 +101,7 @@ target_link_libraries(${LIBNAME}
     ROOT::Core
     ${ONLIBS}    # et.h is in the THaEtClient.h public interface
   PRIVATE
+    Podd::Database
     EVIO::EVIO
   )
 set_target_properties(${LIBNAME} PROPERTIES

@@ -159,7 +159,6 @@ protected:
 
   // Initialization routines
   virtual Int_t init_cmap();
-  virtual Int_t init_cmap_openfile( FILE*&, TString& ) { return 0; }
   virtual Int_t init_slotdata();
   virtual void  makeidx( UInt_t crate, UInt_t slot );
   virtual void  FindUsedSlots();

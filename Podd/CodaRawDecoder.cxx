@@ -60,18 +60,6 @@ CodaRawDecoder::~CodaRawDecoder()
 }
 
 //_____________________________________________________________________________
-Int_t CodaRawDecoder::init_cmap_openfile( FILE*& fi, TString& fname )
-{
-  // Use the analyzer file name search logic to find the crate map database file
-
-  const char* const here = "CodaRawDecoder::init_cmap";
-
-  TDatime date(GetRunTime());    //FIXME: replace with TTimeStamp
-  fi = Podd::OpenDBFile(fCrateMapName, date, here, "r", fDebug);
-  fname = "db_" + fCrateMapName + ".dat";
-  return 1;
-}
-//_____________________________________________________________________________
 
 } // namespace Podd
 
