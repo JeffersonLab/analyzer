@@ -22,6 +22,8 @@
 #include "THaCrateMap.h"
 #include "TClass.h"
 #include <iostream>
+#include <stdexcept>
+#include <sstream>
 
 using namespace std;
 
@@ -133,7 +135,18 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
     }
 
     // Init first, then SetSlot
-    fModule->Init();
+    try {
+      fModule->Init(map->getConfigStr(crate, slot));
+    }
+    catch( const exception& e ) {
+      ostringstream ostr;
+      ostr << "ERROR initializing module for crate " << dec << crate
+           << " slot " << slot << ": " << e.what() << endl;
+      cerr << ostr.str();
+      if( fDebugFile )
+        *fDebugFile << ostr.str();
+      return SD_ERR;
+    }
     fModule->SetSlot(crate, slot,
                      map->getHeader(crate, slot),
                      map->getMask(crate, slot),

@@ -1362,8 +1362,10 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
 	  (status = ReadOneEvent()) != THaRunBase::READ_EOF ) {
 
     //--- Skip events with errors, unless fatal
-    if( status == THaRunBase::READ_FATAL )
-      break;
+    if( status == THaRunBase::READ_FATAL ) {
+      terminate = fatal = true;
+      continue;
+    }
     if( status != THaRunBase::READ_OK )
       continue;
 

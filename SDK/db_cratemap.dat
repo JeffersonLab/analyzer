@@ -1,0 +1,6 @@
+# Example crate map for SkeletonModule
+
+==== Crate 30 type vme
+# slot   model   bank   configuration string (optional)
+  10     4444    4000   cfg: buflen=125, mode=2
+  11     4444    4000   cfg:2 125

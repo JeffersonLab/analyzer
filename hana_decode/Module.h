@@ -13,6 +13,7 @@
 #include <set>
 #include <fstream>
 #include <vector>
+#include <string>
 
 namespace Decoder {
 
@@ -75,9 +76,8 @@ namespace Decoder {
     virtual UInt_t GetNumSamples( UInt_t ) const { return 0; };
     virtual Int_t  GetMode()               const { return fMode; };
 
-    virtual void SetSlot(UInt_t crate, UInt_t slot, UInt_t header=0,
-			 UInt_t mask=0, Int_t modelnum=0)
-    {
+    virtual void   SetSlot( UInt_t crate, UInt_t slot, UInt_t header = 0,
+                            UInt_t mask = 0, Int_t modelnum = 0 ) {
       fCrate      = crate;
       fSlot       = slot;
       fHeader     = header;
@@ -85,24 +85,25 @@ namespace Decoder {
       fModelNum   = modelnum;
     }
 
-    virtual void SetBank(Int_t bank) { fBank = bank; };
-    virtual void SetMode(Int_t mode) { fMode = mode; };
+    virtual void   SetBank( Int_t bank ) { fBank = bank; };
+    virtual void   SetMode( Int_t mode ) { fMode = mode; };
 
-    virtual void Init();
+    virtual void   Init();
+    virtual void   Init( const char* configstr );
 
-    virtual void Clear(Option_t* = "") { fWordsSeen = 0; };
+    virtual void   Clear( Option_t* = "" ) { fWordsSeen = 0; };
 
-    virtual Bool_t IsSlot(UInt_t rdata);
+    virtual Bool_t IsSlot( UInt_t rdata );
 
     virtual UInt_t GetCrate() const { return fCrate; };
     virtual UInt_t GetSlot()  const { return fSlot; };
 
-    virtual void SetDebugFile(std::ofstream *file)
+    virtual void   SetDebugFile( std::ofstream* file )
     {
       if (file) fDebugFile = file;
     }
 
-    virtual void SetHeader(UInt_t header, UInt_t mask) {
+    virtual void SetHeader( UInt_t header, UInt_t mask ) {
       fHeader = header;
       fHeaderMask = mask;
     }
@@ -110,7 +111,7 @@ namespace Decoder {
     virtual void DoPrint() const;
 
     virtual Bool_t IsMultiFunction() { return false; };
-    virtual Bool_t HasCapability(Decoder::EModuleType) { return false; };
+    virtual Bool_t HasCapability( Decoder::EModuleType ) { return false; };
 
   protected:
 
@@ -133,6 +134,13 @@ namespace Decoder {
     std::ofstream *fDebugFile;
 
     TObject* fExtra;  // additional member data, for binary compatibility
+
+    struct ConfigStrReq {
+      std::string name;  // (Optional) parameter name ("name=value")
+      UInt_t&     data;  // Reference to variable to which to assign data
+    };
+    static void ParseConfigStr( const char* configstr,
+                                const std::vector<ConfigStrReq>& req );
 
   private:
 

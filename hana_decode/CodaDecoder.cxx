@@ -787,16 +787,22 @@ int CodaDecoder::init_slotdata()
 
   if(!fMap) return HED_ERR;
 
-  for( auto iroc : fMap->GetUsedCrates() ) {
-    assert(fMap->crateUsed(iroc));
-    for( auto islot : fMap->GetUsedSlots(iroc) ) {
-      assert(fMap->slotUsed(iroc, islot));
-      makeidx(iroc,islot);
-      if (fDebugFile)
-	*fDebugFile << "CodaDecode::  crate, slot " << iroc << "  " << islot
-		    << "   Dev type  = " << crateslot[idx(iroc,islot)]->devType()
-		    << endl;
+  try {
+    for( auto iroc : fMap->GetUsedCrates() ) {
+      assert(fMap->crateUsed(iroc));
+      for( auto islot : fMap->GetUsedSlots(iroc) ) {
+        assert(fMap->slotUsed(iroc, islot));
+        makeidx(iroc, islot);
+        if( fDebugFile )
+          *fDebugFile << "CodaDecode::  crate, slot " << iroc << "  " << islot
+                      << "   Dev type  = " << crateslot[idx(iroc, islot)]->devType()
+                      << endl;
+      }
     }
+  }
+  catch( const exception& e ) {
+    cerr << e.what() << endl;
+    return HED_FATAL;
   }
 
   if (fDebugFile)

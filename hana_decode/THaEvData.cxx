@@ -33,6 +33,8 @@
 #include <algorithm>
 #include <cassert>
 #include <utility>
+#include <stdexcept>
+#include <sstream>
 
 using namespace std;
 using namespace Decoder;
@@ -332,7 +334,12 @@ void THaEvData::makeidx( UInt_t crate, UInt_t slot )
     if( fMap->slotClear(crate,slot) &&
         find(ALL(fSlotClear), idx) == fSlotClear.end() )
       fSlotClear.push_back(idx);
-    crateslot[idx]->loadModule(fMap.get());
+    if( crateslot[idx]->loadModule(fMap.get()) != SD_OK ) {
+      ostringstream ostr;
+      ostr << "Failed to initialize decoder for crate " << crate << " "
+           << "slot " << slot << ". Fix database or call expert.";
+      throw runtime_error(ostr.str());
+    }
   }
 }
 
