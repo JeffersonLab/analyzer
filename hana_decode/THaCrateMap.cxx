@@ -80,7 +80,8 @@ THaCrateMap::THaCrateMap( const char* db_filename )
 }
 
 //_____________________________________________________________________________
-UInt_t THaCrateMap::getScalerCrate( UInt_t word) const {
+UInt_t THaCrateMap::getScalerCrate( UInt_t word) const
+{
   for( UInt_t crate = 0; crate < crdat.size(); crate++ ) {
     const auto& cr = crdat[crate];
     if( !cr.crate_used ) continue;
@@ -96,7 +97,8 @@ UInt_t THaCrateMap::getScalerCrate( UInt_t word) const {
 }
 
 //_____________________________________________________________________________
-int THaCrateMap::setCrateType( UInt_t crate, const char* type ) {
+int THaCrateMap::setCrateType( UInt_t crate, const char* type )
+{
   assert(crate < crdat.size());
   string stype(type);
   CrateInfo_t& cr = crdat[crate];
@@ -121,7 +123,8 @@ int THaCrateMap::setCrateType( UInt_t crate, const char* type ) {
 
 //_____________________________________________________________________________
 int THaCrateMap::setModel( UInt_t crate, UInt_t slot, Int_t mod,
-                           UInt_t nchan, UInt_t ndata ) {
+                           UInt_t nchan, UInt_t ndata )
+{
   setUsed(crate, slot);
   CrateInfo_t& cr = crdat[crate];
   auto& slt = cr.sltdat[slot];
@@ -207,7 +210,8 @@ void THaCrateMap::setUnused( UInt_t crate, UInt_t slot )
 }
 
 //_____________________________________________________________________________
-Int_t THaCrateMap::readFile( FILE* fi, string& text ) {
+Int_t THaCrateMap::readFile( FILE* fi, string& text )
+{
   // Read contents of opened file 'fi' to 'text'
   if( !fi )
     return CM_ERR;
@@ -258,7 +262,8 @@ int THaCrateMap::init( FILE* fi, const char* fname )
 }
 
 //_____________________________________________________________________________
-int THaCrateMap::init(ULong64_t tloc) {
+int THaCrateMap::init(ULong64_t tloc)
+{
   // Initialize the crate map from the database.
   // 'tloc' is the time-stamp/index into the database's periods of validity.
 
@@ -269,7 +274,8 @@ int THaCrateMap::init(ULong64_t tloc) {
 }
 
 //_____________________________________________________________________________
-void THaCrateMap::print(ostream& os) const {
+void THaCrateMap::print(ostream& os) const
+{
   // Pretty-print crate map
   for( UInt_t roc = 0; roc < crdat.size(); roc++ ) {
     const CrateInfo_t& cr = crdat[roc];
@@ -295,11 +301,56 @@ void THaCrateMap::print(ostream& os) const {
 }
 
 //_____________________________________________________________________________
-int THaCrateMap::init(const string& the_map) {
+Int_t THaCrateMap::loadConfig( string& line, string& cfgstr )
+{
+  // Check if module configuration option is specified in 'line' and,
+  // if so, extract it and erase the option string from 'line'.
+  const char* const here = "THaCrateMap::loadConfig";
+  auto pos1 = line.find("cfg:");
+  auto pos2 = line.find("dbfile:");
+  bool have_cfg = (pos1 != string::npos);
+  bool have_dbf = (pos2 != string::npos);
+  if( have_cfg or have_dbf ) {
+    if( have_cfg and have_dbf ) {
+      ::Error(here, "Cannot specify both database file and options, "
+                    "line = \n%s", line.c_str());
+      return CM_ERR;
+    }
+    if( have_cfg ) {
+      cfgstr = line.substr(pos1 + 4);
+      line.erase(pos1);
+    } else {
+      string fname = line.substr(pos2 + 7);
+      Podd::Trim(fname);
+      errno = 0;
+      FILE* fi = Podd::OpenDBFile(fname.c_str(), fInitTime, here);
+      if ( !fi ) {
+        ::Error(here, "Error opening decoder module database file "
+                      "\"db_%s.dat\": %s\n line = %s",
+                fname.c_str(), StrError().c_str(), line.c_str() );
+        return CM_ERR;
+      }
+      if( readFile(fi, cfgstr) != CM_OK ) {
+        ::Error(here, "Error reading decoder module database file "
+                      "\"db_%s.dat\": %s", fname.c_str(), StrError().c_str());
+        fclose(fi);
+        return CM_ERR;
+      }
+      fclose(fi);
+      line.erase(pos2);
+    }
+    Podd::Trim(cfgstr);
+  }
+  return CM_OK;
+}
+
+//_____________________________________________________________________________
+int THaCrateMap::init(const string& the_map)
+{
   // initialize the crate-map according to the lines in the string 'the_map'
   // parse each line separately, to ensure that the format is correct
 
-  const char* const here = "THaCrateMap::init";
+  const char* const here = "THaCrateMap::init(string)";
 
   if ( the_map.empty() ) {
     // Warn if we didn't get any data
@@ -351,6 +402,17 @@ int THaCrateMap::init(const string& the_map) {
       continue; // onto the next line
     }
 
+    // Extract any configuration string given on the line and, if found,
+    // remove it from line and put a copy in cfgstr. This is primarily intended
+    // for bank-decoded VME and scaler modules.
+    string cfgstr;
+    auto code = crdat[crate].crate_code;
+    if( code == kVME /*or code == kScaler*/ ) {
+      Int_t st = loadConfig(line, cfgstr);
+      if( st != CM_OK )
+        return st;
+    }
+
     // The line is of the format:
     //        slot#  model#  [clear header  mask  nchan ndata ]
     // where clear, header, mask, nchan and ndata are optional interpreted in
@@ -387,6 +449,7 @@ int THaCrateMap::init(const string& the_map) {
       if( nread > 4 )
         slt.headmask = mask;
     }
+    slt.cfgstr = std::move(cfgstr);
   }
 
   for( auto& cr : crdat ) {

@@ -54,6 +54,7 @@ class THaCrateMap {
      Int_t  getBank( UInt_t crate, UInt_t slot ) const;  // Return bank number
      UInt_t getScalerCrate( UInt_t word) const;          // Return scaler crate if word=header
      const char* getScalerLoc( UInt_t crate ) const;     // Return scaler crate location
+     const char* getConfigStr( UInt_t crate, UInt_t slot ) const; // Configuration string
      UInt_t getNchan( UInt_t crate, UInt_t slot ) const; // Max number of channels
      UInt_t getNdata( UInt_t crate, UInt_t slot ) const; // Max number of data words
      bool crateUsed( UInt_t crate ) const;               // True if crate is used
@@ -91,6 +92,7 @@ class THaCrateMap {
        Int_t  bank;
        UInt_t nchan;
        UInt_t ndata;
+       std::string cfgstr;
        bool   used;
        bool   clear;
      };
@@ -110,6 +112,7 @@ class THaCrateMap {
 
      std::vector<UInt_t> used_crates;
 
+     Int_t  loadConfig( std::string& line, std::string& cfgstr );
      Int_t  setCrateType( UInt_t crate, const char* stype ); // set the crate type
      Int_t  setModel( UInt_t crate, UInt_t slot, Int_t mod,
                       UInt_t nchan= MAXCHAN,
@@ -229,6 +232,13 @@ const char* THaCrateMap::getScalerLoc( UInt_t crate ) const
 {
   assert( crate < crdat.size() );
   return crdat[crate].scalerloc.c_str();
+}
+
+inline
+const char* THaCrateMap::getConfigStr( UInt_t crate, UInt_t slot ) const
+{
+  assert( crate < crdat.size() && slot < crdat[crate].sltdat.size() );
+  return crdat[crate].sltdat[slot].cfgstr.c_str();
 }
 
 inline
