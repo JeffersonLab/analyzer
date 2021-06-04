@@ -811,7 +811,7 @@ template void THaAnalysisObject::WriteValue<Float_t>( Float_t val, int p=0, int 
 template void THaAnalysisObject::WriteValue<Int_t>( Int_t val, int p=0, int w=5 );
 
 template<>
-void THaAnalysisObject::WriteValue<UInt_t>( UInt_t val, int p, int w )
+void THaAnalysisObject::WriteValue<UInt_t>( UInt_t val, int /*p*/, int w )
 {
   // Helper function for printing debug information -- for unsigned int
   ios_base::fmtflags fmt = cout.flags();
