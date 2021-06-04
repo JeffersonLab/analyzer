@@ -77,7 +77,7 @@ def build_library(env, sotarget, src, extrahdrs = [], extradicthdrs = [],
     expected.
 
     A ROOT dictionary is generated from the headers and compiled into the library.
-    The otional "extradicthdrs" headers will be added to the list of headers used
+    The optional "extradicthdrs" headers will be added to the list of headers used
     for generating the dictionary.
 
     If the dictionary source file should have a different name than <sotarget>Dict.cxx,
@@ -154,13 +154,14 @@ def build_library(env, sotarget, src, extrahdrs = [], extradicthdrs = [],
             shlibsuffix = env.subst('$SHLIBSUFFIX')
         shlinkflags = ['-Wl,-install_name,'+'@rpath/'+libname_soname]
         if versioned:
-            shlinkflags.append(['-Wl,-compatibility_version,'+env.subst('$SOVERSION'),
-                                '-Wl,-current_version,'+env.subst('$VERSION')])
-        try:
-            for rp in env['RPATH']:
-                shlinkflags.append('-Wl,-rpath,'+rp)
-        except KeyError:
-            pass
+            shlinkflags.append('-Wl,-compatibility_version,'+env.subst('$SOVERSION'))
+            shlinkflags.append('-Wl,-current_version,'+env.subst('$VERSION'))
+        # SCons (as of version 4?) now seems to do this for us
+        # try:
+        #     for rp in env['RPATH']:
+        #         shlinkflags.append('-Wl,-rpath,'+rp)
+        # except KeyError:
+        #     pass
     else:
         print('build_library: Error: unsupported platform')
         Exit(3)
