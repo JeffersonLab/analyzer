@@ -33,6 +33,10 @@ public:
   }
 };
 
+using VectorUInt = std::vector<UInt_t>;
+// std::vector that does NOT zero-initialize its elements on resize()
+using VectorUIntNI = std::vector<UInt_t, default_init_allocator<UInt_t>>;
+
 } // namespace Decoder
 
 #endif //Podd_CustomAlloc_h_

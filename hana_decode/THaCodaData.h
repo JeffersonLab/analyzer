@@ -19,8 +19,10 @@
 #include "Rtypes.h"
 #include "TString.h"
 #include "Decoder.h"
-#include <cstdio>
-#include <memory>
+#include "CustomAlloc.h"
+#include <cstdio>   // for EOF
+#include <vector>
+#include <cassert>
 
 // Return codes from codaNNN routines
 #define CODA_OK     0      // OK
@@ -28,24 +30,54 @@
 #define CODA_ERROR  -128   // Generic error return code
 #define CODA_FATAL  -255   // Fatal error
 
-#define MAXEVLEN 100005   // Maximum size of events
 #define CODA_VERBOSE 1    // Errors explained verbosely (recommended)
 #define CODA_DEBUG  0     // Lots of printout (recommend to set = 0)
 
 namespace Decoder {
+
+// Dynamically-sized event buffer
+class EvtBuffer {
+public:
+  explicit EvtBuffer( UInt_t initial_size = 0 );
+
+  void    recordSize();
+  void    updateSize() {
+    if( (fNevents % fUpdateInterval) == 0 &&
+        fChanged && !fDidGrow && fSaved.size() == fMaxSaved )
+      updateImpl();
+  }
+  Bool_t  grow( UInt_t newsize = 0 );
+  UInt_t  operator[]( UInt_t i ) { assert(i < size()); return fBuffer[i]; }
+  UInt_t* get()        { return fBuffer.data(); }
+  UInt_t  size() const { return fBuffer.size(); }
+  void    reset();
+
+private:
+  VectorUIntNI  fBuffer;             // Raw data buffer
+  VectorUInt    fSaved;
+  UInt_t        fMaxSaved;
+  UInt_t        fNevents;
+  UInt_t        fUpdateInterval;
+  Bool_t        fChanged;
+  Bool_t        fDidGrow;
+
+  void updateImpl();
+};
 
 class THaCodaData {
 
 public:
 
    THaCodaData();
+   THaCodaData(const THaCodaData &fn) = delete;
+   THaCodaData& operator=(const THaCodaData &fn) = delete;
    virtual ~THaCodaData() = default;
    virtual Int_t codaOpen(const char* file_name, Int_t mode=1) = 0;
    virtual Int_t codaOpen(const char* file_name, const char* session, Int_t mode=1) = 0;
    virtual Int_t codaClose()=0;
    virtual Int_t codaRead()=0;
    UInt_t*       getEvBuffer() { return evbuffer.get(); }
-   virtual UInt_t getBuffSize() const { return MAXEVLEN; }
+   UInt_t        getBuffSize() const { return evbuffer.size(); }
    virtual Bool_t isOpen() const = 0;
    virtual Int_t getCodaVersion();
    Bool_t isGood() const { return fIsGood; }
@@ -54,16 +86,10 @@ protected:
    static Int_t ReturnCode( Int_t evio_retcode );
    void staterr(const char* tried_to, Int_t status) const;
 
-private:
-   THaCodaData(const THaCodaData &fn);
-   THaCodaData& operator=(const THaCodaData &fn);
-
-protected:
-
-   TString  filename;
-   Int_t    handle;       // EVIO data handle
-   std::unique_ptr<UInt_t>  evbuffer;     // Raw data
-   Bool_t   fIsGood;
+   EvtBuffer     evbuffer;    // Dynamically-sized event buffer
+   TString       filename;
+   Int_t         handle;       // EVIO data handle
+   Bool_t        fIsGood;
 
    ClassDef(THaCodaData,0) // Base class of CODA data (file, ET conn, etc)
 

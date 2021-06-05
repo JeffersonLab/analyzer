@@ -27,31 +27,36 @@ namespace Decoder {
 
 //Constructors
 
+//_____________________________________________________________________________
   THaCodaFile::THaCodaFile()
     : max_to_filt(0), maxflist(0), maxftype(0)
   {
     // Default constructor. Do nothing (must open file separately).
   }
 
+//_____________________________________________________________________________
   THaCodaFile::THaCodaFile(const char* fname, const char* readwrite)
     : max_to_filt(0), maxflist(0), maxftype(0)
   {
     // Standard constructor. Pass read or write flag
-    if( THaCodaFile::codaOpen(fname,readwrite) != CODA_OK )
-      fIsGood = false;
+    THaCodaFile::codaOpen(fname, readwrite);
   }
 
-  THaCodaFile::~THaCodaFile () {
+//_____________________________________________________________________________
+  THaCodaFile::~THaCodaFile ()
+  {
     //Destructor
     THaCodaFile::codaClose();
   }
 
+//_____________________________________________________________________________
   Int_t THaCodaFile::codaOpen(const char* fname, Int_t mode )
   {
     // Open CODA file 'fname' in read-only mode
     return codaOpen( fname, "r", mode );
   }
 
+//_____________________________________________________________________________
   Int_t THaCodaFile::codaOpen(const char* fname, const char* readwrite,
                               Int_t /* mode */ )
   {
@@ -63,6 +68,7 @@ namespace Decoder {
     return ReturnCode(status);
   }
 
+//_____________________________________________________________________________
   Int_t THaCodaFile::codaClose() {
 // Close the file. Do nothing if file not opened.
     if( !handle ) {
@@ -75,7 +81,7 @@ namespace Decoder {
     return ReturnCode(status);
   }
 
-
+//_____________________________________________________________________________
   Int_t THaCodaFile::codaRead() {
 // codaRead: Reads data from file, stored in evbuffer.
 // Must be called once per event.
@@ -87,13 +93,32 @@ namespace Decoder {
       }
       return ReturnCode(S_EVFILE_BADHANDLE);
     }
-    Int_t status = evRead(handle, getEvBuffer(), MAXEVLEN);
+    Int_t status = S_SUCCESS;
+    do {
+      evbuffer.updateSize();
+      status = evRead(handle, getEvBuffer(), getBuffSize());
+      if( status == S_EVFILE_TRUNC ) {
+        // At least with EVIO version 5.2, probably earlier and hopefully later
+        // versions too, evRead has not consumed any buffer data if this
+        // error occurs. Thus growing the buffer and retrying is safe.
+        // Unfortunately, the EVIO C-API does not provide any means to access
+        // the actual event length here, so we have to guess how much more
+        // space is needed.  TODO: Make an EVIO feature request?
+        if( !evbuffer.grow() )
+          break;
+      }
+    } while( status == S_EVFILE_TRUNC );
+
+    if( status == S_SUCCESS )
+      evbuffer.recordSize();
+
     fIsGood = (status == S_SUCCESS || status == EOF );
     staterr("read",status);
     return ReturnCode(status);
   }
 
 
+//_____________________________________________________________________________
   Int_t THaCodaFile::codaWrite(const UInt_t* evbuf) {
 // codaWrite: Writes data from 'evbuf' to file
     if( !handle ) {
@@ -110,6 +135,7 @@ namespace Decoder {
     return (handle!=0);
   }
 
+//_____________________________________________________________________________
 template<typename T>
 struct Equals {
   const T m_val;
@@ -117,6 +143,7 @@ struct Equals {
   bool operator()(T val) const { return val == m_val; }
 };
 
+//_____________________________________________________________________________
 Int_t THaCodaFile::filterToFile( const char* output_file )
 {
 // A call to filterToFile filters from present file to output_file
@@ -207,6 +234,7 @@ Int_t THaCodaFile::filterToFile( const char* output_file )
   return fIsGood ? fout_status : status;
 }
 
+//_____________________________________________________________________________
   void THaCodaFile::addEvTypeFilt(UInt_t evtype_to_filt)
 // Function to set up filtering by event type
   {
@@ -216,7 +244,7 @@ Int_t THaCodaFile::filterToFile( const char* output_file )
      evtypes.push_back(evtype_to_filt);
   }
 
-
+//_____________________________________________________________________________
   void THaCodaFile::addEvListFilt(UInt_t event_to_filt)
 // Function to set up filtering by list of event numbers
   {
@@ -226,12 +254,14 @@ Int_t THaCodaFile::filterToFile( const char* output_file )
      evlist.push_back(event_to_filt);
   }
 
+//_____________________________________________________________________________
   void THaCodaFile::setMaxEvFilt(UInt_t max_event)
 // Function to set up the max number of events to filter
   {
      max_to_filt = max_event;
   }
 
+//_____________________________________________________________________________
   void THaCodaFile::init(const char* fname) {
     if( filename != fname ) {
       codaClose();
@@ -239,7 +269,7 @@ Int_t THaCodaFile::filterToFile( const char* output_file )
     }
     handle = 0;
   }
-
 }
 
+//_____________________________________________________________________________
 ClassImp(Decoder::THaCodaFile)

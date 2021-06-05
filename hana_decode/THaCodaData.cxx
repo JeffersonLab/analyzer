@@ -13,11 +13,15 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaCodaData.h"
+#include "TMath.h"
 #include "evio.h"
 #include <cassert>
 #include <iostream>
-#include <cstring>  // for strdup
 #include <cerrno>
+#include <algorithm>
+#include <iterator>
+
+#define ALL(c) (c).begin(), (c).end()
 
 using namespace std;
 
@@ -26,7 +30,6 @@ namespace Decoder {
 //_____________________________________________________________________________
 THaCodaData::THaCodaData() :
   handle(0),
-  evbuffer{new UInt_t[MAXEVLEN]},  // Raw data
   fIsGood(true)
 {
 }
@@ -128,9 +131,166 @@ Int_t THaCodaData::ReturnCode( Int_t evio_retcode )
   default:
     return CODA_ERROR;
   }
-  return CODA_FATAL; // not reached
 }
 
+//=============================================================================
+static constexpr UInt_t kMaxBufSize = kMaxUInt / 16; // 1 GiB sanity size limit
+static constexpr UInt_t kInitBufSize = 1024;         // 4 kiB initial size
+
+// Dynamic event buffer class
+EvtBuffer::EvtBuffer( UInt_t initial_size ) :
+  fBuffer(std::max(std::min(initial_size, kMaxBufSize), kInitBufSize)),
+  fMaxSaved(11),  // make this odd for faster calculation of median
+  fNevents(0),
+  fUpdateInterval(1000),
+  fChanged(false),
+  fDidGrow(false)
+{
+  fSaved.reserve(fMaxSaved);
 }
+
+//_____________________________________________________________________________
+// Record fMaxSaved largest event sizes
+void EvtBuffer::recordSize()
+{
+  UInt_t evtsize = fBuffer[0] + 1;
+
+  if( fNevents < fMaxSaved || fSaved.empty() ) {
+    fSaved.push_back(evtsize);
+    fChanged = true;
+  } else {
+    auto it = min_element(ALL(fSaved));
+    assert(it != fSaved.end());
+    if( evtsize > *it ) {
+      fChanged = true;
+      if( fSaved.size() < fMaxSaved )
+        fSaved.push_back(evtsize);
+      else
+        *it = evtsize;
+    }
+  }
+
+  ++fNevents;
+  fDidGrow = false;
+}
+
+//_____________________________________________________________________________
+// Calculate median of values in vector 'vec'. Partially reorders 'vec'
+template<typename T, typename Alloc>
+static T Median( vector<T, Alloc>& vec )
+{
+  if( vec.empty() ) {
+    return T{};
+  }
+  auto n = vec.size() / 2;
+  nth_element( vec.begin(), vec.begin()+n, vec.end() );
+  auto med = vec[n];
+  if( !(vec.size() & 1) ) {
+    // even number of elements
+    auto med2 = *max_element( vec.begin(), vec.begin()+n );
+    assert(med2 <= med);
+    med = (med2 + med) / 2;
+  }
+  return med;
+}
+
+//_____________________________________________________________________________
+// Evaluate whether event buffer is too large based on event size history.
+// Shrink if necessary.
+void EvtBuffer::updateImpl()
+{
+  // Detect outliers in the group of largest event sizes. To arrive at a
+  // robust estimate, use median absolute deviation (MAD), not r.m.s., as the
+  // measure of dispersion. See, for example, https://arxiv.org/abs/1910.00229.
+
+  // Find median of saved event sizes.
+  UInt_t median = Median(fSaved);
+
+  // Calculate absolute deviations from median: devs[i] = |x[i]-median|
+  VectorUIntNI devs(fMaxSaved);
+  transform(ALL(fSaved), devs.begin(), [median]( UInt_t elem ) -> UInt_t {
+    return std::abs((Long64_t)elem - (Long64_t)median);
+  });
+
+  // Calculate MAD and scale by the conventional normalization factor
+  UInt_t MAD = TMath::Nint(1.4826 * Median(devs));
+
+  // Take largest non-outlier event size as estimate of the needed buffer size
+  UInt_t max_regular_event_size = median;
+  if( MAD > 0 ) {
+    constexpr UInt_t lambda = 3;  // outlier boundary in units of MADs
+    auto n = fSaved.size()/2;
+    sort(fSaved.begin()+n, fSaved.end());
+    for( auto rt = fSaved.rbegin(); rt != fSaved.rbegin()+n; ++rt ) {
+      UInt_t elem = *rt;
+      if( elem <= median + lambda * MAD ) {
+        max_regular_event_size = elem;
+        break;
+      }
+    }
+  }
+  // Provision 20% headroom
+  size_t newsize = std::min(UInt_t(1.2 * max_regular_event_size), kMaxBufSize);
+  fBuffer.resize(newsize);
+
+  // Shrink buffer if it could offer substantial memory savings
+  if( fBuffer.capacity() > 2 * newsize )
+    fBuffer.shrink_to_fit();
+
+  fChanged = false;
+}
+
+//_____________________________________________________________________________
+// Grow event buffer.
+// If newsize == 0 (default), use heuristics to guess a new size.
+// If newsize > size(), grow buffer to 'newsize'. Otherwise leave buffer as is.
+//
+// Returns false if buffer is already at maximum size.
+Bool_t EvtBuffer::grow( UInt_t newsize )
+{
+  if( size() == kMaxBufSize )
+    return false;
+
+  if( newsize == 0 ) {
+    UInt_t maybe_newsize = 0;
+    if( !fDidGrow && fNevents > fUpdateInterval ) {
+      // If we have accumulated history data, try a modest increase first
+      maybe_newsize = 2 * Median(fSaved);
+    }
+    if( maybe_newsize > size() ) {
+      newsize = maybe_newsize;
+    } else if( fNevents < fUpdateInterval/10 ) {
+      // Grow the buffer rapidly at the beginning of the analysis.
+      // If we overshoot, updateSize() will shrink it again later on.
+      newsize = 4 * size();
+    } else {
+      // Fallback for all other cases: Double the buffer size whenever it
+      // is found too small and try again.
+      newsize = 2 * size();
+    }
+  } else if( newsize <= size() ) {
+    return true;
+  }
+  if( newsize > kMaxBufSize)
+    newsize = kMaxBufSize;
+
+  fBuffer.resize(newsize);
+  fDidGrow = true;
+
+  return true;
+}
+
+//_____________________________________________________________________________
+// Reset to starting values
+void EvtBuffer::reset()
+{
+  fBuffer.clear();
+  fBuffer.shrink_to_fit();
+  fSaved.clear();
+  fChanged = false;
+  fDidGrow = false;
+}
+
+}  // namespace Decoder
 
 ClassImp(Decoder::THaCodaData)

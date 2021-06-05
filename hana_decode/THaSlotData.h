@@ -80,10 +80,6 @@ public:
 
 private:
 
-       using VectorUInt = std::vector<UInt_t>;
-       // std::vector that does NOT zero-initialize its elements on resize()
-       using VectorUIntNI = std::vector<UInt_t, default_init_allocator<UInt_t>>;
-
        UInt_t crate;
        UInt_t slot;
        std::string device;

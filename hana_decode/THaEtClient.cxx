@@ -260,7 +260,7 @@ Int_t THaEtClient::codaRead()
   et_event_getdata(evs[nused], (void **) &data);
   et_event_getlength(evs[nused], &nbytes);
   lencpy = (nbytes < bpi*MAXEVLEN) ? nbytes : bpi*MAXEVLEN;
-  memcpy(evbuffer,data,lencpy);
+  memcpy(evbuffer.get(), data, lencpy);
   nused++;
   if (nbytes > bpi*MAXEVLEN) {
       cout<<"\nET:codaRead:ERROR:  CODA event truncated"<<endl;

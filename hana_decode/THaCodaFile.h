@@ -29,6 +29,8 @@ public:
 
   THaCodaFile();
   explicit THaCodaFile(const char* filename, const char* rw="r");
+  THaCodaFile(const THaCodaFile &fn) = delete;
+  THaCodaFile& operator=(const THaCodaFile &fn) = delete;
   virtual ~THaCodaFile();
   virtual Int_t codaOpen(const char* filename, Int_t mode=1);
   virtual Int_t codaOpen(const char* filename, const char* rw, Int_t mode=1);
@@ -43,8 +45,6 @@ public:
 
 private:
 
-  THaCodaFile(const THaCodaFile &fn);
-  THaCodaFile& operator=(const THaCodaFile &fn);
   void init(const char* fname="");
   UInt_t max_to_filt;
   UInt_t maxflist,maxftype;
