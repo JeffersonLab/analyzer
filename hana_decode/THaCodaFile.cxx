@@ -86,7 +86,7 @@ namespace Decoder {
 // codaRead: Reads data from file, stored in evbuffer.
 // Must be called once per event.
     if( !handle ) {
-      if( CODA_VERBOSE ) {
+      if (verbose > 0) {
         cout << "codaRead ERROR: tried to access a file with handle = 0" << endl;
         cout << "You need to call codaOpen(filename)" << endl;
         cout << "or use the constructor with (filename) arg" << endl;
@@ -152,7 +152,7 @@ Int_t THaCodaFile::filterToFile( const char* output_file )
 // were loaded, it makes a copy of the input file (i.e. no filtering).
 
   if( filename == output_file ) {
-    if( CODA_VERBOSE ) {
+    if (verbose > 0) {
       cout << "filterToFile: ERROR: ";
       cout << "Input and output files cannot be same " << endl;
       cout << "This is to protect you against overwriting data" << endl;
@@ -160,7 +160,7 @@ Int_t THaCodaFile::filterToFile( const char* output_file )
     return CODA_ERROR;
   }
   if( !gSystem->AccessPathName(output_file, kReadPermission) ) {
-    if( CODA_VERBOSE ) {
+    if (verbose > 0) {
       cout << "filterToFile:  ERROR:  ";
       cout << "Output file `" << output_file << "' exists " << endl;
       cout << "You must remove it by hand first. " << endl;
@@ -181,7 +181,7 @@ Int_t THaCodaFile::filterToFile( const char* output_file )
     UInt_t* rawbuff = getEvBuffer();
     UInt_t evtype = rawbuff[1] >> 16;
     UInt_t evnum = rawbuff[4];
-    if( CODA_DEBUG ) {
+    if (verbose > 1) {
       cout << "Input evtype " << dec << evtype;
       cout << "  evnum " << evnum << endl;
       cout << "max_to_filt = " << max_to_filt << endl;
@@ -208,12 +208,12 @@ Int_t THaCodaFile::filterToFile( const char* output_file )
       continue;
 
     nfilt++;
-    if( CODA_DEBUG ) {
+    if (verbose > 1) {
       cout << "Filtering event, nfilt " << dec << nfilt << endl;
     }
     fout_status = fout->codaWrite(getEvBuffer());
     if( fout_status != CODA_OK ) {
-      if( CODA_VERBOSE ) {
+      if (verbose > 0) {
         cout << "Error in filterToFile ! " << endl;
         cout << "codaWrite returned status " << fout_status << endl;
       }

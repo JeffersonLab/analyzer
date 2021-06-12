@@ -222,12 +222,12 @@ Int_t THaEtClient::codaRead()
          printf("-> Need a larger value than MAXEVLEN = %d \n",MAXEVLEN);
          return CODA_ERROR;
       }
-      if (CODA_DEBUG) {
-  	 cout<<"\n\n===== Event "<<j<<"  length "<<event_size<<endl;
-	 pdata = data;
-         for (Int_t i=0; i < event_size; i++, pdata++) {
-           cout<<"evbuff["<<dec<<i<<"] = "<<*pdata<<" = 0x"<<hex<<*pdata<<endl;
-	 }
+      if (verbose > 1) {
+        cout<<"\n\n===== Event "<<j<<"  length "<<event_size<<endl;
+        pdata = data;
+        for (Int_t i=0; i < event_size; i++, pdata++) {
+          cout<<"evbuff["<<dec<<i<<"] = "<<*pdata<<" = 0x"<<hex<<*pdata<<endl;
+        }
       }
     }
 
@@ -245,9 +245,10 @@ Int_t THaEtClient::codaRead()
          ratesum += daqrate;
          double avgrate  = ratesum/++xcnt;
 
-         if (CODA_VERBOSE)
+         if (verbose > 0) {
            printf("ET rate %4.1f Hz in %2.0f sec, avg %4.1f Hz\n",
-          	      daqrate, tdiff, avgrate);
+                  daqrate, tdiff, avgrate);
+         }
          if (waitflag != 0) {
            timeout = (avgrate > FAST) ? SMALL_TIMEOUT : BIG_TIMEOUT;
          }
