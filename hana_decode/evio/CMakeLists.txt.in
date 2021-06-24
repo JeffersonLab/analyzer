@@ -30,6 +30,7 @@ target_compile_options(${LIBNAME}
   PRIVATE
     $<$<CONFIG:Debug>:-O0>
     $<$<CONFIG:RelWithDebInfo>:-fno-omit-frame-pointer>
+    -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable
   )
 set_target_properties(${LIBNAME} PROPERTIES
   SOVERSION ${PROJECT_VERSION_MAJOR}
