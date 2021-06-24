@@ -1,12 +1,11 @@
 # Fetch EVIO archive (currently from our GitHub mirror) and prepare for building the C-library
 
 message(STATUS "Will build local copy of EVIO")
-
 set(EVIO_VERSION 5.2)
-set(repo hallac_evio)
-set(release hallac-evio-${EVIO_VERSION})
+set(repo evio)
+set(release v${EVIO_VERSION})
 set(tarfile ${release}.tar.gz)
-set(EVIO_HASH cc16b9f0d3a7d09e8928ea0fc1119047)
+set(EVIO_HASH 41cf675cc38cf783831cb5368ce12700)
 
 set(EVIO_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/evio/src)
 set(EVIO_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/evio/build)
