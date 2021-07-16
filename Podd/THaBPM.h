@@ -22,7 +22,6 @@ public:
   virtual ~THaBPM();
 
   virtual void   Clear( Option_t* ="" );
-  virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
   virtual Int_t  Decode( const THaEvData& );
   virtual Int_t  Process();
 
@@ -52,6 +51,11 @@ protected:
 
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );
+
+  bool              CheckHitInfo( const DigitizerHitInfo_t& hitinfo ) const;
+  virtual OptUInt_t LoadData( const THaEvData& evdata,
+                              const DigitizerHitInfo_t& hitinfo );
+  virtual Int_t     StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
 
   ClassDef(THaBPM,0)   // Generic BPM class
 };

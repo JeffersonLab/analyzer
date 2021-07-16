@@ -17,8 +17,9 @@
 #include "VarType.h"
 #include <vector>
 #include <stdexcept>
+#include <cassert>
 
-static const UInt_t NCHAN = 4;
+static const Int_t NCHAN = 4;
 
 using namespace std;
 
@@ -132,7 +133,7 @@ void THaBPM::Clear( Option_t* opt )
   THaBeamDet::Clear(opt);
   fPosition.SetXYZ(0., 0., -10000.);
   fDirection.SetXYZ(0., 0., 1.);
-  for( UInt_t k = 0; k < NCHAN; ++k ) {
+  for( Int_t k = 0; k < NCHAN; ++k ) {
     fRawSignal(k) = -1;
     fCorSignal(k) = -1;
   }
@@ -147,7 +148,7 @@ Int_t THaBPM::Decode( const THaEvData& evdata )
   // copies raw data into local variables
   // performs pedestal subtraction
 
-  UInt_t nfired = THaBeamDet::Decode(evdata);
+  Int_t nfired = THaBeamDet::Decode(evdata);
 
   if( nfired == NCHAN ) {
     fCorSignal = fRawSignal - fPedestals;
@@ -160,16 +161,34 @@ Int_t THaBPM::Decode( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
+bool THaBPM::CheckHitInfo( const DigitizerHitInfo_t& hitinfo ) const
+{
+  Int_t k = hitinfo.lchan;
+  if( k >= NCHAN || fRawSignal(k) != -1 ) {
+    Warning(Here("Decode"), "Illegal detector channel %d", k);
+    return false;
+  }
+  return true;
+}
+
+//_____________________________________________________________________________
+OptUInt_t THaBPM::LoadData( const THaEvData& evdata,
+                            const DigitizerHitInfo_t& hitinfo )
+{
+  if( !CheckHitInfo(hitinfo) )
+    return nullopt;
+  return THaBeamDet::LoadData(evdata, hitinfo);
+}
+
+//_____________________________________________________________________________
 Int_t THaBPM::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   // Store 'data' from single hit in channel 'hitinfo'. Called from Decode()
 
-  UInt_t k = hitinfo.lchan;
-  if( k < NCHAN && fRawSignal(k) == -1 ) {
-    fRawSignal(k) = data;
-  } else
-    Warning(Here("StoreHit"), "Illegal detector channel %d", k);
+  Int_t k = hitinfo.lchan;
+  assert(k >= 0 && k < NCHAN && fRawSignal(k) == -1); // else bug in LoadData
 
+  fRawSignal(k) = data;
   return 0;
 }
 
@@ -183,7 +202,7 @@ Int_t THaBPM::Process()
   // to transform it into the HCS
   // directions are not calculated, they are always set parallel to z
 
-  for( UInt_t k = 0; k < NCHAN; k += 2 ) {
+  for( Int_t k = 0; k < NCHAN; k += 2 ) {
     Double_t ap = fCorSignal(k);
     Double_t am = fCorSignal(k + 1);
     if( ap + am != 0.0 ) {
@@ -203,5 +222,5 @@ Int_t THaBPM::Process()
   return 0;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 ClassImp(THaBPM)

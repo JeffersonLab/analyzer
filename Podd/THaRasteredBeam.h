@@ -1,27 +1,28 @@
 #ifndef Podd_THaRasteredBeam_h_
 #define Podd_THaRasteredBeam_h_
 
-//////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // THaRasteredBeam
 //
-//////////////////////////////////////////////////////////////////////////
+// Apparatus describing a rastered beam that is analyzed using event-by-event
+// raster currents.
+//
+////////////////////////////////////////////////////////////////////////////////
 
 #include "THaBeam.h"
 
 class THaRasteredBeam : public THaBeam {
 
 public:
-  THaRasteredBeam( const char* name, const char* description ) ;
+  THaRasteredBeam( const char* name, const char* description,
+                   bool do_setup = true );
 
-  virtual ~THaRasteredBeam() {}
-  
-  virtual Int_t Reconstruct() ;
+  virtual Int_t Reconstruct();
 
 protected:
 
-
-  ClassDef(THaRasteredBeam,0)    // A beam with rastered beam, analyzed event by event using raster currents
+  ClassDef(THaRasteredBeam,0)  // Rastered beam from event-wise raster currents
 };
 
 #endif

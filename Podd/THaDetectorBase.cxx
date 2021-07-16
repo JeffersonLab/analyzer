@@ -128,14 +128,19 @@ Int_t THaDetectorBase::FillDetMap( const vector<Int_t>& values, UInt_t flags,
   // See THaDetMap::Fill for documentation.
 
   Int_t ret = fDetMap->Fill( values, flags );
+  if( ret > 0 )
+    return ret;
   if( ret == 0 ) {
     Error( Here(here), "No detector map entries found. Check database." );
   } else if( ret == -1 ) {
     Error( Here(here), "Unknown hardware module number. "
                        "Check database or add module in THaDetMap.cxx." );
+  } else if( ret == -128 ) {
+    Error( Here(here), "Bad flag combination for filling "
+                       "detector map. Call expert." );
   } else if( ret < 0 ) {
     Error( Here(here), "Invalid detector map data format "
-	   "(wrong number of values). Check database." );
+                       "(wrong number of values). Check database." );
   }
   return ret;
 }
@@ -417,8 +422,13 @@ Int_t THaDetectorBase::Decode( const THaEvData& evdata )
     const auto& hitinfo = *hitIter;
     if( hitinfo.nhit > 1 ) {
       // Multiple hits in a channel (usually noise)
-      MultipleHitWarning(hitinfo, here);
-      has_warning = true;
+      // For multifunction modules, assume "hit" is a data word index, so
+      // don't log anything but assume the user simply wants the first word.
+      if( hitinfo.modtype != Decoder::ChannelType::kMultiFunctionADC and
+          hitinfo.modtype != Decoder::ChannelType::kMultiFunctionTDC ) {
+        MultipleHitWarning(hitinfo, here);
+        has_warning = true;
+      }
     }
 
     // Get the data for this hit
