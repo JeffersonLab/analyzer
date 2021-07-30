@@ -128,7 +128,7 @@ THaAnalyzer::~THaAnalyzer()
 {
   // Destructor.
 
-  Close();
+  THaAnalyzer::Close();
   DeleteContainer(fPostProcess);
   DeleteContainer(fEvtHandlers);
   DeleteContainer(fInterStage);
@@ -521,7 +521,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     Error( here, "failed to create output file %s. Check file/directory "
 	   "permissions.", fOutFileName.Data() );
     Close();
-    return -10;
+    return -14;
   }
   fFile->SetCompressionLevel(fCompress);
 
@@ -541,7 +541,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
       // Don't allow a new event in the middle of the analysis!
       Error( here, "Cannot change event structure for continuing analysis. "
 	     "Close() this analysis, then Init() again." );
-      return 254;
+      return -254;
     } else if( fIsInit ) {
       // If previously initialized, we might have to clean up first.
       // If we had automatically allocated an event before, and now the
@@ -584,7 +584,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     if( !fEvData ) {
       Error( here, "Failed to create decoder object. "
 	     "Something is very wrong..." );
-      return 241;
+      return -241;
     }
     new_decoder = true;
   }
@@ -594,7 +594,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   if( fWantCodaVers > 0 && run->SetDataVersion(fWantCodaVers) < 0 ) {
     Error( here, "Failed to set CODA version %d for run. Call expert.",
         fWantCodaVers );
-    return 242;
+    return -242;
   }
   // Make sure the run is initialized.
   bool run_init = false;
@@ -630,7 +630,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
 	cin >> c;
       }
       if( c != 'y' && c != 'Y' )
-	return 240;
+	return -240;
     }
   }
 #endif
@@ -642,7 +642,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     delete fRun;
     fRun = static_cast<THaRunBase*>(run->IsA()->New());
     if( !fRun )
-      return 252; // FIXME: arbitrary
+      return -252; // FIXME: arbitrary
     *fRun = *run;  // Copy the run via its virtual operator=
   }
 

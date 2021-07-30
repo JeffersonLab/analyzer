@@ -31,7 +31,7 @@ class TObjArray;
 class THaAnalysisObject : public TNamed {
   
 public:
-  enum EStatus { kOK, kNotinit, kInitError, kFileError };
+  enum EStatus { kOK = 0, kInitError = -8, kFileError = -9, kNotinit = -10 };
   enum EType   { kVarDef, kRVarDef };
   enum EMode   { kDefine, kDelete };
 
