@@ -16,7 +16,6 @@
 
 #include "THaUnRasteredBeam.h"
 #include "THaBPM.h"
-#include "TDatime.h"
 #include "TList.h"
 
 using namespace std;
@@ -25,16 +24,17 @@ ClassImp(THaUnRasteredBeam)
 
 //_____________________________________________________________________________
 
-THaUnRasteredBeam::THaUnRasteredBeam( const char* name, 
-				      const char* description,
-				      Int_t runningsum_depth )
+THaUnRasteredBeam::THaUnRasteredBeam( const char* name, const char* description,
+                                      Int_t runningsum_depth, bool do_setup )
   : THaBeam( name, description ), fRunningSumDepth(runningsum_depth),
     fRunningSumWrap(false), fRunningSumNext(0)
 {
 
 
-  AddDetector( new THaBPM("BPMA","1st bpm",this) );
-  AddDetector( new THaBPM("BPMB","2nd bpm",this) );
+  if( do_setup ) {
+    AddDetector( new THaBPM("BPMA","1st bpm",this) );
+    AddDetector( new THaBPM("BPMB","2nd bpm",this) );
+  }
 
   if (fRunningSumDepth>1) {
     fRSPosition.clear();
@@ -61,7 +61,7 @@ Int_t THaUnRasteredBeam::Reconstruct()
   TIter nextDet( fDetectors );
   nextDet.Reset();
   for( auto& thePos : pos ) {
-    auto* theBeamDet = static_cast<THaBeamDet*>( nextDet() );
+    auto* theBeamDet = dynamic_cast<THaBeamDet*>( nextDet() );
     if( theBeamDet ) {
       theBeamDet->Process();
       thePos = theBeamDet->GetPosition();
@@ -72,7 +72,7 @@ Int_t THaUnRasteredBeam::Reconstruct()
   }
 
   // Process any other detectors we may have
-  while( auto* theBeamDet = static_cast<THaBeamDet*>(nextDet()) ) {
+  while( auto* theBeamDet = dynamic_cast<THaBeamDet*>(nextDet()) ) {
     theBeamDet->Process();
   }
 

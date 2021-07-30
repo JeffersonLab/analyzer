@@ -9,14 +9,15 @@ set(LIBNAME HallA)
 set(src
   FADCData.cxx                 FadcBPM.cxx                  FadcCherenkov.cxx
   FadcRaster.cxx               FadcRasteredBeam.cxx         FadcScintillator.cxx
-  FadcShower.cxx               THaADCHelicity.cxx           THaDecData.cxx
-  THaG0Helicity.cxx            THaG0HelicityReader.cxx      THaHRS.cxx
-  THaHelicity.cxx              THaQWEAKHelicity.cxx         THaQWEAKHelicityReader.cxx
-  THaS2CoincTime.cxx           THaVDC.cxx                   THaVDCAnalyticTTDConv.cxx
-  THaVDCChamber.cxx            THaVDCCluster.cxx            THaVDCHit.cxx
-  THaVDCPlane.cxx              THaVDCPoint.cxx              THaVDCPointPair.cxx
-  THaVDCTimeToDistConv.cxx     THaVDCTrackID.cxx            THaVDCWire.cxx
-  TrigBitLoc.cxx               TwoarmVDCTimeCorrection.cxx  VDCeff.cxx
+  FadcShower.cxx               FadcUnRasteredBeam.cxx       THaADCHelicity.cxx
+  THaDecData.cxx               THaG0Helicity.cxx            THaG0HelicityReader.cxx
+  THaHRS.cxx                   THaHelicity.cxx              THaQWEAKHelicity.cxx
+  THaQWEAKHelicityReader.cxx   THaS2CoincTime.cxx           THaVDC.cxx
+  THaVDCAnalyticTTDConv.cxx    THaVDCChamber.cxx            THaVDCCluster.cxx
+  THaVDCHit.cxx                THaVDCPlane.cxx              THaVDCPoint.cxx
+  THaVDCPointPair.cxx          THaVDCTimeToDistConv.cxx     THaVDCTrackID.cxx
+  THaVDCWire.cxx               TrigBitLoc.cxx               TwoarmVDCTimeCorrection.cxx
+  VDCeff.cxx
   )
 
 string(REPLACE .cxx .h headers "${src}")

@@ -13,11 +13,12 @@
 class THaUnRasteredBeam : public THaBeam {
 
 public:
-  THaUnRasteredBeam( const char* name, const char* description, Int_t runningsum_depth = 0 ) ;
+  THaUnRasteredBeam( const char* name, const char* description,
+                     Int_t runningsum_depth = 0, bool do_setup = true );
 
   virtual ~THaUnRasteredBeam() = default;
   
-  virtual Int_t Reconstruct() ;
+  virtual Int_t Reconstruct();
 
   void ClearRunningSum();
 
@@ -32,7 +33,7 @@ protected:
   TVector3 fRSAvPos;
   TVector3 fRSAvDir;   
 
-  ClassDef(THaUnRasteredBeam,0)    // A beam with unrastered beam, analyzed event by event
+  ClassDef(THaUnRasteredBeam,0)  // Unrastered beam from two BPMs
 };
 
 #endif
