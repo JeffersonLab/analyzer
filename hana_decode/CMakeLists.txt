@@ -28,6 +28,7 @@ endif()
 #----------------------------------------------------------------------------
 # Sources and headers
 set(src
+  VETROCModule.cxx
   Caen1190Module.cxx
   Caen775Module.cxx
   Caen792Module.cxx

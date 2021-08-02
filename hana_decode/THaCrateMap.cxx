@@ -145,7 +145,7 @@ int THaCrateMap::SetModelSize( UInt_t crate, UInt_t slot, UInt_t model )
   // Set the max number of channels and data words for some known modules
   assert( crate < crdat.size() && slot < crdat[crate].sltdat.size() );
   struct ModelPar_t { UInt_t model, nchan, ndata; };
-  static const array<ModelPar_t, 18> modelpar = {{
+  static const array<ModelPar_t, 19> modelpar = {{
     { 1875, 64, 512 },  // Detector TDC
     { 1877, 96, 672 },  // Wire-chamber TDC
     { 1881, 64, 64 },   // Detector ADC
@@ -164,6 +164,7 @@ int THaCrateMap::SetModelSize( UInt_t crate, UInt_t slot, UInt_t model )
     { 792, 32, 32 },     // CAEN V792 QDC
     { 1190, 128, 1024 }, //CAEN 1190A
     { 250, 16, 20000 },  // FADC 250
+//    { 526, 128, 1024 },  // VETROC
   }};
   const auto* item =
     find_if(ALL(modelpar), [model]( const ModelPar_t& modelParam ) { return model == modelParam.model; });

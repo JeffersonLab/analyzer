@@ -29,6 +29,7 @@ namespace Decoder {
   class F1TDCModule;
   class Caen775Module;
   class Caen1190Module;
+//  class VETROCModule;
 
   static const UInt_t MAXROC = 32;
   static const Int_t  MAXBANK = (1<<16)-1;   // bank numbers are uint16_t
@@ -55,7 +56,7 @@ namespace Decoder {
 
 
   enum class ChannelType { kUndefined, kADC, kCommonStopTDC, kCommonStartTDC,
-    kMultiFunctionADC, kMultiFunctionTDC };
+    kMultiFunctionADC, kMultiFunctionTDC};
 }
 
 

@@ -44,6 +44,7 @@ static const vector<ModuleDef> module_list {
   { 6401, ChannelType::kCommonStopTDC },
   { 1190, ChannelType::kCommonStopTDC },
   { 250,  ChannelType::kMultiFunctionADC },
+//  { 526,  ChannelType::kTDC },
 };
 
 //_____________________________________________________________________________
