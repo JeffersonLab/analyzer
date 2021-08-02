@@ -247,11 +247,15 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
 
   typedef vector<Int_t>::size_type vsiz_t;
 
+  if( (flags & kFillLogicalChannel) && (flags & kSkipLogicalChannel) )
+    // Bad combination of flags
+    return -128;
+
   if( (flags & kDoNotClear) == 0 )
     Clear();
 
   vsiz_t tuple_size = 4;
-  if( flags & kFillLogicalChannel )
+  if( flags & kFillLogicalChannel || flags & kSkipLogicalChannel )
     tuple_size++;
   if( flags & kFillModel )
     tuple_size++;
@@ -292,6 +296,9 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
         // methods will not be affected.
         fStartAtZero = true;
     } else {
+      if( flags & kSkipLogicalChannel ) {
+        ++k;
+      }
       first = prev_first + prev_nchan;
     }
     if( flags & kFillModel )

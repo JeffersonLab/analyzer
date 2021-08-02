@@ -92,6 +92,7 @@ public:
   // Flags for Fill()
   enum EFillFlags {
     kDoNotClear          = BIT(0),    // Don't clear the map first
+    kSkipLogicalChannel  = BIT(9),    // Parse but ignore the logical channel number
     kFillLogicalChannel  = BIT(10),   // Parse the logical channel number
     kFillModel           = BIT(11),   // Parse the model number
     kFillRefIndex        = BIT(12),   // Parse the reference index
@@ -175,6 +176,7 @@ public:
     public:
       HitInfo_t() :
         module{nullptr}, type{Decoder::ChannelType::kUndefined},
+        modtype{Decoder::ChannelType::kUndefined},
         ev{kMaxUInt}, crate{kMaxUInt}, slot{kMaxUInt}, chan{kMaxUInt}, nhit{0},
         hit{kMaxUInt}, lchan{-1} {}
       void set_crate_slot( const THaDetMap::Module* mod ) {
@@ -183,15 +185,17 @@ public:
         else if( mod->IsTDC() )
           type = mod->IsCommonStart() ? Decoder::ChannelType::kCommonStartTDC
                                       : Decoder::ChannelType::kCommonStopTDC;
+        modtype = mod->type;
         crate = mod->crate;
         slot  = mod->slot;
       }
       void reset() {
-        module = nullptr; type = Decoder::ChannelType::kUndefined;
+        module = nullptr; type = modtype = Decoder::ChannelType::kUndefined;
         crate = slot = chan = hit = kMaxUInt; nhit = 0; lchan = -1;
       }
       Decoder::Module*     module; // Current frontend module being decoded
-      Decoder::ChannelType type;   // Type of measurement recorded in current channel
+      Decoder::ChannelType type;   // Measurement type for current channel (ADC/TDC)
+      Decoder::ChannelType modtype; // Module type (ADC/TDC/MultiFunctionADC etc.)
       UInt_t  ev;      // Event number (for error messages)
       UInt_t  crate;   // Hardware crate
       UInt_t  slot;    // Hardware slot

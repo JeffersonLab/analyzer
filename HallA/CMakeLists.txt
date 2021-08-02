@@ -8,7 +8,8 @@ set(LIBNAME HallA)
 # Sources and headers
 set(src
   FADCData.cxx                 FadcBPM.cxx                  FadcCherenkov.cxx
-  FadcScintillator.cxx         FadcShower.cxx               THaADCHelicity.cxx
+  FadcRaster.cxx               FadcRasteredBeam.cxx         FadcScintillator.cxx
+  FadcShower.cxx               FadcUnRasteredBeam.cxx       THaADCHelicity.cxx
   THaDecData.cxx               THaG0Helicity.cxx            THaG0HelicityReader.cxx
   THaHRS.cxx                   THaHelicity.cxx              THaQWEAKHelicity.cxx
   THaQWEAKHelicityReader.cxx   THaS2CoincTime.cxx           THaVDC.cxx

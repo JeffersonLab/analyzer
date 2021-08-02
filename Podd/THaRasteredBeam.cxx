@@ -1,39 +1,34 @@
 //*-- Author :    Bodo Reitz April 2003
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 //
 // THaRasteredBeam
 //
-// Apparatus describing an rastered beam.
-// 
-//////////////////////////////////////////////////////////////////////////
+// Apparatus describing a rastered beam that is analyzed using event-by-event
+// raster currents.
+//
+///////////////////////////////////////////////////////////////////////////////
 
 #include "THaRasteredBeam.h"
 #include "THaRaster.h"
-#include "TMath.h"
-#include "TDatime.h"
 #include "TList.h"
-
-#include "VarDef.h"
-
 
 ClassImp(THaRasteredBeam)
 
 //_____________________________________________________________________________
-
-THaRasteredBeam::THaRasteredBeam( const char* name, const char* description ) :
-    THaBeam( name, description ) 
+THaRasteredBeam::THaRasteredBeam( const char* name, const char* description,
+                                  bool do_setup )
+  : THaBeam( name, description )
 {
-  AddDetector( new THaRaster("Raster","raster",this) );
+  if( do_setup )
+    AddDetector(new THaRaster("Raster", "raster", this));
 }
-
 
 //_____________________________________________________________________________
 Int_t THaRasteredBeam::Reconstruct()
 {
 
   TIter nextDet( fDetectors ); 
-
   nextDet.Reset();
 
   // This apparatus assumes that there is only one detector 
@@ -41,10 +36,7 @@ Int_t THaRasteredBeam::Reconstruct()
   // detector in the list will be used to get the beam position
   // the others will be processed
 
-  
-
-  if (THaBeamDet* theBeamDet=
-      static_cast<THaBeamDet*>( nextDet() )) {
+  if( auto* theBeamDet = dynamic_cast<THaBeamDet*>( nextDet() ) ) {
     theBeamDet->Process();
     fPosition = theBeamDet->GetPosition();
     fDirection = theBeamDet->GetDirection();
@@ -54,15 +46,13 @@ Int_t THaRasteredBeam::Reconstruct()
 	   "Beamline Detectors Missing in Detector List" );
   }
 
-
   // Process any other detectors that may have been added (by default none)
-  while (THaBeamDet * theBeamDet=
-	 static_cast<THaBeamDet*>( nextDet() )) {
-    theBeamDet->Process();
+  while( TObject* obj = nextDet() ) {
+    if( auto* theBeamDet = dynamic_cast<THaBeamDet*>(obj) )
+      theBeamDet->Process();
   }
 
   Update();
 
   return 0;
-
 }

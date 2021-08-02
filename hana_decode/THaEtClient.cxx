@@ -16,18 +16,14 @@
 #include "THaEtClient.h"
 #include <iostream>
 #include <cstdlib>
-#include <unistd.h>
 #include <cerrno>
-#include <climits>
-#include <cfloat>
 #include <cstring>
-#include <strings.h>
-#include <ctime>
-#include <sys/time.h>  // for timespec
-#include <netdb.h>
+#include <ctime>        // for timespec
+#include <stdexcept>
+#include "evio.h"       // for evioswap
+#include "et_private.h" // for ET_VERSION
 
 using namespace std;
-
 
 static const int FAST          = 25;
 static const int SMALL_TIMEOUT = 10;
@@ -36,9 +32,9 @@ static const int BIG_TIMEOUT   = 20;
 namespace Decoder {
 
 // Common member initialization for our constructors
-#define initflags \
+#define initflags                                       \
 nread(0), nused(0), timeout(BIG_TIMEOUT),               \
-id(0), sconfig(0), my_stat(0), my_att(0), openconfig(0),\
+id(0), my_att(0),                                       \
 daqhost(nullptr), session(nullptr), etfile(nullptr),    \
 waitflag(0), didclose(0), notopened(0), firstread(1),   \
 firstRateCalc(1), evsum(0), xcnt(0), daqt1(-1), ratesum(0)
@@ -79,6 +75,7 @@ Int_t THaEtClient::init(const char* mystation)
     return CODA_ERROR;
   }
   strcpy(station,mystation);
+  et_openconfig openconfig{};
   et_open_config_init(&openconfig);
   et_open_config_sethost(openconfig, daqhost);
   et_open_config_setcast(openconfig, ET_DIRECT);
@@ -91,6 +88,7 @@ Int_t THaEtClient::init(const char* mystation)
     return CODA_ERROR;
   }
   et_open_config_destroy(openconfig);
+  et_statconfig sconfig{};
   et_station_config_init(&sconfig);
   et_station_config_setuser(sconfig, ET_STATION_USER_MULTI);
   et_station_config_setrestore(sconfig, ET_STATION_RESTORE_OUT);
@@ -98,8 +96,9 @@ Int_t THaEtClient::init(const char* mystation)
   et_station_config_setcue(sconfig, 100);
   et_station_config_setselect(sconfig, ET_STATION_SELECT_ALL);
   et_station_config_setblock(sconfig, ET_STATION_NONBLOCKING);
-  Int_t status;
-  if ((status = et_station_create(id, &my_stat, station, sconfig)) < ET_OK) {
+  et_stat_id my_stat{};
+  Int_t status = et_station_create(id, &my_stat, station, sconfig);
+  if (status < ET_OK) {
     if (status == ET_ERROR_EXISTS) {
       // ok
     }
@@ -153,20 +152,15 @@ Int_t THaEtClient::codaRead()
   //  To try to use network efficiently, it actually gets
   //  the events in chunks, and passes them to the user.
 
-  et_event *evs[ET_CHUNK_SIZE];
-  struct timespec twait;
-  Int_t *data;
-  Int_t err;
-  size_t lencpy;
+  uint32_t *data = nullptr;
 #if ET_SYSTEM_NSTATS > 10
   // CODA >= 2.6.2, including CODA 3
-  size_t nbytes;
-  const size_t bpi = sizeof(int);
+  size_t nbytes = 0;
+  const size_t bpi = sizeof(UInt_t);
 #else
-  Int_t nbytes;
-  const Int_t bpi = sizeof(int);
+  Int_t nbytes = 0;
+  const Int_t bpi = sizeof(UInt_t);
 #endif
-  Int_t swapflg;
 
   if (firstread) {
     firstread = 0;
@@ -178,10 +172,13 @@ Int_t THaEtClient::codaRead()
   }
 
 // pull out a ET_CHUNK_SIZE of events from ET
+  et_event *evs[ET_CHUNK_SIZE];
   if (nused >= nread) {
+    int err;
     if (waitflag == 0) {
       err = et_events_get(id, my_att, evs, ET_SLEEP, nullptr, ET_CHUNK_SIZE, &nread);
     } else {
+      struct timespec twait{};
       twait.tv_sec  = timeout;
       twait.tv_nsec = 0;
       err = et_events_get(id, my_att, evs, ET_TIMED, &twait, ET_CHUNK_SIZE, &nread);
@@ -202,41 +199,36 @@ Int_t THaEtClient::codaRead()
     nused = 0;
 
     for (Int_t j=0; j < nread; j++) {
-
+      int swapflg = ET_NOSWAP;
       et_event_getdata(evs[j], (void **) &data);
       et_event_needtoswap(evs[j], &swapflg);
-// The function et_event_CODAswap was removed in CODA 3.05
-// Since there seems to be no easy way to detect the ET software version,
-// we test on ET_ERROR_JAVASYS, which happens to be defined as of that version
-#if !defined(ET_ERROR_JAVASYS)
       if (swapflg == ET_SWAP) {
-	et_event_CODAswap(evs[j]);
-      }
+// The function et_event_CODAswap was removed with CODA 3.05/ET_VERSION 16
+#if ET_VERSION > 15
+        evioswap(data, 1, nullptr);
 #else
-// TODO: how to do CODAsawp with CODA >= 3.05?
+        et_event_CODAswap(evs[j]);
 #endif
-      Int_t* pdata = data;
-      Int_t event_size = *pdata + 1;
-      if ( event_size > MAXEVLEN ) {
-         printf("\nET:codaRead:ERROR:  Event from ET truncated\n");
-         printf("-> Need a larger value than MAXEVLEN = %d \n",MAXEVLEN);
-         return CODA_ERROR;
       }
-      if (CODA_DEBUG) {
-  	 cout<<"\n\n===== Event "<<j<<"  length "<<event_size<<endl;
-	 pdata = data;
-         for (Int_t i=0; i < event_size; i++, pdata++) {
-           cout<<"evbuff["<<dec<<i<<"] = "<<*pdata<<" = 0x"<<hex<<*pdata<<endl;
-	 }
+
+      uint32_t event_size = *data + 1;
+      if( !evbuffer.grow(event_size) )
+        throw runtime_error("THaEtClient: Maximum event buffer size reached");
+      if (verbose > 1) {
+        cout<<"\n\n===== Event "<<j<<"  length "<<event_size<<endl;
+        UInt_t *pdata = data;
+        for (UInt_t i=0; i < event_size; i++, pdata++) {
+          cout<<"evbuff["<<dec<<i<<"] = "<<*pdata<<" = 0x"<<hex<<*pdata<<endl;
+        }
       }
     }
 
     if (firstRateCalc) {
       firstRateCalc = 0;
-      daqt1 = time(0);
+      daqt1 = time(nullptr);
     }
     else {
-      time_t daqt2 = time(0);
+      time_t daqt2 = time(nullptr);
       double tdiff = difftime(daqt2, daqt1);
       evsum += nread;
       if ((tdiff > 4) && (evsum > 30)) {
@@ -245,13 +237,14 @@ Int_t THaEtClient::codaRead()
          ratesum += daqrate;
          double avgrate  = ratesum/++xcnt;
 
-         if (CODA_VERBOSE)
+         if (verbose > 0) {
            printf("ET rate %4.1f Hz in %2.0f sec, avg %4.1f Hz\n",
-          	      daqrate, tdiff, avgrate);
+                  daqrate, tdiff, avgrate);
+         }
          if (waitflag != 0) {
            timeout = (avgrate > FAST) ? SMALL_TIMEOUT : BIG_TIMEOUT;
          }
-         daqt1 = time(0);
+         daqt1 = time(nullptr);
       }
     }
   }
@@ -259,18 +252,15 @@ Int_t THaEtClient::codaRead()
 // return an event
   et_event_getdata(evs[nused], (void **) &data);
   et_event_getlength(evs[nused], &nbytes);
-  lencpy = (nbytes < bpi*MAXEVLEN) ? nbytes : bpi*MAXEVLEN;
-  memcpy(evbuffer.get(), data, lencpy);
+  if( !evbuffer.grow(nbytes/bpi+1) )
+    throw runtime_error("THaEtClient: Maximum event buffer size reached");
+  assert(bpi * evbuffer.size() >= (size_t)nbytes);
+  memcpy(evbuffer.get(), data, nbytes);
   nused++;
-  if (nbytes > bpi*MAXEVLEN) {
-      cout<<"\nET:codaRead:ERROR:  CODA event truncated"<<endl;
-      cout<<"-> Byte size exceeds bytes "<<bpi*MAXEVLEN<<endl;
-      return CODA_ERROR;
-  }
 
 // if we've used all our events, put them back
   if (nused >= nread) {
-    err = et_events_put(id, my_att, evs, nread);
+    int err = et_events_put(id, my_att, evs, nread);
     if (err < ET_OK) {
       cout<<"THaEtClient::codaRead: ERROR: calling et_events_put"<<endl;
       cout<<"This is potentially very bad !!\n"<<endl;

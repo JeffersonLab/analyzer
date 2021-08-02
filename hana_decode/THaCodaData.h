@@ -30,9 +30,6 @@
 #define CODA_ERROR  -128   // Generic error return code
 #define CODA_FATAL  -255   // Fatal error
 
-#define CODA_VERBOSE 1    // Errors explained verbosely (recommended)
-#define CODA_DEBUG  0     // Lots of printout (recommend to set = 0)
-
 namespace Decoder {
 
 // Dynamically-sized event buffer
@@ -80,7 +77,8 @@ public:
    UInt_t        getBuffSize() const { return evbuffer.size(); }
    virtual Bool_t isOpen() const = 0;
    virtual Int_t getCodaVersion();
-   Bool_t isGood() const { return fIsGood; }
+   void          setVerbosity(int level) { verbose = level; }
+   Bool_t        isGood() const { return fIsGood; }
 
 protected:
    static Int_t ReturnCode( Int_t evio_retcode );
@@ -88,7 +86,8 @@ protected:
 
    EvtBuffer     evbuffer;    // Dynamically-sized event buffer
    TString       filename;
-   Int_t         handle;       // EVIO data handle
+   Int_t         handle;      // EVIO data handle
+   Int_t         verbose;     // Message verbosity (0=quiet, 1=verbose, 2=debug)
    Bool_t        fIsGood;
 
    ClassDef(THaCodaData,0) // Base class of CODA data (file, ET conn, etc)

@@ -30,6 +30,7 @@ namespace Decoder {
 //_____________________________________________________________________________
 THaCodaData::THaCodaData() :
   handle(0),
+  verbose(1),
   fIsGood(true)
 {
 }
@@ -59,10 +60,9 @@ void THaCodaData::staterr(const char* tried_to, Int_t status) const
   // and the user has to pay attention to why.
   if (status == S_SUCCESS) return;  // everything is fine.
   if (status == EOF) {
-    if(CODA_VERBOSE) {
+    if (verbose > 0)
       cout << endl << "Normal end of file " << filename << " encountered"
-          << endl;
-    }
+           << endl;
     return;
   }
   cerr << endl << Form("THaCodaFile: ERROR while trying to %s %s: ",

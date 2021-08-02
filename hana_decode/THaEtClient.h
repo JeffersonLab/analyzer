@@ -64,10 +64,7 @@ private:
     Int_t nread, nused, timeout;
 #ifndef __CINT__
     et_sys_id id;
-    et_statconfig sconfig;
-    et_stat_id my_stat;
     et_att_id my_att;
-    et_openconfig openconfig;
 #endif
     char *daqhost,*session,*etfile;
     Int_t waitflag,didclose,notopened,firstread;

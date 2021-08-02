@@ -12,7 +12,6 @@
 #include "TMatrixD.h"
 
 class THaRaster : public THaBeamDet {
-
 public:
   explicit THaRaster( const char* name, const char* description = "",
                       THaApparatus* a = nullptr );
@@ -47,21 +46,19 @@ public:
   Double_t GetPosTarY() { return fPosition[2](1); }
   Double_t GetPosTarZ() { return fPosition[2](2); }
 
-
-
 protected:
-
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );
 
-  //  THaRaster() {}
-  //  THaRaster( const THaRaster& ) {}
-  //  THaRaster& operator=( const THaRaster& ) { return *this; }
+  bool              CheckHitInfo( const DigitizerHitInfo_t& hitinfo ) const;
+  virtual Int_t     StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
+  virtual OptUInt_t LoadData( const THaEvData& evdata,
+                              const DigitizerHitInfo_t& hitinfo );
 
   typedef TVectorT<Double_t> TVectorD;
 
   TVectorD  fRawPos;        // current in Raster ADCs for position
-  TVectorD  fRawSlope;      // current in Raster ADCs for the derivative
+  TVectorD  fRawSlope;      // current in Raster ADCs for the derivative (maybe unused)
 
   TVector3  fPosition[3];   // Beam position at 1st, 2nd BPM or at the target (meters)
   TVector3  fDirection;  // Beam angle at the target (meters)

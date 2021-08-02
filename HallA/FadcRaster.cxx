@@ -1,12 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
-// HallA::FadcBPM                                                            //
-//									     //
-// BPM with FADC frontends                                                   //
+// HallA::FadcRaster                                                         //
 //									     //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "FadcBPM.h"
+#include "FadcRaster.h"
 #include "FADCData.h"
 
 using namespace std;
@@ -14,16 +12,16 @@ using namespace std;
 namespace HallA {
 
 //_____________________________________________________________________________
-FadcBPM::FadcBPM( const char* name, const char* description,
-                  THaApparatus* apparatus ) :
-  THaBPM(name, description, apparatus)
+FadcRaster::FadcRaster( const char* name, const char* description,
+                        THaApparatus* a )
+  : THaRaster(name, description, a)
 {
   // Constructor
 }
 
 //_____________________________________________________________________________
-OptUInt_t FadcBPM::LoadData( const THaEvData& /*evdata*/,
-                             const DigitizerHitInfo_t& hitinfo )
+OptUInt_t FadcRaster::LoadData( const THaEvData& /*evdata*/,
+                                const DigitizerHitInfo_t& hitinfo )
 {
   // Retrieve pulse integral data from FADC for the channel in 'hitinfo'
 
@@ -36,5 +34,5 @@ OptUInt_t FadcBPM::LoadData( const THaEvData& /*evdata*/,
 
 } // namespace HallA
 
-//_____________________________________________________________________________
-ClassImp(HallA::FadcBPM)
+///////////////////////////////////////////////////////////////////////////////
+ClassImp(HallA::FadcRaster)

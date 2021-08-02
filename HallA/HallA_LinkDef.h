@@ -31,10 +31,12 @@
 #pragma link C++ class THaDecData+;
 #pragma link C++ class TrigBitLoc+;
 #pragma link C++ class HallA::TwoarmVDCTimeCorrection+;
-#pragma link C++ class HallA::FadcScintillator+;
-#pragma link C++ class HallA::FadcCherenkov+;
-#pragma link C++ class HallA::FadcShower+;
-#pragma link C++ class HallA::FadcBPM+;
 #pragma link C++ class HallA::FADCData+;
+#pragma link C++ class HallA::FadcBPM+;
+#pragma link C++ class HallA::FadcCherenkov+;
+#pragma link C++ class HallA::FadcRaster+;
+#pragma link C++ class HallA::FadcRasteredBeam+;
+#pragma link C++ class HallA::FadcScintillator+;
+#pragma link C++ class HallA::FadcShower+;
 
 #endif
