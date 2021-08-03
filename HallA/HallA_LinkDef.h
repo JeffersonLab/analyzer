@@ -36,6 +36,7 @@
 #pragma link C++ class HallA::FadcCherenkov+;
 #pragma link C++ class HallA::FadcRaster+;
 #pragma link C++ class HallA::FadcRasteredBeam+;
+#pragma link C++ class HallA::FadcUnRasteredBeam+;
 #pragma link C++ class HallA::FadcScintillator+;
 #pragma link C++ class HallA::FadcShower+;
 
