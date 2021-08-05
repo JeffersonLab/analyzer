@@ -22,7 +22,7 @@
 #include <cerrno>
 #include <cctype>    // for isspace
 #include <cstring>
-#include <cstdlib>   // for atof, atoi
+#include <cstdlib>   // for atoi, strtod, strtol etc.
 #include <iterator>  // for std::distance
 #include <iostream>
 #include <sstream>
@@ -36,8 +36,7 @@ using namespace std;
 static TVirtualMutex* gHereMutex = nullptr;
 
 //_____________________________________________________________________________
-const char* Here( const char* method, const char* prefix )
-{
+const char* Here( const char* method, const char* prefix ) {
   // Utility function for error messages. The return value points to a static
   // string buffer that is unique to the current thread.
   // There are two usage cases:
@@ -45,7 +44,7 @@ const char* Here( const char* method, const char* prefix )
   // ::Here("Class::method","prefix") -> returns Class("prefix")::method
 
   // One static string buffer per thread ID
-  static map<Long_t,TString> buffers;
+  static map<Long_t, TString> buffers;
 
   TString txt;
   if( prefix && *prefix ) {
@@ -53,11 +52,12 @@ const char* Here( const char* method, const char* prefix )
     // delete trailing dot of prefix, if any
     if( full_prefix.EndsWith(".") )
       full_prefix.Chop();
-    full_prefix.Prepend("(\""); full_prefix.Append("\")");
+    full_prefix.Prepend("(\"");
+    full_prefix.Append("\")");
     const char* scope = nullptr;
     if( method && *method && (scope = strstr(method, "::")) ) {
-      assert( scope >= method );
-      auto pos = static_cast<Ssiz_t>(std::distance(method,scope));
+      assert(scope >= method);
+      auto pos = static_cast<Ssiz_t>(std::distance(method, scope));
       txt = method;
       assert(pos >= 0 && pos < txt.Length());
       txt.Insert(pos, full_prefix);
@@ -71,7 +71,7 @@ const char* Here( const char* method, const char* prefix )
 
   R__LOCKGUARD2(gHereMutex);
 
-  TString& ret = (buffers[ TThread::SelfId() ] = txt);
+  TString& ret = (buffers[TThread::SelfId()] = txt);
 
   return ret.Data(); // pointer to the C-string of a TString in static map
 }
@@ -80,16 +80,14 @@ const char* Here( const char* method, const char* prefix )
 namespace Podd {
 
 //_____________________________________________________________________________
-TString& GetObjArrayString( const TObjArray* array, Int_t i )
-{
+TString& GetObjArrayString( const TObjArray* array, Int_t i ) {
   // Get the string at index i in the given TObjArray
 
   return (static_cast<TObjString*>(array->At(i)))->String();
 }
 
 //_____________________________________________________________________________
-vector<string> GetDBFileList( const char* name, const TDatime& date, const char* here )
-{
+vector<string> GetDBFileList( const char* name, const TDatime& date, const char* here ) {
   // Return the database file searchlist as a vector of strings.
   // The file names are relative to the current directory.
 
@@ -107,13 +105,13 @@ vector<string> GetDBFileList( const char* name, const TDatime& date, const char*
   // If name contains a directory separator, we take the name verbatim
   string filename = name;
   if( filename.find_first_of(allsep) != string::npos ) {
-    fnames.push_back( filename );
+    fnames.push_back(filename);
     return fnames;
   }
 
   // Build search list of directories
   vector<string> dnames;
-  if( const char* dbdir = gSystem->Getenv("DB_DIR"))
+  if( const char* dbdir = gSystem->Getenv("DB_DIR") )
     dnames.emplace_back(dbdir);
   dnames.emplace_back("DB");
   dnames.emplace_back("db");
@@ -129,7 +127,7 @@ vector<string> GetDBFileList( const char* name, const TDatime& date, const char*
 
   // None of the directories can be opened?
   if( it == dnames.end() ) {
-    ::Error( here, "Cannot open any database directories. Check your disk!");
+    ::Error(here, "Cannot open any database directories. Check your disk!");
     return fnames;
   }
 
@@ -144,11 +142,11 @@ vector<string> GetDBFileList( const char* name, const TDatime& date, const char*
     string item = result;
     if( item.length() == 8 ) {
       Int_t pos = 0;
-      for( ; pos<8; ++pos )
-        if( !isdigit(item[pos])) break;
-      if( pos==8 )
-        time_dirs.push_back( item );
-    } else if ( item == defaultdir )
+      for( ; pos < 8; ++pos )
+        if( !isdigit(item[pos]) ) break;
+      if( pos == 8 )
+        time_dirs.push_back(item);
+    } else if( item == defaultdir )
       have_defaultdir = true;
   }
   gSystem->FreeDirectory(dirp);
@@ -156,7 +154,7 @@ vector<string> GetDBFileList( const char* name, const TDatime& date, const char*
   // Search a date-coded subdirectory that corresponds to the requested date.
   bool found = false;
   if( !time_dirs.empty() ) {
-    sort( time_dirs.begin(), time_dirs.end() );
+    sort(time_dirs.begin(), time_dirs.end());
     for( it = time_dirs.begin(); it != time_dirs.end(); ++it ) {
       Int_t item_date = atoi((*it).c_str());
       if( it == time_dirs.begin() && date.GetDate() < item_date )
@@ -177,42 +175,41 @@ vector<string> GetDBFileList( const char* name, const TDatime& date, const char*
   // Construct the database file name. It is of the form db_<prefix>.dat.
   // Subdetectors use the same files as their parent detectors!
   // If filename does not start with "db_", make it so
-  if( filename.substr(0,3) != "db_" )
-    filename.insert(0,"db_");
+  if( filename.substr(0, 3) != "db_" )
+    filename.insert(0, "db_");
     // If filename does not end with ".dat", make it so
 #ifndef NDEBUG
   // should never happen
-  assert( filename.length() >= 4 );
+  assert(filename.length() >= 4);
 #else
   if( filename.length() < 4 ) { fnames.clear(); return fnames; }
 #endif
   if( *filename.rbegin() == '.' ) {
     filename += "dat";
-  } else if( filename.substr(filename.length()-4) != ".dat" ) {
+  } else if( filename.substr(filename.length() - 4) != ".dat" ) {
     filename += ".dat";
   }
 
   // Build the searchlist of file names in the order:
   // ./filename <dbdir>/<date-dir>/filename
   //    <dbdir>/DEFAULT/filename <dbdir>/filename
-  fnames.push_back( filename );
+  fnames.push_back(filename);
   if( found ) {
     string item = thedir + dirsep + *it + dirsep + filename;
-    fnames.push_back( item );
+    fnames.push_back(item);
   }
   if( have_defaultdir ) {
     string item = thedir + dirsep + defaultdir + dirsep + filename;
-    fnames.push_back( item );
+    fnames.push_back(item);
   }
-  fnames.push_back( thedir + dirsep + filename );
+  fnames.push_back(thedir + dirsep + filename);
 
   return fnames;
 }
 
 //_____________________________________________________________________________
-FILE* OpenDBFile( const char* name, const TDatime& date,  const char* here,
-                  const char* filemode, int debug_flag, const char*& openpath )
-{
+FILE* OpenDBFile( const char* name, const TDatime& date, const char* here,
+                  const char* filemode, int debug_flag, const char*& openpath ) {
   // Open database file and return a pointer to the C-style file descriptor.
 
   // Ensure input is sane
@@ -226,7 +223,7 @@ FILE* OpenDBFile( const char* name, const TDatime& date,  const char* here,
 
   // Get list of database file candidates and try to open them in turn
   FILE* fi = nullptr;
-  vector <string> fnames(GetDBFileList(name, date, here));
+  vector<string> fnames(GetDBFileList(name, date, here));
   if( !fnames.empty() ) {
     auto it = fnames.begin();
     do {
@@ -237,7 +234,7 @@ FILE* OpenDBFile( const char* name, const TDatime& date,  const char* here,
 
       if( debug_flag > 1 )
         if( !fi ) cout << " ... failed" << endl;
-        else      cout << " ... ok" << endl;
+        else cout << " ... ok" << endl;
       else if( debug_flag > 0 && fi )
         cout << "<" << here << ">: Opened database file " << *it << endl;
       // continue until we succeed
@@ -255,8 +252,7 @@ FILE* OpenDBFile( const char* name, const TDatime& date,  const char* here,
 
 //_____________________________________________________________________________
 FILE* OpenDBFile( const char* name, const TDatime& date, const char* here,
-                  const char* filemode, int debug_flag )
-{
+                  const char* filemode, int debug_flag ) {
   const char* openpath = nullptr;
   return OpenDBFile(name, date, here, filemode, debug_flag, openpath);
 }
@@ -271,8 +267,7 @@ static string loaddb_prefix; // Actual prefix of object in LoadDB (for err msg)
 // Local helper functions
 namespace {
 //_____________________________________________________________________________
-Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
-{
+Int_t IsDBdate( const string& line, TDatime& date, bool warn = true ) {
   // Check if 'line' contains a valid database time stamp. If so,
   // parse the line, set 'date' to the extracted time stamp, and return 1.
   // Else return 0;
@@ -297,8 +292,7 @@ Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
 }
 
 //_____________________________________________________________________________
-Int_t IsDBkey( const string& line, const char* key, string& text )
-{
+Int_t IsDBkey( const string& line, const char* key, string& text ) {
   // Check if 'line' is of the form "key = value" and, if so, whether the key
   // equals 'key'. Keys are not case-sensitive.
   // - If there is no '=', then return 0.
@@ -334,8 +328,7 @@ Int_t IsDBkey( const string& line, const char* key, string& text )
 }
 
 //_____________________________________________________________________________
-inline Int_t ChopPrefix( string& s )
-{
+inline Int_t ChopPrefix( string& s ) {
   // Remove trailing level from prefix. Example "L.vdc." -> "L."
   // Return remaining number of dots, or zero if empty/invalid prefix
 
@@ -354,8 +347,7 @@ inline Int_t ChopPrefix( string& s )
 }
 
 //_____________________________________________________________________________
-inline bool IsTag( const char* buf )
-{
+inline bool IsTag( const char* buf ) {
   // Return true if the string in 'buf' matches regexp ".*\[.+\].*",
   // i.e. it is a database section marker.  Generic utility function.
 
@@ -370,8 +362,7 @@ inline bool IsTag( const char* buf )
 }
 
 //_____________________________________________________________________________
-Int_t GetLine( FILE* file, char* buf, Int_t bufsiz, string& line )
-{
+Int_t GetLine( FILE* file, char* buf, Int_t bufsiz, string& line ) {
   // Get a line (possibly longer than 'bufsiz') from 'file' using
   // the provided buffer 'buf'. Put result into string 'line'.
   // This is similar to std::getline, except that C-style I/O is used.
@@ -400,8 +391,7 @@ Int_t GetLine( FILE* file, char* buf, Int_t bufsiz, string& line )
 }
 
 //_____________________________________________________________________________
-inline Bool_t IsAssignment( const string& str )
-{
+inline Bool_t IsAssignment( const string& str ) {
   // Check if 'str' has the form of an assignment (<text> = [optional text]).
   // Properly handles comparison operators '==', '!=', '<=', '>='
 
@@ -421,8 +411,7 @@ inline Bool_t IsAssignment( const string& str )
 } // end anonymous namespace
 
 //_____________________________________________________________________________
-Int_t ReadDBline( FILE* file, char* buf, Int_t bufsiz, string& line )
-{
+Int_t ReadDBline( FILE* file, char* buf, Int_t bufsiz, string& line ) {
   // Get a text line from the database file 'file'. Ignore all comments
   // (anything after a #). Trim trailing whitespace. Concatenate continuation
   // lines (ending with \).
@@ -523,12 +512,11 @@ Int_t ReadDBline( FILE* file, char* buf, Int_t bufsiz, string& line )
 }
 
 //_____________________________________________________________________________
-Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key, string& text )
-{
+Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key, string& value ) {
   // Load a data value tagged with 'key' from the database 'file'.
   // Lines starting with "#" are ignored.
   // If 'key' is found, then the most recent value seen (based on time stamps
-  // and position within the file) is returned in 'text'.
+  // and position within the file) is returned in 'value'.
   // Values with time stamps later than 'date' are ignored.
   // This allows incremental organization of the database where
   // only changes are recorded with time stamps.
@@ -541,13 +529,13 @@ Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key, string& tex
   errtxt.clear();
   rewind(file);
 
-  static const Int_t bufsiz = 256;
-  char* buf = new char[bufsiz];
+  constexpr Int_t bufsiz = 256;
+  unique_ptr<char[]> buf{new char[bufsiz]};
 
   bool found = false, do_ignore = false;
   string dbline;
-  vector <string> lines;
-  while( ReadDBline(file, buf, bufsiz, dbline) != EOF ) {
+  vector<string> lines;
+  while( ReadDBline(file, buf.get(), bufsiz, dbline) != EOF ) {
     if( dbline.empty() ) continue;
     // Replace text variables in this database line, if any. Multi-valued
     // variables are supported here, although they are only sensible on the LHS
@@ -556,7 +544,7 @@ Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key, string& tex
       gHaTextvars->Substitute(lines);
     for( auto& line : lines ) {
       Int_t status = 0;
-      if( !do_ignore && (status = IsDBkey(line, key, text)) != 0 ) {
+      if( !do_ignore && (status = IsDBkey(line, key, value)) != 0 ) {
         if( status > 0 ) {
           // Found a matching key for a newer date than before
           found = true;
@@ -568,7 +556,6 @@ Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key, string& tex
         do_ignore = (keydate > date || keydate < prevdate);
     }
   }
-  delete[] buf;
 
   if( errno ) {
     perror("LoadDBvalue");
@@ -578,65 +565,155 @@ Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key, string& tex
 }
 
 //_____________________________________________________________________________
-Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key, Double_t& value )
-{
-  // Locate key in database, convert the text found to double-precision,
-  // and return result in 'value'.
-  // This is a convenience function.
-
-  string text;
-  Int_t err = LoadDBvalue(file, date, key, text);
-  if( err == 0 )
-    value = atof(text.c_str());
-  return err;
+static Int_t conversion_error( const char* key, const string& value ) {
+  errtxt = key;
+  errtxt += " = \"" + value + "\"";
+  return -131;
 }
 
 //_____________________________________________________________________________
-Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key, Int_t& value )
-{
-  // Locate key in database, convert the text found to integer
-  // and return result in 'value'.
-  // This is a convenience function.
-
-  string text;
-  Int_t err = LoadDBvalue(file, date, key, text);
-  if( err == 0 )
-    value = atoi(text.c_str());
-  return err;
+template<typename T,
+  typename enable_if
+    <is_integral<T>::value && is_signed<T>::value, bool>::type = true>
+static inline
+long long int convert_string( const char* p, char*& end ) {
+  return strtoll(p, &end, 10);
 }
 
 //_____________________________________________________________________________
-Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key, TString& text )
-{
-  // Locate key in database, convert the text found to TString
-  // and return result in 'text'.
-  // This is a convenience function.
+template<typename T,
+  typename enable_if
+    <is_integral<T>::value && is_unsigned<T>::value, bool>::type = true>
+static inline
+unsigned long long int convert_string( const char* p, char*& end ) {
+  return strtoull(p, &end, 10);
+}
+
+// This is not terribly elegant, but allows us to call the most efficient
+// conversion function
+//_____________________________________________________________________________
+template<typename T,
+  typename enable_if<is_same<T, float>::value, bool>::type = true>
+static inline
+T convert_string( const char* p, char*& end ) {
+  return strtof(p, &end);
+}
+
+//_____________________________________________________________________________
+template<typename T,
+  typename enable_if<is_same<T, double>::value, bool>::type = true>
+static inline
+T convert_string( const char* p, char*& end ) {
+  return strtod(p, &end);
+}
+
+//_____________________________________________________________________________
+template<typename T,
+  typename enable_if<is_same<T, long double>::value, bool>::type = true>
+static inline
+T convert_string( const char* p, char*& end ) {
+  return strtold(p, &end);
+}
+
+//_____________________________________________________________________________
+template<typename T, typename S>
+static inline bool is_in_range( S val ) {
+  static_assert( (is_integral<T>::value && is_integral<S>::value) ||
+                 (is_floating_point<T>::value && is_floating_point<S>::value),
+                 "Inconsistent types");
+  bool ret = (val <= numeric_limits<T>::max());
+  if( ret ) {
+    if( is_integral<T>::value ) {
+      if( is_signed<S>::value ) {
+        if( is_unsigned<T>::value )
+          ret = (val >= 0);
+        else
+          ret = (val >= numeric_limits<T>::min());
+      }
+    } else if( is_floating_point<T>::value )
+      ret = (val >= -numeric_limits<T>::max());
+  }
+  return ret;
+}
+
+//_____________________________________________________________________________
+Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key, TString& value ) {
+  // Locate key in database, convert the text found to TString and return
+  // result in 'value'.
 
   string _text;
   Int_t err = LoadDBvalue(file, date, key, _text);
   if( err == 0 )
-    text = _text.c_str();
+    value = _text.c_str();
   return err;
 }
 
 //_____________________________________________________________________________
 template<class T>
-Int_t LoadDBarray( FILE* file, const TDatime& date, const char* key, vector <T>& values )
+Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key, T& value ) {
+  // Locate key in database, convert the text found to numerical type T,
+  // and return result in 'value'.
+  // Returns 0 if OK, 1 if key not found, and a negative number for error.
+
+  static_assert(std::is_arithmetic<T>::value, "Value argument must be arithmetic");
+
+  string text;
+  if( Int_t err = LoadDBvalue(file, date, key, text) )
+    return err;
+  const char* p = text.c_str();
+  char* end = nullptr;
+  errno = 0;
+  // Convert the value string depending on the requested type
+  auto dval = convert_string<T>(p, end);
+  if( p == end || (end && *end && !isspace(*end)) || errno != 0 ||
+      !is_in_range<T>(dval) ) {
+    return conversion_error(key, text);
+  }
+  value = static_cast<T>(dval);
+  return 0;
+}
+
+//_____________________________________________________________________________
+template<class T>
+Int_t LoadDBarray( FILE* file, const TDatime& date, const char* key, vector<T>& values )
 {
+  // Locate key in database, interpret the key as a whitespace-separated array
+  // of arithmetic values of type T, convert each field, and return result in
+  // the vector 'values'.
+  // Returns 0 if OK, 1 if key not found, and a negative number for error.
+
+  static_assert(std::is_arithmetic<T>::value, "Value argument must be arithmetic");
+
   string text;
   Int_t err = LoadDBvalue(file, date, key, text);
   if( err )
     return err;
   values.clear();
-  text += " ";
-  istringstream inp(text);
-  T dval;
+  // Determine number of elements to avoid resizing the vector multiple times
+  size_t nelem = 0;
+  bool in_field = false;
+  for( char c : text ) {
+    bool istxt = !isspace(c);
+    if( istxt && !in_field )
+      ++nelem;
+    in_field = istxt;
+  }
+  values.reserve(nelem);
+  const char* p = text.c_str(), * endp = p + text.length();
+  char* end = nullptr;
+  // Read the fields into the vector
   while( true ) {
-    inp >> dval;
-    if( inp.good() )
-      values.push_back(dval);
-    else
+    errno = 0;
+    // Convert each value depending on the requested type
+    auto dval = convert_string<T>(p, end);
+    if( p == end || (end && *end && !isspace(*end)) || errno != 0 ||
+        !is_in_range<T>(dval) ) {
+      return conversion_error(key, text);
+    }
+    values.push_back(static_cast<T>(dval));
+    if( end == endp )
       break;
+    p = end;
   }
   return 0;
 }
@@ -644,8 +721,7 @@ Int_t LoadDBarray( FILE* file, const TDatime& date, const char* key, vector <T>&
 //_____________________________________________________________________________
 template<class T>
 Int_t LoadDBmatrix( FILE* file, const TDatime& date, const char* key,
-                    vector <vector<T>>& values, UInt_t ncols )
-{
+                    vector<vector<T>>& values, UInt_t ncols ) {
   // Read a matrix of values of type T into a vector of vectors.
   // The matrix is rectangular with ncols columns.
 
@@ -693,8 +769,7 @@ Int_t LoadDBmatrix( FILE* file, const TDatime& date, const char* key,
 
 //_____________________________________________________________________________
 Int_t LoadDatabase( FILE* f, const TDatime& date, const DBRequest* req,
-                    const char* prefix, Int_t search, const char* here )
-{
+                    const char* prefix, Int_t search, const char* here ) {
   // Load a list of parameters from the database file 'f' according to
   // the contents of the 'req' structure (see VarDef.h).
 
@@ -778,7 +853,7 @@ Int_t LoadDatabase( FILE* f, const TDatime& date, const DBRequest* req,
           }
         } else {
           // Array of integers requested
-          vector <Int_t> ivals;
+          vector<Int_t> ivals;
           ret = LoadDBarray(f, date, key, ivals);
           if( ret == 0 && ivals.size() != nelem ) {
             nelem = ivals.size();
@@ -843,21 +918,21 @@ Int_t LoadDatabase( FILE* f, const TDatime& date, const DBRequest* req,
           ret = -130;
         }
       } else if( item->type == kIntV ) {
-        ret = LoadDBarray(f, date, key, *((vector <Int_t>*)item->var));
+        ret = LoadDBarray(f, date, key, *((vector<Int_t>*)item->var));
         if( ret == 0 && nelem > 0 && nelem !=
-                                     static_cast<UInt_t>(((vector <Int_t>*)item->var)->size()) ) {
-          nelem = ((vector <Int_t>*)item->var)->size();
+                                     static_cast<UInt_t>(((vector<Int_t>*)item->var)->size()) ) {
+          nelem = ((vector<Int_t>*)item->var)->size();
           ret = -130;
         }
       } else if( item->type == kFloatM ) {
         ret = LoadDBmatrix(f, date, key,
-                           *((vector <vector<float>>*)item->var), nelem);
+                           *((vector<vector<float>>*)item->var), nelem);
       } else if( item->type == kDoubleM ) {
         ret = LoadDBmatrix(f, date, key,
-                           *((vector <vector<double>>*)item->var), nelem);
+                           *((vector<vector<double>>*)item->var), nelem);
       } else if( item->type == kIntM ) {
         ret = LoadDBmatrix(f, date, key,
-                           *((vector <vector<Int_t>>*)item->var), nelem);
+                           *((vector<vector<Int_t>>*)item->var), nelem);
       } else {
 badtype:
         if( item->type >= kDouble && item->type <= kObject2P )
@@ -945,6 +1020,10 @@ rangeerr:
                 "%u requested, %u found. Fix database.", keystr.c_str(),
                 item->nelem, nelem);
         break;
+      } else if( ret == -131 ) {  // Error converting string to numerical value
+        ::Error(::Here(here, loaddb_prefix.c_str()),
+                "Numerical conversion error: %s. ", errtxt.c_str());
+        break;
       } else {  // other ret < 0: unexpected zero pointer etc.
         ::Error(::Here(here, loaddb_prefix.c_str()),
                 R"(Program error when trying to read database key "%s". )"
@@ -963,8 +1042,7 @@ nextitem:
 
 //_____________________________________________________________________________
 Int_t SeekDBconfig( FILE* file, const char* tag, const char* label,
-                    Bool_t end_on_tag )
-{
+                    Bool_t end_on_tag ) {
   // Starting from the current position in 'file', look for the
   // configuration 'tag'. Position the file on the
   // line immediately following the tag. If no tag found, return to
@@ -1031,8 +1109,7 @@ Int_t SeekDBconfig( FILE* file, const char* tag, const char* label,
 }
 
 //_____________________________________________________________________________
-Int_t SeekDBdate( FILE* file, const TDatime& date, Bool_t end_on_tag )
-{
+Int_t SeekDBdate( FILE* file, const TDatime& date, Bool_t end_on_tag ) {
   // Starting from the current position in file 'f', look for a
   // date tag matching time stamp 'date'. Position the file on the
   // line immediately following the tag. If no tag found, return to

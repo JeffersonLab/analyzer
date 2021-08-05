@@ -14,6 +14,7 @@
 #include <cstdio>  // for FILE
 #include <vector>
 #include <string>
+#include <type_traits>
 
 class TObjArray;
 class TDatime;
@@ -38,10 +39,10 @@ FILE*    OpenDBFile( const char* name, const TDatime& date, const char* here,
 Int_t    ReadDBline( FILE* file, char* buf, Int_t bufsiz, std::string& line );
 
 // Access functions for reading key/value pairs from database files
-Int_t    LoadDBvalue( FILE* file, const TDatime& date, const char* key, Double_t& value );
-Int_t    LoadDBvalue( FILE* file, const TDatime& date, const char* key, Int_t& value );
-Int_t    LoadDBvalue( FILE* file, const TDatime& date, const char* key, std::string& text );
-Int_t    LoadDBvalue( FILE* file, const TDatime& date, const char* key, TString& text );
+template<class T> // instantiations available for int and double
+Int_t    LoadDBvalue( FILE* file, const TDatime& date, const char* key, T& value );
+Int_t    LoadDBvalue( FILE* file, const TDatime& date, const char* key, std::string& value );
+Int_t    LoadDBvalue( FILE* file, const TDatime& date, const char* key, TString& value );
 template <class T>
 Int_t    LoadDBarray( FILE* file, const TDatime& date, const char* key, std::vector<T>& values );
 template <class T>
