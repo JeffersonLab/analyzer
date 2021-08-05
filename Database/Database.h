@@ -39,7 +39,7 @@ FILE*    OpenDBFile( const char* name, const TDatime& date, const char* here,
 Int_t    ReadDBline( FILE* file, char* buf, Int_t bufsiz, std::string& line );
 
 // Access functions for reading key/value pairs from database files
-template<class T> // instantiations available for int and double
+template<class T> // instantiations available for all supported types (see VarType.h)
 Int_t    LoadDBvalue( FILE* file, const TDatime& date, const char* key, T& value );
 Int_t    LoadDBvalue( FILE* file, const TDatime& date, const char* key, std::string& value );
 Int_t    LoadDBvalue( FILE* file, const TDatime& date, const char* key, TString& value );

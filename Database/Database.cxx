@@ -565,12 +565,15 @@ Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key, string& val
 }
 
 //_____________________________________________________________________________
-static Int_t conversion_error( const char* key, const string& value ) {
+static Int_t conversion_error( const char* key, const string& value )
+{
   errtxt = key;
   errtxt += " = \"" + value + "\"";
   return -131;
 }
 
+// The following is not terribly elegant, but allows us to call the most
+// efficient conversion function for a given type
 //_____________________________________________________________________________
 template<typename T,
   typename enable_if
@@ -589,8 +592,6 @@ unsigned long long int convert_string( const char* p, char*& end ) {
   return strtoull(p, &end, 10);
 }
 
-// This is not terribly elegant, but allows us to call the most efficient
-// conversion function
 //_____________________________________________________________________________
 template<typename T,
   typename enable_if<is_same<T, float>::value, bool>::type = true>
@@ -747,25 +748,55 @@ Int_t LoadDBmatrix( FILE* file, const TDatime& date, const char* key,
   return 0;
 }
 
+//_____________________________________________________________________________
+template<typename T> static inline
+Int_t load_and_assign( FILE* f, const TDatime& date, const char* key,
+                       void* dest, UInt_t& nelem )
+{
+  Int_t st = -1;
+  if( nelem < 2 ) {
+    T val{};
+    st = LoadDBvalue(f, date, key, val);
+    if( st == 0 )
+      memcpy(dest, &val, sizeof(T));
+  } else {
+    vector<T> vals;
+    st = LoadDBarray(f, date, key, vals);
+    if( st == 0 ) {
+      if( vals.size() != nelem ) {
+        nelem = vals.size();
+        st = -130;
+      } else {
+        memcpy( dest, vals.data(), nelem*sizeof(Double_t));
+      }
+    }
+  }
+  return st;
+}
 
 //_____________________________________________________________________________
-#define CheckLimits( T, val )                      \
-  if( (val) < -std::numeric_limits<T>::max() ||    \
-      (val) >  std::numeric_limits<T>::max() ) {   \
-    ostringstream txt;                             \
-    txt << (val);                                  \
-    errtxt = txt.str();                            \
-    goto rangeerr;                                 \
+template<typename T> static inline
+Int_t load_and_assign_vector( FILE* f, const TDatime& date, const char* key,
+                              void* dest, UInt_t& nelem )
+{
+  vector<T>& vec = *reinterpret_cast<vector<T>*>(dest);
+  Int_t st = LoadDBarray(f, date, key, vec);
+  if( st == 0 && nelem > 0 && nelem != vec.size() ) {
+    nelem = vec.size();
+    st = -130;
   }
+  return st;
+}
 
-#define CheckLimitsUnsigned( T, val )              \
-  if( (val) < 0 || static_cast<ULong64_t>(val)     \
-      > std::numeric_limits<T>::max() ) {          \
-    ostringstream txt;                             \
-    txt << (val);                                  \
-    errtxt = txt.str();                            \
-    goto rangeerr;                                 \
-  }
+//_____________________________________________________________________________
+template<typename T> static inline
+Int_t load_and_assign_matrix( FILE* f, const TDatime& date, const char* key,
+                              void* dest, UInt_t nelem )
+{
+  vector<vector<T>>& mat = *reinterpret_cast<vector<vector<T>>*>(dest);
+  Int_t st = LoadDBmatrix(f, date, key, mat, nelem);
+  return st;
+}
 
 //_____________________________________________________________________________
 Int_t LoadDatabase( FILE* f, const TDatime& date, const DBRequest* req,
@@ -786,170 +817,57 @@ Int_t LoadDatabase( FILE* f, const TDatime& date, const DBRequest* req,
       keystr.append(item->name);
       UInt_t nelem = item->nelem;
       const char* key = keystr.c_str();
-      if( item->type == kDouble || item->type == kFloat ) {
-        if( nelem < 2 ) {
-          Double_t dval = 0;
-          ret = LoadDBvalue(f, date, key, dval);
-          if( ret == 0 ) {
-            if( item->type == kDouble )
-              *((Double_t*)item->var) = dval;
-            else {
-              CheckLimits(Float_t, dval)
-              *((Float_t*)item->var) = static_cast<Float_t>(dval);
-            }
-          }
-        } else {
-          // Array of reals requested
-          vector<double> dvals;
-          ret = LoadDBarray(f, date, key, dvals);
-          if( ret == 0 && dvals.size() != nelem ) {
-            nelem = dvals.size();
-            ret = -130;
-          } else if( ret == 0 ) {
-            if( item->type == kDouble ) {
-              for( UInt_t i = 0; i < nelem; i++ )
-                ((Double_t*)item->var)[i] = dvals[i];
-            } else {
-              for( UInt_t i = 0; i < nelem; i++ ) {
-                CheckLimits(Float_t, dvals[i])
-                ((Float_t*)item->var)[i] = static_cast<Float_t>(dvals[i]);
-              }
-            }
-          }
-        }
-      } else if( item->type >= kInt && item->type <= kByte ) {
-        // Implies a certain order of definitions in VarType.h
-        if( nelem < 2 ) {
-          Int_t ival = 0;
-          ret = LoadDBvalue(f, date, key, ival);
-          if( ret == 0 ) {
-            switch( item->type ) {
-            case kInt:
-              *((Int_t*)item->var) = ival;
-              break;
-            case kUInt:
-              CheckLimitsUnsigned(UInt_t, ival)
-              *((UInt_t*)item->var) = static_cast<UInt_t>(ival);
-              break;
-            case kShort:
-              CheckLimits(Short_t, ival)
-              *((Short_t*)item->var) = static_cast<Short_t>(ival);
-              break;
-            case kUShort:
-              CheckLimitsUnsigned(UShort_t, ival)
-              *((UShort_t*)item->var) = static_cast<UShort_t>(ival);
-              break;
-            case kChar:
-              CheckLimits(Char_t, ival)
-              *((Char_t*)item->var) = static_cast<Char_t>(ival);
-              break;
-            case kByte:
-              CheckLimitsUnsigned(Byte_t, ival)
-              *((Byte_t*)item->var) = static_cast<Byte_t>(ival);
-              break;
-            default:
-              goto badtype;
-            }
-          }
-        } else {
-          // Array of integers requested
-          vector<Int_t> ivals;
-          ret = LoadDBarray(f, date, key, ivals);
-          if( ret == 0 && ivals.size() != nelem ) {
-            nelem = ivals.size();
-            ret = -130;
-          } else if( ret == 0 ) {
-            switch( item->type ) {
-            case kInt:
-              for( UInt_t i = 0; i < nelem; i++ )
-                ((Int_t*)item->var)[i] = ivals[i];
-              break;
-            case kUInt:
-              for( UInt_t i = 0; i < nelem; i++ ) {
-                CheckLimitsUnsigned(UInt_t, ivals[i])
-                ((UInt_t*)item->var)[i] = static_cast<UInt_t>(ivals[i]);
-              }
-              break;
-            case kShort:
-              for( UInt_t i = 0; i < nelem; i++ ) {
-                CheckLimits(Short_t, ivals[i])
-                ((Short_t*)item->var)[i] = static_cast<Short_t>(ivals[i]);
-              }
-              break;
-            case kUShort:
-              for( UInt_t i = 0; i < nelem; i++ ) {
-                CheckLimitsUnsigned(UShort_t, ivals[i])
-                ((UShort_t*)item->var)[i] = static_cast<UShort_t>(ivals[i]);
-              }
-              break;
-            case kChar:
-              for( UInt_t i = 0; i < nelem; i++ ) {
-                CheckLimits(Char_t, ivals[i])
-                ((Char_t*)item->var)[i] = static_cast<Char_t>(ivals[i]);
-              }
-              break;
-            case kByte:
-              for( UInt_t i = 0; i < nelem; i++ ) {
-                CheckLimitsUnsigned(Byte_t, ivals[i])
-                ((Byte_t*)item->var)[i] = static_cast<Byte_t>(ivals[i]);
-              }
-              break;
-            default:
-              goto badtype;
-            }
-          }
-        }
-      } else if( item->type == kString ) {
-        ret = LoadDBvalue(f, date, key, *((string*)item->var));
-      } else if( item->type == kTString ) {
-        ret = LoadDBvalue(f, date, key, *((TString*)item->var));
-      } else if( item->type == kFloatV ) {
-        ret = LoadDBarray(f, date, key, *((vector<float>*)item->var));
-        if( ret == 0 && nelem > 0 && nelem !=
-                                     static_cast<UInt_t>(((vector<float>*)item->var)->size()) ) {
-          nelem = ((vector<float>*)item->var)->size();
-          ret = -130;
-        }
-      } else if( item->type == kDoubleV ) {
-        ret = LoadDBarray(f, date, key, *((vector<double>*)item->var));
-        if( ret == 0 && nelem > 0 && nelem !=
-                                     static_cast<UInt_t>(((vector<double>*)item->var)->size()) ) {
-          nelem = ((vector<double>*)item->var)->size();
-          ret = -130;
-        }
-      } else if( item->type == kIntV ) {
-        ret = LoadDBarray(f, date, key, *((vector<Int_t>*)item->var));
-        if( ret == 0 && nelem > 0 && nelem !=
-                                     static_cast<UInt_t>(((vector<Int_t>*)item->var)->size()) ) {
-          nelem = ((vector<Int_t>*)item->var)->size();
-          ret = -130;
-        }
-      } else if( item->type == kFloatM ) {
-        ret = LoadDBmatrix(f, date, key,
-                           *((vector<vector<float>>*)item->var), nelem);
-      } else if( item->type == kDoubleM ) {
-        ret = LoadDBmatrix(f, date, key,
-                           *((vector<vector<double>>*)item->var), nelem);
-      } else if( item->type == kIntM ) {
-        ret = LoadDBmatrix(f, date, key,
-                           *((vector<vector<Int_t>>*)item->var), nelem);
-      } else {
-badtype:
-        if( item->type >= kDouble && item->type <= kObject2P )
-          ::Error(::Here(here, loaddb_prefix.c_str()),
-                  R"(Key "%s": Reading of data type "%s" not implemented)",
-                  key, Vars::GetEnumName(item->type));
-        else
-          ::Error(::Here(here, loaddb_prefix.c_str()),
-                  R"/(Key "%s": Reading of data type "(#%d)" not implemented)/",
-                  key, item->type);
-        ret = -2;
+      switch( item->type ) {
+      case kDouble:
+        ret = load_and_assign<Double_t>(f, date, key, item->var, nelem);
         break;
-rangeerr:
-        ::Error(::Here(here, loaddb_prefix.c_str()),
-                R"(Key "%s": Value %s out of range for requested type "%s")",
-                key, errtxt.c_str(), Vars::GetEnumName(item->type));
-        ret = -3;
+      case kFloat:
+        ret = load_and_assign<Float_t>(f, date, key, item->var, nelem);
+        break;
+      case kInt:
+        ret = load_and_assign<Int_t>(f, date, key, item->var, nelem);
+        break;
+      case kUInt:
+        ret = load_and_assign<UInt_t>(f, date, key, item->var, nelem);
+        break;
+      case kShort:
+        ret = load_and_assign<Short_t>(f, date, key, item->var, nelem);
+        break;
+      case kUShort:
+        ret = load_and_assign<UShort_t>(f, date, key, item->var, nelem);
+        break;
+      case kChar:
+        ret = load_and_assign<Char_t>(f, date, key, item->var, nelem);
+        break;
+      case kByte:
+        ret = load_and_assign<Byte_t>(f, date, key, item->var, nelem);
+        break;
+      case kString:
+        ret = LoadDBvalue(f, date, key, *((string*)item->var));
+        break;
+      case kTString:
+        ret = LoadDBvalue(f, date, key, *((TString*)item->var));
+        break;
+      case kFloatV:
+        ret = load_and_assign_vector<Float_t>(f, date, key, item->var, nelem);
+        break;
+      case kDoubleV:
+        ret = load_and_assign_vector<Double_t>(f, date, key, item->var, nelem);
+        break;
+      case kIntV:
+        ret = load_and_assign_vector<Int_t>(f, date, key, item->var, nelem);
+        break;
+      case kFloatM:
+        ret = load_and_assign_matrix<Float_t>(f, date, key, item->var, nelem);
+        break;
+      case kDoubleM:
+        ret = load_and_assign_matrix<Double_t>(f, date, key, item->var, nelem);
+        break;
+      case kIntM:
+        ret = load_and_assign_matrix<Int_t>(f, date, key, item->var, nelem);
+        break;
+      default:
+        ret = -2;
         break;
       }
 
@@ -1003,6 +921,16 @@ rangeerr:
           ret = 1 + static_cast<Int_t>(std::distance(req, item));
           break;
         }
+      } else if( ret == -2 ) {  // Unsupported type
+        if( item->type >= kDouble && item->type <= kObject2P )
+          ::Error(::Here(here, loaddb_prefix.c_str()),
+                  R"(Key "%s": Reading of data type "%s" not implemented)",
+                  key, Vars::GetEnumName(item->type));
+        else
+          ::Error(::Here(here, loaddb_prefix.c_str()),
+                  R"/(Key "%s": Reading of data type "(#%d)" not implemented)/",
+                  key, item->type);
+        break;
       } else if( ret == -128 ) {  // Line too long
         ::Error(::Here(here, loaddb_prefix.c_str()),
                 "Text line too long. Fix the database!\n\"%s...\"",
