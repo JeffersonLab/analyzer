@@ -430,6 +430,8 @@ Int_t THaAnalyzer::InitModules(
   Int_t retval = 0;
   for( auto it = module_list.begin(); it != module_list.end(); ) {
     auto* theModule = *it;
+    if( fVerbose > 1 )
+      cout << "Initializing " << theModule->GetName() << endl;
     try {
       retval = theModule->Init( run_time );
     }
@@ -599,6 +601,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   // Make sure the run is initialized.
   bool run_init = false;
   if( !run->IsInit()) {
+    cout << "Initializing run object" << endl;
     run_init = true;
     retval = run->Init();
     if( retval )
@@ -684,6 +687,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
 
   // Initialize all apparatuses, physics modules, event type handlers
   // and inter-stage modules in that order. Quit on any errors.
+  cout << "Initializing analysis objects" << endl;
   vector<THaAnalysisObject*> modulesToInit;
   modulesToInit.reserve(fApps.size() + fPhysics.size() +
                         fEvtHandlers.size() + fInterStage.size());
@@ -702,6 +706,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     } else {
       if( fCutFileName != fLoadedCutFileName ) {
 	// New test definitions -> load them
+	cout << "Loading cuts from " << fCutFileName << endl;
 	gHaCuts->Load( fCutFileName );
 	fLoadedCutFileName = fCutFileName;
       }
@@ -720,6 +725,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     TDirectory *olddir = gDirectory;
     fFile->cd();
 
+    cout << "Initializing output" << endl;
     if( (retval = fOutput->Init( fOdefFileName )) < 0 ) {
       Error( here, "Error initializing THaOutput." );
     } else if( retval == 1 )
@@ -735,6 +741,8 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     olddir->cd();
 
     // Post-process has to be initialized after all cuts are known
+    if( !fPostProcess.empty() )
+      cout << "Initializing post processors" << endl;
     for( auto* obj : fPostProcess) {
       retval = obj->Init(run_time);
       if( retval != 0 )
