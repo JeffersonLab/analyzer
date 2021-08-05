@@ -459,7 +459,7 @@ Int_t THaAnalyzer::Init( THaRunBase* run )
 {
   // Initialize the analyzer.
 
-  // This is a wrapper so we can conveniently control the benchmark counter
+  // This is a wrapper, so we can conveniently control the benchmark counter
   if( !run ) return -1;
 
   if( !fIsInit ) fBench->Reset();
@@ -546,7 +546,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
       // If previously initialized, we might have to clean up first.
       // If we had automatically allocated an event before, and now the
       // user specifies his/her own (fEvent != 0), then get rid of the
-      // previous event. Otherwise keep the old event since it would just be
+      // previous event. Otherwise, keep the old event since it would just be
       // re-created anyway.
       if( !fLocalEvent || fEvent )
 	new_event = true;
@@ -1372,7 +1372,7 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
     UInt_t evnum = fEvData->GetEvNum();
 
     // Count events according to the requested mode
-    // Whether or not to ignore events prior to fRun->GetFirstEvent()
+    // Whether to ignore events prior to fRun->GetFirstEvent()
     // is up to the analysis routines.
     switch(fCountMode) {
     case kCountPhysics:

@@ -52,7 +52,7 @@ Int_t THaUnRasteredBeam::Reconstruct()
 {
 
   // only the first two detectors in the list are used to get
-  // get the beam position in two points, and to extrapolate that 
+  // the beam position in two points, and to extrapolate that
   // to the nominal target point
   // the following detectors are processed, but not used
 

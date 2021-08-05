@@ -300,7 +300,7 @@ Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
 Int_t IsDBkey( const string& line, const char* key, string& text )
 {
   // Check if 'line' is of the form "key = value" and, if so, whether the key
-  // equals 'key'. Keys are not case sensitive.
+  // equals 'key'. Keys are not case-sensitive.
   // - If there is no '=', then return 0.
   // - If there is a '=', but the left-hand side doesn't match 'key',
   //   then return -1.
@@ -373,7 +373,7 @@ inline bool IsTag( const char* buf )
 Int_t GetLine( FILE* file, char* buf, Int_t bufsiz, string& line )
 {
   // Get a line (possibly longer than 'bufsiz') from 'file' using
-  // using the provided buffer 'buf'. Put result into string 'line'.
+  // the provided buffer 'buf'. Put result into string 'line'.
   // This is similar to std::getline, except that C-style I/O is used.
   // Also, convert all tabs to spaces.
   // Returns 0 on success, or EOF if no more data (or error).
