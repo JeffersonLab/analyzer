@@ -416,8 +416,11 @@ Int_t THaRunBase::ReadDatabase()
   }
 
   Int_t st = fParam->ReadDatabase(fDate);
-  if( st )
-    return st;
+  if( st ) {
+    Error( here, "Failed to read run database, error = %d. "
+                 "Cannot continue. Check for typos and ill-formed lines.", st);
+    return READ_FATAL;
+  }
 
   fDBRead = true;
   return READ_OK;
