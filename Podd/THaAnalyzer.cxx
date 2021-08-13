@@ -976,6 +976,10 @@ Int_t THaAnalyzer::BeginAnalysis()
     theModule->Begin( fRun );
   }
 
+  for( auto* obj : fEvtHandlers ) {
+    obj->Begin(fRun);
+  }
+
   return 0;
 }
 
@@ -988,6 +992,11 @@ Int_t THaAnalyzer::EndAnalysis()
   for( auto* theModule : fAnalysisModules ) {
     theModule->End( fRun );
   }
+
+  for( auto* obj : fEvtHandlers ) {
+    obj->End(fRun);
+  }
+
   return 0;
 }
 
