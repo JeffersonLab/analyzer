@@ -11,8 +11,7 @@ proc ModulesHelp { } {
 
 set version @PROJECT_VERSION@@EXTVERS@
 set osname  [uname sysname]
-# Support relocation
-set prefix  [file dirname [file normalize [info script]/../..]]
+set prefix  [file normalize "@CMAKE_INSTALL_PREFIX@"]
 
 module load root
 
