@@ -401,6 +401,16 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init()
 }
 
 //_____________________________________________________________________________
+class database_error : public std::runtime_error {
+public:
+  explicit database_error( Int_t st, const char* fnam )
+    : std::runtime_error("Error reading database"),
+      status(st), filename(fnam) {}
+  Int_t status;
+  const char* filename;
+};
+
+//_____________________________________________________________________________
 THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 {
   // Common Init function for THaAnalysisObjects.
@@ -416,65 +426,70 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
   if( IsZombie() )
     return fStatus = kNotinit;
 
-  fInitDate = date;
-  
-  const char* fnam = "run.";
-
   // Generate the name prefix for global variables. Do this here, not in
   // the constructor, so we can use a virtual function - detectors and
   // especially subdetectors may have their own idea what prefix they like.
   MakePrefix();
 
-  // Open the run database and call the reader. If database cannot be opened,
-  // fail only if this object needs the run database
-  // Call this object's actual database reader
-  Int_t status = ReadRunDatabase(date);
-  if( status && (status != kFileError || (fProperties & kNeedsRunDB) != 0))
-    goto err;
+  // Skip reinitialization if there is no (relevant) date change.
+  if( DBDatesDiffer(date, fInitDate) ) {
+    try {
+      // Open the run database and call the reader. If database cannot be opened,
+      // fail only if this object needs the run database
+      // Call this object's actual database reader
+      Int_t status = ReadRunDatabase(date);
+      if( status && (status != kFileError || (fProperties & kNeedsRunDB) != 0) ) {
+        throw database_error(status, "run.");
+      }
 
-  // Read the database for this object.
-  // Don't bother if this object has not implemented its own database reader.
-
-  // Note: requires ROOT >= 3.01 because of TClass::GetMethodAllAny()
-  if( IsA()->GetMethodAllAny("ReadDatabase") != 
+      // Read the database for this object.
+      // Don't bother if this object has not implemented its own database reader.
+      if( IsA()->GetMethodAllAny("ReadDatabase") !=
       gROOT->GetClass("THaAnalysisObject")->GetMethodAllAny("ReadDatabase") ) {
 
-    // Call this object's actual database reader
-    fnam = GetDBFileName();
-    try {
-      status = ReadDatabase(date);
+        // Call this object's actual database reader
+        if( (status = ReadDatabase(date)) )
+          throw database_error(status, GetDBFileName());
+
+      } else if( fDebug > 1 ) {
+        Info(Here(here), "No ReadDatabase function defined. "
+                         "Database not read.");
+      }
+    }
+
+    catch( const database_error& e ) {
+      if( e.status == kFileError )
+        Error(Here(here), "Cannot open database file db_%sdat", e.filename);
+      else
+        Error(Here(here), "Error while reading file db_%sdat", e.filename);
+      return fStatus = static_cast<EStatus>(e.status);
     }
     catch( const std::bad_alloc& ) {
-      Error( Here(here), "Out of memory in ReadDatabase. Machine too busy? "
-	     "Call expert." );
-      status = kInitError;
+      Error(Here(here), "Out of memory in ReadDatabase.");
+      return fStatus = kInitError;
     }
     catch( const std::exception& e ) {
-      Error( Here(here), "Exception %s caught in ReadDatabase. "
-	     "Module not initialized. Check database or call expert.",
-	     e.what() );
-      status = kInitError;
+      Error(Here(here), "Exception \"%s\" caught in ReadDatabase. "
+                        "Module not initialized. Check database or call expert.",
+            e.what());
+      return fStatus = kInitError;
     }
-    if( status )
-      goto err;
-  } 
-  else if ( fDebug>0 ) {
-    Info( Here(here), "No ReadDatabase function defined. Database not read." );
+  } else if( fDebug > 1 ) {
+    Info(Here(here), "Not re-reading database for same date.");
   }
 
+  // Save the last successful initialization date. This is used to prevent
+  // unnecessary reinitialization.
+  fInitDate = date;
+
   // Define this object's variables.
-  status = DefineVariablesWrapper(kDefine);
+  fStatus = static_cast<EStatus>( DefineVariablesWrapper(kDefine) );
 
+  // Clear() the object. The "I" option indicates that the call comes from
+  // Init(), which can be used to perform or skip certain steps, as needed.
   Clear("I");
-  goto exit;
 
- err:
-  if( status == kFileError )
-    Error( Here(here), "Cannot open database file db_%sdat", fnam );
-  else if( status == kInitError )
-    Error( Here(here), "Error when reading file db_%sdat", fnam);
- exit:
-  return fStatus = (EStatus)status;
+  return fStatus;
 }
 
 //_____________________________________________________________________________

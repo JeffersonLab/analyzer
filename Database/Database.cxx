@@ -524,6 +524,17 @@ Int_t ReadDBline( FILE* file, char* buf, Int_t bufsiz, string& line )
 }
 
 //_____________________________________________________________________________
+Bool_t DBDatesDiffer( const TDatime& a, const TDatime& b )
+{
+  // Determine if there are any differences in the database contents for dates
+  // 'a' and 'b'. If so, return true.
+  // Currently simply returns whether 'a' and 'b' are different.
+  // TODO: Fully implement this once database indexes are kept in memory.
+
+  return a != b;
+}
+
+//_____________________________________________________________________________
 Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key,
                    string& value )
 {

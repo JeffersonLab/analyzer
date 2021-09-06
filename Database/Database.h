@@ -37,6 +37,7 @@ FILE*    OpenDBFile( const char* name, const TDatime& date, const char* here = "
 FILE*    OpenDBFile( const char* name, const TDatime& date, const char* here,
                      const char* filemode, int debug_flag, const char*& openpath );
 Int_t    ReadDBline( FILE* file, char* buf, Int_t bufsiz, std::string& line );
+Bool_t   DBDatesDiffer( const TDatime& a, const TDatime& b );
 
 // Access functions for reading key/value pairs from database files
 template<class T> // instantiations available for all supported types (see VarType.h)
