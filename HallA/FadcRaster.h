@@ -20,7 +20,7 @@ protected:
   OptUInt_t LoadData( const THaEvData& evdata,
                       const DigitizerHitInfo_t& hitinfo ) override;
 
-  ClassDef(THaRaster,0)   // Generic Raster class with FADC readouts
+  ClassDef(FadcRaster,0)   // Generic Raster class with FADC readouts
 };
 
 } //namespace HallA
