@@ -11,6 +11,7 @@ libname = 'HallA'
 # Sources and headers
 src = """
 FADCData.cxx               FadcBPM.cxx                 FadcCherenkov.cxx
+FadcRaster.cxx             FadcRasteredBeam.cxx        FadcUnRasteredBeam.cxx
 FadcScintillator.cxx       FadcShower.cxx
 THaADCHelicity.cxx         THaDecData.cxx              THaG0Helicity.cxx
 THaG0HelicityReader.cxx    THaHelicity.cxx             THaHRS.cxx
