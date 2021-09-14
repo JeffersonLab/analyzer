@@ -159,13 +159,10 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
     return err;
   }
 
-  if( !fIsInit || !fPMTData ) {
-    fDetectorData.clear();
-    auto detdata = MKPMTDATA(GetPrefixName(), fTitle, nval);
-    fPMTData = detdata.get();
-    fDetectorData.emplace_back(std::move(detdata));
-    fIsInit = true;
-  }
+  fDetectorData.clear();
+  auto detdata = MKPMTDATA(GetPrefixName(), fTitle, nval);
+  fPMTData = detdata.get();
+  fDetectorData.emplace_back(std::move(detdata));
   assert(fPMTData->GetSize() == nval);
 
   // Read calibration parameters
@@ -207,6 +204,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   }
 #endif
 
+  fIsInit = true;
   return kOK;
 }
 
