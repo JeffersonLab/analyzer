@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(Podd VERSION 1.7.0 LANGUAGES CXX)
-set(EXTVERS -rc6)
+set(EXTVERS -rc7)
 
 #----------------------------------------------------------------------------
 # Use our modules and utility functions
