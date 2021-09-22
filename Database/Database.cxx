@@ -861,6 +861,12 @@ Int_t LoadDatabase( FILE* f, const TDatime& date, const DBRequest* req,
       case kFloat:
         ret = load_and_assign<Float_t>(f, date, key, item->var, nelem);
         break;
+      case kLong:
+        ret = load_and_assign<Long64_t>(f, date, key, item->var, nelem);
+        break;
+      case kULong:
+        ret = load_and_assign<ULong64_t>(f, date, key, item->var, nelem);
+        break;
       case kInt:
         ret = load_and_assign<Int_t>(f, date, key, item->var, nelem);
         break;
