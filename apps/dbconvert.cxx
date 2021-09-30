@@ -1864,7 +1864,7 @@ static int ForAllFilesInDir( const string& sdir, Action action, int depth = 0 )
       return -1;
     }
     // In case 'action' caused the directory contents to change, rewind the
-    // directory and scan it again (needed for MacOS HFS file systems, perhaps
+    // directory and scan it again (needed for macOS HFS file systems, perhaps
     // elsewhere too)
     if( action.MustRewind() ) {
       rewinddir(dir);
@@ -2095,7 +2095,7 @@ static int PrepareOutputDir( const string& topdir, const vector<string>& subdirs
 static Int_t GetLine( FILE* file, char* buf, Int_t bufsiz, string& line )
 {
   // Get a line (possibly longer than 'bufsiz') from 'file' using
-  // using the provided buffer 'buf'. Put result into string 'line'.
+  // the provided buffer 'buf'. Put result into string 'line'.
   // This is similar to std::getline, except that C-style I/O is used.
   // Also, convert all tabs to spaces.
   // Returns 0 on success, or EOF if no more data (or error).
@@ -2462,8 +2462,8 @@ static int CopyFiles( const string& target_dir, const vector<string>& subdirs,
 
       set_tz( inp_tz );
       bool got_initial_timestamp = false;
-      time_t cur_date = 0; // Timestamp of currect section
-      size_t ndata = 0;    // Non-comment lines in currect section
+      time_t cur_date = 0; // Timestamp of current section
+      size_t ndata = 0;    // Non-comment lines in current section
       SectionMap_t sections;
       string chunk;
       bool skip = false;
@@ -2862,12 +2862,12 @@ Detector::EReadBlockRetval Detector::ReadBlock( FILE* fi, T* data, int nval,
   // Read exactly 'nval' values of type T from file 'fi' into array 'data'.
   // Skip initial comment lines and comments at the end of each line.
   // Comment lines are lines that start with non-whitespace.
-  // Data values may be spread over multiple lines. Each data line should
+  // Data values may be spread over multiple lines. Each line with data should
   // start with whitespace. A comment line after data lines ends parsing.
   // Error conditions: Not enough or too many data values in block
   // Optionally: value < 0 or <= 0 encountered
   // Warning if: comment line actually appears to be data (starts with
-  // a digit or "-" followed by a digit.
+  // a digit or "-" followed by a digit).
 
   const char* const digits = "01234567890";
   const Int_t LEN = 128;
@@ -3001,7 +3001,7 @@ Detector::EReadBlockRetval Detector::ReadBlock( FILE* fi, T* data, int nval,
 //-----------------------------------------------------------------------------
 int Detector::PurgeAllDefaultKeys()
 {
-  // Remove all keys of this detector that have only default values
+  // Remove all keys of this detector that are set to their default values
 
   if( fDefaults.empty() )
     RegisterDefaults();
@@ -3179,7 +3179,7 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
   }
 
   // If the detector map did not specify models, make it so. The Cherenkov
-  // detector need models numbers in the data base
+  // detector needs model numbers in the database
   if( !fDetMapHasModel ) {
     // If there are no model numbers, we must have an even number of modules
     // where the first half are ADCs, the second, TDCs
@@ -3300,7 +3300,7 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     fRGain   = unique_ptr<Double_t[]>(new Double_t[fNelem]);
     fTrigOff = unique_ptr<Double_t[]>(new Double_t[fNelem]);
 
-    fNTWalkPar = 2*fNelem; // 1 paramter per PMT
+    fNTWalkPar = 2*fNelem; // one parameter per PMT
     fTWalkPar = unique_ptr<Double_t[]>(new Double_t[fNTWalkPar]);
   }
   memset(fTrigOff.get(),0,fNelem*sizeof(fTrigOff[0]));
@@ -3329,7 +3329,7 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   // <left TDC offsets>
   // <right TDC offsets>
   // <left ADC peds>
-  // <rigth ADC peds>
+  // <right ADC peds>
   // <left ADC coeff>
   // <right ADC coeff>
   //
@@ -4063,9 +4063,8 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
   fp_map["y"] = 1;
   fp_map["p"] = 2;
 
-  // Read in as many of the matrix elements as there are.
-  // Read in line-by-line, so as to be able to handle tensors of
-  // different orders.
+  // Read as many of the matrix elements as there are.
+  // Read line-by-line, so we can handle tensors of different orders.
   while( fgets(buff, LEN, file) ) {
     string line2(buff);
     // Erase trailing newline
@@ -4301,7 +4300,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
   }
   fNelem = nWires;
 
-  // Load z, wire beginning postion, wire spacing, and wire angle
+  // Load z, wire beginning position, wire spacing, and wire angle
   sscanf( buff, "%15lf %15lf %15lf %15lf", &fZ, &fWBeg, &fWSpac, &fWAngle );
   fOrigin.SetXYZ( 0.0, 0.0, fZ );
 
