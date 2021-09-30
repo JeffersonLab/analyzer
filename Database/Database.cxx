@@ -16,8 +16,6 @@
 #include "TString.h"
 #include "TError.h"
 #include "TSystem.h"
-#include "TThread.h"
-#include "TVirtualMutex.h"
 
 #include <cerrno>
 #include <cctype>    // for isspace
@@ -28,12 +26,8 @@
 #include <iostream>
 #include <limits>
 #include <algorithm>
-#include <map>
 
 using namespace std;
-
-// Mutex for concurrent access to global Here function
-static TVirtualMutex* gHereMutex = nullptr;
 
 //_____________________________________________________________________________
 const char* Here( const char* method, const char* prefix )
@@ -44,8 +38,8 @@ const char* Here( const char* method, const char* prefix )
   // ::Here("method","prefix")        -> returns ("prefix")::method
   // ::Here("Class::method","prefix") -> returns Class("prefix")::method
 
-  // One static string buffer per thread ID
-  static map<Long_t, TString> buffers;
+  // One static string buffer per thread
+  static thread_local TString buffer;
 
   TString txt;
   if( prefix && *prefix ) {
@@ -70,11 +64,9 @@ const char* Here( const char* method, const char* prefix )
   if( method )
     txt.Append(method);
 
-  R__LOCKGUARD2(gHereMutex);
+  buffer = txt;
 
-  TString& ret = (buffers[TThread::SelfId()] = txt);
-
-  return ret.Data(); // pointer to the C-string of a TString in static map
+  return buffer.Data(); // pointer to the C-string of a static TString
 }
 
 //=============================================================================
@@ -96,11 +88,7 @@ vector<string> GetDBFileList( const char* name, const TDatime& date,
   // The file names are relative to the current directory.
 
   static const string defaultdir = "DEFAULT";
-#ifdef WIN32
-  static const string dirsep = "\\", allsep = "/\\";
-#else
   static const string dirsep = "/", allsep = "/";
-#endif
 
   vector<string> fnames;
   if( !name || !*name )
@@ -265,10 +253,9 @@ FILE* OpenDBFile( const char* name, const TDatime& date, const char* here,
 
 //---------- Database utility functions ---------------------------------------
 
-//FIXME: make thread-safe
-static string errtxt;
-static int loaddb_depth = 0; // Recursion depth in LoadDB
-static string loaddb_prefix; // Actual prefix of object in LoadDB (for err msg)
+static thread_local string errtxt;
+static thread_local int loaddb_depth = 0; // Recursion depth in LoadDB
+static thread_local string loaddb_prefix; // Actual prefix of object in LoadDB (for err msg)
 
 // Local helper functions
 namespace {
