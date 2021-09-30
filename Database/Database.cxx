@@ -24,6 +24,7 @@
 #include <cstring>
 #include <cstdlib>   // for atoi, strtod, strtol etc.
 #include <iterator>  // for std::distance
+#include <ctime>     // for struct tm
 #include <iostream>
 #include <limits>
 #include <algorithm>
@@ -283,17 +284,36 @@ Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
   if( lbrk == string::npos || lbrk >= line.size() - 12 ) return 0;
   auto rbrk = line.find(']', lbrk);
   if( rbrk == string::npos || rbrk <= lbrk + 11 ) return 0;
-  Int_t yy, mm, dd, hh, mi, ss;
-  if( sscanf(line.substr(lbrk + 1, rbrk - lbrk - 1).c_str(), "%4d-%2d-%2d %2d:%2d:%2d",
-             &yy, &mm, &dd, &hh, &mi, &ss) != 6
-      || yy < 1995 || mm < 1 || mm > 12 || dd < 1 || dd > 31
-      || hh < 0 || hh > 23 || mi < 0 || mi > 59 || ss < 0 || ss > 59 ) {
+  string ts = line.substr(lbrk+1,rbrk-lbrk-1);
+
+  bool err = false;
+  struct tm tm{};
+  const char* c = strptime(ts.c_str(), " %Y-%m-%d %H:%M:%S %z ", &tm);
+  if( !c ) {
+    // No time zone field: try again without that field.
+    // We allow this for compatibility with old databases.
+    c = strptime(ts.c_str(), " %Y-%m-%d %H:%M:%S ", &tm);
+    if( !c )
+      err = true;
+    // If this succeeds, assume the value represents local time.
+    // This may cause errors if the database and the local time zone differ!
+  } else {
+    // Time zone offset explicitly given (as it should): Convert to localtime,
+    // which is what TDatime wants.
+    time_t tval = mktime(&tm);
+    if( tval == -1 )
+      err = true;
+    else
+      localtime_r(&tval, &tm);
+  }
+  if( err || tm.tm_year < 95 ) {
     if( warn )
-      ::Warning("IsDBdate()",
-                "Invalid date tag %s", line.c_str());
+      ::Warning("IsDBdate()", "Invalid date tag %s", line.c_str());
     return 0;
   }
-  date.Set(yy, mm, dd, hh, mi, ss);
+  date.Set(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+           tm.tm_hour, tm.tm_min, tm.tm_sec);
+
   return 1;
 }
 
