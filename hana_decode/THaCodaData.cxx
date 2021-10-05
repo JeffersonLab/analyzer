@@ -65,13 +65,12 @@ void THaCodaData::staterr(const char* tried_to, Int_t status) const
            << endl;
     return;
   }
-  cerr << endl << Form("THaCodaFile: ERROR while trying to %s %s: ",
+  cerr << Form("THaCodaFile: ERROR while trying to %s %s: ",
       tried_to, filename.Data());
-  Long64_t code = status;
-  switch( code ) {
+  switch( static_cast<UInt_t>(status) ) {
   case S_EVFILE_TRUNC :
     cerr << "Truncated event on file read. Evbuffer size is too small. "
-    << endl;
+         << endl;
     break;
   case S_EVFILE_BADBLOCK :
     cerr << "Bad block number encountered " << endl;
@@ -102,12 +101,12 @@ Int_t THaCodaData::ReturnCode( Int_t evio_retcode )
 {
   // Convert EVIO return codes to THaRunBase codes
 
-  switch( static_cast<Long64_t>(evio_retcode) ) {
+  switch( static_cast<UInt_t>(evio_retcode) ) {
 
   case S_SUCCESS:
     return CODA_OK;
 
-  case EOF:
+  case static_cast<UInt_t>(EOF):
     return CODA_EOF;
 
   case S_EVFILE_UNXPTDEOF:
@@ -121,7 +120,7 @@ Int_t THaCodaData::ReturnCode( Int_t evio_retcode )
   case S_EVFILE_BADSIZEREQ:
     return CODA_FATAL;
 
-    // The following indicate a programming error and so should be trapped
+  // The following indicate a programming error and so should be trapped
   case S_EVFILE_UNKOPTION:
   case S_EVFILE_BADARG:
   case S_EVFILE_BADMODE:
