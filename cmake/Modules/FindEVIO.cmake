@@ -13,11 +13,14 @@ if( DEFINED ENV{CODA} )
   set(coda_arch_inc $ENV{CODA}/${evio_arch}/include $ENV{CODA}/common/include)
 endif()
 
-find_library(EVIO_LIBRARY evio
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(evio_dbg evio-dbg)
+endif()
+find_library(EVIO_LIBRARY ${evio_dbg} evio
   PATHS ENV EVIO_LIBDIR ${evio_arch_lib} ${coda_arch_lib} NO_DEFAULT_PATHS
   DOC "EVIO C-API library"
   )
-find_library(EVIO_LIBRARY evio
+find_library(EVIO_LIBRARY ${evio_dbg} evio
   DOC "EVIO C-API library"
   )
 find_path(EVIO_INCLUDE_DIR
