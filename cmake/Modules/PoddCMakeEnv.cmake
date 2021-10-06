@@ -1,7 +1,6 @@
 # CMake settings and utility functions for Podd projects
 
 include(CheckCXXCompilerFlag)
-include(CheckCXXSourceRuns)
 
 #----------------------------------------------------------------------------
 # Set default build type to RelWithDebInfo
@@ -41,18 +40,6 @@ if(NOT PROJECT_VERSION_MAJOR)
 endif()
 math(EXPR ${PROJECT_NAME_UC}_VERCODE
   "${PROJECT_VERSION_MAJOR} * 65536 + ${PROJECT_VERSION_MINOR} * 256 + ${PROJECT_VERSION_PATCH}")
-
-#----------------------------------------------------------------------------
-# Feature checks
-set(CMAKE_REQUIRED_FLAGS -std=c++11)
-check_cxx_source_runs("
-#include <cstdlib>
-#include <cstdint>
-#include <typeinfo>
-int main() {
- return typeid(int64_t) == typeid(long int) ? EXIT_SUCCESS : EXIT_FAILURE;
-}"
-  INT64_IS_LONG)
 
 #============================================================================
 # Remove duplicates from space-separated list of items

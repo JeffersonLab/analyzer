@@ -1,17 +1,18 @@
 # Fetch EVIO archive (currently from our GitHub mirror) and prepare for building the C-library
 
 message(STATUS "Will build local copy of EVIO")
-set(EVIO_VERSION 5.2)
+set(EVIO_VERSION 5.2.1)
+set(acct hansenjo)
 set(repo evio)
 set(release v${EVIO_VERSION})
 set(tarfile ${release}.tar.gz)
-set(EVIO_HASH 41cf675cc38cf783831cb5368ce12700)
+set(EVIO_HASH ea4bc91e59d6a1f074edf0fad06292d0)
 
 set(EVIO_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/evio/src)
 set(EVIO_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/evio/build)
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${EVIO_SOURCE_DIR} ${EVIO_BINARY_DIR})
 set(EVIO_TARFILE ${EVIO_SOURCE_DIR}/${tarfile})
-file(DOWNLOAD https://github.com/JeffersonLab/${repo}/archive/${tarfile}
+file(DOWNLOAD https://github.com/${acct}/${repo}/archive/${tarfile}
   ${EVIO_TARFILE}
   EXPECTED_HASH MD5=${EVIO_HASH}
   STATUS _status
@@ -40,18 +41,6 @@ if(_havegnu GREATER -1)
 endif()
 execute_process(COMMAND ${TARPROG} -x --strip-components=3 -f ${EVIO_TARFILE} ${TAR_FLAGS} "*/libsrc"
   WORKING_DIRECTORY ${EVIO_SOURCE_DIR})
-# Patch for issues with official EVIO release
-if(INT64_IS_LONG)
-  find_program(PATCHPROG NAMES patch DOC "Unix patch utility")
-  if(NOT PATCHPROG)
-    message(FATAL_ERROR "Need patch to build EVIO")
-  endif()
-  # This is somehow backwards. The code should /not/ need patching for the
-  # standard case int64_t = long int. But it assumes int64_t = long long int.
-  execute_process(COMMAND ${PATCHPROG} --silent --strip 3 --input
-    ${CMAKE_CURRENT_SOURCE_DIR}/evio/0001-revert-printf-long-long-format.patch
-    WORKING_DIRECTORY ${EVIO_SOURCE_DIR})
-endif()
 # Configure custom CMake files for building the EVIO C-library only
 configure_file(evio/CMakeLists.txt.in ${EVIO_SOURCE_DIR}/CMakeLists.txt @ONLY)
 file(COPY evio/EVIOConfig.cmake.in DESTINATION ${EVIO_SOURCE_DIR})
