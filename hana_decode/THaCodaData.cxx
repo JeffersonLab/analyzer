@@ -17,9 +17,7 @@
 #include "evio.h"
 #include <cassert>
 #include <iostream>
-#include <cerrno>
 #include <algorithm>
-#include <iterator>
 
 #define ALL(c) (c).begin(), (c).end()
 
@@ -85,14 +83,24 @@ void THaCodaData::staterr(const char* tried_to, Int_t status) const
     cerr << "File format error" << endl;
     break;
   case S_EVFILE_UNKOPTION :
-    cerr << "Unknown file open option specified" << endl;
+  case S_EVFILE_BADARG :
+  case S_EVFILE_BADMODE :
+    cerr << "Unknown function argument or option" << endl;
     break;
   case S_EVFILE_UNXPTDEOF :
     cerr << "Unexpected end of file while reading event" << endl;
     break;
+  case S_EVFILE_BADSIZEREQ :
+    cerr << "Invalid buffer size request to evIoct" << endl;
+    break;
+#if defined(S_EVFILE_BADHEADER)
+  case S_EVFILE_BADHEADER :
+    cerr << "Invalid bank/segment header data" << endl;
+    break;
+#endif
   default:
-    errno = status;
-    perror(nullptr);
+    cerr << "Unknown error " << hex << status << dec << endl;
+    break;
   }
 }
 
@@ -111,6 +119,9 @@ Int_t THaCodaData::ReturnCode( Int_t evio_retcode )
 
   case S_EVFILE_UNXPTDEOF:
   case S_EVFILE_TRUNC:
+#if defined(S_EVFILE_BADHEADER)
+  case S_EVFILE_BADHEADER:
+#endif
     return CODA_ERROR;
 
   case S_EVFILE_BADBLOCK:
