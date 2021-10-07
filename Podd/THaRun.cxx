@@ -255,7 +255,7 @@ Int_t THaRun::ReadInitInfo()
 	}
       }
       for(const auto & fname : fnames) {
-	if( !gSystem->AccessPathName(s, kReadPermission) ) {
+	if( !gSystem->AccessPathName(fname, kReadPermission) ) {
 	  THaCodaData* save_coda = fCodaData;
 	  Int_t        save_seg  = fSegment;
 	  fCodaData = new THaCodaFile;
