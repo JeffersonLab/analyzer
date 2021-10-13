@@ -249,6 +249,7 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer) {
       break;
     case 0xff50:
     case 0xff58: // Physics event with sync bit
+    case 0xFF78:
     case 0xff70:
       event_type = 1;  // Physics event type
       break;
