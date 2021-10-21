@@ -98,7 +98,7 @@ protected:
   TObject*      fExtra;         // Additional member data (for binary compat.)
 
   virtual Int_t ReadDatabase();
-  virtual Int_t ReadInitInfo();
+  virtual Int_t ReadInitInfo( Int_t level = 0);
 
   ClassDef(THaRunBase,6)       // Base class for run objects
 };

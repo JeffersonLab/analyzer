@@ -17,8 +17,11 @@
 #include "TSystem.h"
 #include "TRegexp.h"
 #include <iostream>
-#include <cstdlib>
+#include <iomanip>
 #include <cassert>
+#include <string>
+#include <regex>
+#include <stdexcept>
 
 using namespace std;
 
@@ -28,17 +31,18 @@ using namespace std;
 # define MKCODAFILE unique_ptr<Decoder::THaCodaFile>(new Decoder::THaCodaFile)
 #endif
 
-static const int   fgMaxScan   = 5000;
-static const char* fgThisClass = "THaRun";
+static const int         fgMaxScan   = 5000;
+static const char* const fgRe1       = "^.*\\.([0-9]+)$";
+static const char* const fgRe2       = "^.*\\.([0-9]+)\\.([0-9]+)$";
 
 //_____________________________________________________________________________
 THaRun::THaRun( const char* fname, const char* description ) :
-  THaCodaRun(description), fFilename(fname), fMaxScan(fgMaxScan), fSegment(0)
+  THaCodaRun(description), fFilename(fname), fMaxScan(fgMaxScan),
+  fSegment(-1), fStream(-1)
 {
   // Normal & default constructor
 
   fCodaData = MKCODAFILE;  //Specifying the file name would open the file
-  FindSegmentNumber();
 
   // Hall A runs normally contain all these items
   fDataRequired = kDate|kRunNumber|kRunType|kPrescales;
@@ -46,8 +50,8 @@ THaRun::THaRun( const char* fname, const char* description ) :
 
 //_____________________________________________________________________________
 THaRun::THaRun( const vector<TString>& pathList, const char* filename,
-		const char* description )
-  : THaCodaRun(description), fMaxScan(fgMaxScan), fSegment(0)
+                const char* description )
+  : THaCodaRun(description), fMaxScan(fgMaxScan), fSegment(-1), fStream(-1)
 {
   //  cout << "Looking for file:\n";
   for(const auto & path : pathList) {
@@ -60,7 +64,6 @@ THaRun::THaRun( const vector<TString>& pathList, const char* filename,
   //cout << endl << "--> Opening file:  " << fFilename << endl;
 
   fCodaData = MKCODAFILE;  //Specifying the file name would open the file
-  FindSegmentNumber();
 
   // Hall A runs normally contain all these items
   fDataRequired = kDate|kRunNumber|kRunType|kPrescales;
@@ -68,12 +71,12 @@ THaRun::THaRun( const vector<TString>& pathList, const char* filename,
 
 //_____________________________________________________________________________
 THaRun::THaRun( const THaRun& rhs ) :
-  THaCodaRun(rhs), fFilename(rhs.fFilename), fMaxScan(rhs.fMaxScan), fSegment(0)
+  THaCodaRun(rhs), fFilename(rhs.fFilename), fMaxScan(rhs.fMaxScan),
+  fSegment(rhs.fSegment), fStream(rhs.fStream)
 {
   // Copy ctor
 
   fCodaData = MKCODAFILE;
-  FindSegmentNumber();
 }
 
 //_____________________________________________________________________________
@@ -96,7 +99,7 @@ THaRun& THaRun::operator=(const THaRunBase& rhs)
     catch( const std::bad_cast& ) {
       fMaxScan = fgMaxScan;
       fSegment = 0;
-      //fStream = 0;
+      fStream = 0;
     }
   }
   return *this;
@@ -136,6 +139,8 @@ Int_t THaRun::Compare( const TObject* obj ) const
   if( !rhsr ) return 0;
   if( fSegment < rhsr->fSegment ) return -1;
   else if( rhsr->fSegment < fSegment ) return 1;
+  if( fStream < rhsr->fStream ) return -1;
+  else if( rhsr->fStream < fStream ) return 1;
   return 0;
 }
 
@@ -149,6 +154,10 @@ Int_t THaRun::Open()
   if( fFilename.IsNull() ) {
     Error( here, "CODA file name not set. Cannot open the run." );
     return READ_FATAL;  // filename not set
+  }
+  if( !FindSegmentNumber() ) {
+    Error(here, "Malformed file name or program bug. Call expert.");
+    return READ_FATAL;
   }
 
   fOpened = false;
@@ -176,106 +185,157 @@ void THaRun::Print( Option_t* opt ) const
   cout << "Max # scan:     " << fMaxScan  << endl;
   cout << "CODA file:      " << fFilename << endl;
   cout << "Segment number: " << fSegment  << endl;
+  cout << "Stream number: "  << fStream   << endl;
 }
 
 //_____________________________________________________________________________
-Int_t THaRun::ReadInitInfo()
+Bool_t THaRun::ProvidesInitInfo()
+{
+  // Return true if this run /should/ contain the necessary data for
+  // initialization (run date etc.)
+
+  // Current configuration in Hall A/C:
+  // - If there is no segment number, the run has init info (file not split)
+  // - If there is a segment number, only segment 0 has the init info
+  return (fSegment == -1 || fSegment == 0);
+}
+
+//_____________________________________________________________________________
+Int_t THaRun::PrescanFile()
+{
+  static const char* const here = "PrescanFile";
+
+  unique_ptr<THaEvData> evdata{static_cast<THaEvData*>(gHaDecoder->New())};
+  // Disable advanced processing
+  evdata->EnableScalers(false);
+  evdata->EnableHelicity(false);
+  evdata->SetDataVersion(GetCodaVersion());
+  UInt_t nev = 0;
+  Int_t status = READ_OK;
+  while( nev < fMaxScan && !HasInfo(fDataRequired) &&
+         (status = ReadEvent()) == READ_OK ) {
+
+    // Decode events. Skip bad events.
+    nev++;
+    status = evdata->LoadEvent(GetEvBuffer());
+    if( status != THaEvData::HED_OK ) {
+      if( status == THaEvData::HED_ERR || status == THaEvData::HED_FATAL ) {
+        Error(here, "Error decoding event %u", nev);
+        status = READ_ERROR;
+        break;
+      }
+      Warning(here, "Skipping event %u due to warnings", nev);
+      status = READ_OK;
+      continue;
+    }
+
+    // Inspect event and extract run parameters if appropriate
+    Int_t st = Update(evdata.get());
+    //FIXME: debug
+    if( st == 1 )
+      cout << "Prestart at " << nev << endl;
+    else if( st == 2 )
+      cout << "Prescales at " << nev << endl;
+    else if( st < 0 ) {
+      status = READ_ERROR;
+      break;
+    }
+  }//end while
+
+  return status;
+}
+
+//_____________________________________________________________________________
+TString THaRun::GetInitInfoFileName( TString fname )
+{
+  // Based on the given file name, get the file name pattern that matches
+  // runs containing initialization info.
+  // This version simply changes the segment number to 0.
+
+  // Extract the file base name
+  Ssiz_t dot = fname.Last('.');
+  if( dot != kNPOS) {
+    fname.Remove(dot);
+    fname.Append(".0");
+  }
+
+  return fname;
+}
+
+//_____________________________________________________________________________
+TString THaRun::FindInitInfoFile( const TString& fname )
+{
+  // Find a file matching the name pattern returned by GetInitInfoFile().
+  // The file must exist on disk and have at least read permissions.
+  // Search in typical directories:
+  // - First, in the same directory as the continuation segment.
+  // - Then, if the filename's dirname contains dataN or workN, with N=0...9,
+  //   also try looking in all other dataNs or workN. If dataN is found, ignore
+  //   any workN in the file name.
+  // Returns an empty string if no matching file can be found.
+
+  TString s = GetInitInfoFileName(fname);
+  if( !gSystem->AccessPathName(s, kReadPermission) )
+    return s;
+
+  TString dirn = gSystem->DirName(s);
+  Ssiz_t pos = dirn.Index(TRegexp("data[0-9]"));
+  if( pos == kNPOS )
+    pos = dirn.Index(TRegexp("work[0-9]"));
+  if( pos != kNPOS ) {
+    TString sN = dirn(pos + 4, 1);
+    Int_t curN = sN.Atoi();
+    TString base = gSystem->BaseName(s);
+    for( Int_t i = 0; i <= 9; i++ ) {
+      if( i == curN )
+        continue;
+      dirn[pos+4] = TString::Itoa(i,10)[0];
+      s = dirn + "/" + base;
+      if( !gSystem->AccessPathName(s, kReadPermission) )
+        return s;
+    }
+  }
+  return {};  // empty string: not found
+}
+
+//_____________________________________________________________________________
+Int_t THaRun::ReadInitInfo( Int_t level )
 {
   // Read initial info from the CODA file. This is done by prescanning
   // the run file in a local mini event loop via a local decoder.
+  // 'level' is an optional recursion depth, default 0.
 
   static const char* const here = "ReadInitInfo";
 
   // If pre-scanning of the data file requested, read up to fMaxScan events
   // and extract run parameters from the data.
+  if( fMaxScan == 0 )
+    return READ_OK;
+
   Int_t status = READ_OK;
-  if( fMaxScan > 0 ) {
-    if( fSegment == 0 ) {
-      unique_ptr<THaEvData> evdata{static_cast<THaEvData*>(gHaDecoder->New())};
-      // Disable advanced processing
-      evdata->EnableScalers(false);
-      evdata->EnableHelicity(false);
-      evdata->SetDataVersion(GetCodaVersion());
-      UInt_t nev = 0;
-      while( nev<fMaxScan && !HasInfo(fDataRequired) &&
-	     (status = ReadEvent()) == READ_OK ) {
 
-	// Decode events. Skip bad events.
-	nev++;
-	status = evdata->LoadEvent( GetEvBuffer());
-	if( status != THaEvData::HED_OK ) {
-	  if( status == THaEvData::HED_ERR ||
-	      status == THaEvData::HED_FATAL ) {
-	    Error( here, "Error decoding event %u", nev );
-	    status = READ_ERROR;
-	    break;
-	  }
-	  Warning( here, "Skipping event %u due to warnings", nev );
-	  status = READ_OK;
-	  continue;
-	}
+  if( ProvidesInitInfo() || level > 0 ) {
+    status = PrescanFile();
 
-	// Inspect event and extract run parameters if appropriate
-	Int_t st = Update( evdata.get() );
-	//FIXME: debug
-	if( st == 1 )
-	  cout << "Prestart at " << nev << endl;
-	else if( st == 2 )
-	  cout << "Prescales at " << nev << endl;
-	else if ( st < 0 ) {
-	  status = READ_ERROR;
-	  break;
-	}
-      }//end while
+    if( status != READ_OK && status != READ_EOF ) {
+      Error(here, "Error %d reading CODA file %s. Check file type & "
+                  "permissions.", status, GetFilename());
+      return status;
+    }
 
-      if( status != READ_OK && status != READ_EOF ) {
-	Error( here, "Error %d reading CODA file %s. Check file type & "
-	       "permissions.", status, GetFilename());
-	return status;
-      }
+  } else {
+    // If this is a continuation segment or parallel stream, try finding the
+    // segment and/or stream which contains the initialization data.
+    TString fname = FindInitInfoFile(fFilename);
 
-    } else {
-      // If this is a continuation segment, try finding segment 0
-      // Since this class is Hall A-specific, look in typical directories.
-      // First look in the same directory as the continuation segment.
-      // If the filename's dirname contains dataN, with N=1...9, also look in
-      // all other dataN's.
-      Ssiz_t dot = fFilename.Last('.');
-      assert( dot != kNPOS );  // if fSegment>0, there must be a dot
-      TString s = fFilename(0,dot);
-      s.Append(".0");
-      vector<TString> fnames;
-      fnames.push_back(s);
-      TString dirn = gSystem->DirName(s);
-      Ssiz_t pos = dirn.Index( TRegexp("data[1-9]") );
-      if( pos != kNPOS ) {
-	fnames.reserve(10);
-	TString sN = dirn(pos+4,1);
-	Int_t curN = atoi(sN.Data());
-	TString base = gSystem->BaseName(s);
-	for( Int_t i = 1; i <= 9; i++ ) {
-	  if( i == curN )
-	    continue;
-	  dirn.Replace( pos, 5, Form("data%d",i) );
-	  s = dirn + "/" + base;
-	  fnames.push_back(s);
-	}
-      }
-      for(const auto & fname : fnames) {
-	if( !gSystem->AccessPathName(fname, kReadPermission) ) {
-          unique_ptr<Decoder::THaCodaData> save_coda = std::move(fCodaData);
-          fCodaData = MKCODAFILE;
-          Int_t save_seg = fSegment;
-	  fSegment = 0;
-	  if( fCodaData->codaOpen(fname) == CODA_OK )
-	    status = ReadInitInfo();
-	  fSegment  = save_seg;
-	  fCodaData = std::move(save_coda);
-	  break;
-	}
-      }
-    } //end if(fSegment==0)else
-  } //end if(fMaxScan>0)
+    if( !fname.IsNull() ) {
+      unique_ptr<Decoder::THaCodaData> save_coda = std::move(fCodaData);
+      fCodaData = MKCODAFILE;
+      if( fCodaData->codaOpen(fname) == CODA_OK )
+        status = ReadInitInfo(level+1);
+      fCodaData = std::move(save_coda);
+    }
+  } //end if(fSegment==0)else
 
   return status;
 }
@@ -289,7 +349,7 @@ Int_t THaRun::SetFilename( const char* name )
 
   static const char* const here = "SetFilename";
 
-  if( !name ) {
+  if( !name || !*name ) {
     Error( here, "Illegal file name." );
     return -1;
   }
@@ -298,11 +358,16 @@ Int_t THaRun::SetFilename( const char* name )
     return 1;
 
   Close();
+
   fFilename = name;
-  FindSegmentNumber();
+  if( !FindSegmentNumber() ) {
+    Error( here, "Illegal file name or program bug. Call expert.");
+    return -1;
+  }
 
   // The run becomes uninitialized only if this is not a continuation segment
-  if( fSegment == 0 )
+  //TODO: needed?
+  if( ProvidesInitInfo() )
     fIsInit = false;
 
   return 0;
@@ -317,20 +382,52 @@ void THaRun::SetNscan( UInt_t n )
 }
 
 //_____________________________________________________________________________
-Int_t THaRun::FindSegmentNumber()
+Bool_t THaRun::FindSegmentNumber()
 {
-  // Determine the segment number, if any. For Hall A CODA disk files, we can
-  // safely assume that the suffix of the file name will tell us.
-  // Internal function.
+  // Determine the segment number, if any. For typical CODA disk files, this is
+  // the suffix of the file name, i.e. MM in name.MM, where MM can be one or
+  // more digits.
+  // Also set the stream number if the file name ends with .NN.MM, where
+  // NN=stream, MM=segment.
+  // Returns true if info successfully extracted
 
-  Ssiz_t dot = fFilename.Last('.');
-  if( dot != kNPOS ) {
-    TString s = fFilename(dot+1,fFilename.Length()-dot-1);
-    fSegment = atoi(s.Data());
-  } else
-    fSegment = 0;
+  fSegment = fStream = -1; // default -1 means unset
+  if( fFilename.IsNull() )
+    return false;
 
-  return fSegment;
+  const char* const s = fFilename.Data();
+  try {
+    regex re1(fgRe1, regex_constants::extended);
+    regex re2(fgRe2, regex_constants::extended);
+    cmatch m;
+    if( regex_match(s, m, re2) ) {
+      assert(m.size() == 3);
+      const string& s1 = m[1].str(), s2 = m[2].str();
+      size_t pos{};
+      fStream = stoi(s1, &pos);
+      if( pos != s1.size() ) throw logic_error("Bad regex re2 sub1");
+      fSegment = stoi(s2, &pos);
+      if( pos != s2.size() ) throw logic_error("Bad regex re2 sub2");
+    } else if( regex_match(s, m, re1) ) {
+      assert(m.size() == 2);
+      const string& s1 = m[1].str();
+      size_t pos{};
+      fSegment = stoi(s1, &pos);
+      if( pos != s1.size() ) throw logic_error("Bad regex re1 sub1");
+    } else {
+      // If neither expression matches, this run does not have the standard
+      // segment/stream info in its file name. Leave both segment and stream
+      // numbers unset and report success.
+      fSegment = fStream = -1;
+    }
+  }
+  catch ( const exception& e ) {
+    cerr << "Error parsing segment and/or stream number in run file name "
+         << "\"" << s << "\": " << e.what() << endl;
+    fSegment = fStream = -1;
+    return false;
+  }
+  return true;
 }
 
 //_____________________________________________________________________________

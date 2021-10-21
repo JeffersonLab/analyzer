@@ -300,7 +300,7 @@ Int_t THaRunBase::Init()
 
   // Get initial information - e.g., prescan the data source for
   // the required run date
-  retval = ReadInitInfo();
+  retval = ReadInitInfo(0);
 
   // Close the data source for now to avoid conflicts. It will be opened
   // again later.
@@ -417,7 +417,7 @@ Int_t THaRunBase::ReadDatabase()
 }
 
 //_____________________________________________________________________________
-Int_t THaRunBase::ReadInitInfo()
+Int_t THaRunBase::ReadInitInfo( Int_t /*level*/ )
 {
   // Read initial information from the run data source.
   // Internal function called by Init(). The default version checks
