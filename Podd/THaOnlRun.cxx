@@ -39,7 +39,7 @@ THaOnlRun::THaOnlRun() : THaCodaRun(), fMode(1)
 }
 
 //______________________________________________________________________________
-THaOnlRun::THaOnlRun( const char* computer, const char* session, UInt_t mode) :
+THaOnlRun::THaOnlRun( const char* computer, const char* session, Int_t mode) :
   THaCodaRun(session), fComputer(computer), fSession(session), fMode(mode)
 {
   // Normal constructor
@@ -106,7 +106,7 @@ Int_t THaOnlRun::Open()
 
 //______________________________________________________________________________
 Int_t THaOnlRun::OpenConnection( const char* computer, const char* session, 
-				 UInt_t mode )
+				 Int_t mode )
 {
   // Set the computer name, session name, and mode, then open the 'file'.
   // It isn't really a file.  It is an ET connection.
