@@ -30,13 +30,9 @@ THaCodaRun::THaCodaRun( const THaCodaRun& rhs )
 }
 
 //_____________________________________________________________________________
-THaCodaRun::~THaCodaRun()
-{
-  // Destructor. The CODA data will be closed by the THaCodaData
-  // destructor if necessary.
-
-  delete fCodaData; fCodaData = nullptr;
-}
+// Destructor. The CODA data will be closed by the THaCodaData
+// destructor if necessary.
+THaCodaRun::~THaCodaRun() = default;
 
 //_____________________________________________________________________________
 THaCodaRun& THaCodaRun::operator=(const THaRunBase& rhs)
@@ -45,7 +41,7 @@ THaCodaRun& THaCodaRun::operator=(const THaRunBase& rhs)
 
   if( this != &rhs ) {
     THaRunBase::operator=(rhs);
-    delete fCodaData; fCodaData = nullptr;
+    fCodaData = nullptr;
   }
   return *this;
 }

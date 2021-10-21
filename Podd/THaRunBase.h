@@ -10,6 +10,7 @@
 #include "TNamed.h"
 #include "TDatime.h"
 #include <cstdio>        // for EOF
+#include <memory>
 
 class THaRunParameters;
 class THaEvData;
@@ -48,13 +49,14 @@ public:
           void         IncrNumAnalyzed( Int_t n=1 ) { fNumAnalyzed += n; }
   const   TDatime&     GetDate()        const { return fDate; }
           UInt_t       GetDataRequired() const { return fDataRequired; }
+  // GetDataVersion is intentionally not const; derived classes modify members
   virtual Int_t        GetDataVersion()       { return fDataVersion; }
           UInt_t       GetNumAnalyzed() const { return fNumAnalyzed; }
           UInt_t       GetNumber()      const { return fNumber; }
           UInt_t       GetType()        const { return fType; }
           UInt_t       GetFirstEvent()  const { return fEvtRange[0]; }
           UInt_t       GetLastEvent()   const { return fEvtRange[1]; }
-  THaRunParameters*    GetParameters()  const { return fParam; }
+  THaRunParameters*    GetParameters()  const { return fParam.get(); }
   virtual Bool_t       HasInfo( UInt_t bits ) const;
   virtual Bool_t       HasInfoRead( UInt_t bits ) const;
           Bool_t       IsInit()         const { return fIsInit; }
@@ -90,7 +92,7 @@ protected:
   UInt_t        fDataSet;       // Flags for info that is valid (see EInfoType)
   UInt_t        fDataRead;      // Flags for info found in data (see EInfoType)
   UInt_t        fDataRequired;  // Info required for Init() to succeed
-  THaRunParameters* fParam;     // Run parameters
+  std::unique_ptr<THaRunParameters> fParam; // Run parameters
   TString       fRunParamClass; // Class of object in fParam
   Int_t         fDataVersion;   // Data format version (implementation-dependent)
   TObject*      fExtra;         // Additional member data (for binary compat.)
@@ -98,7 +100,7 @@ protected:
   virtual Int_t ReadDatabase();
   virtual Int_t ReadInitInfo();
 
-  ClassDef(THaRunBase,5)       // Base class for run objects
+  ClassDef(THaRunBase,6)       // Base class for run objects
 };
 
 

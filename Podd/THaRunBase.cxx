@@ -49,7 +49,7 @@ THaRunBase::THaRunBase( const THaRunBase& rhs ) :
 
   // NB: the run parameter object might inherit from THaRunParameters
   if( rhs.fParam ) {
-    fParam = static_cast<THaRunParameters*>(rhs.fParam->IsA()->New());
+    fParam.reset(static_cast<THaRunParameters*>(rhs.fParam->IsA()->New()));
     *fParam = *rhs.fParam;
   }
   if( rhs.fExtra )
@@ -77,9 +77,8 @@ THaRunBase& THaRunBase::operator=(const THaRunBase& rhs)
      fDataSet    = rhs.fDataSet;
      fDataRead   = rhs.fDataRead;
      fDataRequired = rhs.fDataRequired;
-     delete fParam;
      if( rhs.fParam ) {
-       fParam = static_cast<THaRunParameters*>(rhs.fParam->IsA()->New());
+       fParam.reset(static_cast<THaRunParameters*>(rhs.fParam->IsA()->New()));
        *fParam = *rhs.fParam;
      } else
        fParam    = nullptr;
@@ -100,7 +99,6 @@ THaRunBase::~THaRunBase()
   // Destructor
 
   delete fExtra; fExtra = nullptr;
-  delete fParam; fParam = nullptr;
 }
 
 //_____________________________________________________________________________
@@ -269,33 +267,25 @@ Int_t THaRunBase::Init()
   Int_t retval = READ_OK;
 
   // Set up the run parameter object
-  delete fParam; fParam = nullptr;
+  fParam = nullptr;
   const char* s = fRunParamClass.Data();
   TClass* cl = TClass::GetClass(s);
   if( !cl ) {
     Error( here, "Run parameter class \"%s\" not "
 	   "available. Load library or fix configuration.", s?s:"" );
-    retval = READ_FATAL;
-    goto err;
+    return READ_FATAL;
   }
   if( !cl->InheritsFrom( THaRunParameters::Class() )) {
     Error( here, "Class \"%s\" is not a run parameter class.", s );
-    retval = READ_FATAL;
-    goto err;
+    return READ_FATAL;
   }
 
-  fParam = static_cast<THaRunParameters*>( cl->New() );
+  fParam.reset(static_cast<THaRunParameters*>( cl->New() ));
 
   if( !fParam ) {
     Error( here, "Unexpected error creating run parameter object "
 	   "\"%s\". Call expert.", s );
-    retval = READ_FATAL;
-    goto err;
-  }
- err:
-  if( retval != READ_OK ) {
-    delete fParam; fParam = nullptr;
-    return retval;
+    return READ_FATAL;
   }
 
   // Clear selected parameters (matters for re-init)

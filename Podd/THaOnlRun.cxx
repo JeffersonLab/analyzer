@@ -16,8 +16,15 @@
 #include "THaEtClient.h"
 #include "TClass.h"
 #include "TError.h"
+#include <stdexcept>
 
 using namespace std;
+
+#if __cplusplus >= 201402L
+# define MKETCLIENT make_unique<Decoder::THaEtClient>()
+#else
+# define MKETCLIENT unique_ptr<Decoder::THaEtClient>(new Decoder::THaEtClient)
+#endif
 
 //______________________________________________________________________________
 THaOnlRun::THaOnlRun() : THaCodaRun(), fMode(1)
@@ -28,7 +35,7 @@ THaOnlRun::THaOnlRun() : THaCodaRun(), fMode(1)
   TDatime now;
   SetDate(now);
   // Use ET client as data source
-  fCodaData = new Decoder::THaEtClient();
+  fCodaData = MKETCLIENT;
 }
 
 //______________________________________________________________________________
@@ -42,7 +49,7 @@ THaOnlRun::THaOnlRun( const char* computer, const char* session, UInt_t mode) :
   SetDate(now);
 
   // Use ET client as data source
-  fCodaData = new Decoder::THaEtClient();
+  fCodaData = MKETCLIENT;
 }
 
 //______________________________________________________________________________
@@ -56,7 +63,7 @@ THaOnlRun::THaOnlRun( const THaOnlRun& rhs ) :
   TDatime now;
   SetDate(now);
 
-  fCodaData = new Decoder::THaEtClient();
+  fCodaData = MKETCLIENT;
 }
 
 //_____________________________________________________________________________
@@ -65,14 +72,15 @@ THaOnlRun& THaOnlRun::operator=(const THaRunBase& rhs)
   // Assignment operator.
 
   if (this != &rhs) {
-     THaCodaRun::operator=(rhs);
-     if( rhs.InheritsFrom("THaOnlRun") ) {
-       fComputer = static_cast<const THaOnlRun&>(rhs).fComputer;
-       fSession  = static_cast<const THaOnlRun&>(rhs).fSession;
-       fMode     = static_cast<const THaOnlRun&>(rhs).fMode;
-     }
-     //     delete fCodaData; //already done in THaCodaRun
-     fCodaData = new Decoder::THaEtClient;
+    THaCodaRun::operator=(rhs);
+    try {
+      const auto& obj = dynamic_cast<const THaOnlRun&>(rhs);
+      fComputer = obj.fComputer;
+      fSession  = obj.fSession;
+      fMode     = obj.fMode;
+    }
+    catch( const std::bad_cast& e ) {}
+    fCodaData = MKETCLIENT;
   }
   return *this;
 }

@@ -21,7 +21,12 @@
 #include <cassert>
 
 using namespace std;
-using namespace Decoder;
+
+#if __cplusplus >= 201402L
+# define MKCODAFILE make_unique<Decoder::THaCodaFile>()
+#else
+# define MKCODAFILE unique_ptr<Decoder::THaCodaFile>(new Decoder::THaCodaFile)
+#endif
 
 static const int   fgMaxScan   = 5000;
 static const char* fgThisClass = "THaRun";
@@ -32,7 +37,7 @@ THaRun::THaRun( const char* fname, const char* description ) :
 {
   // Normal & default constructor
 
-  fCodaData = new THaCodaFile;  //Specifying the file name would open the file
+  fCodaData = MKCODAFILE;  //Specifying the file name would open the file
   FindSegmentNumber();
 
   // Hall A runs normally contain all these items
@@ -54,7 +59,7 @@ THaRun::THaRun( const vector<TString>& pathList, const char* filename,
   }
   //cout << endl << "--> Opening file:  " << fFilename << endl;
 
-  fCodaData = new THaCodaFile;  //Specifying the file name would open the file
+  fCodaData = MKCODAFILE;  //Specifying the file name would open the file
   FindSegmentNumber();
 
   // Hall A runs normally contain all these items
@@ -67,7 +72,7 @@ THaRun::THaRun( const THaRun& rhs ) :
 {
   // Copy ctor
 
-  fCodaData = new THaCodaFile;
+  fCodaData = MKCODAFILE;
   FindSegmentNumber();
 }
 
@@ -79,18 +84,20 @@ THaRun& THaRun::operator=(const THaRunBase& rhs)
   // If 'rhs' is of different actual class (e.g. THaOnlRun - an ET run)
   // than this object, then its special properties are lost.
 
-  if (this != &rhs) {
-     THaCodaRun::operator=(rhs);
-     //     delete fCodaData; //already done in THaCodaRun
-     fCodaData   = new THaCodaFile;
-     if( rhs.InheritsFrom(fgThisClass) ) {
-       fFilename   = static_cast<const THaRun&>(rhs).fFilename;
-       fMaxScan    = static_cast<const THaRun&>(rhs).fMaxScan;
-       FindSegmentNumber();
-     } else {
-       fMaxScan    = fgMaxScan;
-       fSegment    = 0;
-     }
+  if( this != &rhs ) {
+    THaCodaRun::operator=(rhs);
+    fCodaData = MKCODAFILE;
+    try {
+      const auto& obj = dynamic_cast<const THaRun&>(rhs);
+      fFilename = obj.fFilename;
+      fMaxScan  = obj.fMaxScan;
+      FindSegmentNumber();
+    }
+    catch( const std::bad_cast& ) {
+      fMaxScan = fgMaxScan;
+      fSegment = 0;
+      //fStream = 0;
+    }
   }
   return *this;
 }
@@ -256,15 +263,14 @@ Int_t THaRun::ReadInitInfo()
       }
       for(const auto & fname : fnames) {
 	if( !gSystem->AccessPathName(fname, kReadPermission) ) {
-	  THaCodaData* save_coda = fCodaData;
-	  Int_t        save_seg  = fSegment;
-	  fCodaData = new THaCodaFile;
-	  fSegment  = 0;
+          unique_ptr<Decoder::THaCodaData> save_coda = std::move(fCodaData);
+          fCodaData = MKCODAFILE;
+          Int_t save_seg = fSegment;
+	  fSegment = 0;
 	  if( fCodaData->codaOpen(fname) == CODA_OK )
 	    status = ReadInitInfo();
-	  delete fCodaData;
 	  fSegment  = save_seg;
-	  fCodaData = save_coda;
+	  fCodaData = std::move(save_coda);
 	  break;
 	}
       }
