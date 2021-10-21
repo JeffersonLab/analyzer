@@ -85,7 +85,7 @@ Int_t THaRunParameters::ReadDatabase( const TDatime& date )
   if( !f ) 
     return -1;
 
-  Double_t E, M = 0.511e-3, Q = -1.0, dE = 0.0;
+  Double_t E = kBig, M = 0.511e-3, Q = -1.0, dE = 0.0;
 
   DBRequest request[] = {
     { "ebeam",  &E },
