@@ -14,6 +14,7 @@
 #include "TClass.h"
 #include "TError.h"
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -265,6 +266,7 @@ Int_t THaRunBase::Init()
   static const char* const here = "THaRunBase::Init";
 
   Int_t retval = READ_OK;
+  //FIXME fIsInit = false;
 
   // Set up the run parameter object
   fParam = nullptr;
@@ -310,20 +312,18 @@ Int_t THaRunBase::Init()
     return retval;
 
   if( !HasInfo(fDataRequired) ) {
-    const char* errmsg[] = { "run date", "run number", "run type",
-			     "prescale factors", nullptr };
+    vector<TString> errmsg = { "run date", "run number", "run type",
+                               "prescale factors" };
     TString errtxt("Missing run parameters: ");
     UInt_t i = 0, n = 0;
-    const char** msg = errmsg;
-    while( *msg ) {
-      if( !HasInfo(BIT(i)&fDataRequired) ) {
+    for( auto& msg : errmsg ) {
+      if( !HasInfo(BIT(i) & fDataRequired) ) {
 	if( n>0 )
 	  errtxt += ", ";
-	errtxt += *msg;
+	errtxt += msg;
 	n++;
       }
       i++;
-      msg++;
     }
     errtxt += ". Run not initialized.";
     Error( here, "%s", errtxt.Data() );
