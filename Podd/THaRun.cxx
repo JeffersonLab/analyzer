@@ -19,8 +19,6 @@
 #include <iostream>
 #include <iomanip>
 #include <cassert>
-#include <string>
-#include <regex>
 #include <stdexcept>
 
 using namespace std;
@@ -32,8 +30,8 @@ using namespace std;
 #endif
 
 static const int         fgMaxScan   = 5000;
-static const char* const fgRe1       = "^.*\\.([0-9]+)$";
-static const char* const fgRe2       = "^.*\\.([0-9]+)\\.([0-9]+)$";
+static const char* const fgRe1       ="\\.[0-9]+$";
+static const char* const fgRe2       ="\\.[0-9]+\\.[0-9]+$";
 
 //_____________________________________________________________________________
 THaRun::THaRun( const char* fname, const char* description ) :
@@ -395,25 +393,25 @@ Bool_t THaRun::FindSegmentNumber()
   if( fFilename.IsNull() )
     return false;
 
-  const char* const s = fFilename.Data();
   try {
-    regex re1(fgRe1, regex_constants::extended);
-    regex re2(fgRe2, regex_constants::extended);
-    cmatch m;
-    if( regex_match(s, m, re2) ) {
-      assert(m.size() == 3);
-      const string& s1 = m[1].str(), s2 = m[2].str();
-      size_t pos{};
-      fStream = stoi(s1, &pos);
-      if( pos != s1.size() ) throw logic_error("Bad regex re2 sub1");
-      fSegment = stoi(s2, &pos);
-      if( pos != s2.size() ) throw logic_error("Bad regex re2 sub2");
-    } else if( regex_match(s, m, re1) ) {
-      assert(m.size() == 2);
-      const string& s1 = m[1].str();
-      size_t pos{};
-      fSegment = stoi(s1, &pos);
-      if( pos != s1.size() ) throw logic_error("Bad regex re1 sub1");
+    TRegexp re1(fgRe1);
+    TRegexp re2(fgRe2);
+    Ssiz_t pos{};
+    if( (pos = fFilename.Index(re2)) != kNPOS ) {
+      ++pos;
+      assert(pos < fFilename.Length());
+      Ssiz_t pos2 = fFilename.Index(".", pos);
+      assert(pos2 != kNPOS && pos2+1 < fFilename.Length());
+      TString sStream = fFilename(pos, pos2 - pos);
+      ++pos2;
+      TString sSegmnt = fFilename(pos2, fFilename.Length() - pos2);
+      fStream  = sStream.Atoi();
+      fSegment = sSegmnt.Atoi();
+    } else if( (pos = fFilename.Index(re1)) != kNPOS ) {
+      ++pos;
+      assert(pos < fFilename.Length());
+      TString sSegmnt = fFilename(pos, fFilename.Length() - pos);
+      fSegment = sSegmnt.Atoi();
     } else {
       // If neither expression matches, this run does not have the standard
       // segment/stream info in its file name. Leave both segment and stream
@@ -423,7 +421,7 @@ Bool_t THaRun::FindSegmentNumber()
   }
   catch ( const exception& e ) {
     cerr << "Error parsing segment and/or stream number in run file name "
-         << "\"" << s << "\": " << e.what() << endl;
+         << "\"" << fFilename << "\": " << e.what() << endl;
     fSegment = fStream = -1;
     return false;
   }
