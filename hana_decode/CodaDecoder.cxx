@@ -285,7 +285,7 @@ UInt_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize) {
   tbank.len = evbuffer[0] + 1;
   tbank.tag = (evbuffer[1]&0xffff0000)>>16;
   tbank.nrocs = (evbuffer[1]&0xff);
-  tbank.evtNum = evbuffer[3];
+  memcpy(&tbank.evtNum, evbuffer + 3, sizeof(uint64_t));
 
   if((tbank.tag)&1)
     tbank.withTimeStamp = 1;
