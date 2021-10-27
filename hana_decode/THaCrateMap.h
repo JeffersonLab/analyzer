@@ -45,6 +45,7 @@ class THaCrateMap {
      UInt_t getNslot( UInt_t crate ) const;         // Returns num occupied slots
      UInt_t getMinSlot( UInt_t crate ) const;       // Returns min slot number
      UInt_t getMaxSlot( UInt_t crate ) const;       // Returns max slot number
+     UInt_t getTSROC(void) {return fgTSROC;};       // Returns the crate number of the Trig. Super.
 
  // This class must inform the crateslot where the modules are.
 
@@ -72,6 +73,8 @@ class THaCrateMap {
      static const Int_t CM_OK;
      static const Int_t CM_ERR;
 
+     static const UInt_t DEFAULT_TSROC  = 21;   // default crate number for trigger supervisor
+
      const char* GetName() const { return fDBfileName.c_str(); }
 
  private:
@@ -80,6 +83,7 @@ class THaCrateMap {
 
      std::string fDBfileName;       // Database file name
      TDatime     fInitTime;         // Database time stamp
+     Int_t  fgTSROC;  // Crate (aka ROC) of the trigger supervisor.
 
      class SlotInfo_t {
      public:
@@ -282,3 +286,4 @@ const std::vector<UInt_t>& THaCrateMap::GetUsedSlots( UInt_t crate ) const
 }
 
 #endif
+

@@ -364,6 +364,9 @@ int THaCrateMap::init(const string& the_map)
   UInt_t crate = kMaxUInt; // current CRATE
   string line; line.reserve(128);
   istringstream s(the_map);
+  Int_t found_tscrate=0;
+  fgTSROC = DEFAULT_TSROC;  // default value, if not found in db_cratemap
+
   while( getline(s, line) ) {
     auto pos = line.find_first_of("!#");    // drop comments
     if( pos != string::npos )
@@ -371,6 +374,13 @@ int THaCrateMap::init(const string& the_map)
 
     if( line.find_first_not_of(" \t") == string::npos )
       continue; // empty or blank line
+
+    pos = line.find("TSROC");
+    if( pos != string::npos ) {
+	sscanf(line.c_str(), "TSROC %u", &fgTSROC);
+        found_tscrate = 1;
+        continue;
+    }
 
 // Make the line "==== Crate" not care about how many "=" chars or other
 // chars before "Crate", but lines beginning in # are still a comment
@@ -456,6 +466,11 @@ int THaCrateMap::init(const string& the_map)
              []( const SlotInfo_t& slt ) { return slt.bank >= 0; } );
   }
   sort(ALL(used_crates));
+
+  if ( !found_tscrate ) {
+    cout << "THaCrateMap::WARNING:  Did not find TSROC.  Using default "<<fgTSROC<<endl;
+    cout << "THaCrateMap:: It may be ok for SBS, though."<<endl;
+  }
 
   return CM_OK;
 }
