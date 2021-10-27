@@ -46,8 +46,12 @@ namespace Decoder {
   static const UInt_t EPICS_EVTYPE     = 131; // default in Hall A
   static const UInt_t PRESCALE_EVTYPE  = 133;
   static const UInt_t DETMAP_FILE      = 135;
+  static const UInt_t DAQCONFIG_FILE1  = 137;
+  static const UInt_t DAQCONFIG_FILE2  = 138;
   static const UInt_t TRIGGER_FILE     = 136;
   static const UInt_t SCALER_EVTYPE    = 140;
+  static const UInt_t SBSSCALER_EVTYPE = 141;
+  static const UInt_t HV_DATA_EVTYPE   = 150;
 
   // Access processed data for multi-function modules
   enum EModuleType { kSampleADC, kPulseIntegral, kPulseTime,
