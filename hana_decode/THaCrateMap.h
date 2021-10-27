@@ -45,6 +45,7 @@ class THaCrateMap {
      UInt_t getNslot( UInt_t crate ) const;         // Returns num occupied slots
      UInt_t getMinSlot( UInt_t crate ) const;       // Returns min slot number
      UInt_t getMaxSlot( UInt_t crate ) const;       // Returns max slot number
+     UInt_t getTSROC() const;                       // Returns the crate number of the Trig. Super.
 
  // This class must inform the crateslot where the modules are.
 
@@ -72,14 +73,17 @@ class THaCrateMap {
      static const Int_t CM_OK;
      static const Int_t CM_ERR;
 
+     static const UInt_t DEFAULT_TSROC;
+
      const char* GetName() const { return fDBfileName.c_str(); }
 
  private:
 
      enum ECrateCode { kUnknown, kFastbus, kVME, kScaler, kCamac };
 
-     std::string fDBfileName;       // Database file name
-     TDatime     fInitTime;         // Database time stamp
+     std::string fDBfileName;     // Database file name
+     TDatime     fInitTime;       // Database time stamp
+     UInt_t      fTSROC;          // Crate (aka ROC) of the trigger supervisor
 
      class SlotInfo_t {
      public:
@@ -260,6 +264,12 @@ UInt_t THaCrateMap::getMaxSlot( UInt_t crate ) const
 }
 
 inline
+UInt_t THaCrateMap::getTSROC() const
+{
+  return fTSROC;
+}
+
+inline
 UInt_t THaCrateMap::getHeader( UInt_t crate, UInt_t slot ) const
 {
   assert( crate < crdat.size() && slot < crdat[crate].sltdat.size() );
@@ -282,3 +292,4 @@ const std::vector<UInt_t>& THaCrateMap::GetUsedSlots( UInt_t crate ) const
 }
 
 #endif
+

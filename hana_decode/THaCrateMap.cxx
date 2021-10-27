@@ -63,11 +63,14 @@ namespace Decoder {
 
 const UInt_t THaCrateMap::MAXCHAN = 8192;
 const UInt_t THaCrateMap::MAXDATA = 65536;
-const Int_t  THaCrateMap::CM_OK = 1;
-const Int_t  THaCrateMap::CM_ERR = -1;
+const Int_t  THaCrateMap::CM_OK   = 1;
+const Int_t  THaCrateMap::CM_ERR  = -1;
+
+// default crate number for trigger supervisor
+const UInt_t THaCrateMap::DEFAULT_TSROC = 21;
 
 //_____________________________________________________________________________
-THaCrateMap::THaCrateMap( const char* db_filename )
+THaCrateMap::THaCrateMap( const char* db_filename ) : fTSROC{DEFAULT_TSROC}
 {
   // Construct uninitialized crate map. The argument is the name of
   // the database file to use for initialization
@@ -360,10 +363,13 @@ int THaCrateMap::init(const string& the_map)
   crdat.clear();   // support re-init
   crdat.resize(ncrates);
   used_crates.clear(); used_crates.reserve(ncrates/2);
+  fTSROC = DEFAULT_TSROC;  // default value, if not found in db_cratemap
 
   UInt_t crate = kMaxUInt; // current CRATE
   string line; line.reserve(128);
   istringstream s(the_map);
+  Int_t found_tscrate=0;
+
   while( getline(s, line) ) {
     auto pos = line.find_first_of("!#");    // drop comments
     if( pos != string::npos )
@@ -371,6 +377,13 @@ int THaCrateMap::init(const string& the_map)
 
     if( line.find_first_not_of(" \t") == string::npos )
       continue; // empty or blank line
+
+    pos = line.find("TSROC");
+    if( pos != string::npos ) {
+	sscanf(line.c_str(), "TSROC %u", &fTSROC);
+        found_tscrate = 1;
+        continue;
+    }
 
 // Make the line "==== Crate" not care about how many "=" chars or other
 // chars before "Crate", but lines beginning in # are still a comment
@@ -456,6 +469,11 @@ int THaCrateMap::init(const string& the_map)
              []( const SlotInfo_t& slt ) { return slt.bank >= 0; } );
   }
   sort(ALL(used_crates));
+
+  if ( !found_tscrate ) {
+    cout << "THaCrateMap::WARNING:  Did not find TSROC.  Using default " << fTSROC << endl;
+    cout << "THaCrateMap:: It may be ok for SBS, though."<<endl;
+  }
 
   return CM_OK;
 }

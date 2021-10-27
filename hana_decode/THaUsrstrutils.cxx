@@ -64,6 +64,15 @@ unsigned int THaUsrstrutils::getint(const char *s) const
   return(retval);
 }
 
+long THaUsrstrutils::getSignedInt(const char *s) const
+{
+  char* sval = getstr(s);
+  if(!sval) return(-1);    /* Return -1 if no value string */
+  long retval = strtol(sval,nullptr,0);
+  delete [] sval;
+  return(retval);
+}
+
 void THaUsrstrutils::getflagpos_instring( const char* confstr,
                                           const char* s,
                                           const char** pos_ret,

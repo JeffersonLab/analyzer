@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 //
 //   CodaDecoder
 //
@@ -121,7 +121,7 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
   if (fDataVersion == 2) {
     event_type = evbuffer[1]>>16;
   } else {  // CODA version 3
-    interpretCoda3(evbuffer);
+    interpretCoda3(evbuffer);  // this defines event_type
   }
   if(fDebugFile) {
       *fDebugFile << "CodaDecode:: dumping "<<endl;
@@ -129,6 +129,7 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
   }
 
   Int_t ret = HED_OK;
+
   if (event_type == PRESTART_EVTYPE ) {
     // Usually prestart is the first 'event'.  Call SetRunTime() to
     // re-initialize the crate map since we now know the run time.
@@ -148,8 +149,12 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
   }
 
   else if( event_type == PRESCALE_EVTYPE || event_type == TS_PRESCALE_EVTYPE ) {
-    if( (ret = prescale_decode(evbuffer)) != HED_OK )
-      return ret;
+    if (fDataVersion == 2) {
+      ret = prescale_decode_coda2(evbuffer);
+    } else {
+      ret = prescale_decode_coda3(evbuffer);
+    }
+    if (ret != HED_OK ) return ret;
   }
 
   else if( event_type <= MAX_PHYS_EVTYPE ) {
@@ -229,10 +234,12 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
 //_____________________________________________________________________________
 Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer) {
 
-  event_type = 0;
+  Int_t check_ETdata=0;  // debug if 1
   bank_tag   = (evbuffer[1] & 0xffff0000) >> 16;
   data_type  = (evbuffer[1] & 0xff00) >> 8;
   block_size = evbuffer[1] & 0xff;
+
+  if (fMap) fgTSROC=fMap->getTSROC();
 
   if( bank_tag >= 0xff00 ) { /* CODA Reserved bank type */
 
@@ -251,14 +258,63 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer) {
     case 0xff58: // Physics event with sync bit
     case 0xFF78:
     case 0xff70:
-      event_type = 1;  // Physics event type
+      event_type = 1;    // for CODA 3.* physics events are type 1.
       break;
     default:
       cout << "CodaDecoder:: WARNING:  Undefined CODA 3 event type" << endl;
     }
   } else { /* User event type */
 
-    event_type = bank_tag;  // need to check this.
+    event_type = bank_tag;  // ET-insertions
+
+    if (check_ETdata) {  // if you set=1, character data gets printed.
+
+    // checks of ET-inserted data
+
+       Int_t print_it=0;
+
+       switch(event_type) {
+
+       case EPICS_EVTYPE:
+          cout << "EPICS data "<<endl;
+          print_it=1;
+          break;
+       case PRESCALE_EVTYPE:
+          cout << "Prescale data "<<endl;
+          print_it=1;
+          break;
+       case DAQCONFIG_FILE1:
+          cout << "DAQ config file 1 "<<endl;
+          print_it=1;
+          break;
+        case DAQCONFIG_FILE2:
+          cout << "DAQ config file 2 "<<endl;
+          print_it=1;
+          break;
+        case SCALER_EVTYPE:
+          cout << "LHRS scaler event "<<endl;
+          print_it=1;
+          break;
+        case SBSSCALER_EVTYPE:
+          cout << "SBS scaler event "<<endl;
+          print_it=1;
+          break;
+        case HV_DATA_EVTYPE:
+          cout << "High voltage data event "<<endl;
+          print_it=1;
+          break;
+        default:
+	  // something else ?
+          cout << endl << "--- Special event type "<<event_type<<endl<<endl;
+       }
+       if(print_it) {  
+           char *cbuf = (char *)evbuffer; // These are character data
+           size_t elen = sizeof(int)*(evbuffer[0]+1);
+           cout << "Dump of event buffer .  Len = "<<elen<<endl;
+	   // This dump will look exactly like the text file that was inserted.
+           for (size_t ii=0; ii<elen; ii++) cout << cbuf[ii];
+       }
+    }  // check_ETdata  (debug output)
 
     if( fDebugFile )
       *fDebugFile << " User defined event type " << event_type << endl;
@@ -266,7 +322,14 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer) {
   }
 
   tbLen = 0;
-  if( event_type == 1 ) tbLen = trigBankDecode(&evbuffer[2], block_size);
+
+  if( event_type == 1 ) {
+     tbLen = trigBankDecode(&evbuffer[2], block_size);
+     if (trigger_bits == 0) trigger_bits =tsEvType;
+  }
+
+  if( fDebugFile )
+    *fDebugFile << "CODA 3  Event type "<<event_type<<" trigger_bits "<< trigger_bits<<"  tsEvType  "<<tsEvType<<"  evt_time "<<GetEvTime()<<endl;
 
   return HED_OK;
 }
@@ -285,6 +348,7 @@ UInt_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize) {
   tbank.len = evbuffer[0] + 1;
   tbank.tag = (evbuffer[1]&0xffff0000)>>16;
   tbank.nrocs = (evbuffer[1]&0xff);
+ tsEvType = -1;
   memcpy(&tbank.evtNum, evbuffer + 3, sizeof(uint64_t));
 
   if((tbank.tag)&1)
@@ -307,7 +371,21 @@ UInt_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize) {
       tbank.evType = (uint16_t *)&evbuffer[5 + 1];
     }
   }
+  
+ tsEvType = tbank.evType[0];
 
+/* Search for TS segment.  */
+  evt_time=0;
+  trigger_bits=0;
+  for (UInt_t i=5; i<tbank.len; i++) {
+    Int_t rocnum=(evbuffer[i]&0xff000000)>>24;
+    if (rocnum==fgTSROC) {
+        evt_time = evbuffer[i+1];
+        trigger_bits = evbuffer[i+3]; 
+    }
+  }
+
+  
   return(tbank.len);
 
 }
@@ -929,7 +1007,7 @@ void CodaDecoder::SetRunTime( ULong64_t tloc )
 }
 
 //_____________________________________________________________________________
-Int_t CodaDecoder::prescale_decode(const UInt_t* evbuffer)
+Int_t CodaDecoder::prescale_decode_coda2(const UInt_t* evbuffer)
 {
   // Decodes prescale factors from either
   // TS_PRESCALE_EVTYPE(default) = PS factors
@@ -988,6 +1066,93 @@ Int_t CodaDecoder::prescale_decode(const UInt_t* evbuffer)
 	cout << "** psfact[ "<<trig+1<< " ] = "<<psfact[trig]<<endl;
     }
   }
+
+  // Ok in any case
+  return HED_OK;
+}
+
+//_____________________________________________________________________________
+Int_t CodaDecoder::prescale_decode_coda3(const UInt_t* evbuffer)
+{
+  // Decodes prescale factors from either
+  // TS_PRESCALE_EVTYPE(default) = PS factors
+  // This version is for CODA 3 data.
+  //  0 means no prescaling, what we called "1" before.
+  // -1 means the trigger is disabled.  "infinite" prescale
+  //  otherwise the value is 2^(ps-1) + 1.
+  //    ps  ..... prescale factor
+  //     1 ....... 2
+  //     2 ....... 3
+  //     3 ....... 5
+  //     5 ....... 17
+  //    10 ....... 513
+  
+  static const char* const here = "prescale_decode_coda3";
+
+  assert( evbuffer );
+  assert( event_type == TS_PRESCALE_EVTYPE ||
+	  event_type == PRESCALE_EVTYPE );
+  const UInt_t HEAD_OFF1 = 2;
+  const UInt_t HEAD_OFF2 = 4;
+  UInt_t super_big = 999999;
+  static const char* const pstr[] = { "ps1", "ps2", "ps3", "ps4",
+				      "ps5", "ps6", "ps7", "ps8",
+				      "ps9", "ps10", "ps11", "ps12" };
+  // TS registers -->
+  // don't have these yet for CODA3.  hmmm... that reminds me to do it.
+  if( event_type == TS_PRESCALE_EVTYPE) {  
+    // this is more authoritative
+    for( UInt_t j = 0; j < 8; j++ ) {
+      UInt_t k = j + HEAD_OFF1;
+      UInt_t ps = 0;
+      if( k < event_length ) {
+	ps = evbuffer[k];
+        if( psfact[j] != 0 && ps != psfact[j] ) {
+	  Warning(here,"Mismatch in prescale factor: "
+		  "Trig %u  oldps %u   TS_PRESCALE %d. Setting to TS_PRESCALE",
+		  j+1,psfact[j],ps);
+	}
+      }
+      psfact[j]=ps;
+      if (fDebug > 1)
+	cout << "%% TS psfact "<<dec<<j<<"  "<<psfact[j]<<endl;
+    }
+  }
+  // "prescale.dat" -->
+  else if( event_type == PRESCALE_EVTYPE ) {
+    if( event_length <= HEAD_OFF2 )
+      return HED_ERR;  //oops, event too short?
+    THaUsrstrutils sut;
+    sut.string_from_evbuffer(evbuffer+HEAD_OFF2, event_length-HEAD_OFF2);
+    
+    for( Int_t trig = 0; trig < MAX_PSFACT; trig++ ) {
+      long ps = sut.getSignedInt(pstr[trig]);
+      if( ps == -1 ) {
+        // The trigger is actually off, not just "super big" but infinite.
+        ps = super_big;
+      } else if( ps == 0 ) {
+        ps = 1;
+      } else if( ps >= 1 && ps <= 16 ) {
+        // ps = 2^(val-1)+1 (sic)
+        ps = 1 + (1U << (ps - 1));
+      } else { // ps > 16 or ps < -1
+        // ps has 4 bits in hardware, so this indicates a misconfiguration
+        Error(here, "Invalid prescale = %ld in prescale.dat. "
+                    "Must be between -1 and 16", ps);
+        ps = -1;
+      }
+      if( psfact[trig] == kMaxUInt ) // not read before
+        psfact[trig] = (UInt_t)ps;
+      else if( ps != psfact[trig] ) {
+        Warning(here, "Mismatch in prescale factor: "
+                      "Trig %d  oldps %d   prescale.dat %ld, Keeping old value",
+                trig + 1, (Int_t)psfact[trig], ps);
+      }
+      if( fDebug > 1 )
+        cout << "** psfact[ " << trig + 1 << " ] = " << psfact[trig] << endl;
+    }
+  }
+
   // Ok in any case
   return HED_OK;
 }

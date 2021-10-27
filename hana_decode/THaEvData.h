@@ -51,6 +51,8 @@ public:
   // Basic access to the decoded data
   UInt_t    GetEvType()      const { return event_type; }
   UInt_t    GetEvLength()    const { return event_length; }
+  UInt_t    GetTrigBits()    const { return trigger_bits; }
+  UInt_t    GetTSEvtype()    const { return tsEvType; }
   UInt_t    GetEvNum()       const { return event_num; }
   UInt_t    GetRunNum()      const { return run_num; }
   Int_t     GetDataVersion() const { return fDataVersion; }
@@ -188,18 +190,20 @@ protected:
   Bool_t fTrigSupPS;
   Int_t  fDataVersion;    // Data format version (implementation-defined)
   UInt_t fEpicsEvtType;
+  UInt_t fgTSROC;
 
   const UInt_t *buffer;
 
   std::ofstream *fDebugFile;  // debug output
 
   UInt_t event_type, event_length, event_num, run_num;
+  UInt_t tsEvType, trigger_bits;
   Int_t  evscaler;
   UInt_t  bank_tag, data_type;
   UInt_t block_size, tbLen;
   UInt_t run_type;    // Run type
   ULong64_t fRunTime; // Run start time (Unix time)
-  ULong64_t evt_time; // Event time
+  ULong64_t evt_time; // Event time (for CODA 3.* this is a 250 Mhz clock)
   UInt_t recent_event;
   Bool_t buffmode,synchmiss,synchextra;
 
@@ -342,6 +346,7 @@ inline
 Bool_t THaEvData::IsPhysicsTrigger() const {
   return ((event_type > 0) && (event_type <= Decoder::MAX_PHYS_EVTYPE));
 }
+
 
 inline
 Bool_t THaEvData::IsScalerEvent() const {

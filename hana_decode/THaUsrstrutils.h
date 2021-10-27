@@ -38,6 +38,10 @@ class THaUsrstrutils {
    int getint(char *s) - If keyword present, interpret value as an integer.
                          Value assumed decimal, unless preceded by 0x for hex
 			 Return 0 if keyword not present or has no value.
+   int getSignedInt(char *s) - If keyword present, interpret value as an 
+                         integer and it can have a sign.
+                         Value assumed decimal, unless preceded by 0x for hex
+			 Return 0 if keyword not present or has no value.
 
    char *getstr(char *s) - Return ptr to string value associated with
                            the keyword.  Return null if keyword not present.
@@ -94,6 +98,7 @@ public:
   int getflag(const char *s) const;
   char *getstr(const char *s) const;
   unsigned int getint(const char *s) const;
+  long getSignedInt(const char *s) const;
   void string_from_evbuffer(const UInt_t* evbuffer, UInt_t nlen);
   void string_from_file(const char *ffile_name);
 
