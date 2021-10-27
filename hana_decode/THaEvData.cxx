@@ -64,6 +64,7 @@ THaEvData::THaEvData() :
   fTrigSupPS{true},
   fDataVersion{0},
   fEpicsEvtType{Decoder::EPICS_EVTYPE},  // default for Hall A
+  fgTSROC{21}, 
   buffer{nullptr},
   fDebugFile{nullptr},
   event_type{0},
