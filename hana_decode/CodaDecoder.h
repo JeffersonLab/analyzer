@@ -55,7 +55,8 @@ protected:
   virtual Int_t  init_slotdata();
   virtual Int_t  interpretCoda3( const UInt_t* buffer );
   virtual UInt_t trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize );
-  Int_t prescale_decode( const UInt_t* evbuffer );
+  Int_t prescale_decode_coda2( const UInt_t* evbuffer );
+  Int_t prescale_decode_coda3( const UInt_t* evbuffer );
   void  dump( const UInt_t* evbuffer ) const;
 
   // Data
