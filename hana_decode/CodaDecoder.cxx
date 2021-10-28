@@ -341,53 +341,70 @@ UInt_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize) {
 // Decode the "Trigger Bank" which is a CODA3 structure that appears
 // near the top of the event buffer.  
 
-  memset((void *)&tbank, 0, sizeof(TBOBJ));
+  memset(&tbank, 0, sizeof(TBOBJ));
 
-  tbank.start = (uint32_t *)evbuffer;
+  tsEvType = -1;
+  evt_time = 0;
+  trigger_bits = 0;
+
+  tbank.start = (uint32_t*) evbuffer;
   tbank.blksize = blkSize;
   tbank.len = evbuffer[0] + 1;
-  tbank.tag = (evbuffer[1]&0xffff0000)>>16;
-  tbank.nrocs = (evbuffer[1]&0xff);
- tsEvType = -1;
-  memcpy(&tbank.evtNum, evbuffer + 3, sizeof(uint64_t));
+  tbank.tag = (evbuffer[1] & 0xffff0000) >> 16;
+  tbank.nrocs = evbuffer[1] & 0xff;
 
-  if((tbank.tag)&1)
-    tbank.withTimeStamp = 1;
-  if((tbank.tag)&2)
-    tbank.withRunInfo = 1;
-
-  if(tbank.withTimeStamp) {
-    tbank.evTS = (uint64_t *)&evbuffer[5];
-    if(tbank.withRunInfo) {
-      tbank.evType = (uint16_t *)&evbuffer[5 + 2*blkSize + 3];
-    }else{
-      tbank.evType = (uint16_t *)&evbuffer[5 + 2*blkSize + 1];
+  uint32_t* p = (uint32_t*) evbuffer + 2;
+  // Segment 1:
+  //  uint64_t event_number
+  //  uint64_t run_info                if withRunInfo
+  //  uint64_t time_stamp[blkSize]     if withTimeStamp
+  {
+    uint32_t len = *p & 0xffff;
+    auto* q = (uint64_t*) (p + 1);
+    tbank.evtNum = *(q++);
+    if( tbank.withRunInfo() )
+      q++;  // TODO: extract run info
+    if( tbank.withTimeStamp() ) {
+      tbank.evTS = q;
+      evt_time = tbank.evTS[0];  // time of first event in block
     }
-  }else{
-    tbank.evTS = nullptr;
-    if(tbank.withRunInfo) {
-      tbank.evType = (uint16_t *)&evbuffer[5 + 3];
-    }else{
-      tbank.evType = (uint16_t *)&evbuffer[5 + 1];
-    }
+    p += len + 1;
   }
-  
- tsEvType = tbank.evType[0];
+  assert( p-evbuffer < tbank.len);
 
-/* Search for TS segment.  */
-  evt_time=0;
-  trigger_bits=0;
-  for (UInt_t i=5; i<tbank.len; i++) {
-    Int_t rocnum=(evbuffer[i]&0xff000000)>>24;
-    if (rocnum==fgTSROC) {
-        evt_time = evbuffer[i+1];
-        trigger_bits = evbuffer[i+3]; 
-    }
+  // Segment 2:
+  //  uint16_t event_type[blkSize]
+  //  padded to next 32-bit boundary
+  {
+    uint32_t len = *p & 0xffff;
+    tbank.evType = (uint16_t*) (p + 1);
+    tsEvType = tbank.evType[0];  // type of first event in block
+    p += len + 1;
   }
 
-  
-  return(tbank.len);
+  // tbank.nroc ROC segments containing timestamps and optional
+  // data like trigger latch bits:
+  // struct {
+  //   uint64_t roc_time_stamp;
+  //   uint32_t roc_trigger_bits;   // this is optional!
+  // } roc_segment[blkSize];
+  for( uint32_t i = 0; i < tbank.nrocs; ++i ) {
+    assert( p-evbuffer < tbank.len);
+    uint32_t len = *p & 0xffff;
+    uint32_t rocnum = (*p & 0xff000000) >> 24;
+    if( rocnum == fgTSROC ) {
+      tbank.TSROC = p + 1;
+      tbank.tsrocLen = len;
+      if( !tbank.withTimeStamp() )
+        evt_time = *(uint64_t*) tbank.TSROC;
+      if( len > 2 )
+        trigger_bits = tbank.TSROC[2];  // trigger bits of first event in block
+      break;
+    }
+    p += len + 1;
+  }
 
+  return tbank.len;
 }
 
 //_____________________________________________________________________________

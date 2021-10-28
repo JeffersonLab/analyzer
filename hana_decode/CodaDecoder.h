@@ -89,19 +89,22 @@ protected:
 
   class TBOBJ {
   public:
-     TBOBJ() : blksize(0), tag(0), nrocs(0), len(0), withTimeStamp(0),
-         withRunInfo(0), evtNum(0), runInfo(0), start(nullptr), evTS(nullptr), evType(nullptr) {}
+     TBOBJ() : blksize(0), tag(0), nrocs(0), len(0), evtNum(0), runInfo(0),
+               start(nullptr), evTS(nullptr), evType(nullptr), TSROC(nullptr),
+               tsrocLen(0) {}
+     bool withTimeStamp() const { return (tag & 1) != 0; }
+     bool withRunInfo()   const { return (tag & 2) != 0; }
      uint32_t blksize;              /* total number of triggers in the Bank */
      uint16_t tag;                  /* Trigger Bank Tag ID = 0xff2x */
      uint16_t nrocs;                /* Number of ROC Banks in the Event Block (val = 1-256) */
      uint32_t len;                  /* Total Length of the Trigger Bank - including Bank header */
-     int      withTimeStamp;        /* =1 if Time Stamps are available */
-     int      withRunInfo;          /* =1 if Run information is available - Run # and Run Type */
      uint64_t evtNum;               /* Starting Event # of the Block */
      uint64_t runInfo;              /* Run Info Data */
      uint32_t *start;               /* Pointer to start of the Trigger Bank */
      uint64_t *evTS;                /* Pointer to the array of Time Stamps */
      uint16_t *evType;              /* Pointer to the array of Event Types */
+     uint32_t *TSROC;               /* Pointer to Trigger Supervisor ROC segment data */
+     uint32_t tsrocLen;             /* Number of elements in TSROC array */
    };
 
   TBOBJ tbank;
