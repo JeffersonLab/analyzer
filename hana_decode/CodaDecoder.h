@@ -13,6 +13,8 @@
 #include "THaEvData.h"
 #include <vector>
 #include <cstdint>
+#include <stdexcept>
+#include <string>
 
 namespace Decoder {
 
@@ -40,6 +42,15 @@ public:
 
   enum { MAX_PSFACT = 12 };
 
+  // CODA file format exception, thrown by LoadEvent/LoadFromMultiBlock
+  class coda_format_error : public std::runtime_error {
+  public:
+    explicit coda_format_error( const std::string& what_arg )
+      : std::runtime_error(what_arg) {}
+    explicit coda_format_error( const char* what_arg )
+      : std::runtime_error(what_arg) {}
+  };
+
 protected:
   virtual Int_t  LoadIfFlagData(const UInt_t* evbuffer);
 
@@ -54,7 +65,7 @@ protected:
 
   virtual Int_t  init_slotdata();
   virtual Int_t  interpretCoda3( const UInt_t* buffer );
-  virtual UInt_t trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize );
+  //virtual UInt_t trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize );
   Int_t prescale_decode_coda2( const UInt_t* evbuffer );
   Int_t prescale_decode_coda3( const UInt_t* evbuffer );
   void  dump( const UInt_t* evbuffer ) const;
@@ -89,22 +100,24 @@ protected:
 
   class TBOBJ {
   public:
-     TBOBJ() : blksize(0), tag(0), nrocs(0), len(0), evtNum(0), runInfo(0),
-               start(nullptr), evTS(nullptr), evType(nullptr), TSROC(nullptr),
-               tsrocLen(0) {}
-     bool withTimeStamp() const { return (tag & 1) != 0; }
-     bool withRunInfo()   const { return (tag & 2) != 0; }
-     uint32_t blksize;              /* total number of triggers in the Bank */
-     uint16_t tag;                  /* Trigger Bank Tag ID = 0xff2x */
-     uint16_t nrocs;                /* Number of ROC Banks in the Event Block (val = 1-256) */
-     uint32_t len;                  /* Total Length of the Trigger Bank - including Bank header */
-     uint64_t evtNum;               /* Starting Event # of the Block */
-     uint64_t runInfo;              /* Run Info Data */
-     uint32_t *start;               /* Pointer to start of the Trigger Bank */
-     uint64_t *evTS;                /* Pointer to the array of Time Stamps */
-     uint16_t *evType;              /* Pointer to the array of Event Types */
-     uint32_t *TSROC;               /* Pointer to Trigger Supervisor ROC segment data */
-     uint32_t tsrocLen;             /* Number of elements in TSROC array */
+     TBOBJ() : blksize(0), tag(0), nrocs(0), len(0), tsrocLen(0), evtNum(0),
+               runInfo(0), start(nullptr), evTS(nullptr), evType(nullptr),
+               TSROC(nullptr) {}
+     uint32_t Fill( const uint32_t* evbuffer, uint32_t blkSize, uint32_t tsroc );
+     bool     withTimeStamp() const { return (tag & 1) != 0; }
+     bool     withRunInfo()   const { return (tag & 2) != 0; }
+
+     uint32_t blksize;          /* total number of triggers in the Bank */
+     uint16_t tag;              /* Trigger Bank Tag ID = 0xff2x */
+     uint16_t nrocs;            /* Number of ROC Banks in the Event Block (val = 1-256) */
+     uint32_t len;              /* Total Length of the Trigger Bank - including Bank header */
+     uint32_t tsrocLen;         /* Number of words in TSROC array */
+     uint64_t evtNum;           /* Starting Event # of the Block */
+     uint64_t runInfo;          /* Run Info Data (optional) */
+     const uint32_t *start;     /* Pointer to start of the Trigger Bank */
+     const uint64_t *evTS;      /* Pointer to the array of Time Stamps (optional) */
+     const uint16_t *evType;    /* Pointer to the array of Event Types */
+     const uint32_t *TSROC;     /* Pointer to Trigger Supervisor ROC segment data */
    };
 
   TBOBJ tbank;

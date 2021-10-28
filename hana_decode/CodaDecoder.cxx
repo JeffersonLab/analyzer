@@ -138,7 +138,6 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
     SetRunTime(evbuffer[2]);
     run_num  = evbuffer[3];
     run_type = evbuffer[4];
-    evt_time = fRunTime;
     if (fDebugFile) {
       *fDebugFile << "Prestart Event : run_num " << run_num
                   << "  run type "   << run_type
@@ -324,8 +323,17 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer) {
   tbLen = 0;
 
   if( event_type == 1 ) {
-     tbLen = trigBankDecode(&evbuffer[2], block_size);
-     if (trigger_bits == 0) trigger_bits =tsEvType;
+//     tbLen = trigBankDecode(&evbuffer[2], block_size);
+//     if (trigger_bits == 0) trigger_bits =tsEvType;
+    tbLen = tbank.Fill(evbuffer+2, block_size, fgTSROC);
+
+    tsEvType = tbank.evType[0];      // type of first event in block
+    if( tbank.evTS )
+      evt_time = tbank.evTS[0];      // time of first event in block
+    else if( tbank.TSROC )
+      evt_time = *(const uint64_t*)tbank.TSROC;
+    if( tbank.tsrocLen > 2 )
+      trigger_bits = tbank.TSROC[2]; // trigger bits of first event in block
   }
 
   if( fDebugFile )
@@ -335,6 +343,74 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer) {
 }
 
 
+//_____________________________________________________________________________
+uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
+                                   uint32_t blkSize, uint32_t tsroc )
+{
+  memset(this, 0, sizeof(*this));
+
+  if( blkSize == 0 )
+    throw std::invalid_argument("CODA block size must be > 0");
+  start = evbuffer;
+  blksize = blkSize;
+  len = evbuffer[0] + 1;
+  tag = (evbuffer[1] & 0xffff0000) >> 16;
+  nrocs = evbuffer[1] & 0xff;
+
+  const uint32_t* p = evbuffer + 2;
+  // Segment 1:
+  //  uint64_t event_number
+  //  uint64_t run_info                if withRunInfo
+  //  uint64_t time_stamp[blkSize]     if withTimeStamp
+  {
+    uint32_t slen = *p & 0xffff;
+    if( slen != 2*(1 + (withRunInfo() ? 1 : 0) + (withTimeStamp() ? blkSize : 0)))
+      throw coda_format_error("Invalid length for Trigger Bank seg 1");
+    const auto* q = (const uint64_t*) (p + 1);
+    evtNum = *q++;
+    if( withRunInfo() )
+      runInfo = *q++;
+    if( withTimeStamp() )
+      evTS = q;
+    p += slen + 1;
+  }
+  if( p-evbuffer >= len )
+    throw coda_format_error("Past end of bank after Trigger Bank seg 1");
+
+  // Segment 2:
+  //  uint16_t event_type[blkSize]
+  //  padded to next 32-bit boundary
+  {
+    uint32_t slen = *p & 0xffff;
+    if( slen != (blkSize-1)/2 + 1 )
+      throw coda_format_error("Invalid length for Trigger Bank seg 2");
+    evType = (const uint16_t*) (p + 1);
+    p += slen + 1;
+  }
+
+  // nroc ROC segments containing timestamps and optional
+  // data like trigger latch bits:
+  // struct {
+  //   uint64_t roc_time_stamp;
+  //   uint32_t roc_trigger_bits;   // this is optional!
+  // } roc_segment[blkSize];
+  for( uint32_t i = 0; i < nrocs; ++i ) {
+    if( p-evbuffer >= len )
+      throw coda_format_error("Past end of bank while scanning trigger bank segments");
+    uint32_t slen = *p & 0xffff;
+    uint32_t rocnum = (*p & 0xff000000) >> 24;
+    if( rocnum == tsroc ) {
+      TSROC = p + 1;
+      tsrocLen = slen;
+      break;
+    }
+    p += slen + 1;
+  }
+
+  return len;
+}
+
+#if 0
 //_____________________________________________________________________________
 UInt_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize) {
 
@@ -406,6 +482,7 @@ UInt_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize) {
 
   return tbank.len;
 }
+#endif
 
 //_____________________________________________________________________________
 Int_t CodaDecoder::LoadFromMultiBlock()
@@ -832,7 +909,7 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
 // processed (written out) with EVIO 4, it will segfault. Do as it says below.
       printf("This might indicate a file written with EVIO 4 that was a CODA 2 file\n");
       printf("Try  analyzer->SetCodaVersion(2)  in the analyzer script.\n");
-
+      return HED_ERR;
   }
 
   if (fDebugFile) {  // debug
