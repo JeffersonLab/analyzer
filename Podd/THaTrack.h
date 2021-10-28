@@ -41,18 +41,18 @@ public:
       fPvect(kBig,kBig,kBig), fVertex(kBig,kBig,kBig),
       fVertexError(kBig,kBig,kBig),
       fPathl(kBig), fTime(kBig), fdTime(kBig), fBeta(kBig), fdBeta(kBig),
-      fNclusters(0), fPIDinfo(0), fCreator(0), fIndex(-1), fTrkNum(0),
-      fID(0), fFlag(0), fType(0), fChi2(kBig), fNDoF(0),
+      fNclusters(0), fClusters{}, fPIDinfo(nullptr), fCreator(nullptr), fIndex(-1),
+      fTrkNum(0), fID(nullptr), fFlag(0), fType(0), fChi2(kBig), fNDoF(0),
       fDedx(kBig), fEnergy(kBig),
       fNPMT(0), fBetaChi2(kBig), fFPTime(kBig),
       fGoodPlane3(0), fGoodPlane4(0)
-  { memset(fClusters,0,kMAXCL*sizeof(THaCluster*)); }
+  {}
 
   // Constructor with fp coordinates
   // FIXME: this really should be setting detector coordinates
   THaTrack( Double_t x, Double_t y, Double_t theta, Double_t phi,
-	    THaTrackingDetector* creator=0, THaTrackID* id=0,
-	    THaPIDinfo* pid=0 )
+	    THaTrackingDetector* creator=nullptr, THaTrackID* id=nullptr,
+	    THaPIDinfo* pid=nullptr )
     : TObject(),
       fX(x), fY(y), fTheta(theta), fPhi(phi), fP(kBig),
       fDX(kBig), fDY(kBig), fDTheta(kBig), fDPhi(kBig),
@@ -61,13 +61,12 @@ public:
       fPvect(kBig,kBig,kBig), fVertex(kBig,kBig,kBig),
       fVertexError(kBig,kBig,kBig),
       fPathl(kBig), fTime(kBig), fdTime(kBig), fBeta(kBig), fdBeta(kBig),
-      fNclusters(0), fPIDinfo(pid), fCreator(creator), fIndex(-1), fTrkNum(0),
-      fID(id), fFlag(0), fType(kHasFP), fChi2(kBig), fNDoF(0),
+      fNclusters(0), fClusters{}, fPIDinfo(pid), fCreator(creator), fIndex(-1),
+      fTrkNum(0), fID(id), fFlag(0), fType(kHasFP), fChi2(kBig), fNDoF(0),
       fDedx(kBig), fEnergy(kBig),
       fNPMT(0), fBetaChi2(kBig), fFPTime(kBig),
       fGoodPlane3(0), fGoodPlane4(0)
   {
-    memset(fClusters,0,kMAXCL*sizeof(THaCluster*));
     if(pid) pid->Clear();
   }
 

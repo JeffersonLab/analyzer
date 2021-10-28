@@ -18,9 +18,10 @@ using namespace std;
 //_____________________________________________________________________________
 THaTrack::~THaTrack()
 {
-  // Destructor. Delete the track ID associated with this track.
+  // Destructor. Delete objects owned by this track.
 
   delete fID;
+  delete fPIDinfo;
 }
 
 //_____________________________________________________________________________
@@ -38,7 +39,7 @@ void THaTrack::Clear( Option_t* opt )
     fRX = fRY = fRTheta = fRPhi = kBig;
     fTX = fTY = fTTheta = fTPhi = kBig;
     fDX = fDY = fDTheta = fDPhi = kBig;
-    fNclusters = fFlag = fType = 0;
+    fNclusters = 0; fFlag = fType = 0U;
     fIndex = -1;
     if( fPIDinfo ) fPIDinfo->Clear( opt );
     fPvect.SetXYZ( kBig, kBig, kBig );
@@ -46,9 +47,10 @@ void THaTrack::Clear( Option_t* opt )
     fVertexError.SetXYZ( kBig, kBig, kBig );
     fPathl = fTime = fdTime = fBeta = fdBeta = kBig;
     fChi2 = kBig; fNDoF = 0;
-    memset( fClusters, 0, kMAXCL*sizeof(THaCluster*) );
+    memset( fClusters, 0, kMAXCL*sizeof(void*) );
   }
   delete fID; fID = nullptr;
+  delete fPIDinfo; fPIDinfo = nullptr;
 }
 
 //_____________________________________________________________________________
