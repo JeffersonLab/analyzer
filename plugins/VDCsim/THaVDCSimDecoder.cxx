@@ -124,7 +124,6 @@ int THaVDCSimDecoder::LoadEvent(const UInt_t* evbuffer )
 
   event_type = 1;
   event_num = simEvent->event_num;
-  recent_event = event_num;
 
   if( fDoBench ) fBench->Begin("physics_decode");
 

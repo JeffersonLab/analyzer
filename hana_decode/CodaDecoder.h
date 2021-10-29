@@ -40,6 +40,8 @@ public:
   virtual Int_t  FillBankData( UInt_t* rdat, UInt_t roc, Int_t bank,
                                UInt_t offset = 0, UInt_t num = 1 ) const;
 
+  UInt_t         GetTSEvtype() const { return tsEvType; }
+
   enum { MAX_PSFACT = 12 };
 
   // CODA file format exception, thrown by LoadEvent/LoadFromMultiBlock
@@ -71,14 +73,11 @@ protected:
   void  dump( const UInt_t* evbuffer ) const;
 
   // Data
-  //  Int_t   synchflag; // unused
-  //  Bool_t  buffmode,synchmiss,synchextra; // already defined in base class
-
   UInt_t nroc;
   std::vector<UInt_t> irn;
   std::vector<bool>   fbfound;
   std::vector<UInt_t> psfact;
-  Bool_t fdfirst;
+  Bool_t buffmode,synchmiss,synchextra,fdfirst;
   Int_t  chkfbstat;
 
   class BankDat_t {            // Coordinates of bank data in raw event
@@ -97,6 +96,7 @@ protected:
   // CODA3 stuff
   UInt_t evcnt_coda3;
   Bool_t fMultiBlockMode, fBlockIsDone;
+  UInt_t tsEvType, bank_tag, block_size, tbLen;
 
   class TBOBJ {
   public:
@@ -120,9 +120,9 @@ protected:
      const uint32_t *TSROC;     /* Pointer to Trigger Supervisor ROC segment data */
    };
 
-  TBOBJ tbank;
+   TBOBJ tbank;
 
-  ClassDef(CodaDecoder,0) // Decoder for CODA event buffer
+   ClassDef(CodaDecoder,0) // Decoder for CODA event buffer
 };
 
 }

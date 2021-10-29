@@ -32,10 +32,18 @@ CodaDecoder::CodaDecoder() :
   irn(MAXROC, 0),
   fbfound(MAXROC*MAXSLOT_FB, false),
   psfact(MAX_PSFACT, kMaxUInt),
-  fdfirst(true), chkfbstat(1),
+  buffmode{false},
+  synchmiss{false},
+  synchextra{false},
+  fdfirst(true),
+  chkfbstat(1),
   evcnt_coda3(0),
   fMultiBlockMode{false},
-  fBlockIsDone{false}
+  fBlockIsDone{false},
+  tsEvType{0},
+  bank_tag{0},
+  block_size{0},
+  tbLen{0}
 {
   bankdat.reserve(32);
   // Please leave these 3 lines for me to debug if I need to.  thanks, Bob
@@ -317,7 +325,6 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer) {
 
     if( fDebugFile )
       *fDebugFile << " User defined event type " << event_type << endl;
-
   }
 
   tbLen = 0;
@@ -337,7 +344,9 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer) {
   }
 
   if( fDebugFile )
-    *fDebugFile << "CODA 3  Event type "<<event_type<<" trigger_bits "<< trigger_bits<<"  tsEvType  "<<tsEvType<<"  evt_time "<<GetEvTime()<<endl;
+    *fDebugFile << "CODA 3  Event type " << event_type << " trigger_bits "
+                << trigger_bits << "  tsEvType  " << tsEvType
+                << "  evt_time " << GetEvTime() << endl;
 
   return HED_OK;
 }
