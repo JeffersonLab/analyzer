@@ -165,88 +165,101 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
   }
 
   else if( event_type <= MAX_PHYS_EVTYPE && !PrescanModeEnabled() ) {
-    assert(fMap || fNeedInit);
-    if( first_decode || fNeedInit ) {
-      if( (ret = Init()) != HED_OK )
-        return ret;
+    if( fDataVersion != 2 &&
+        (ret = trigBankDecode(evbuffer)) != HED_OK ) {
+      return ret;
     }
-    assert(fMap);
-    if( fDoBench ) fBench->Begin("clearEvent");
-    for( auto i : fSlotClear )
-      crateslot[i]->clearEvent();
-    if( fDoBench ) fBench->Stop("clearEvent");
-
-    if( fDataVersion == 3 ) {
-      event_num = ++evcnt_coda3;
-      FindRocsCoda3(evbuffer);
-    } else {
-      event_num = evbuffer[4];
-      FindRocs(evbuffer);
-    }
-    recent_event = event_num;
-
-    if( fdfirst && fDebugFile ) {
-      fdfirst = false;
-      CompareRocs();
-    }
-
-   // Decode each ROC
-   // From this point onwards there is no diff between CODA 2.* and CODA 3.*
-
-    for( UInt_t i = 0; i < nroc; i++ ) {
-
-      UInt_t iroc = irn[i];
-      const RocDat_t& ROC = rocdat[iroc];
-      UInt_t ipt = ROC.pos + 1;
-      UInt_t iptmax = ROC.pos + ROC.len;
-
-      if( fMap->isFastBus(iroc) ) {  // checking that slots found = expected
-        if( GetEvNum() > 200 && chkfbstat < 3 ) chkfbstat = 2;
-        if( chkfbstat == 1 ) ChkFbSlot(iroc, evbuffer, ipt, iptmax);
-        if( chkfbstat == 2 ) {
-          ChkFbSlots();
-          chkfbstat = 3;
-        }
-      }
-
-      // If at least one module is in a bank, must split the banks for this roc
-
-      if( fMap->isBankStructure(iroc) ) {
-        if( fDebugFile )
-          *fDebugFile << "\nCodaDecode::Calling bank_decode "
-                      << i << "   " << iroc << "  " << ipt << "  " << iptmax
-                      << endl;
-        /*status =*/
-        bank_decode(iroc, evbuffer, ipt, iptmax);
-      }
-
-      if( fDebugFile )
-        *fDebugFile << "\nCodaDecode::Calling roc_decode " << i << "   "
-                    << evbuffer << "  " << iroc << "  " << ipt
-                    << "  " << iptmax << endl;
-
-      Int_t status = roc_decode(iroc, evbuffer, ipt, iptmax);
-
-      // do something with status
-      if( status )
-        break;
-
-    }
+    ret = physics_decode(evbuffer);
   }
 
   return ret;
 }
 
+//_____________________________________________________________________________
+Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
+{
+  assert(fMap || fNeedInit);
+  if( first_decode || fNeedInit ) {
+    Int_t ret = Init();
+    if( ret != HED_OK )
+      return ret;
+  }
+  assert(fMap);
+  if( fDoBench ) fBench->Begin("clearEvent");
+  for( auto i : fSlotClear )
+    crateslot[i]->clearEvent();
+  if( fDoBench ) fBench->Stop("clearEvent");
+
+  if( fDataVersion == 3 ) {
+    event_num = ++evcnt_coda3;
+    FindRocsCoda3(evbuffer);
+  } else {
+    event_num = evbuffer[4];
+    FindRocs(evbuffer);
+  }
+
+  if( fdfirst && fDebugFile ) {
+    fdfirst = false;
+    CompareRocs();
+  }
+
+  // Decode each ROC
+  // From this point onwards there is no diff between CODA 2.* and CODA 3.*
+
+  for( UInt_t i = 0; i < nroc; i++ ) {
+
+    UInt_t iroc = irn[i];
+    const RocDat_t& ROC = rocdat[iroc];
+    UInt_t ipt = ROC.pos + 1;
+    UInt_t iptmax = ROC.pos + ROC.len;
+
+    if( fMap->isFastBus(iroc) ) {  // checking that slots found = expected
+      if( GetEvNum() > 200 && chkfbstat < 3 ) chkfbstat = 2;
+      if( chkfbstat == 1 ) ChkFbSlot(iroc, evbuffer, ipt, iptmax);
+      if( chkfbstat == 2 ) {
+        ChkFbSlots();
+        chkfbstat = 3;
+      }
+    }
+
+    // If at least one module is in a bank, must split the banks for this roc
+
+    if( fMap->isBankStructure(iroc) ) {
+      if( fDebugFile )
+        *fDebugFile << "\nCodaDecode::Calling bank_decode "
+                    << i << "   " << iroc << "  " << ipt << "  " << iptmax
+                    << endl;
+      /*status =*/
+      bank_decode(iroc, evbuffer, ipt, iptmax);
+    }
+
+    if( fDebugFile )
+      *fDebugFile << "\nCodaDecode::Calling roc_decode " << i << "   "
+                  << evbuffer << "  " << iroc << "  " << ipt
+                  << "  " << iptmax << endl;
+
+    Int_t status = roc_decode(iroc, evbuffer, ipt, iptmax);
+
+    // do something with status
+    if( status )
+      break;
+
+  }
+  return HED_OK;
+}
 
 //_____________________________________________________________________________
-Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer) {
+Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer)
+{
+  // Extract basic information from a CODA3 event
+  tbLen = 0;
+  tsEvType = 0;
+  trigger_bits = 0;
+  evt_time = 0;
 
-  Int_t check_ETdata=0;  // debug if 1
   bank_tag   = (evbuffer[1] & 0xffff0000) >> 16;
   data_type  = (evbuffer[1] & 0xff00) >> 8;
   block_size = evbuffer[1] & 0xff;
-
-  if (fMap) fgTSROC=fMap->getTSROC();
 
   if( bank_tag >= 0xff00 ) { /* CODA Reserved bank type */
 
@@ -274,75 +287,12 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer) {
 
     event_type = bank_tag;  // ET-insertions
 
-    if (check_ETdata) {  // if you set=1, character data gets printed.
-
-    // checks of ET-inserted data
-
-       Int_t print_it=0;
-
-       switch(event_type) {
-
-       case EPICS_EVTYPE:
-          cout << "EPICS data "<<endl;
-          print_it=1;
-          break;
-       case PRESCALE_EVTYPE:
-          cout << "Prescale data "<<endl;
-          print_it=1;
-          break;
-       case DAQCONFIG_FILE1:
-          cout << "DAQ config file 1 "<<endl;
-          print_it=1;
-          break;
-        case DAQCONFIG_FILE2:
-          cout << "DAQ config file 2 "<<endl;
-          print_it=1;
-          break;
-        case SCALER_EVTYPE:
-          cout << "LHRS scaler event "<<endl;
-          print_it=1;
-          break;
-        case SBSSCALER_EVTYPE:
-          cout << "SBS scaler event "<<endl;
-          print_it=1;
-          break;
-        case HV_DATA_EVTYPE:
-          cout << "High voltage data event "<<endl;
-          print_it=1;
-          break;
-        default:
-	  // something else ?
-          cout << endl << "--- Special event type "<<event_type<<endl<<endl;
-       }
-       if(print_it) {  
-           char *cbuf = (char *)evbuffer; // These are character data
-           size_t elen = sizeof(int)*(evbuffer[0]+1);
-           cout << "Dump of event buffer .  Len = "<<elen<<endl;
-	   // This dump will look exactly like the text file that was inserted.
-           for (size_t ii=0; ii<elen; ii++) cout << cbuf[ii];
-       }
-    }  // check_ETdata  (debug output)
+    if( fDebug > 1 )    // if set, character data gets printed.
+      debug_print(evbuffer);
 
     if( fDebugFile )
       *fDebugFile << " User defined event type " << event_type << endl;
   }
-
-  tbLen = 0;
-
-  if( event_type == 1 && !PrescanModeEnabled() ) {
-//     tbLen = trigBankDecode(&evbuffer[2], block_size);
-//     if (trigger_bits == 0) trigger_bits =tsEvType;
-    tbLen = tbank.Fill(evbuffer+2, block_size, fgTSROC);
-
-    tsEvType = tbank.evType[0];      // type of first event in block
-    if( tbank.evTS )
-      evt_time = tbank.evTS[0];      // time of first event in block
-    else if( tbank.TSROC )
-      evt_time = *(const uint64_t*)tbank.TSROC;
-    if( tbank.tsrocLen > 2 )
-      trigger_bits = tbank.TSROC[2]; // trigger bits of first event in block
-  }
-
   if( fDebugFile )
     *fDebugFile << "CODA 3  Event type " << event_type << " trigger_bits "
                 << trigger_bits << "  tsEvType  " << tsEvType
@@ -351,6 +301,84 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer) {
   return HED_OK;
 }
 
+//_____________________________________________________________________________
+Int_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer )
+{
+  // Decode the CODA3 trigger bank. Copy relevant data to member variables.
+  // This will initialize the crate map.
+
+  // If necessary, initialize the crate map (for TS ROC)
+  assert(fMap || fNeedInit);
+  if( first_decode || fNeedInit ) {
+    Int_t ret = Init();
+    if( ret != HED_OK )
+      return ret;
+  }
+  assert(fMap);
+
+  // Decode trigger bank (bank of segments at start of physics event)
+  tbLen = tbank.Fill(evbuffer + 2, block_size, fMap->getTSROC());
+
+  // Copy pertinent data to member variables for faster retrieval
+  tsEvType = tbank.evType[0];      // type of first event in block
+  if( tbank.evTS )
+    evt_time = tbank.evTS[0];      // time of first event in block
+  else if( tbank.TSROC )
+    evt_time = *(const uint64_t*)tbank.TSROC;
+  if( tbank.tsrocLen > 2 )
+    trigger_bits = tbank.TSROC[2]; // trigger bits of first event in block
+
+  return HED_OK;
+}
+
+//_____________________________________________________________________________
+void CodaDecoder::debug_print( const UInt_t* evbuffer ) const
+{
+  // checks of ET-inserted data
+  Int_t print_it=0;
+
+  switch( event_type ) {
+
+  case EPICS_EVTYPE:
+    cout << "EPICS data "<<endl;
+    print_it=1;
+    break;
+  case PRESCALE_EVTYPE:
+    cout << "Prescale data "<<endl;
+    print_it=1;
+    break;
+  case DAQCONFIG_FILE1:
+    cout << "DAQ config file 1 "<<endl;
+    print_it=1;
+    break;
+  case DAQCONFIG_FILE2:
+    cout << "DAQ config file 2 "<<endl;
+    print_it=1;
+    break;
+  case SCALER_EVTYPE:
+    cout << "LHRS scaler event "<<endl;
+    print_it=1;
+    break;
+  case SBSSCALER_EVTYPE:
+    cout << "SBS scaler event "<<endl;
+    print_it=1;
+    break;
+  case HV_DATA_EVTYPE:
+    cout << "High voltage data event "<<endl;
+    print_it=1;
+    break;
+  default:
+    // something else ?
+    cout << endl << "--- Special event type " << event_type << endl << endl;
+  }
+  if(print_it) {
+    char *cbuf = (char *)evbuffer; // These are character data
+    size_t elen = sizeof(int)*(evbuffer[0]+1);
+    cout << "Dump of event buffer .  Len = "<<elen<<endl;
+    // This dump will look exactly like the text file that was inserted.
+    for (size_t ii=0; ii<elen; ii++) cout << cbuf[ii];
+  }
+}
 
 //_____________________________________________________________________________
 uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
@@ -418,80 +446,6 @@ uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
 
   return len;
 }
-
-#if 0
-//_____________________________________________________________________________
-UInt_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize) {
-
-// Decode the "Trigger Bank" which is a CODA3 structure that appears
-// near the top of the event buffer.  
-
-  memset(&tbank, 0, sizeof(TBOBJ));
-
-  tsEvType = -1;
-  evt_time = 0;
-  trigger_bits = 0;
-
-  tbank.start = (uint32_t*) evbuffer;
-  tbank.blksize = blkSize;
-  tbank.len = evbuffer[0] + 1;
-  tbank.tag = (evbuffer[1] & 0xffff0000) >> 16;
-  tbank.nrocs = evbuffer[1] & 0xff;
-
-  uint32_t* p = (uint32_t*) evbuffer + 2;
-  // Segment 1:
-  //  uint64_t event_number
-  //  uint64_t run_info                if withRunInfo
-  //  uint64_t time_stamp[blkSize]     if withTimeStamp
-  {
-    uint32_t len = *p & 0xffff;
-    auto* q = (uint64_t*) (p + 1);
-    tbank.evtNum = *(q++);
-    if( tbank.withRunInfo() )
-      q++;  // TODO: extract run info
-    if( tbank.withTimeStamp() ) {
-      tbank.evTS = q;
-      evt_time = tbank.evTS[0];  // time of first event in block
-    }
-    p += len + 1;
-  }
-  assert( p-evbuffer < tbank.len);
-
-  // Segment 2:
-  //  uint16_t event_type[blkSize]
-  //  padded to next 32-bit boundary
-  {
-    uint32_t len = *p & 0xffff;
-    tbank.evType = (uint16_t*) (p + 1);
-    tsEvType = tbank.evType[0];  // type of first event in block
-    p += len + 1;
-  }
-
-  // tbank.nroc ROC segments containing timestamps and optional
-  // data like trigger latch bits:
-  // struct {
-  //   uint64_t roc_time_stamp;
-  //   uint32_t roc_trigger_bits;   // this is optional!
-  // } roc_segment[blkSize];
-  for( uint32_t i = 0; i < tbank.nrocs; ++i ) {
-    assert( p-evbuffer < tbank.len);
-    uint32_t len = *p & 0xffff;
-    uint32_t rocnum = (*p & 0xff000000) >> 24;
-    if( rocnum == fgTSROC ) {
-      tbank.TSROC = p + 1;
-      tbank.tsrocLen = len;
-      if( !tbank.withTimeStamp() )
-        evt_time = *(uint64_t*) tbank.TSROC;
-      if( len > 2 )
-        trigger_bits = tbank.TSROC[2];  // trigger bits of first event in block
-      break;
-    }
-    p += len + 1;
-  }
-
-  return tbank.len;
-}
-#endif
 
 //_____________________________________________________________________________
 Int_t CodaDecoder::LoadFromMultiBlock()

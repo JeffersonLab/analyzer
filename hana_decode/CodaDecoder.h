@@ -60,6 +60,7 @@ protected:
   Int_t FindRocsCoda3(const UInt_t *evbuffer); // CODA3 version
   Int_t roc_decode( UInt_t roc, const UInt_t* evbuffer, UInt_t ipt, UInt_t istop );
   Int_t bank_decode( UInt_t roc, const UInt_t* evbuffer, UInt_t ipt, UInt_t istop );
+  Int_t physics_decode( const UInt_t* evbuffer );
 
   void CompareRocs();
   void ChkFbSlot( UInt_t roc, const UInt_t* evbuffer, UInt_t ipt, UInt_t istop );
@@ -67,10 +68,11 @@ protected:
 
   virtual Int_t  init_slotdata();
   virtual Int_t  interpretCoda3( const UInt_t* buffer );
-  //virtual UInt_t trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize );
+  virtual Int_t  trigBankDecode( const UInt_t* evbuffer );
   Int_t prescale_decode_coda2( const UInt_t* evbuffer );
   Int_t prescale_decode_coda3( const UInt_t* evbuffer );
   void  dump( const UInt_t* evbuffer ) const;
+  void  debug_print( const UInt_t* evbuffer ) const;
 
   // Data
   UInt_t nroc;
