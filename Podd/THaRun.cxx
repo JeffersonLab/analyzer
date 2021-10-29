@@ -207,6 +207,7 @@ Int_t THaRun::PrescanFile()
   // Disable advanced processing
   evdata->EnableScalers(false);
   evdata->EnableHelicity(false);
+  evdata->EnablePrescanMode(true);
   evdata->SetDataVersion(GetCodaVersion());
   UInt_t nev = 0;
   Int_t status = READ_OK;

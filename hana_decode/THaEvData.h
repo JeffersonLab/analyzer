@@ -134,6 +134,8 @@ public:
   Bool_t  HelicityEnabled() const;
   void    EnableScalers( Bool_t enable=true );
   Bool_t  ScalersEnabled() const;
+  void    EnablePrescanMode( Bool_t enable=true );
+  Bool_t  PrescanModeEnabled() const;
   void    SetOrigPS( Int_t event_type );
   TString GetOrigPS() const;
 
@@ -157,6 +159,7 @@ protected:
   enum {
     kHelicityEnabled = BIT(14),
     kScalersEnabled  = BIT(15),
+    kPrescanMode     = BIT(16)
   };
 
   // Initialization routines
@@ -389,6 +392,12 @@ inline
 Bool_t THaEvData::ScalersEnabled() const {
   // Test if scaler decoding enabled
   return TestBit(kScalersEnabled);
+}
+
+inline
+Bool_t THaEvData::PrescanModeEnabled() const {
+  // Test if prescan mode enabled
+  return TestBit(kPrescanMode);
 }
 
 // Dummy versions of EPICS data access functions. These will always fail

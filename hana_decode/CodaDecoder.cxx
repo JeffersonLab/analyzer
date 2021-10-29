@@ -156,7 +156,7 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
     if (ret != HED_OK ) return ret;
   }
 
-  else if( event_type <= MAX_PHYS_EVTYPE ) {
+  else if( event_type <= MAX_PHYS_EVTYPE && !PrescanModeEnabled() ) {
     assert(fMap || fNeedInit);
     if( first_decode || fNeedInit ) {
       if( (ret = Init()) != HED_OK )
@@ -322,7 +322,7 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer) {
 
   tbLen = 0;
 
-  if( event_type == 1 ) {
+  if( event_type == 1 && !PrescanModeEnabled() ) {
 //     tbLen = trigBankDecode(&evbuffer[2], block_size);
 //     if (trigger_bits == 0) trigger_bits =tsEvType;
     tbLen = tbank.Fill(evbuffer+2, block_size, fgTSROC);

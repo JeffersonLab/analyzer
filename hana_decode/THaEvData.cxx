@@ -180,6 +180,13 @@ void THaEvData::EnableScalers( Bool_t enable )
 }
 
 //_____________________________________________________________________________
+void THaEvData::EnablePrescanMode( Bool_t enable )
+{
+  // Enable/disable prescan mode
+  SetBit(kPrescanMode, enable);
+}
+
+//_____________________________________________________________________________
 void THaEvData::SetVerbose( Int_t level )
 {
   // Set verbosity level. Identical to SetDebug(). Kept for compatibility.
