@@ -307,6 +307,8 @@ Int_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer )
   // Decode the CODA3 trigger bank. Copy relevant data to member variables.
   // This will initialize the crate map.
 
+  const char* const here = "CodaDecoder::trigBankDecode";
+
   // If necessary, initialize the crate map (for TS ROC)
   assert(fMap || fNeedInit);
   if( first_decode || fNeedInit ) {
@@ -317,7 +319,17 @@ Int_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer )
   assert(fMap);
 
   // Decode trigger bank (bank of segments at start of physics event)
-  tbLen = tbank.Fill(evbuffer + 2, block_size, fMap->getTSROC());
+  if( block_size == 0 ) {
+    Error(here, "CODA 3 format error: Physics event with block size 0");
+    return HED_ERR;
+  }
+  try {
+    tbLen = tbank.Fill(evbuffer + 2, block_size, fMap->getTSROC());
+  }
+  catch( const coda_format_error& e ) {
+    Error(here, "CODA 3 format error: %s", e.what() );
+    return HED_ERR;
+  }
 
   // Copy pertinent data to member variables for faster retrieval
   tsEvType = tbank.evType[0];      // type of first event in block
