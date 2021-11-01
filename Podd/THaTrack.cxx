@@ -21,7 +21,6 @@ THaTrack::~THaTrack()
   // Destructor. Delete objects owned by this track.
 
   delete fID;
-  delete fPIDinfo;
 }
 
 //_____________________________________________________________________________
@@ -50,7 +49,6 @@ void THaTrack::Clear( Option_t* opt )
     memset( fClusters, 0, kMAXCL*sizeof(void*) );
   }
   delete fID; fID = nullptr;
-  delete fPIDinfo; fPIDinfo = nullptr;
 }
 
 //_____________________________________________________________________________
