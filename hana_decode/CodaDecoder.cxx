@@ -325,7 +325,7 @@ Int_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer )
     evt_time = tbank.evTS[0];      // time of first event in block
   else if( tbank.TSROC )
     evt_time = *(const uint64_t*)tbank.TSROC;
-  if( tbank.tsrocLen > 2 )
+  if( tbank.withTriggerBits() )
     trigger_bits = tbank.TSROC[2]; // trigger bits of first event in block
 
   return HED_OK;
@@ -384,10 +384,9 @@ void CodaDecoder::debug_print( const UInt_t* evbuffer ) const
 uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
                                    uint32_t blkSize, uint32_t tsroc )
 {
-  memset(this, 0, sizeof(*this));
-
   if( blkSize == 0 )
     throw std::invalid_argument("CODA block size must be > 0");
+  Clear();
   start = evbuffer;
   blksize = blkSize;
   len = evbuffer[0] + 1;

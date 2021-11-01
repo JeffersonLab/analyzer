@@ -105,9 +105,11 @@ protected:
      TBOBJ() : blksize(0), tag(0), nrocs(0), len(0), tsrocLen(0), evtNum(0),
                runInfo(0), start(nullptr), evTS(nullptr), evType(nullptr),
                TSROC(nullptr) {}
+     void     Clear() { memset(this, 0, sizeof(*this)); }
      uint32_t Fill( const uint32_t* evbuffer, uint32_t blkSize, uint32_t tsroc );
-     bool     withTimeStamp() const { return (tag & 1) != 0; }
-     bool     withRunInfo()   const { return (tag & 2) != 0; }
+     bool     withTimeStamp()   const { return (tag & 1) != 0; }
+     bool     withRunInfo()     const { return (tag & 2) != 0; }
+     bool     withTriggerBits() const { return (tsrocLen > 2);}
 
      uint32_t blksize;          /* total number of triggers in the Bank */
      uint16_t tag;              /* Trigger Bank Tag ID = 0xff2x */
