@@ -30,6 +30,7 @@ public:
   virtual void             Clear( Option_t* opt="");
   virtual Int_t            CoarseTrack();
   virtual Int_t            CoarseReconstruct();
+  virtual EStatus          Init( const TDatime& run_time );
   virtual Int_t            Track();
   virtual Int_t            Reconstruct();
   virtual Int_t            CalcPID();
@@ -43,12 +44,11 @@ public:
 					   const char* name,
 					   Double_t mass, Int_t charge = 0 );
   virtual void             DefinePidParticles();
-  virtual Int_t            DefineVariables( EMode mode = kDefine );
           THaTrack*        GetGoldenTrack() const { return fGoldenTrack; }
           Int_t            GetNpidParticles() const;
           Int_t            GetNpidDetectors() const;
-  const   THaParticleInfo* GetPidParticleInfo( Int_t i ) const;
-  const   THaPidDetector*  GetPidDetector( Int_t i ) const;
+          THaParticleInfo* GetPidParticleInfo( Int_t i ) const;
+          THaPidDetector*  GetPidDetector( Int_t i ) const;
           Int_t            GetNTracks()  const { return fTracks->GetLast()+1; }
           TClonesArray*    GetTracks()   const { return fTracks; }
           TClonesArray*    GetTrackPID() const { return fTrackPID; }
@@ -103,7 +103,6 @@ protected:
   TObjArray*      fPidDetectors;          //PID detectors
   TObjArray*      fPidParticles;          //Particles for which we want PID
   THaTrack*       fGoldenTrack;           //Golden track within fTracks
-  Bool_t          fPID;                   //PID enabled
 
   // The following is specific to small-acceptance pointing spectrometers
   TRotation       fToLabRot;              //Rotation matrix from TRANSPORT to lab
@@ -119,19 +118,18 @@ protected:
   Double_t        fPcentral;              //Central momentum (GeV)
   Double_t        fCollDist;              //Distance from collimator to target center (m)
 
+  // Status flags
   UInt_t          fStagesDone;            //Bitfield of completed analysis stages
+  Bool_t          fPID;                   //PID enabled
 
   // only derived classes can construct me
   THaSpectrometer( const char* name, const char* description );
 
+  virtual Int_t   DefineVariables( EMode mode = kDefine );
   virtual Int_t   ReadRunDatabase( const TDatime& date );
+  virtual void    ListInit();     // Initialize lists of detector types
 
-private:
-  Bool_t          fListInit;      //Detector lists initialized
-
-  void            ListInit();     //Initializes lists of specialized detectors
-
-  ClassDef(THaSpectrometer,0)     //A generic spectrometer
+  ClassDef(THaSpectrometer,1)     // A generic spectrometer
 };
 
 
@@ -148,14 +146,13 @@ inline Int_t THaSpectrometer::GetNpidDetectors() const
 }
 
 //_____________________________________________________________________________
-inline const THaParticleInfo* THaSpectrometer::GetPidParticleInfo( Int_t i ) 
-  const
+inline THaParticleInfo* THaSpectrometer::GetPidParticleInfo( Int_t i ) const
 {
   return static_cast<const THaParticleInfo*>( fPidParticles->At(i) );
 }
 
 //_____________________________________________________________________________
-inline const THaPidDetector* THaSpectrometer::GetPidDetector( Int_t i ) const
+inline THaPidDetector* THaSpectrometer::GetPidDetector( Int_t i ) const
 {
   return static_cast<const THaPidDetector*>( fPidDetectors->At(i) );
 }

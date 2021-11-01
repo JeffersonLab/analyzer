@@ -62,19 +62,19 @@ THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
   auto* spect = static_cast<THaSpectrometer*>( GetApparatus() );
 
   if( spect ) {
+    if( spect->IsPID() ) {
+      // Create new PIDinfo and vertex objects if necessary
 
-    // Create new PIDinfo and vertex objects if necessary
+      UInt_t ndet = spect->GetNpidDetectors();
+      UInt_t npart = spect->GetNpidParticles();
+      TClonesArray& c = *spect->GetTrackPID();
 
-    UInt_t ndet      = spect->GetNpidDetectors();
-    UInt_t npart     = spect->GetNpidParticles();
-    TClonesArray& c  = *spect->GetTrackPID();
+      // caution: c[i] creates an empty object at i if slot i was empty,
+      // so use At(i) to check.
 
-    // caution: c[i] creates an empty object at i if slot i was empty,
-    // so use At(i) to check.
-
-    if( i > c.GetLast() || !c.At(i) )  new( c[i] ) THaPIDinfo( ndet, npart );
-    pid = static_cast<THaPIDinfo*>( c.At(i) );
-  
+      if( i > c.GetLast() || !c.At(i) ) new(c[i]) THaPIDinfo(ndet, npart);
+      pid = static_cast<THaPIDinfo*>( c.At(i) );
+    }
   } else if( fDebug>0 ) {
     ::Warning("THaTrackingDetector::AddTrack", "No spectrometer defined for "
 	      "detector %s. Track has no PID and vertex info.", GetName());

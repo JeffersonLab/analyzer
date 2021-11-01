@@ -18,7 +18,6 @@
 #include "THaParticleInfo.h"
 #include "THaTrackingDetector.h"
 #include "THaNonTrackingDetector.h"
-#include "THaPidDetector.h"
 #include "THaPIDinfo.h"
 #include "THaTrack.h"
 #include "TClass.h"
@@ -43,20 +42,18 @@ THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) :
   fPidDetectors{new TObjArray},
   fPidParticles{new TObjArray},
   fGoldenTrack{nullptr},
-  fPID{false},
   fThetaGeo{0.0}, fPhiGeo{0.0},   fThetaSph{0.0}, fPhiSph{0.0},
   fSinThGeo{0.0}, fCosThGeo{1.0}, fSinPhGeo{0.0}, fCosPhGeo{1.0},
   fSinThSph{0.0}, fCosThSph{1.0}, fSinPhSph{0.0}, fCosPhSph{1.0},
   fPcentral{1.0},
   fCollDist{0.0},
   fStagesDone{0},
-  fListInit{false}
+  fPID{false}
 {
   // Constructor.
   // Protected. Can only be called by derived classes.
 
-  Clear();
-  DefinePidParticles();
+  THaSpectrometer::Clear();
 
   fProperties |= kNeedsRunDB;
 
@@ -159,16 +156,34 @@ void THaSpectrometer::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
+THaAnalysisObject::EStatus THaSpectrometer::Init( const TDatime& run_time )
+{
+  // Initialize spectrometer. First, ensure that the lists of detector types
+  // are in a consistent state. This also sets up the PID structures, if
+  // enabled. Then, do the Apparatus initialization, which initializes the
+  // detectors
+
+  ListInit();
+
+  return THaApparatus::Init(run_time);
+}
+
+//_____________________________________________________________________________
 void THaSpectrometer::DefinePidParticles()
 {
   // Define the default set of PID particles:
-  //  pion, kaon, proton
+  //  electron, pion, kaon, proton
+  //
+  // This spectrometer does not necessarily have to have PID detectors
+  // that can identify all of these types. This is essentially a list of
+  // convenient candidates for medium energy experiments.
 
   fPidParticles->Delete();    //make sure array is empty
 
-  AddPidParticle( "pi", "pion",   0.139, 0 );
-  AddPidParticle( "k",  "kaon",   0.4936, 0 );
-  AddPidParticle( "p",  "proton", 0.938, 1 );
+  AddPidParticle( "e",  "electron", 0.511e-3, -1 );
+  AddPidParticle( "pi", "pion",     0.139,     0 );
+  AddPidParticle( "k",  "kaon",     0.4936,    0 );
+  AddPidParticle( "p",  "proton",   0.938,     1 );
 }
 
 //_____________________________________________________________________________
@@ -254,26 +269,28 @@ void THaSpectrometer::ListInit()
       fPidDetectors->Add( theDetector );
   }
 
-  // Set up PIDinfo and vertex objects that can be associated with tracks
+  if( IsPID() ) {
+    // If not already done, set up this spectrometer's default PID particles
+    if( fPidParticles->IsEmpty() )
+      DefinePidParticles();
 
-  UInt_t ndet  = GetNpidDetectors();
-  UInt_t npart = GetNpidParticles();
-  TClonesArray& pid  = *fTrackPID;
+    UInt_t ndet = GetNpidDetectors();
+    UInt_t npart = GetNpidParticles();
 
-  for( int i = 0; i < kInitTrackMultiplicity; i++ ) {
-    new( pid[i] )  THaPIDinfo( ndet, npart );
+    // Set up PIDinfo objects that can be associated with tracks
+    for( int i = 0; i < kInitTrackMultiplicity; i++ ) {
+      new( (*fTrackPID)[i])  THaPIDinfo(ndet, npart);
+    }
   }
-  
-  fListInit = true;
+
+  // TODO: Set up vertex objects that can be associated with tracks?
+
 }
 
 //_____________________________________________________________________________
 Int_t THaSpectrometer::CoarseTrack()
 {
   // Coarse Tracking: First step of spectrometer analysis
-
-  if( !fListInit )
-    ListInit();
 
   // 1st step: Coarse tracking.  This should be quick and dirty.
   // Any tracks found are put in the fTrack array.
