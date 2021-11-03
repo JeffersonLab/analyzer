@@ -17,8 +17,4 @@ R__EXTERN class THaRunBase*  gHaRun;       //The currently active run
 R__EXTERN class TClass*      gHaDecoder;   //Class(!) of decoder to use
 R__EXTERN class THaDB*       gHaDB;        //Database system to use
 
-namespace Podd {
-class Textvars;
-}
-R__EXTERN class Podd::Textvars* gHaTextvars;
 #endif
