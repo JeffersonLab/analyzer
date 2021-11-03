@@ -11,6 +11,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <cctype>   // for isspace
 
 namespace Podd {
 
@@ -20,6 +21,7 @@ void  Tokenize( const std::string& s, const std::string& delim,
 void  Trim( std::string& str );
 std::vector<std::string> vsplit( const std::string& s );
 
+//_____________________________________________________________________________
 class Textvars {
 
 public:
@@ -54,15 +56,42 @@ private:
   
   Textvars_t fVars;
 
-  ClassDef(Textvars, 0)
+  ClassDef(Textvars, 0)  // String substitution facility
 };
+
+//_____________________________________________________________________________
+inline
+void Trim( std::string& str )
+{
+  // Trim leading and trailing whitespace from string 'str'
+
+  if( str.empty() )
+    return;
+  const char *s = str.data(), *c = s;
+  while( isspace(*c) )
+    ++c;
+  if( !*c ) {
+    str.clear();
+    return;
+  }
+  const char *e = s + str.size() - 1, *p = e;
+  while( isspace(*p) )
+    --p;
+  if( p != e )
+    str.erase(p-s+1);
+  if( c != s )
+    str.erase(0,c-s);
+}
 
 } // namespace Podd
 
-// Pick up definition of R__EXTERN
+//_____________________________________________________________________________
+// Global instance of Podd::Textvars for easy access from scripts
+
 #ifndef R__EXTERN
+// Pick up definition of R__EXTERN
 #include "DllImport.h"
 #endif
-R__EXTERN class Podd::Textvars* gHaTextvars;  //List of text variable definitions
+R__EXTERN class Podd::Textvars* gHaTextvars;  //String substitution definitions
 
 #endif

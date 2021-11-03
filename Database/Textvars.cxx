@@ -58,22 +58,6 @@ void Tokenize( const string& s, const string& delim, vector<string>& tokens )
 }
 
 //_____________________________________________________________________________
-void Trim( string& str )
-{
-  // Trim leading and trailing whitespace from string 'str'
-
-  if( str.empty() )
-    return;
-  auto start = str.find_first_not_of(whtspc);
-  if( start == string::npos )
-    str.clear();
-  else {
-    auto end = str.find_last_not_of(whtspc);
-    str = str.substr(start,end-start+1);
-  }
-}
-
-//_____________________________________________________________________________
 vector<string> vsplit( const string& s )
 {
   // Utility function to split a string into whitespace-separated strings
@@ -83,7 +67,8 @@ vector<string> vsplit( const string& s )
 }
 
 //_____________________________________________________________________________
-static string ValStr( const vector<string>& s ) {
+static string ValStr( const vector<string>& s )
+{
   // Assemble vector of strings into a comma-separated single string.
   // Used by print functions.
 

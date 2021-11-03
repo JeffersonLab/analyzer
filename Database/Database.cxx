@@ -417,7 +417,9 @@ inline Bool_t IsAssignment( const string& str )
   if( pos == string::npos )
     // No '='
     return false;
-  if( str.find_first_not_of(" \t") == pos )
+  const char *s = str.data(), *c = s;
+  while( isspace(*c) ) ++c;
+  if( c-s-pos == 0 )
     // Only whitespace before '=' or '=' at start of line
     return false;
   assert(pos > 0);
@@ -429,6 +431,42 @@ inline Bool_t IsAssignment( const string& str )
 } // end anonymous namespace
 
 //_____________________________________________________________________________
+inline static
+void prepare_line( string& linbuf, bool& comment, bool& continued,
+                   bool& leading_space, bool& trailing_space )
+{
+  // Search for comment or continuation character.
+  // If found, remove it and everything that follows.
+  if( linbuf.empty() )
+    return;
+  auto pos = linbuf.find('#');
+  if( pos == 0 ) {
+    comment = true;
+    linbuf.clear();
+    return;
+  } else {
+    auto pos2 = linbuf.find('\\');
+    pos = std::min(pos, pos2);
+    if( pos != string::npos ) {
+      if( pos == pos2 )
+        continued = true;
+      else
+        comment = true;
+      linbuf.erase(pos);
+    }
+  }
+  // Trim leading and trailing space
+  if( !linbuf.empty() ) {
+    if( isspace(linbuf.front()) )
+      leading_space = true;
+    if( isspace(linbuf.back()) )
+      trailing_space = true;
+    if( leading_space || trailing_space )
+      Trim(linbuf);
+  }
+}
+
+//_____________________________________________________________________________
 Int_t ReadDBline( FILE* file, char* buf, Int_t bufsiz, string& line )
 {
   // Get a text line from the database file 'file'. Ignore all comments
@@ -437,34 +475,18 @@ Int_t ReadDBline( FILE* file, char* buf, Int_t bufsiz, string& line )
   // Only returns if a non-empty line was found, or on EOF.
 
   line.clear();
+  line.reserve(1023);
 
   Int_t r = 0;
   bool maybe_continued = false, unfinished = true;
-  string linbuf;
+  string linbuf; linbuf.reserve(255);
   fpos_t oldpos{};
   while( unfinished && fgetpos(file, &oldpos) == 0 &&
          (r = GetLine(file, buf, bufsiz, linbuf)) == 0 ) {
-    // Search for comment or continuation character.
-    // If found, remove it and everything that follows.
     bool continued = false, comment = false,
       trailing_space = false, leading_space = false, is_assignment = false;
-    auto pos = linbuf.find_first_of("#\\");
-    if( pos != string::npos ) {
-      if( linbuf[pos] == '\\' )
-        continued = true;
-      else
-        comment = true;
-      linbuf.erase(pos);
-    }
-    // Trim leading and trailing space
-    if( !linbuf.empty() ) {
-      if( linbuf[0] == ' ' )
-        leading_space = true;
-      if( linbuf[linbuf.length() - 1] == ' ' )
-        trailing_space = true;
-      if( leading_space || trailing_space )
-        Trim(linbuf);
-    }
+
+    prepare_line(linbuf,comment,continued,leading_space, trailing_space);
 
     if( line.empty() && linbuf.empty() )
       // Nothing to do, i.e. no line building in progress and no data
@@ -506,9 +528,9 @@ Int_t ReadDBline( FILE* file, char* buf, Int_t bufsiz, string& line )
     // Ensure that at least one space is preserved between continuations,
     // if originally present
     if( maybe_continued || (trailing_space && continued) )
-      linbuf += ' ';
-    if( leading_space && !line.empty() && line[line.length() - 1] != ' ' )
-      line += ' ';
+      linbuf.push_back(' ');
+    if( leading_space && !line.empty() && !isspace(line.back()))
+      line.push_back(' ');
 
     // Append current data to result
     line.append(linbuf);
@@ -524,8 +546,8 @@ Int_t ReadDBline( FILE* file, char* buf, Int_t bufsiz, string& line )
     // Also, whether we hit EOF or not, tentative continuation may have
     // added a tentative space, which we tidy up here
     assert(!line.empty());
-    if( line[line.length() - 1] == ' ' )
-      line.erase(line.length() - 1);
+    if( isspace(line.back()) )
+      line.pop_back();
   }
   return r;
 }
