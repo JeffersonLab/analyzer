@@ -199,14 +199,13 @@ void PipeliningModule::ReStart() {
    fBlockIsDone = false;
 }
 
-std::vector< UInt_t > PipeliningModule::GetNextBlock() {
-  std::vector< UInt_t > vnothing;  vnothing.clear();
+std::vector<UInt_t> PipeliningModule::GetNextBlock() {
   if (eventblock.empty()) {
       cerr << "ERROR:  No event buffers ! "<<endl;   // Should never happen
-      return vnothing;
+      return {};
   }
-  if (!IsMultiBlockMode()) return eventblock[0];
-  if (index_buffer == (eventblock.size()-1)) fBlockIsDone=true;
+  if( !IsMultiBlockMode() ) return eventblock[0];
+  if( index_buffer == (eventblock.size() - 1) ) fBlockIsDone = true;
   index_buffer++;
   return eventblock[GetIndex()];
 }
