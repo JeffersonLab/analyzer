@@ -14,6 +14,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <stdexcept>
 
 namespace Decoder {
 
@@ -112,6 +113,15 @@ namespace Decoder {
 
     virtual Bool_t IsMultiFunction() { return false; };
     virtual Bool_t HasCapability( Decoder::EModuleType ) { return false; };
+
+    // Invalid input data exception, thrown by "Load*" functions
+    class module_data_error : public std::runtime_error {
+    public:
+      explicit module_data_error( const std::string& what_arg )
+        : std::runtime_error(what_arg) {}
+      explicit module_data_error( const char* what_arg )
+        : std::runtime_error(what_arg) {}
+    };
 
   protected:
 
