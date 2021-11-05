@@ -21,15 +21,15 @@ class THaPidDetector : public THaNonTrackingDetector {
 public:
   THaPidDetector() = default; // for ROOT I/O
   virtual ~THaPidDetector() = default;
-  
-          Bool_t   IsPid() { return true; }
+
+  virtual Bool_t   IsPid() { return true; }
 
 protected:
 
   //Only derived classes may construct me
 
   THaPidDetector( const char* name, const char* description,
-		  THaApparatus* a = nullptr );
+                  THaApparatus* a = nullptr );
 
   ClassDef(THaPidDetector,0)  //ABC for a PID detector
 };

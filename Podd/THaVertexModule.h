@@ -30,7 +30,7 @@ protected:
 
   THaVertexModule();
 
-  ClassDef(THaVertexModule,0)   //ABC for a vertex module
+  ClassDef(THaVertexModule,1)   //ABC for a vertex module
 
 };
 

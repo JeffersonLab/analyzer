@@ -64,7 +64,6 @@ THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) :
 THaSpectrometer::~THaSpectrometer()
 {
   // Destructor. Delete the lists of specialized detectors.
-  // FIXME: delete tracks, pid, vertices too?
 
   fPidParticles->Delete();   //delete all THaParticleInfo objects
 
@@ -79,7 +78,8 @@ THaSpectrometer::~THaSpectrometer()
 }
 
 //_____________________________________________________________________________
-Int_t THaSpectrometer::AddDetector( THaDetector* pdet, Bool_t quiet, Bool_t first )
+Int_t THaSpectrometer::AddDetector( THaDetector* pdet, Bool_t quiet,
+                                    Bool_t first )
 {
   // Add a detector to the internal lists of spectrometer detectors.
   // Duplicate detector names are not allowed.
@@ -87,18 +87,23 @@ Int_t THaSpectrometer::AddDetector( THaDetector* pdet, Bool_t quiet, Bool_t firs
   // NOTE: The detector object must be allocated by the caller, but will be
   // deleted by the spectrometer. Do not delete detectors you've added
   // to an apparatus/spectrometer. Recommended: AddDetector( new MyDetector )
+  //
+  // NOTE: If an error occurs (wrong detector class, detector already exists),
+  // the passed detector is deleted and -1 is returned.
 
-  if( !pdet || !pdet->IsA()->InheritsFrom("THaSpectrometerDetector")) {
+  auto* sdet = dynamic_cast<THaSpectrometerDetector*>( pdet );
+  if( !sdet ) {
     if( !quiet )
       Error("AddDetector", "Detector is not a THaSpectrometerDetector. "
-	    "Detector not added.");
+	    "Detector not added. Detector object deleted.");
     delete pdet;
     return -1;
   }
   Int_t status = THaApparatus::AddDetector( pdet, quiet, first );
-  if( status != 0 ) return status;
+  if( status != 0 )
+    return status;
 
-  auto* sdet = dynamic_cast<THaSpectrometerDetector*>( pdet );
+  assert(sdet);
   if( sdet->IsTracking() )
     fTrackingDetectors->Add( sdet );
   else
@@ -132,6 +137,7 @@ Int_t THaSpectrometer::CalcPID()
 
   for( int i = 0; i < fTracks->GetLast()+1; i++ ) {
     if( auto* theTrack = static_cast<THaTrack*>( fTracks->At(i) ) ) {
+      assert(dynamic_cast<THaTrack*>(theTrack));
       if( THaPIDinfo* pid = theTrack->GetPIDinfo() ) {
         pid->CombinePID();
       }
@@ -297,6 +303,7 @@ Int_t THaSpectrometer::CoarseTrack()
   TIter next( fTrackingDetectors );
   while( auto* theTrackDetector =
 	 static_cast<THaTrackingDetector*>( next() )) {
+    assert(dynamic_cast<THaTrackingDetector*>(theTrackDetector));
 #ifdef WITH_DEBUG
     if( fDebug>1 ) cout << "Call CoarseTrack() for " 
 			<< theTrackDetector->GetName() << "... ";
@@ -319,12 +326,13 @@ Int_t THaSpectrometer::CoarseReconstruct()
   // This may include clustering and preliminary PID.
   // PID information is tacked onto the tracks as a THaPIDinfo object.
 
-  if( !IsDone(kCoarseTrack))
+  if( !IsDone(kCoarseTrack) )
     CoarseTrack();
 
   TIter next( fNonTrackingDetectors );
   while( auto* theNonTrackDetector =
 	 static_cast<THaNonTrackingDetector*>( next() )) {
+    assert(dynamic_cast<THaNonTrackingDetector*>(theNonTrackDetector));
 #ifdef WITH_DEBUG
     if( fDebug>1 ) cout << "Call CoarseProcess() for " 
 			<< theNonTrackDetector->GetName() << "... ";
@@ -346,12 +354,13 @@ Int_t THaSpectrometer::Track()
   // If coarse tracking was done, this step should simply "refine" the
   // tracks found earlier, not add new tracks to fTrack.
 
-  if( !IsDone(kCoarseRecon))
+  if( !IsDone(kCoarseRecon) )
     CoarseReconstruct();
 
   TIter next( fTrackingDetectors );
   while( auto* theTrackDetector =
 	 static_cast<THaTrackingDetector*>( next() )) {
+    assert(dynamic_cast<THaTrackingDetector*>(theTrackDetector));
 #ifdef WITH_DEBUG
     if( fDebug>1 ) cout << "Call FineTrack() for " 
 			<< theTrackDetector->GetName() << "... ";
@@ -395,7 +404,7 @@ Int_t THaSpectrometer::Reconstruct()
   //
 
   // Do prior analysis stages if not done yet
-  if( !IsDone(kTracking))
+  if( !IsDone(kTracking) )
     Track();
 
   // Fine processing.  Pass the precise tracks to the
@@ -405,6 +414,7 @@ Int_t THaSpectrometer::Reconstruct()
   TIter next( fNonTrackingDetectors );
   while( auto* theNonTrackDetector =
 	 static_cast<THaNonTrackingDetector*>( next() )) {
+    assert(dynamic_cast<THaNonTrackingDetector*>(theNonTrackDetector));
 #ifdef WITH_DEBUG
     if( fDebug>1 ) cout << "Call FineProcess() for " 
 			<< theNonTrackDetector->GetName() << "... ";

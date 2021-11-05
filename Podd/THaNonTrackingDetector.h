@@ -21,7 +21,7 @@ public:
   virtual void     Clear( Option_t* ="" );
   virtual Int_t    CoarseProcess( TClonesArray& tracks ) = 0;
   virtual Int_t    FineProcess( TClonesArray& tracks )  = 0;
-          Bool_t   IsTracking() { return false; }
+  virtual Bool_t   IsTracking() { return false; }
   virtual Bool_t   IsPid()      { return false; }
 
   Int_t GetNTracks() const;  // Number of tracks crossing this detector
@@ -36,7 +36,7 @@ protected:
 
   //Only derived classes may construct me
   THaNonTrackingDetector( const char* name, const char* description,
-			  THaApparatus* a = nullptr);
+                          THaApparatus* a = nullptr);
 
   ClassDef(THaNonTrackingDetector,2)  //ABC for a non-tracking spectrometer detector
 };

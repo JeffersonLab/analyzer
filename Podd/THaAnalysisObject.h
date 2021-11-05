@@ -36,7 +36,11 @@ public:
   enum EMode   { kDefine, kDelete };
 
   THaAnalysisObject();  // only for ROOT I/O
-  
+  THaAnalysisObject( const THaAnalysisObject& ) = delete;
+  THaAnalysisObject( const THaAnalysisObject&& ) = delete;
+  THaAnalysisObject& operator=( const THaAnalysisObject& ) = delete;
+  THaAnalysisObject& operator=( const THaAnalysisObject&& ) = delete;
+
   virtual ~THaAnalysisObject();
   
   virtual Int_t        Begin( THaRunBase* r=nullptr );
@@ -159,10 +163,6 @@ protected:
   THaAnalysisObject( const char* name, const char* description );
 
 private:
-  // Prevent default construction, copying, assignment
-  THaAnalysisObject( const THaAnalysisObject& );
-  THaAnalysisObject& operator=( const THaAnalysisObject& );
-
   Int_t DefineVariablesWrapper( EMode mode = kDefine );
 
   static TList* fgModules;  // List of all currently existing Analysis Modules

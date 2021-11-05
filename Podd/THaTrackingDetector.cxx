@@ -27,8 +27,8 @@ ClassImp(THaTrackingDetector)
 
 //_____________________________________________________________________________
 THaTrackingDetector::THaTrackingDetector( const char* name, 
-					  const char* description,
-					  THaApparatus* apparatus )
+                                          const char* description,
+                                          THaApparatus* apparatus )
   : THaSpectrometerDetector(name,description,apparatus)
 {
   // Constructor
@@ -43,16 +43,13 @@ THaTrackingDetector::THaTrackingDetector( )
 }
 
 //_____________________________________________________________________________
-THaTrackingDetector::~THaTrackingDetector()
-{
-  // Destructor
-}
+THaTrackingDetector::~THaTrackingDetector() = default;
 
 //_____________________________________________________________________________
 THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
-					 Double_t x, Double_t y,
-					 Double_t theta, Double_t phi,
-					 THaTrackID* ID )
+                                         Double_t x, Double_t y,
+                                         Double_t theta, Double_t phi,
+                                         THaTrackID* ID )
 {
   // Add a track with the given parameters to the array of tracks
   // Returns the index of the created track in the TClonesArray.
@@ -77,7 +74,7 @@ THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
     }
   } else if( fDebug>0 ) {
     ::Warning("THaTrackingDetector::AddTrack", "No spectrometer defined for "
-	      "detector %s. Track has no PID and vertex info.", GetName());
+              "detector %s. Track has no PID and vertex info.", GetName());
   }
 
   // Create the track

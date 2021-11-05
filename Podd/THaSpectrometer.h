@@ -15,13 +15,14 @@
 #include "TRotation.h"
 #include "THaParticleInfo.h"
 #include "THaPidDetector.h"
+#include <cassert>
 
 class THaTrack;
 class TList;
 class THaCut;
 
 class THaSpectrometer : public THaApparatus, public THaTrackingModule,
-			public THaVertexModule {
+                        public THaVertexModule {
   
 public:
   virtual ~THaSpectrometer();
@@ -39,10 +40,10 @@ public:
 
   // Auxiliary functions
   virtual Int_t            AddDetector( THaDetector* det, Bool_t quiet = false,
-					Bool_t first = false );
+                                        Bool_t first = false );
   virtual Int_t            AddPidParticle( const char* shortname, 
-					   const char* name,
-					   Double_t mass, Int_t charge = 0 );
+                                           const char* name,
+                                           Double_t mass, Int_t charge = 0 );
   virtual void             DefinePidParticles();
           THaTrack*        GetGoldenTrack() const { return fGoldenTrack; }
           Int_t            GetNpidParticles() const;
@@ -73,18 +74,18 @@ public:
           Double_t         GetCollDist() const { return fCollDist; }
 
           void             SetCentralAngles( Double_t th, Double_t ph,
-					     Bool_t bend_down );
+                                             Bool_t bend_down );
 
   virtual void             TrackToLab( THaTrack& track, TVector3& pvect ) const;
   virtual void             TransportToLab( Double_t p, Double_t th, 
-					   Double_t ph, TVector3& pvect ) const;
+                                           Double_t ph, TVector3& pvect ) const;
   virtual void             LabToTransport( const TVector3& vertex, 
-					   const TVector3& pvect, 
-					   TVector3& tvertex, 
-					   Double_t* ray ) const;
+                                           const TVector3& pvect,
+                                           TVector3& tvertex,
+                                           Double_t* ray ) const;
           void             LabToTransport( const TVector3& vertex, 
-					   const TVector3& pvect, 
-					   Double_t* ray ) const;
+                                           const TVector3& pvect,
+                                           Double_t* ray ) const;
   enum EStagesDone {
     kCoarseTrack = BIT(0),
     kCoarseRecon = BIT(1),
@@ -148,13 +149,15 @@ inline Int_t THaSpectrometer::GetNpidDetectors() const
 //_____________________________________________________________________________
 inline THaParticleInfo* THaSpectrometer::GetPidParticleInfo( Int_t i ) const
 {
-  return static_cast<const THaParticleInfo*>( fPidParticles->At(i) );
+  assert(dynamic_cast<THaParticleInfo*>(fPidParticles->At(i)));
+  return static_cast<THaParticleInfo*>( fPidParticles->At(i) );
 }
 
 //_____________________________________________________________________________
 inline THaPidDetector* THaSpectrometer::GetPidDetector( Int_t i ) const
 {
-  return static_cast<const THaPidDetector*>( fPidDetectors->At(i) );
+  assert(dynamic_cast<THaPidDetector*>(fPidDetectors->At(i)));
+  return static_cast<THaPidDetector*>( fPidDetectors->At(i) );
 }
 
 //_____________________________________________________________________________
@@ -167,8 +170,8 @@ Bool_t THaSpectrometer::IsDone( UInt_t stage ) const
 //_____________________________________________________________________________
 inline
 void THaSpectrometer::LabToTransport( const TVector3& vertex,
-				      const TVector3& pvect,
-				      Double_t* ray ) const
+                                      const TVector3& pvect,
+                                      Double_t* ray ) const
 {
   TVector3 dummy;
   LabToTransport( vertex, pvect, dummy, ray );
