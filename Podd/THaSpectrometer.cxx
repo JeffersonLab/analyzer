@@ -165,13 +165,22 @@ void THaSpectrometer::Clear( Option_t* opt )
 THaAnalysisObject::EStatus THaSpectrometer::Init( const TDatime& run_time )
 {
   // Initialize spectrometer. First, ensure that the lists of detector types
-  // are in a consistent state. This also sets up the PID structures, if
-  // enabled. Then, do the Apparatus initialization, which initializes the
-  // detectors
+  // are in a consistent state. Then, do the Apparatus initialization,
+  // which reads our database and initializes the detectors. Finally, set up
+  // the PID structures if PID enabled.
 
   ListInit();
 
-  return THaApparatus::Init(run_time);
+  EStatus ret = THaApparatus::Init(run_time);
+  if( ret )
+    return ret;
+
+  if( IsPID() )
+    PidInit();
+
+  // TODO: Set up vertex objects that can be associated with tracks?
+
+  return kOK;
 }
 
 //_____________________________________________________________________________
@@ -256,8 +265,7 @@ Bool_t THaSpectrometer::HasVertex() const
 //_____________________________________________________________________________
 void THaSpectrometer::ListInit()
 {
-  // Initialize lists of specialized detectors. 
-  // Private function called by Reconstruct().
+  // Initialize lists of specialized detectors. Called by Init().
 
   fTrackingDetectors->Clear();
   fNonTrackingDetectors->Clear();
@@ -274,23 +282,24 @@ void THaSpectrometer::ListInit()
     if( theDetector->IsPid() )
       fPidDetectors->Add( theDetector );
   }
+}
 
-  if( IsPID() ) {
-    // If not already done, set up this spectrometer's default PID particles
-    if( fPidParticles->IsEmpty() )
-      DefinePidParticles();
+//_____________________________________________________________________________
+void THaSpectrometer::PidInit()
+{
+  // Initialize PID structures that can be associated with tracks
 
-    UInt_t ndet = GetNpidDetectors();
-    UInt_t npart = GetNpidParticles();
+  // If not already done, set up this spectrometer's default PID particles
+  if( fPidParticles->IsEmpty() )
+    DefinePidParticles();
 
-    // Set up PIDinfo objects that can be associated with tracks
-    for( int i = 0; i < kInitTrackMultiplicity; i++ ) {
-      new( (*fTrackPID)[i])  THaPIDinfo(ndet, npart);
-    }
+  UInt_t ndet = GetNpidDetectors();
+  UInt_t npart = GetNpidParticles();
+
+  // Set up initial set of PIDinfo objects
+  for( Int_t i = 0; i < kInitTrackMultiplicity; i++ ) {
+    new( (*fTrackPID)[i])  THaPIDinfo(ndet, npart);
   }
-
-  // TODO: Set up vertex objects that can be associated with tracks?
-
 }
 
 //_____________________________________________________________________________
@@ -432,7 +441,8 @@ Int_t THaSpectrometer::Reconstruct()
 
   // Compute combined PID
 
-  if( fPID ) CalcPID();
+  if( IsPID() )
+    CalcPID();
 
   fStagesDone |= kReconstruct;
   return 0;

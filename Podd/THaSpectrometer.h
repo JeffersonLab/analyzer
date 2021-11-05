@@ -129,6 +129,7 @@ protected:
   virtual Int_t   DefineVariables( EMode mode = kDefine );
   virtual Int_t   ReadRunDatabase( const TDatime& date );
   virtual void    ListInit();     // Initialize lists of detector types
+  virtual void    PidInit();      // Initialize PID structures
 
   ClassDef(THaSpectrometer,1)     // A generic spectrometer
 };
