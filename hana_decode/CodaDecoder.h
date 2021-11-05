@@ -91,7 +91,7 @@ protected:
     bool operator< ( const BankDat_t& rhs ) const { return key <  rhs.key; }
     UInt_t key;   // bank number + (roc << 16)
     UInt_t pos;   // position in evbuffer[]
-    UInt_t len;   // length of data
+    UInt_t len;   // length of data including pos, so pos+len-1 = last word of data
   };
   std::vector<BankDat_t> bankdat;
 

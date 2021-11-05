@@ -44,7 +44,6 @@ namespace Decoder {
     virtual UInt_t GetNumFadcEvents( UInt_t chan ) const;
     virtual UInt_t GetNumFadcSamples( UInt_t chan, UInt_t ievent ) const;
     virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop );
-    virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer, UInt_t pos, UInt_t len );
     virtual UInt_t DecodeOneWord( UInt_t pdat);
     virtual Int_t  Decode( const UInt_t* ) { return 0; }
     virtual Bool_t IsMultiFunction() { return true; }

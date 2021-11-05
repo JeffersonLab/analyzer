@@ -180,8 +180,8 @@ protected:
   public:
     RocDat_t() : pos(0), len(0) {}
     void clear() { pos = len = 0; }
-    UInt_t pos;               // position in evbuffer[]
-    UInt_t len;               // length of data
+    UInt_t pos;   // position of ROC length word in evbuffer[], so pos+1 = first word of data
+    UInt_t len;   // length of data after pos, so pos+len = last word of data
   };
   std::array<RocDat_t, Decoder::MAXROC> rocdat;
 

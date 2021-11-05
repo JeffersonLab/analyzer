@@ -602,19 +602,12 @@ namespace Decoder {
   UInt_t Fadc250Module::LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop) {
     // the 3-arg version of LoadSlot
 
-    std::vector<UInt_t> evb(evbuffer, pstop);
+    std::vector<UInt_t> evb(evbuffer, pstop+1);
 
     // Note, methods SplitBuffer, GetNextBlock  are defined in PipeliningModule
 
     SplitBuffer(evb);
     return LoadThisBlock(sldat, GetNextBlock());
-  }
-
-  UInt_t Fadc250Module::LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer, UInt_t pos, UInt_t len) {
-    // the 4-arg version of LoadSlot.  Let it call the 3-arg version.
-    // I'm not sure we need both (historical)
-
-    return LoadSlot(sldat, evbuffer+pos, evbuffer+pos+len);
   }
 
   void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {

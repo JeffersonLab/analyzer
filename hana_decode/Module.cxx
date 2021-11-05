@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <sstream>
+#include <cassert>
 
 #define ALL(c) (c).begin(), (c).end()
 
@@ -204,7 +205,7 @@ Module::TypeIter_t Module::DoRegister( const ModuleType& info )
 UInt_t Module::LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer,
                          UInt_t pos, UInt_t len)
 {
-  // Load slot from pos to pos+len
+  // Load slot from [pos, pos+len). pos+len-1 is the last word of data
 
   // Basic example of how this could be done
   // if (fDebugFile) {
@@ -228,7 +229,9 @@ UInt_t Module::LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer,
   // By default, this is just a wrapper for the 3-parameter version of LoadSlot,
   // which every module is required to implement
 
-  return LoadSlot(sldat, evbuffer+pos, evbuffer+pos+len);
+  assert(len > 0);
+  if( len == 0 ) return 0;
+  return LoadSlot(sldat, evbuffer+pos, evbuffer+pos+len-1);
 }
 
 } // namespace Decoder

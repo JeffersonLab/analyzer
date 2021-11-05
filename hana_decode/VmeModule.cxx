@@ -38,14 +38,14 @@ UInt_t VmeModule::LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer,
   if (!fHeader) cerr << "Module::LoadSlot::ERROR : no header ?"<<endl;
   fWordsSeen=0;
   while (IsSlot( *p )) {
-    if (p >= pstop) break;
     if (fDebugFile) *fDebugFile << "IsSlot ... data = "<<*p<<endl;
     p++;
+    if (p > pstop) break;
     Decode(p);
     for( UInt_t ichan = 0, nchan = GetNumChan(); ichan < nchan; ichan++ ) {
       fWordsSeen++;
       p++;
-      if (p >= pstop) break;
+      if (p > pstop) break;
       UInt_t rdata = *p;
       UInt_t mdata = rdata;
       sldat->loadData(ichan, mdata, rdata);

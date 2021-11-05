@@ -59,10 +59,10 @@ namespace Decoder {
     virtual UInt_t GetOpt( UInt_t /*chan*/, UInt_t /*hit*/) const { return 0; }; //1190
 
     virtual Int_t  Decode(const UInt_t *p) = 0; // implement in derived class
-    // Loads slot data
+    // Loads slot data from [evbuffer,pstop]. pstop points to last word of data
     virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer,
                              const UInt_t *pstop ) = 0;
-    // Loads slot data from pos to pos+len
+    // Loads slot data from [pos,pos+len). pos = start of data, len = num words
     virtual UInt_t LoadSlot( THaSlotData* sldat, const UInt_t *evbuffer,
                              UInt_t pos, UInt_t len);
     virtual UInt_t LoadNextEvBuffer( THaSlotData* /* sldat */) { return 0; };

@@ -211,7 +211,7 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
     UInt_t iroc = irn[i];
     const RocDat_t& ROC = rocdat[iroc];
     UInt_t ipt = ROC.pos + 1;
-    UInt_t iptmax = ROC.pos + ROC.len;
+    UInt_t iptmax = ROC.pos + ROC.len; // last word of data
 
     if( fMap->isFastBus(iroc) ) {  // checking that slots found = expected
       if( GetEvNum() > 200 && chkfbstat < 3 ) chkfbstat = 2;
@@ -518,7 +518,7 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
     ostr << "CodaDecoder::bank_decode: ROC number " << roc << " out of range";
     throw logic_error(ostr.str());
   }
-  if( istop > event_length )
+  if( istop >= event_length )
     throw logic_error("ERROR:: roc_decode:  stop point exceeds event length (?!)");
 
   if( ipt+1 >= istop )
@@ -649,7 +649,7 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
     ostr << "CodaDecoder::bank_decode: ROC number " << roc << " out of range";
     throw logic_error(ostr.str());
   }
-  if( istop > event_length )
+  if( istop >= event_length )
     throw logic_error("ERROR:: bank_decode:  stop point exceeds event length (?!)");
 
   if (!fMap->isBankStructure(roc))
@@ -672,8 +672,12 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
                   << "    len 0x" << len << dec << endl;
 
     UInt_t key = (roc << 16) + bank;
-    assert( find(ALL(bankdat), key) == bankdat.end()); // else bug in CODA or corrupt input
-    bankdat.emplace_back(key, pos + 2, len - 1);
+    // Bank numbers only appear once,else bug in CODA or corrupt input
+    assert( find(ALL(bankdat), key) == bankdat.end());
+    // If len == 0, bug in CODA or corrupt input
+    assert( len > 0 );
+    if( len > 0 )
+      bankdat.emplace_back(key, pos + 2, len - 1);
     pos += len+1;
   }
 
@@ -863,8 +867,10 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
   UInt_t pos = 2 + tbLen;
   nroc=0;
 
-  while (pos < event_length) {
-    UInt_t len = (evbuffer[pos]+1);               /* total Length of ROC Bank */
+  for_each(ALL(rocdat), []( RocDat_t& ROC ) { ROC.clear(); });
+
+  while (pos+1 < event_length) {
+    UInt_t len = evbuffer[pos];          /* total Length of ROC Bank data */
     UInt_t iroc = (evbuffer[pos+1]&0x0fff0000)>>16;   /* ID of ROC is 12 bits*/
     if( iroc >= MAXROC ) {
       return HED_ERR;
@@ -872,7 +878,7 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
     rocdat[iroc].len = len;
     rocdat[iroc].pos = pos;
     irn[nroc] = iroc;
-    pos += len;
+    pos += len+1;
     nroc++;
   }
 
