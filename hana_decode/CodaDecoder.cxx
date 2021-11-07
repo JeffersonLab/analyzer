@@ -229,10 +229,12 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
         *fDebugFile << "\nCodaDecode::Calling bank_decode "
                     << i << "   " << iroc << "  " << ipt << "  " << iptmax
                     << endl;
-      /*status =*/
+      /*status =*/   //FIXME use the return value?
       bank_decode(iroc, evbuffer, ipt, iptmax);
     }
 
+    //TODO add THaCrateMap hasNonBankData(roc)
+    //if( fMap->hasNonBankData(iroc) ) {
     if( fDebugFile )
       *fDebugFile << "\nCodaDecode::Calling roc_decode " << i << "   "
                   << evbuffer << "  " << iroc << "  " << ipt
@@ -240,10 +242,10 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
 
     Int_t status = roc_decode(iroc, evbuffer, ipt, iptmax);
 
-    // do something with status
+    //FIXME do something with status
     if( status )
       break;
-
+  //} // hasNonBankData(iroc)
   }
   return HED_OK;
 }
@@ -461,7 +463,7 @@ uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
 //_____________________________________________________________________________
 Int_t CodaDecoder::LoadFromMultiBlock()
 {
-  // LoadFromMultiBlock : This assumes some of the slots are in multiblock mode.
+  // LoadFromMultiBlock : This assumes some slots are in multiblock mode.
   // For modules that are in multiblock mode, the next event is loaded.
   // For other modules not in multiblock mode (e.g. scalers) or other data
   // (e.g. flags) the data remain "stale" until the next block of events.

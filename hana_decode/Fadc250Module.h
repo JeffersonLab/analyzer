@@ -11,6 +11,7 @@
 #include "PipeliningModule.h"
 #include <vector>
 #include <cstdint>
+#include <cstring>  // for memset
 
 namespace Decoder {
 
@@ -22,7 +23,8 @@ namespace Decoder {
     Fadc250Module( UInt_t crate, UInt_t slot );
     virtual ~Fadc250Module();
 
-    using Module::GetData;
+    using PipeliningModule::GetData;
+    using PipeliningModule::Init;
 
     virtual void Clear( Option_t *opt="" );
     virtual void Init();
@@ -43,11 +45,11 @@ namespace Decoder {
     virtual Int_t  GetMode() const { return GetFadcMode(); };
     virtual UInt_t GetNumFadcEvents( UInt_t chan ) const;
     virtual UInt_t GetNumFadcSamples( UInt_t chan, UInt_t ievent ) const;
-    virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop );
-    virtual Int_t  Decode( const UInt_t* ) { return 0; }
+    virtual UInt_t LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer, const UInt_t* pstop );
+    virtual UInt_t LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer, UInt_t pos, UInt_t len );
+    virtual Int_t  Decode( const UInt_t* data );
     virtual Bool_t IsMultiFunction() { return true; }
     virtual Bool_t HasCapability( Decoder::EModuleType type );
-    virtual UInt_t LoadNextEvBuffer( THaSlotData *sldat );
     virtual UInt_t GetData( Decoder::EModuleType mtype, UInt_t chan, UInt_t ievent ) const;
     virtual UInt_t GetNumEvents( Decoder::EModuleType mtype, UInt_t ichan ) const;
     virtual UInt_t GetNumEvents() const { return GetNumEvents(0); } ;
@@ -89,6 +91,7 @@ namespace Decoder {
       uint32_t samp_overflow, samp_underflow, samp_over_thresh;     // FADC pulse parameters
       // Time word object
       uint32_t peak_beyond_nsa, peak_not_found, peak_above_maxped;  // FADC pulse parameters
+      void clear() { memset(this, 0, sizeof(fadc_data_struct)); }
     } __attribute__((aligned(128))) fadc_data;  // fadc_data_struct
 
     struct fadc_pulse_data {
@@ -107,13 +110,11 @@ namespace Decoder {
     Bool_t block_header_found, block_trailer_found, event_header_found, slots_match;
 
     void ClearDataVectors();
-    void PopulateDataVector( std::vector<uint32_t>& data_vector, uint32_t data );
+    void PopulateDataVector( std::vector<uint32_t>& data_vector, uint32_t data ) const;
     static uint32_t SumVectorElements( const std::vector<uint32_t>& data_vector );
     void LoadTHaSlotDataObj( THaSlotData* sldat );
-    UInt_t LoadThisBlock( THaSlotData *sldat, const std::vector<UInt_t>& evb );
     void PrintDataType() const;
 
-    UInt_t DecodeOneWord( UInt_t pdat);
     void DecodeBlockHeader( UInt_t pdat, uint32_t data_type_id );
     void DecodeBlockTrailer( UInt_t pdat );
     void DecodeEventHeader( UInt_t pdat );

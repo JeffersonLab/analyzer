@@ -94,7 +94,7 @@ namespace Decoder {
     virtual void   Init();
     virtual void   Init( const char* configstr );
 
-    virtual void   Clear( Option_t* = "" ) { fWordsSeen = 0; };
+    virtual void   Clear( Option_t* = "" );
 
     virtual Bool_t IsSlot( UInt_t rdata );
 
@@ -124,6 +124,16 @@ namespace Decoder {
       explicit module_data_error( const char* what_arg )
         : std::runtime_error(what_arg) {}
     };
+
+    // Wrappers for LoadSlot methods to allow buffer preprocessing
+    virtual UInt_t LoadBlock( THaSlotData* sldat, const UInt_t* evbuffer,
+                              const UInt_t* pstop ) {
+      return LoadSlot(sldat, evbuffer, pstop);
+    }
+    virtual UInt_t LoadBank( THaSlotData* sldat, const UInt_t* evbuffer,
+                             UInt_t pos, UInt_t len ) {
+      return LoadSlot(sldat, evbuffer, pos, len);
+    }
 
   protected:
 

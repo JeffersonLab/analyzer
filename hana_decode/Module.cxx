@@ -66,6 +66,19 @@ void Module::Init()
 }
 
 //_____________________________________________________________________________
+void Module::Clear( Option_t* )
+{
+  // Clear event-by-event data.
+  // This is called for each event block read from file, but not for each
+  // individual event in a multi-event block.
+
+  fWordsSeen = 0;
+  block_size = 1;
+  fMultiBlockMode = false;
+  fBlockIsDone = false;
+}
+
+//_____________________________________________________________________________
 static void StoreValue( const string& item, UInt_t& data )
 {
   // Convert 'item' to unsigned int and store the result in 'data'

@@ -132,7 +132,8 @@ void Fadc250Module::ClearDataVectors()
 // Require that slot from base class and slot from
 //   data match before populating data vectors
 inline
-void Fadc250Module::PopulateDataVector( vector<uint32_t>& data_vector, uint32_t data )
+void Fadc250Module::PopulateDataVector( vector<uint32_t>& data_vector,
+                                        uint32_t data ) const
 {
   if( slots_match )
     data_vector.push_back(data);
@@ -150,7 +151,8 @@ uint32_t Fadc250Module::SumVectorElements( const vector<uint32_t>& data_vector )
 void Fadc250Module::Clear( Option_t* opt )
 {
   // Clear event-by-event data
-  VmeModule::Clear(opt);
+  PipeliningModule::Clear(opt);
+  fadc_data.clear();
   ClearDataVectors();
   // Initialize data_type_def to FILLER and data types to false
   data_type_def = 15;
@@ -681,20 +683,6 @@ UInt_t Fadc250Module::GetNumFadcSamples( UInt_t chan, UInt_t ievent ) const
 }
 
 //_____________________________________________________________________________
-UInt_t Fadc250Module::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
-                                const UInt_t* pstop )
-{
-  // the 3-arg version of LoadSlot
-
-  std::vector<UInt_t> evb(evbuffer, pstop+1);
-
-  // Note, methods SplitBuffer, GetNextBlock  are defined in PipeliningModule
-
-  SplitBuffer(evb);
-  return LoadThisBlock(sldat, GetNextBlock());
-}
-
-//_____________________________________________________________________________
 inline
 void Fadc250Module::DecodeBlockHeader( UInt_t pdat, uint32_t data_type_id )
 {
@@ -767,8 +755,8 @@ void Fadc250Module::DecodeEventHeader( UInt_t pdat )
 {
   event_header_found = true;
   // For firmware versions pre 0x0C00 (06/09/2016)
-  // fadc_data.slot_evt_hdr = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
-  // fadc_data.evt_num = (data >> 0) & 0x3FFFFF;    // Event number, mask 22 bits
+  fadc_data.slot_evt_hdr = (pdat >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
+  // fadc_data.evt_num = (pdat >> 0) & 0x3FFFFF;    // Event number, mask 22 bits
   // For firmware versions post 0x0C00 (06/09/2016)
   fadc_data.eh_trig_time = (pdat >> 12) & 0x3FF;  // Event header trigger time
   fadc_data.trig_num = (pdat >> 0) & 0xFFF;       // Trigger number
@@ -1126,24 +1114,28 @@ void Fadc250Module::UnsupportedType( UInt_t pdat, uint32_t data_type_id )
 }
 
 //_____________________________________________________________________________
-UInt_t Fadc250Module::DecodeOneWord( UInt_t pdat )
+Int_t Fadc250Module::Decode( const UInt_t* pdat )
 {
-  uint32_t data_type_id = (pdat >> 31) & 0x1;  // Data type identification, mask 1 bit
+  assert(pdat);
+  uint32_t data = *pdat;
+  uint32_t data_type_id = (data >> 31) & 0x1;  // Data type identification, mask 1 bit
   if( data_type_id == 1 )
-    data_type_def = (pdat >> 27) & 0xF;        // Data type defining words, mask 4 bits
+    data_type_def = (data >> 27) & 0xF;        // Data type defining words, mask 4 bits
 
   // Debug output
 #ifdef WITH_DEBUG
   if( fDebugFile )
     *fDebugFile << "Fadc250Module::Decode:: FADC DATA TYPES"
-                << " >> data = " << hex << pdat << dec
+                << " >> data = " << hex << data << dec
                 << " >> data word id = " << data_type_id
                 << " >> data type = " << data_type_def
                 << endl;
 
 #endif
 
-  // Ensure that slots match and do not decode if they differ
+  // Ensure that slots match and do not decode if they differ.
+  // This should never happen if PipeliningModule::LoadBank selected the
+  // correct bank.
   if( !slots_match && data_type_def != 0 ) {
 #ifdef WITH_DEBUG
     if( fDebugFile )
@@ -1151,50 +1143,50 @@ UInt_t Fadc250Module::DecodeOneWord( UInt_t pdat )
                   << "fSlot & FADC slot do not match AND data type != 0"
                   << endl;
 #endif
-    return kMaxUInt;
+    return -1;
   }
 
   // Acquire data objects depending on the data type defining word
   switch( data_type_def ) {
     case 0: // Block header, indicates the beginning of a block of events
-      DecodeBlockHeader(pdat, data_type_id);
+      DecodeBlockHeader(data, data_type_id);
       break;
     case 1: // Block trailer, indicates the end of a block of events
-      DecodeBlockTrailer(pdat);
+      DecodeBlockTrailer(data);
       break;
     case 2: // Event header, indicates start of an event, includes the trigger number
-      DecodeEventHeader(pdat);
+      DecodeEventHeader(data);
       break;
     case 3:  // Trigger time, time of trigger occurrence relative to the most recent global reset
-      DecodeTriggerTime(pdat, data_type_id);
+      DecodeTriggerTime(data, data_type_id);
       break;
     case 4:  // Window raw data
-      DecodeWindowRawData(pdat, data_type_id);
+      DecodeWindowRawData(data, data_type_id);
       break;
     case 6:  // Pulse raw data
-      DecodePulseRawData(pdat, data_type_id);
+      DecodePulseRawData(data, data_type_id);
       break;
     case 7:  // Pulse integral
-      DecodePulseIntegral(pdat);
+      DecodePulseIntegral(data);
       break;
     case 8:  // Pulse time
-      DecodePulseTime(pdat);
+      DecodePulseTime(data);
       break;
     case 9:  // Pulse Parameters
-      DecodePulseParameters(pdat, data_type_id);
+      DecodePulseParameters(data, data_type_id);
       break;
     case 10: // Pulse Pedestal
-      DecodePulsePedestal(pdat);
+      DecodePulsePedestal(data);
       break;
     case 12: // Scaler header
-      DecodeScalerHeader(pdat);
+      DecodeScalerHeader(data);
       break;
     case 5:  // Undefined type
     case 11: // Undefined type
     case 13: // Undefined type
     case 14: // Data not valid
     case 15: // Filler Word, should be ignored
-      UnsupportedType(pdat, data_type_id);
+      UnsupportedType(data, data_type_id);
       break;
     default:
       throw logic_error("Fadc250Module: incorrect masking of data_type_def");
@@ -1233,27 +1225,31 @@ void Fadc250Module::LoadTHaSlotDataObj( THaSlotData* sldat )
 }
 
 //_____________________________________________________________________________
-UInt_t Fadc250Module::LoadThisBlock( THaSlotData* sldat,
-                                     const vector<uint32_t>& evb )
+UInt_t Fadc250Module::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
+                                const UInt_t* pstop )
 {
-  // Fill data structures of this class using the event buffer of one "event".
-  // An "event" is defined in the traditional way -- a scattering from a target, etc.
+  // Load from evbuffer between [evbuffer,pstop]
 
-  Clear();
-
-  for( auto pdat: evb )
-    DecodeOneWord(pdat);
-
-  LoadTHaSlotDataObj(sldat);
-
-  return evb.size();
+  return LoadSlot(sldat, evbuffer, 0, pstop + 1 - evbuffer);
 }
 
 //_____________________________________________________________________________
-UInt_t Fadc250Module::LoadNextEvBuffer( THaSlotData* sldat )
+UInt_t Fadc250Module::LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer,
+                                UInt_t pos, UInt_t len)
 {
-  // Note, GetNextBlock belongs to PipeliningModule
-  return LoadThisBlock(sldat, GetNextBlock());
+  // Load from bank data in evbuffer between [pos,pos+len)
+
+
+  const auto* p = evbuffer + pos;
+  const auto* q = p + len;
+  while( p != q ) {
+    if( Decode(p++) == 1 )
+      break;  // block trailer found
+  }
+
+  LoadTHaSlotDataObj(sldat);
+
+  return fWordsSeen = p - (evbuffer + pos);
 }
 
 //_____________________________________________________________________________
