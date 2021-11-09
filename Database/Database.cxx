@@ -274,33 +274,49 @@ Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
   string ts = line.substr(lbrk+1,rbrk-lbrk-1);
 
   bool err = false;
-  struct tm tm{};
-  const char* c = strptime(ts.c_str(), " %Y-%m-%d %H:%M:%S %z ", &tm);
-  if( !c ) {
+  struct tm tmc{};
+  const char* c = strptime(ts.c_str(), " %Y-%m-%d %H:%M:%S %z ", &tmc);
+  if( !c || c != ts.c_str()+ts.size() ) {
     // No time zone field: try again without that field.
     // We allow this for compatibility with old databases.
-    c = strptime(ts.c_str(), " %Y-%m-%d %H:%M:%S ", &tm);
-    if( !c )
+    c = strptime(ts.c_str(), " %Y-%m-%d %H:%M:%S ", &tmc);
+    if( !c || c != ts.c_str()+ts.size() )
       err = true;
     // If this succeeds, assume the value represents local time.
     // This may cause errors if the database and the local time zone differ!
-  } else {
-    // Time zone offset explicitly given (as it should): Convert to localtime,
-    // which is what TDatime wants.
-    time_t tval = mktime(&tm);
-    if( tval == -1 )
-      err = true;
-    else
-      localtime_r(&tval, &tm);
   }
-  if( err || tm.tm_year < 95 ) {
+#ifdef __GLIBC__
+  else {
+    // Time zone offset explicitly given. If using glibc, strptime does not
+    // apply the time zone offset to the result, so we need to explicitly
+    // convert it to localtime, which is what TDatime wants.
+    // Get localtime GMT offset at the specified date
+    struct tm tml = tmc;
+    tml.tm_isdst = -1;
+    time_t tval = mktime(&tml);
+    if( tval != -1 ) {
+      long tzdiff = tml.tm_gmtoff - tmc.tm_gmtoff;
+      if( tzdiff != 0 ) {
+        tmc.tm_hour += (int) (tzdiff / 3600);
+        tmc.tm_min += (int) ((tzdiff % 3600) / 60);
+        tmc.tm_isdst = tml.tm_isdst;
+        tval = mktime(&tmc);  // Normalizes tmc, converts to localtime
+        if( tval == -1 )
+          err = true;
+      }
+    } else {
+      err = true;
+    }
+  }
+#endif
+  if( err || tmc.tm_year < 95 ) {
     if( warn )
       ::Warning("IsDBdate()", "Invalid date tag %s", line.c_str());
     return 0;
   }
-  date.Set(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-           tm.tm_hour, tm.tm_min, tm.tm_sec);
-
+  date.Set(tmc.tm_year + 1900, tmc.tm_mon + 1, tmc.tm_mday,
+           tmc.tm_hour, tmc.tm_min, tmc.tm_sec);
+  errno = 0;  // strptime() may set errno to spurious values despite succeeding
   return 1;
 }
 
