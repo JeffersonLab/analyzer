@@ -1179,5 +1179,39 @@ Int_t SeekDBdate( FILE* file, const TDatime& date, Bool_t end_on_tag )
   return found;
 }
 
+//_____________________________________________________________________________
+#ifdef __clang__
+// Clang appears to make implicitly instantiated template functions private
+// symbols when linking optimized code. Prevent this with explicit instantiations.
+template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, Double_t& );
+template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, Float_t& );
+template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, Long64_t& );
+template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, ULong64_t& );
+template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, Int_t& );
+template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, UInt_t& );
+template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, Short_t& );
+template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, UShort_t& );
+template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, Char_t& );
+template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, Byte_t& );
+
+template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<Double_t>&);
+template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<Float_t>&);
+template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<Long64_t>&);
+template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<ULong64_t>&);
+template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<Int_t>&);
+template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<UInt_t>&);
+template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<Short_t>&);
+template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<UShort_t>&);
+template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<Char_t>&);
+template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<Byte_t>&);
+
+template Int_t LoadDBmatrix( FILE*, const TDatime&, const char*,
+                             vector<vector<Double_t>>&, UInt_t);
+template Int_t LoadDBmatrix( FILE*, const TDatime&, const char*,
+                             vector<vector<Float_t>>&, UInt_t);
+template Int_t LoadDBmatrix( FILE*, const TDatime&, const char*,
+                             vector<vector<Int_t>>&, UInt_t);
+#endif
+
 } // namespace Podd
 
