@@ -42,6 +42,7 @@ class THaCrateMap {
      bool isCamac( UInt_t crate ) const;            // True if CAMAC crate;
      bool isScalerCrate( UInt_t crate ) const;      // True if a Scaler crate
      bool isBankStructure( UInt_t crate ) const;    // True if modules in banks
+     bool isAllBanks( UInt_t crate ) const;         // True if all modules in banks
      UInt_t getNslot( UInt_t crate ) const;         // Returns num occupied slots
      UInt_t getMinSlot( UInt_t crate ) const;       // Returns min slot number
      UInt_t getMaxSlot( UInt_t crate ) const;       // Returns max slot number
@@ -109,6 +110,7 @@ class THaCrateMap {
        std::string scalerloc;
        bool crate_used;
        bool bank_structure;
+       bool all_banks;
        std::vector<UInt_t> used_slots;
        std::array<SlotInfo_t, MAXSLOT> sltdat;
      };
@@ -164,6 +166,13 @@ bool THaCrateMap::isBankStructure( UInt_t crate ) const
 {
   assert( crate < crdat.size() );
   return (crdat[crate].bank_structure);
+}
+
+inline
+bool THaCrateMap::isAllBanks( UInt_t crate ) const
+{
+  assert( crate < crdat.size() );
+  return (crdat[crate].all_banks);
 }
 
 inline
