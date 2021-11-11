@@ -340,18 +340,21 @@ Int_t IsDBkey( const string& line, const char* key, string& text )
   const char* ln = line.c_str();
   const char* eq = strchr(ln, '=');
   if( !eq ) return 0;
+  // Disregard "==", "!=", "<=", ">="
+  if( (eq > ln && (*(eq-1) == '!' || *(eq-1) == '<' || *(eq-1) == '>')) || *(eq+1) == '=' )
+    return 0;
   // Extract the key
-  while( *ln == ' ' ) ++ln; // find_first_not_of(" ")
+  while( *ln == ' ' || *ln == '\t' ) ++ln; // find_first_not_of(" \t")
   assert(ln <= eq);
   if( ln == eq ) return -1;
   const char* p = eq - 1;
   assert(p >= ln);
-  while( *p == ' ' ) --p; // find_last_not_of(" ")
+  while( *p == ' ' || *p == '\t' ) --p; // find_last_not_of(" \t")
   if( strncmp(ln, key, p - ln + 1) != 0 ) return -1;
   // Key matches. Now extract the value, trimming leading whitespace.
   ln = eq + 1;
   assert(!*ln || *(ln + strlen(ln) - 1) != ' '); // Trailing space already trimmed
-  while( *ln == ' ' ) ++ln;
+  while( *ln == ' ' || *ln == '\t' ) ++ln;
   text = ln;
 
   return 1;
