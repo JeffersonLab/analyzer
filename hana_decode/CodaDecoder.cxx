@@ -232,19 +232,18 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
       bank_decode(iroc, evbuffer, ipt, iptmax);
     }
 
-    //TODO add THaCrateMap hasNonBankData(roc)
-    //if( fMap->hasNonBankData(iroc) ) {
-    if( fDebugFile )
-      *fDebugFile << "\nCodaDecode::Calling roc_decode " << i << "   "
-                  << evbuffer << "  " << iroc << "  " << ipt
-                  << "  " << iptmax << endl;
+    if( !fMap->isAllBanks(iroc) ) {
+      if( fDebugFile )
+        *fDebugFile << "\nCodaDecode::Calling roc_decode " << i << "   "
+                    << evbuffer << "  " << iroc << "  " << ipt
+                    << "  " << iptmax << endl;
 
-    Int_t status = roc_decode(iroc, evbuffer, ipt, iptmax);
+      Int_t status = roc_decode(iroc, evbuffer, ipt, iptmax);
 
-    //FIXME do something with status
-    if( status )
-      break;
-  //} // hasNonBankData(iroc)
+      if( status )
+        break;   //FIXME do something with status!
+
+    }
   }
   return HED_OK;
 }
@@ -515,14 +514,20 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
   assert( evbuffer && fMap );
   if( roc >= MAXROC ) {
     ostringstream ostr;
-    ostr << "CodaDecoder::bank_decode: ROC number " << roc << " out of range";
+    ostr << "CodaDecoder::roc_decode: ROC number " << roc << " out of range";
     throw logic_error(ostr.str());
   }
   if( istop >= event_length )
     throw logic_error("ERROR:: roc_decode:  stop point exceeds event length (?!)");
 
+  synchmiss = false;
+  synchextra = false;
+  buffmode = false;
+  fBlockIsDone = false;
+
   if( ipt+1 >= istop )
     return HED_OK;
+
   if( fDoBench ) fBench->Begin("roc_decode");
   Int_t retval = HED_OK;
   try {
@@ -547,13 +552,6 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
       *fDebugFile << "CodaDecode:: roc_decode:: roc#  " << dec << roc
                   << " nslot " << Nslot << endl;
 
-    synchmiss = false;
-    synchextra = false;
-    buffmode = false;
-    fBlockIsDone = false;
-    const UInt_t* p = evbuffer + ipt;    // Points to ROC ID word (1 before data)
-    const UInt_t* pstop = evbuffer + istop;   // Points to last word of data
-
     assert(fMap->GetUsedSlots(roc).size() == Nslot); // else bug in THaCrateMap
 
     // Build the to-do list of slots based on the contents of the crate map
@@ -565,6 +563,9 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
         continue;
       slots_todo.emplace_back(slot,crateslot[idx(roc,slot)].get());
     }
+    // Quit if nothing to do (all bank structure slots, decoded in bank_decode)
+    if( slots_todo.empty() )
+      return HED_OK;
 
     // higher slot # appears first in multiblock mode
     // the decoding order improves efficiency
@@ -579,7 +580,10 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
     // data are loaded into the module's internal storage, and the corresponding
     // slot is removed from the search list. The search for the remaining slots
     // then resumes at the first word after the data.
+    const UInt_t* p = evbuffer + ipt;    // Points to ROC ID word (1 before data)
+    const UInt_t* pstop = evbuffer + istop;   // Points to last word of data
     UInt_t nextidx = 0;
+
     while( p++ < pstop ) {
       if( fDebugFile )
         *fDebugFile << "CodaDecode::roc_decode:: evbuff " << (p - evbuffer)
@@ -672,7 +676,7 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
                   << "    len 0x" << len << dec << endl;
 
     UInt_t key = (roc << 16) + bank;
-    // Bank numbers only appear once,else bug in CODA or corrupt input
+    // Bank numbers only appear once, else bug in CODA or corrupt input
     assert( find(ALL(bankdat), key) == bankdat.end());
     // If len == 0, bug in CODA or corrupt input
     assert( len > 0 );
