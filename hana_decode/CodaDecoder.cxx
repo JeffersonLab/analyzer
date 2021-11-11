@@ -42,8 +42,7 @@ CodaDecoder::CodaDecoder() :
   fBlockIsDone{false},
   tsEvType{0},
   bank_tag{0},
-  block_size{0},
-  tbLen{0}
+  block_size{0}
 {
   bankdat.reserve(32);
   // Please leave these 3 lines for me to debug if I need to.  thanks, Bob
@@ -254,7 +253,7 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
 Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer)
 {
   // Extract basic information from a CODA3 event
-  tbLen = 0;
+  tbank.Clear();
   tsEvType = 0;
   trigger_bits = 0;
   evt_time = 0;
@@ -326,7 +325,7 @@ Int_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer )
     return HED_ERR;
   }
   try {
-    tbLen = tbank.Fill(evbuffer + 2, block_size, fMap->getTSROC());
+    tbank.Fill(evbuffer + 2, block_size, fMap->getTSROC());
   }
   catch( const coda_format_error& e ) {
     Error(here, "CODA 3 format error: %s", e.what() );
@@ -400,7 +399,6 @@ uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
 {
   if( blkSize == 0 )
     throw std::invalid_argument("CODA block size must be > 0");
-  Clear();
   start = evbuffer;
   blksize = blkSize;
   len = evbuffer[0] + 1;
@@ -863,10 +861,10 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
 // Find the pointers and lengths of ROCs in CODA3
 // ROC = ReadOut Controller, synonymous with "crate".
 // Earlier we had decoded the Trigger Bank in method trigBankDecode.
-// This determined tbLen and the tbank structure. 
+// This filled the tbank structure.
 // For CODA3, the ROCs start after the Trigger Bank.
 
-  UInt_t pos = 2 + tbLen;
+  UInt_t pos = 2 + tbank.len;
   nroc=0;
 
   for_each(ALL(rocdat), []( RocDat_t& ROC ) { ROC.clear(); });
@@ -898,7 +896,7 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
 
     *fDebugFile << endl << "  FindRocsCoda3 :: Starting Event number = " << dec << tbank.evtNum;
     *fDebugFile << endl;
-    *fDebugFile << "    Trigger Bank Len = "<<tbLen<<" words "<<endl;
+    *fDebugFile << "    Trigger Bank Len = "<<tbank.len<<" words "<<endl;
     *fDebugFile << "    There are "<<nroc<<"  ROCs"<<endl;
     for( UInt_t i = 0; i < nroc; i++ ) {
       *fDebugFile << "     ROC ID = "<<irn[i]<<"  pos = "<<rocdat[irn[i]].pos

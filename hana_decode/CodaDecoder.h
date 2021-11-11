@@ -98,7 +98,7 @@ protected:
   // CODA3 stuff
   UInt_t evcnt_coda3;
   Bool_t fMultiBlockMode, fBlockIsDone;
-  UInt_t tsEvType, bank_tag, block_size, tbLen;
+  UInt_t tsEvType, bank_tag, block_size;
 
   class TBOBJ {
   public:
