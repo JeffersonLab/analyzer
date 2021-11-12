@@ -479,7 +479,8 @@ Int_t CodaDecoder::LoadFromMultiBlock()
   }
 
   for( auto i : fSlotClear ) {
-    if( crateslot[i]->GetModule()->IsMultiBlockMode() )
+    auto* mod = crateslot[i]->GetModule();
+    if( mod && mod->IsMultiBlockMode() )
       crateslot[i]->clearEvent();
   }
 
@@ -489,6 +490,8 @@ Int_t CodaDecoder::LoadFromMultiBlock()
       assert(fMap->slotUsed(roc, slot));
       auto* sd = crateslot[idx(roc, slot)].get();
       auto* mod = sd->GetModule();
+      if( !mod )
+        continue;
       // for CODA3, cross-check the block size (found in trigger bank and, separately, in modules)
       if( fDebugFile )
         *fDebugFile << "cross chk blk size " << roc << "  " << slot << "  "
@@ -498,9 +501,14 @@ Int_t CodaDecoder::LoadFromMultiBlock()
       }
       if( mod->IsMultiBlockMode() ) {
         sd->LoadNextEvBuffer();
+        // Presumes that all modules have the same global block size (see check above)
         if( sd->BlockIsDone() )
           fBlockIsDone = true;
       }
+      // else {
+      // Not really sure what to do with a module that isn't in multi-block mode
+      // while others are ...
+      // }
     }
   }
   return HED_OK;
