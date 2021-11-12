@@ -19,7 +19,7 @@ namespace Decoder {
 
   public:
     
-    Fadc250Module();
+    Fadc250Module() : Fadc250Module(0,0) {}
     Fadc250Module( UInt_t crate, UInt_t slot );
     virtual ~Fadc250Module();
 

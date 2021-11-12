@@ -42,9 +42,7 @@ class PipeliningModule : public VmeModule  {
 
 public:
 
-   PipeliningModule()
-    : fNWarnings(0), fBlockHeader(0), data_type_def(15), fFirstTime(true),
-      index_buffer(0) {}
+   PipeliningModule() : PipeliningModule(0,0) {}
    PipeliningModule( UInt_t crate, UInt_t slot );
    PipeliningModule(const PipeliningModule &fh) = delete;
    PipeliningModule& operator=(const PipeliningModule &fh) = delete;

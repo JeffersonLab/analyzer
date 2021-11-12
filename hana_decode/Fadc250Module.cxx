@@ -79,14 +79,6 @@ Module::TypeIter_t Fadc250Module::fgThisType =
   DoRegister(ModuleType("Decoder::Fadc250Module", 250));
 
 //_____________________________________________________________________________
-Fadc250Module::Fadc250Module()
-  : fadc_data{}, fPulseData(NADCCHAN),
-    data_type_4(false), data_type_6(false), data_type_7(false),
-    data_type_8(false), data_type_9(false), data_type_10(false),
-    block_header_found(false), block_trailer_found(false),
-    event_header_found(false), slots_match(false) {}
-
-//_____________________________________________________________________________
 Fadc250Module::Fadc250Module( UInt_t crate, UInt_t slot )
   : PipeliningModule(crate, slot), fadc_data{}, fPulseData(NADCCHAN),
     data_type_4(false), data_type_6(false), data_type_7(false),

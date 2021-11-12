@@ -22,7 +22,7 @@ namespace Decoder {
 
   public:
 
-    Module();   // for ROOT TClass & I/O
+    Module() : Module(0,0) {}   // for ROOT TClass & I/O
     Module(UInt_t crate, UInt_t slot);
     virtual ~Module() = default;
 
