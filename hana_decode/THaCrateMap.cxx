@@ -462,11 +462,13 @@ int THaCrateMap::init(const string& the_map)
     slt.cfgstr = std::move(cfgstr);
   }
 
-  for( auto& cr : crdat ) {
+  for( auto& iused : used_crates ) {
+    auto& cr = crdat[iused];
+    assert( !cr.used_slots.empty() );
     sort(ALL(cr.used_slots));
-    cr.bank_structure =
-      any_of(ALL(cr.sltdat),
-             []( const SlotInfo_t& slt ) { return slt.bank >= 0; } );
+    auto slot_is_bank = [&]( UInt_t idx ) { return cr.sltdat[idx].bank >= 0; };
+    cr.bank_structure = any_of(ALL(cr.used_slots), slot_is_bank);
+    cr.all_banks = all_of(ALL(cr.used_slots), slot_is_bank);
   }
   sort(ALL(used_crates));
 
@@ -481,7 +483,7 @@ int THaCrateMap::init(const string& the_map)
 //_____________________________________________________________________________
 THaCrateMap::CrateInfo_t::CrateInfo_t() :
   crate_code(kUnknown), crate_type_name("unknown"),
-  crate_used(false), bank_structure(false)
+  crate_used(false), bank_structure(false), all_banks(false)
 {
   used_slots.reserve(sltdat.size()/2);
 }

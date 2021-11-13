@@ -14,6 +14,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <stdexcept>
 
 namespace Decoder {
 
@@ -21,7 +22,7 @@ namespace Decoder {
 
   public:
 
-    Module();   // for ROOT TClass & I/O
+    Module() : Module(0,0) {}   // for ROOT TClass & I/O
     Module(UInt_t crate, UInt_t slot);
     virtual ~Module() = default;
 
@@ -60,9 +61,11 @@ namespace Decoder {
 
     virtual Int_t  Decode(const UInt_t *p) = 0; // implement in derived class
     // Loads slot data from [evbuffer,pstop]. pstop points to last word of data
+    // This is used in decoding based on header words (roc_decode)
     virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer,
                              const UInt_t *pstop ) = 0;
     // Loads slot data from [pos,pos+len). pos = start of data, len = num words
+    // This is used in bank decoding (bank_decode)
     virtual UInt_t LoadSlot( THaSlotData* sldat, const UInt_t *evbuffer,
                              UInt_t pos, UInt_t len);
     virtual UInt_t LoadNextEvBuffer( THaSlotData* /* sldat */) { return 0; };
@@ -91,7 +94,7 @@ namespace Decoder {
     virtual void   Init();
     virtual void   Init( const char* configstr );
 
-    virtual void   Clear( Option_t* = "" ) { fWordsSeen = 0; };
+    virtual void   Clear( Option_t* = "" );
 
     virtual Bool_t IsSlot( UInt_t rdata );
 
@@ -112,6 +115,25 @@ namespace Decoder {
 
     virtual Bool_t IsMultiFunction() { return false; };
     virtual Bool_t HasCapability( Decoder::EModuleType ) { return false; };
+
+    // Invalid input data exception, thrown by "Load*" functions
+    class module_data_error : public std::runtime_error {
+    public:
+      explicit module_data_error( const std::string& what_arg )
+        : std::runtime_error(what_arg) {}
+      explicit module_data_error( const char* what_arg )
+        : std::runtime_error(what_arg) {}
+    };
+
+    // Wrappers for LoadSlot methods to allow buffer preprocessing
+    virtual UInt_t LoadBlock( THaSlotData* sldat, const UInt_t* evbuffer,
+                              const UInt_t* pstop ) {
+      return LoadSlot(sldat, evbuffer, pstop);
+    }
+    virtual UInt_t LoadBank( THaSlotData* sldat, const UInt_t* evbuffer,
+                             UInt_t pos, UInt_t len ) {
+      return LoadSlot(sldat, evbuffer, pos, len);
+    }
 
   protected:
 

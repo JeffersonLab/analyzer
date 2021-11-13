@@ -23,25 +23,14 @@ using namespace std;
 namespace Decoder {
 
 //_____________________________________________________________________________
-Module::Module()
-  : fCrate(0), fSlot(0), fHeader(0), fHeaderMask(0xffffffff), fBank(-1),
-    fWordsExpect(0), fWordsSeen(0), fWdcntMask(0), fWdcntShift(0),
-    fModelNum(-1), fNumChan(0), fMode(0), block_size(1), IsInit(false),
-    fMultiBlockMode(false), fBlockIsDone(false), fFirmwareVers(0),
-    fDebug(0), fDebugFile(nullptr), fExtra(nullptr)
-{
-}
-
-//_____________________________________________________________________________
 Module::Module(UInt_t crate, UInt_t slot)
-  : fCrate(crate), fSlot(slot), fHeader(0), fHeaderMask(0xffffffff), fBank(-1),
-    fWordsExpect(0), fWordsSeen(0), fWdcntMask(0), fWdcntShift(0),
+  : TNamed(), fCrate(crate), fSlot(slot), fHeader(0), fHeaderMask(0xffffffff),
+    fBank(-1), fWordsExpect(0), fWordsSeen(0), fWdcntMask(0), fWdcntShift(0),
     fModelNum(-1), fNumChan(0), fMode(0), block_size(1), IsInit(false),
     fMultiBlockMode(false), fBlockIsDone(false), fFirmwareVers(0),
     fDebug(0), fDebugFile(nullptr), fExtra(nullptr)
 {
   // Warning: see comments at Init()
-  fName = "";
 }
 
 //_____________________________________________________________________________
@@ -63,6 +52,19 @@ void Module::Init()
   fModelNum = -1;
   fName = "";
   fNumChan = 0;
+}
+
+//_____________________________________________________________________________
+void Module::Clear( Option_t* )
+{
+  // Clear event-by-event data.
+  // This is called for each event block read from file, but not for each
+  // individual event in a multi-event block.
+
+  fWordsSeen = 0;
+  block_size = 1;
+  fMultiBlockMode = false;
+  fBlockIsDone = false;
 }
 
 //_____________________________________________________________________________

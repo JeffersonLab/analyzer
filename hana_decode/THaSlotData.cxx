@@ -181,8 +181,8 @@ UInt_t THaSlotData::LoadIfSlot( const UInt_t* evbuffer, const UInt_t *pstop) {
     return 0;
   }
   if (fDebugFile) fModule->DoPrint();
-  fModule->Clear("");
-  UInt_t wordseen = fModule->LoadSlot(this, evbuffer, pstop);
+  fModule->Clear();
+  UInt_t wordseen = fModule->LoadBlock(this, evbuffer, pstop);
   if (fDebugFile)
     *fDebugFile << "THaSlotData:: after LoadIfSlot:  wordseen =  "
                 << dec << "  " << wordseen << endl;
@@ -203,8 +203,8 @@ UInt_t THaSlotData::LoadBank( const UInt_t* p, UInt_t pos, UInt_t len) {
                 << "  pos " << pos << "   len " << len << "   start word "
                 << hex << *p << "  module ptr  " << fModule.get() << dec << endl;
   if (fDebugFile) fModule->DoPrint();
-  fModule->Clear("");
-  UInt_t wordseen = fModule->LoadSlot(this, p, pos, len);
+  fModule->Clear();
+  UInt_t wordseen = fModule->LoadBank(this, p, pos, len);
   if (fDebugFile) *fDebugFile << "THaSlotData:: after LoadBank:  wordseen =  "<<dec<<"  "<<wordseen<<endl;
   return wordseen;
 }

@@ -34,8 +34,8 @@ public:
 
   virtual Bool_t DataCached() { return fMultiBlockMode && !fBlockIsDone; }
   virtual Int_t  LoadFromMultiBlock();
-  virtual Bool_t IsMultiBlockMode() { return fMultiBlockMode; };
-  virtual Bool_t BlockIsDone() { return fBlockIsDone; };
+          Bool_t IsMultiBlockMode() const { return fMultiBlockMode; };
+          Bool_t BlockIsDone() const { return fBlockIsDone; };
 
   virtual Int_t  FillBankData( UInt_t* rdat, UInt_t roc, Int_t bank,
                                UInt_t offset = 0, UInt_t num = 1 ) const;
@@ -98,7 +98,7 @@ protected:
   // CODA3 stuff
   UInt_t evcnt_coda3;
   Bool_t fMultiBlockMode, fBlockIsDone;
-  UInt_t tsEvType, bank_tag, block_size, tbLen;
+  UInt_t tsEvType, bank_tag, block_size;
 
   class TBOBJ {
   public:
