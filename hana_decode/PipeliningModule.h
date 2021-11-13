@@ -33,7 +33,6 @@
 #include <cstdint>
 #include <cassert>
 
-
 class THaSlotData;
 
 namespace Decoder {
@@ -50,7 +49,6 @@ public:
 
    void Init( const char* configstr );
    virtual void Clear( Option_t *opt="" );
-  // void PrintBlocks();
 
   // Wrappers for LoadSlot methods to allow buffer preprocessing
   virtual UInt_t LoadBlock( THaSlotData* sldat, const UInt_t* evbuffer,
@@ -61,11 +59,8 @@ public:
 protected:
 
    virtual UInt_t LoadNextEvBuffer( THaSlotData *sldat );
-   UInt_t fNWarnings;
    UInt_t fBlockHeader;
    UInt_t data_type_def;
-
-//   Bool_t fFirstTime;
 
    // Support for multi-block mode
    VectorUIntNI fBuffer;   // Copy of this module's chunk of the event buffer

@@ -67,7 +67,7 @@ namespace Decoder {
 //_____________________________________________________________________________
 PipeliningModule::PipeliningModule( UInt_t crate, UInt_t slot )
   : VmeModule(crate, slot),
-    fNWarnings(0), fBlockHeader(0),
+    fBlockHeader(0),
     data_type_def(15),  // initialize to FILLER WORD
     index_buffer(0)
 {
@@ -85,9 +85,6 @@ void PipeliningModule::Init( const char* configstr )
   //   10      250    2501   cfg: debug=1
 
   VmeModule::Init();  // standard Init
-
-  if( !configstr || !*configstr )
-    return;
 
   UInt_t debug = 0;
   vector<ConfigStrReq> req = { { "debug", debug } };
