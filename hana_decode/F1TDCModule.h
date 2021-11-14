@@ -22,8 +22,9 @@ public:
    F1TDCModule( UInt_t crate, UInt_t slot );
    virtual ~F1TDCModule() = default;
 
-   using Module::GetData;
-   using Module::LoadSlot;
+   using VmeModule::GetData;
+   using VmeModule::LoadSlot;
+   using VmeModule::Init;
 
    enum EResolution { ILO = 0, IHI = 1 };
 

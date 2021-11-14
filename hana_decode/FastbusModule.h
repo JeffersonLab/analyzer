@@ -26,6 +26,7 @@ public:
    virtual ~FastbusModule() = default;
 
    using Module::LoadSlot;
+   using Module::Init;
 
    virtual Int_t  Decode(const UInt_t *evbuffer);
    virtual Bool_t IsSlot(UInt_t rdata) { return (Slot(rdata)==fSlot); };

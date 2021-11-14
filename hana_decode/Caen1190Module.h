@@ -22,7 +22,8 @@ namespace Decoder {
     Caen1190Module(Int_t crate, Int_t slot);
     virtual ~Caen1190Module() = default;
 
-    using Module::GetData;
+    using VmeModule::GetData;
+    using VmeModule::Init;
 
     virtual void  Init();
     virtual void  Clear(Option_t *opt="");

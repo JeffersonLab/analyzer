@@ -20,6 +20,7 @@ public:
    Scaler3800() = default;
    virtual ~Scaler3800() = default;
 
+   using GenScaler::Init;
    virtual void Init();
 
 private:

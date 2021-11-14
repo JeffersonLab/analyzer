@@ -24,7 +24,7 @@ namespace Decoder {
       firsttime(true), firstwarn(true) {}
     GenScaler( UInt_t crate, UInt_t slot );
 
-    using Module::GetData;
+    using VmeModule::GetData;
 
     virtual void   Clear( Option_t* opt = "" );
     virtual Int_t  Decode( const UInt_t* evbuffer );

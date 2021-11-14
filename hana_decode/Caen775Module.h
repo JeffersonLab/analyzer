@@ -20,7 +20,8 @@ public:
    Caen775Module( UInt_t crate, UInt_t slot );
    virtual ~Caen775Module() = default;
 
-   using Module::GetData;
+   using VmeModule::GetData;
+   using VmeModule::Init;
 
    virtual UInt_t GetData( UInt_t chan) const;
    virtual void   Init();

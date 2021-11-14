@@ -47,6 +47,7 @@ public:
    PipeliningModule& operator=(const PipeliningModule &fh) = delete;
    virtual ~PipeliningModule() = default;
 
+   using VmeModule::Init;
    void Init( const char* configstr );
    virtual void Clear( Option_t *opt="" );
 
