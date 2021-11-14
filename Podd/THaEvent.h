@@ -15,33 +15,27 @@ class THaVar;
 class THaEventHeader {
 
 public:
-  THaEventHeader() : 
+  THaEventHeader() :
     fEvtTime(0), fEvtNum(0), fEvtType(0), fEvtLen(0), fHelicity(0),
-    fTargetPol(0), fRun(0) {}
+    fTrigBits(0), fRun(0) {}
   virtual ~THaEventHeader() = default;
 
   void Set( UInt_t num, UInt_t type, UInt_t len, ULong64_t time,
-	    Int_t hel, Int_t pol, UInt_t run ) {
+            Int_t hel, UInt_t tbits, UInt_t run ) {
     fEvtNum    = num; 
     fEvtType   = type;
     fEvtLen    = len;
     fEvtTime   = time;
     fHelicity  = hel;
-    fTargetPol = pol;
+    fTrigBits  = tbits;
     fRun       = run;
-  }
-  // Old Set() for backwards compatibility
-  void Set( UInt_t num, UInt_t type, UInt_t len, Double_t time,
-	    Int_t hel, UInt_t run ) {
-    Set( num, type, len, static_cast<ULong64_t>( 1e6*time ),
-	 hel, 0, run );
   }
   UInt_t    GetEvtNum()    const  { return fEvtNum; }
   UInt_t    GetEvtType()   const  { return fEvtType; }
   UInt_t    GetEvtLen()    const  { return fEvtLen; }
   ULong64_t GetEvtTime()   const  { return fEvtTime; }
   Int_t     GetHelicity()  const  { return fHelicity; }
-  Int_t     GetTargetPol() const  { return fTargetPol; }
+  UInt_t    GetTrigBits()  const  { return fTrigBits; }
   UInt_t    GetRun()       const  { return fRun; }
 
 private:
@@ -51,10 +45,10 @@ private:
   UInt_t    fEvtType;         // Event type
   UInt_t    fEvtLen;          // Event length
   Int_t     fHelicity;        // Beam helicity
-  Int_t     fTargetPol;       // Target polarization
+  UInt_t    fTrigBits;        // Trigger bitpattern
   UInt_t    fRun;             // Run number
 
-  ClassDef(THaEventHeader,6)  // Header for analyzed event data in ROOT file
+  ClassDef(THaEventHeader,7)  // Header for analyzed event data in ROOT file
 };
 
 

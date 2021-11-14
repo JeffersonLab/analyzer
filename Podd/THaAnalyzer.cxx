@@ -1176,7 +1176,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 				fEvData->GetEvLength(),
 				fEvData->GetEvTime(),
 				fEvData->GetHelicity(),
-				0,
+				fEvData->GetTrigBits(),
 				fRun->GetNumber()
 				);
       fEvent->Fill();
