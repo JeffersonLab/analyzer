@@ -1017,9 +1017,8 @@ void THaAnalyzer::PrintTimingSummary() const
     if( fDoBench ) {
       cout << "Timing summary:" << endl;
       names = {
-        "Init", "RawDecode", "Decode",
-        "CoarseTracking", "CoarseReconstruct",
-        "Tracking", "Reconstruct", "Physics",
+        "Init", "Begin", "RawDecode", "Decode", "CoarseTracking",
+        "CoarseReconstruct", "Tracking", "Reconstruct", "Physics", "End",
         "Output", "Cuts"
       };
     }
@@ -1080,6 +1079,8 @@ Int_t THaAnalyzer::BeginAnalysis()
 
   fFirstPhysics = true;
 
+  if( fDoBench ) fBench->Begin("Begin");
+
   for( auto* theModule : fAnalysisModules ) {
     theModule->Begin( fRun );
   }
@@ -1087,6 +1088,8 @@ Int_t THaAnalyzer::BeginAnalysis()
   for( auto* obj : fEvtHandlers ) {
     obj->Begin(fRun);
   }
+
+  if( fDoBench ) fBench->Stop("Begin");
 
   return 0;
 }
@@ -1097,6 +1100,8 @@ Int_t THaAnalyzer::EndAnalysis()
   // Execute End() for all Apparatus and Physics modules. Internal function
   // called right after event loop is finished for each run.
 
+  if( fDoBench ) fBench->Begin("End");
+
   for( auto* theModule : fAnalysisModules ) {
     theModule->End( fRun );
   }
@@ -1104,6 +1109,8 @@ Int_t THaAnalyzer::EndAnalysis()
   for( auto* obj : fEvtHandlers ) {
     obj->End(fRun);
   }
+
+  if( fDoBench ) fBench->Stop("End");
 
   return 0;
 }
@@ -1472,15 +1479,19 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
 
   //--- The main event loop.
 
+  if( fDoBench ) fBench->Begin("Init");
   fNev = 0;
   bool terminate = false, fatal = false;
   UInt_t nlast = fRun->GetLastEvent();
   fAnalysisStarted = true;
   PrepareModuleList();
+  if( fDoBench ) fBench->Stop("Init");
   BeginAnalysis();
   if( fFile ) {
+    if( fDoBench ) fBench->Begin("Output");
     fFile->cd();
     fRun->Write("Run_Data");  // Save run data to first ROOT file
+    if( fDoBench ) fBench->Stop("Output");
   }
 
   while ( !terminate && fNev < nlast &&
