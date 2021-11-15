@@ -351,13 +351,21 @@ Bool_t THaRunBase::IsOpen() const
 void THaRunBase::Print( Option_t* opt ) const
 {
   // Print definition of run
+  TString sopt(opt);
+  sopt.ToUpper();
+  if( sopt =="NAMEDESC" ) {
+    cout << "\"" << fName << "\"";
+    if( !fTitle.IsNull() )
+      cout << " (" << fTitle << ")";
+    return;
+  }
+
   TNamed::Print( opt );
   cout << "Run number: " << fNumber << endl;
   cout << "Run date:   " << fDate.AsString() << endl;
   cout << "Requested event range: " << fEvtRange[0] << "-"
        << fEvtRange[1] << endl;
 
-  TString sopt(opt);
   if( sopt == "STARTINFO" )
     return;
 

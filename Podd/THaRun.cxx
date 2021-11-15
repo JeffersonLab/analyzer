@@ -179,11 +179,19 @@ Int_t THaRun::Open()
 //_____________________________________________________________________________
 void THaRun::Print( Option_t* opt ) const
 {
+  TString sopt(opt);
+  sopt.ToUpper();
+  if( sopt == "NAMEDESC" ) {
+    cout << "\"file://" << fFilename << "\"";
+    if( !fTitle.IsNull() )
+      cout << " (" << fTitle << ")";
+    return;
+  }
   THaCodaRun::Print( opt );
   cout << "Max # scan:     " << fMaxScan  << endl;
   cout << "CODA file:      " << fFilename << endl;
   cout << "Segment number: " << fSegment  << endl;
-  cout << "Stream number: "  << fStream   << endl;
+  cout << "Stream number:  " << fStream   << endl;
 }
 
 //_____________________________________________________________________________

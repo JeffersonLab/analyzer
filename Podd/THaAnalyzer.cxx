@@ -292,12 +292,6 @@ void THaAnalyzer::EnablePhysicsEvents( Bool_t b )
 }
 
 //_____________________________________________________________________________
-void THaAnalyzer::EnableScalers( Bool_t )
-{
-  cout << "Warning:: Scalers are handled by event handlers now"<<endl;
-}
-
-//_____________________________________________________________________________
 void THaAnalyzer::EnableSlowControl( Bool_t b )
 {
   fDoSlowControl = b;
@@ -481,8 +475,31 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
 {
   // Internal function called by Init(). This is where the actual work is done.
 
+  //FIXME:should define return codes in header
   static const char* const here = "Init";
   Int_t retval = 0;
+
+  //--- Initialize the run object, if necessary
+  if( !run ) {
+    Error(here, "run is null");
+    return -243;
+  }
+  // If we've been told to use a specific CODA version, tell the run
+  // object about it. (FIXME: This may not work with non-CODA runs.)
+  if( fWantCodaVers > 0 && run->SetDataVersion(fWantCodaVers) < 0 ) {
+    Error( here, "Failed to set CODA version %d for run. Call expert.",
+           fWantCodaVers );
+    return -242;
+  }
+  // Make sure the run is initialized.
+  bool run_init = false;
+  if( !run->IsInit()) {
+    cout << "Initializing run object" << endl;
+    run_init = true;
+    retval = run->Init();
+    if( retval )
+      return retval;  //Error message printed by run class
+  }
 
   //--- Open the output file if necessary so that Trees and Histograms
   //    are created on disk.
@@ -526,6 +543,20 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     return -14;
   }
   fFile->SetCompressionLevel(fCompress);
+
+  //--- Set up the summary output file, if any
+  if( !fAnalysisStarted && !fSummaryFileName.IsNull() ) {
+    ofstream ofs;
+    auto openmode = fOverwrite ? ios::out : ios::app;
+    ofs.open(fSummaryFileName, openmode);
+    if( !ofs ) {
+      Error(here, "Failed to open summary file %s. Check file/directory "
+                  "permissions", fSummaryFileName.Data());
+      return -15;
+    }
+    ofs << "==== " << TDatime().AsString();
+    ofs.close();
+  }
 
   // Set up the analysis stages and allocate counters.
   if( !fIsInit ) {
@@ -591,23 +622,6 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     new_decoder = true;
   }
 
-  // If we've been told to use a specific CODA version, tell the run
-  // object about it. (FIXME: This may not work with non-CODA runs.)
-  if( fWantCodaVers > 0 && run->SetDataVersion(fWantCodaVers) < 0 ) {
-    Error( here, "Failed to set CODA version %d for run. Call expert.",
-        fWantCodaVers );
-    return -242;
-  }
-  // Make sure the run is initialized.
-  bool run_init = false;
-  if( !run->IsInit()) {
-    cout << "Initializing run object" << endl;
-    run_init = true;
-    retval = run->Init();
-    if( retval )
-      return retval;  //Error message printed by run class
-  }
-
   // Deal with the run.
   bool new_run   = ( !fRun || *fRun != *run );
   bool need_init = ( !fIsInit || new_event || new_output || new_run ||
@@ -644,8 +658,11 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   if( new_run || fRun->Compare(run) ) {
     delete fRun;
     fRun = static_cast<THaRunBase*>(run->IsA()->New());
-    if( !fRun )
-      return -252; // FIXME: arbitrary
+    if( !fRun ) {
+      Error(here, "Failed to create copy of run object. "
+                  "Something is very wrong...");
+      return -252;
+    }
     *fRun = *run;  // Copy the run via its virtual operator=
   }
 
@@ -656,6 +673,27 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   // Print run info
   if( fVerbose>0 ) {
     fRun->Print("STARTINFO");
+  }
+
+  // Write startup info to summary file
+  if( !fSummaryFileName.IsNull() ) {
+    ofstream ofs(fSummaryFileName.Data(), ios::app);
+    if( !ofs ) {
+      // This would be odd, since it just worked above
+      Error(here, "Failed to open summary file %s (after previous success). "
+                  "Check file/directory permissions", fSummaryFileName.Data());
+      return -15;
+    }
+    ofs << " " << (fAnalysisStarted ? "Continuing" : "Started") << " analysis"
+        << ", run " << run->GetNumber() << endl;
+    ofs << "Reading from ";
+    // Redirect cout to ofs
+    auto* cout_buf = cout.rdbuf();
+    cout.rdbuf(ofs.rdbuf());
+    fRun->Print("NAMEDESC");
+    cout.rdbuf(cout_buf);
+    ofs << endl;
+    ofs.close();
   }
 
   // Clear counters unless we are continuing an analysis
@@ -920,46 +958,116 @@ void THaAnalyzer::PrintCounters() const
       cout << setw(w) << GetCount(i) << "  " << text << endl;
     }
   }
+  cout << endl;
 }
 
 //_____________________________________________________________________________
-void THaAnalyzer::PrintScalers() const
+void THaAnalyzer::PrintExitStatus(EExitStatus status) const
 {
-  // may want to loop over scaler event handlers and use their print methods.
-  // but that can be done with the End method of the event handler
-  // Print scaler statistics
-  cout << "Scalers are event handlers now and can be summarized by "<<endl;
-  cout << "those objects"<<endl;
-  //OLD WAY    theScaler->PrintSummary();
+  // Print analyzer exit status
+
+  cout << dec;
+  switch( status ) {
+    case EExitStatus::kUnknown:
+      cout << "Analysis ended.";
+      break;
+    case EExitStatus::kEOF:
+      cout << "End of file.";
+      break;
+    case EExitStatus::kEvLimit:
+      cout << "Event limit reached.";
+      break;
+    case EExitStatus::kFatal:
+      cout << "Fatal processing error.";
+      break;
+    case EExitStatus::kTerminated:
+      cout << "Terminated during processing.";
+      break;
+  }
+  cout << endl;
+}
+
+//_____________________________________________________________________________
+void THaAnalyzer::PrintRunSummary() const
+{
+  // Print general summary of run
+
+  cout << "==== " << TDatime().AsString()
+       << " Summary for run " << fRun->GetNumber()
+       << endl;
 }
 
 //_____________________________________________________________________________
 void THaAnalyzer::PrintCutSummary() const
 {
-  // Print summary of cuts etc.
-  // Only print to screen if fVerbose>1, but always print to
-  // the summary file if a summary file is requested.
+  // Print summary of cuts
 
   if( gHaCuts->GetSize() > 0 ) {
     cout << "Cut summary:" << endl;
-    if( fVerbose>1 )
-      gHaCuts->Print("STATS");
-    if( fSummaryFileName.Length() > 0 ) {
-      ofstream ostr(fSummaryFileName);
-      if( ostr ) {
-	// Write to file via cout
-	streambuf* cout_buf = cout.rdbuf();
-	cout.rdbuf(ostr.rdbuf());
-	TDatime now;
-	cout << "Cut Summary for run " << fRun->GetNumber()
-	     << " completed " << now.AsString()
-	     << endl << endl;
-	gHaCuts->Print("STATS");
-	cout.rdbuf(cout_buf);
-	ostr.close();
-      }
+    gHaCuts->Print("STATS");
+  }
+}
+
+//_____________________________________________________________________________
+void THaAnalyzer::PrintTimingSummary() const
+{
+  // Print timing statistics, if benchmarking enabled
+  if( (fVerbose > 1 || fDoBench) ) {
+    vector<TString> names;
+    if( fDoBench ) {
+      cout << "Timing summary:" << endl;
+      names = {
+        "Init", "RawDecode", "Decode",
+        "CoarseTracking", "CoarseReconstruct",
+        "Tracking", "Reconstruct", "Physics",
+        "Output", "Cuts"
+      };
+    }
+    names.emplace_back("Total");
+    fBench->PrintByName(names);
+  }
+}
+
+//_____________________________________________________________________________
+void THaAnalyzer::PrintSummary( EExitStatus exit_status ) const
+{
+  // Print summary (cuts etc.)
+  // Only print to screen if fVerbose>1.
+  // Always write to the summary file if a summary file is requested.
+
+  if( fVerbose > 0 ) {
+    PrintExitStatus(exit_status);
+    PrintRunSummary();
+    if( exit_status != EExitStatus::kFatal ) {
+      PrintCounters();
+      if( fVerbose > 1 )
+        PrintCutSummary();
     }
   }
+  PrintTimingSummary();
+
+  if( !fSummaryFileName.IsNull() ) {
+    // Append to the summary file. If fOverwrite is set, it was already
+    // recreated earlier
+    ofstream ostr(fSummaryFileName, ios::app );
+    if( ostr ) {
+      // Write to file via cout
+      auto* cout_buf = cout.rdbuf();
+      cout.rdbuf(ostr.rdbuf());
+
+      PrintExitStatus(exit_status);
+      PrintRunSummary();
+      if( exit_status != EExitStatus::kFatal ) {
+        PrintCounters();
+        PrintCutSummary();
+      }
+      PrintTimingSummary();
+
+      cout.rdbuf(cout_buf);
+      ostr.close();
+    }
+  }
+
 }
 
 //_____________________________________________________________________________
@@ -1176,7 +1284,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 				fEvData->GetEvLength(),
 				fEvData->GetEvTime(),
 				fEvData->GetHelicity(),
-				fEvData->GetTrigBits(),
+				0,
 				fRun->GetNumber()
 				);
       fEvent->Fill();
@@ -1472,47 +1580,18 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
 
   fBench->Stop("Total");
 
-  //--- Report statistics
-  if( fVerbose>0 ) {
-    cout << dec;
-    if( status == THaRunBase::READ_EOF )
-      cout << "End of file";
-    else if ( fNev == nlast )
-      cout << "Event limit reached.";
-    else if ( fatal )
-      cout << "Fatal processing error.";
-    else if ( terminate )
-      cout << "Terminated during processing.";
-    cout << endl;
+  //--- Report statistics and summary information (also to file if one given)
+  EExitStatus exit_status = EExitStatus::kUnknown;
+  if( status == THaRunBase::READ_EOF )
+    exit_status = EExitStatus::kEOF;
+  else if( fNev == nlast )
+    exit_status = EExitStatus::kEvLimit;
+  else if( fatal )
+    exit_status = EExitStatus::kFatal;
+  else if( terminate )
+    exit_status = EExitStatus::kTerminated;
 
-    if( !fatal ) {
-      PrintCounters();
-
-      if( fVerbose>1 )
-	PrintScalers();
-    }
-  }
-
-  // Print cut summary (also to file if one given)
-  if( !fatal )
-    PrintCutSummary();
-
-  // Print timing statistics, if benchmarking enabled
-  if( fDoBench && !fatal ) {
-    cout << "Timing summary:" << endl;
-    fBench->Print("Init");
-    fBench->Print("RawDecode");
-    fBench->Print("Decode");
-    fBench->Print("CoarseTracking");
-    fBench->Print("CoarseReconstruct");
-    fBench->Print("Tracking");
-    fBench->Print("Reconstruct");
-    fBench->Print("Physics");
-    fBench->Print("Output");
-    fBench->Print("Cuts");
-  }
-  if( (fVerbose>1 || fDoBench) && !fatal )
-    fBench->Print("Total");
+  PrintSummary(exit_status);
 
   //keep the last run available
   //  gHaRun = nullptr;

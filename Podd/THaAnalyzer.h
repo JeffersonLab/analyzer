@@ -54,7 +54,6 @@ public:
   void           EnableOverwrite( Bool_t b = true );
   void           EnablePhysicsEvents( Bool_t b = true );
   void           EnableRunUpdate( Bool_t b = true );
-  void           EnableScalers( Bool_t b = true );   // archaic
   void           EnableSlowControl( Bool_t b = true );
   const char*    GetOutFileName()      const  { return fOutFileName.Data(); }
   const char*    GetCutFileName()      const  { return fCutFileName.Data(); }
@@ -209,10 +208,15 @@ protected:
   virtual Int_t  InitModules( const std::vector<THaAnalysisObject*>& module_list,
                               TDatime& run_time );
   virtual Int_t  InitOutput( const std::vector<THaAnalysisObject*>& module_list );
+
+  enum class EExitStatus { kUnknown = -1, kEOF, kEvLimit, kFatal, kTerminated };
   virtual void   PrepareModuleList();
   virtual void   PrintCounters() const;
-  virtual void   PrintScalers() const;  // archaic
+  virtual void   PrintExitStatus( EExitStatus status ) const;
+  virtual void   PrintRunSummary() const;
   virtual void   PrintCutSummary() const;
+  virtual void   PrintTimingSummary() const;
+  virtual void   PrintSummary( EExitStatus exit_status ) const;
 
   static THaAnalyzer* fgAnalyzer;  //Pointer to instance of this class
 
