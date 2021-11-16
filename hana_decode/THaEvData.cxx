@@ -72,6 +72,7 @@ THaEvData::THaEvData() :
   run_num{0},
   run_type{0},
   data_type{0},
+  trigger_bits{0},
   evscaler{0},
   fRunTime(time(nullptr)),    // default fRunTime is NOW
   evt_time{0},

@@ -123,6 +123,9 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
   event_length = evbuffer[0]+1;  // in longwords (4 bytes)
   event_num = 0;
   event_type = 0;
+  data_type = 0;
+  trigger_bits = 0;
+  evt_time = 0;
 
   // Determine event type
   if (fDataVersion == 2) {
@@ -254,8 +257,6 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer)
   // Extract basic information from a CODA3 event
   tbank.Clear();
   tsEvType = 0;
-  trigger_bits = 0;
-  evt_time = 0;
 
   bank_tag   = (evbuffer[1] & 0xffff0000) >> 16;
   data_type  = (evbuffer[1] & 0xff00) >> 8;
