@@ -7,7 +7,7 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "Rtypes.h"
+#include "TObject.h"
 #include <vector>
 #include <map>
 #include <string> 
@@ -117,8 +117,17 @@ protected:
   static const Int_t kNbout = 4000;
   static const Int_t fgNocut = -1;
 
-  static Int_t fgVerbose;
+  static Int_t fgVerbose;  // FIXME: -> member variable
   TObject*  fExtra;     // Additional member data (for binary compat.)
+
+  // Data put into fExtra
+  class OutputExtras : public TObject {
+  public:
+    OutputExtras() : fEpicsTimestamp(-1), fEpicsEvtNum(0) {}
+    virtual ~OutputExtras() = default;
+    time_t   fEpicsTimestamp;  // Timestamp of entry in EPICS tree
+    Long64_t fEpicsEvtNum;     // Most recent physics event before entry in EPICS tree
+  };
 
 private:
 

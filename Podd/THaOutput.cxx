@@ -118,8 +118,6 @@ private:
 };
 
 //_____________________________________________________________________________
-
-//_____________________________________________________________________________
 THaOdata::THaOdata( const THaOdata& other )
   : tree{other.tree}, name{other.name}, ndata{other.ndata}, nsize{other.nsize},
     data{new Double_t[nsize]}
@@ -246,6 +244,9 @@ Int_t THaOutput::Init( const char* filename )
     return -3;
   }
 
+  delete fExtra;
+  fExtra = new OutputExtras;
+
   fNvar = fVarnames.size();  // this gets reassigned below
   fArrayNames.clear();
   fVNames.clear();
@@ -363,20 +364,21 @@ Int_t THaOutput::Init( const char* filename )
   }
 
   if (!fEpicsKey.empty()) {
-    vector<THaEpicsKey*>::size_type siz = fEpicsKey.size();
-    fEpicsVar = new Double_t[siz+1];
-    UInt_t i = 0;
-    for (auto it = fEpicsKey.begin(); it != fEpicsKey.end(); ++it, ++i) {
+    auto siz = fEpicsKey.size();
+    delete [] fEpicsVar;
+    fEpicsVar = new Double_t[siz];
+    for( size_t i = 0; i < siz; ++i ) {
       fEpicsVar[i] = -1e32;
-      string epicsbr = CleanEpicsName((*it)->GetName());
+      string epicsbr = CleanEpicsName(fEpicsKey[i]->GetName());
       string tinfo = epicsbr + "/D";
       fTree->Branch(epicsbr.c_str(), &fEpicsVar[i], 
         tinfo.c_str(), kNbout);
       fEpicsTree->Branch(epicsbr.c_str(), &fEpicsVar[i], 
         tinfo.c_str(), kNbout);
     }
-    fEpicsVar[siz] = -1e32;
-    fEpicsTree->Branch("timestamp",&fEpicsVar[siz],"timestamp/D", kNbout);
+    auto* extras = static_cast<OutputExtras*>(fExtra);
+    fEpicsTree->Branch("timestamp", &(extras->fEpicsTimestamp), "timestamp/L", kNbout);
+    fEpicsTree->Branch("evnum", &(extras->fEpicsEvtNum), "evnum/L", kNbout);
   }
 
   Print();
@@ -507,23 +509,25 @@ Int_t THaOutput::ProcEpics(THaEvData *evdata, THaEpicsEvtHandler *epicshandle)
   if ( !epicshandle->IsMyEvent(evdata->GetEvType()) 
        || fEpicsKey.empty() || !fEpicsTree ) return 0;
   if( fgDoBench ) fgBench.Begin("EPICS");
-  fEpicsVar[fEpicsKey.size()] = -1e32;
-  for (size_t i = 0; i < fEpicsKey.size(); i++) {
+  auto* extras = static_cast<OutputExtras*>(fExtra);
+  extras->fEpicsTimestamp = -1;
+  extras->fEpicsEvtNum = evdata->GetEvNum(); // most recent physics event number
+  auto siz = fEpicsKey.size();
+  for( size_t i = 0; i < siz; ++i ) {
     if (epicshandle->IsLoaded(fEpicsKey[i]->GetName().c_str())) {
-      //      cout << "EPICS name "<<fEpicsKey[i]->GetName()<<"    val "<< epicshandle->GetString(fEpicsKey[i]->GetName().c_str())<<endl;
+      //      cout << "EPICS name "<<fEpicsKey[i]->GetName()<<"    val "
+      //      << epicshandle->GetString(fEpicsKey[i]->GetName().c_str())<<endl;
       if (fEpicsKey[i]->IsString()) {
-        fEpicsVar[i] = fEpicsKey[i]->Eval(
-          epicshandle->GetString(
-             fEpicsKey[i]->GetName().c_str()));
+        fEpicsVar[i] =
+          fEpicsKey[i]->Eval(
+            epicshandle->GetString(fEpicsKey[i]->GetName().c_str()));
       } else {
-        fEpicsVar[i] = 
-           epicshandle->GetData(
-              fEpicsKey[i]->GetName().c_str());
+        fEpicsVar[i] = epicshandle->GetData(fEpicsKey[i]->GetName().c_str());
       }
  // fill time stamp (once is ok since this is an EPICS event)
-      fEpicsVar[fEpicsKey.size()] =
- 	 epicshandle->GetTime(
-           fEpicsKey[i]->GetName().c_str());
+ //FIXME: check for inconsistent time stamps?
+      extras->fEpicsTimestamp =
+        epicshandle->GetTime(fEpicsKey[i]->GetName().c_str());
     } else {
       fEpicsVar[i] = -1e32;  // data not yet found
     }
