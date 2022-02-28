@@ -121,7 +121,6 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
 
   buffer = evbuffer;
   event_length = evbuffer[0]+1;  // in longwords (4 bytes)
-  event_num = 0;
   event_type = 0;
   data_type = 0;
   trigger_bits = 0;
