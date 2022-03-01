@@ -31,7 +31,7 @@
 
 using namespace std;
 
-static int DEBUGL = 0;
+static int DEBUGL = 0;  // FIXME: -> fDebug member variable
 
 namespace Decoder {
 
@@ -81,10 +81,6 @@ void THaEpics::Print()
     cout << "Size of epics vector "<<vepics.size();
     for( const auto& chan : vepics ) {
       cout << "\n Tag = " << chan.GetTag();
-      //      if (strstr(vepics[k].GetTag().c_str(),"VMI3128")!=nullptr) {
-      //	cout << "\n GOT ONE "<<k<<endl;
-      //        exit(0);
-      //      }
       cout << "   Evnum = " << chan.GetEvNum();
       cout << "   Date = " << chan.GetDate();
       cout << "   Timestamp = " << chan.GetTimeStamp();
@@ -96,29 +92,33 @@ void THaEpics::Print()
   }
 }
 
+//_____________________________________________________________________________
 Bool_t THaEpics::IsLoaded(const char* tag) const
 {
   const vector<EpicsChan> ep = GetChan(tag);
   return !ep.empty();
 }
 
+//_____________________________________________________________________________
 Double_t THaEpics::GetData ( const char* tag, UInt_t event) const
 {
   const vector<EpicsChan> ep = GetChan(tag);
   UInt_t k = FindEvent(ep, event);
   if( k == kMaxUInt ) return 0;
   return ep[k].GetData();
-}  
+}
 
+//_____________________________________________________________________________
 string THaEpics::GetString ( const char* tag, UInt_t event) const
 {
   const vector<EpicsChan> ep = GetChan(tag);
   UInt_t k = FindEvent(ep, event);
   if( k == kMaxUInt ) return "";
   return ep[k].GetString();
-}  
+}
 
-Double_t THaEpics::GetTimeStamp( const char* tag, UInt_t event) const
+//_____________________________________________________________________________
+time_t THaEpics::GetTimeStamp( const char* tag, UInt_t event) const
 {
   const vector<EpicsChan> ep = GetChan(tag);
   UInt_t k = FindEvent(ep, event);
@@ -126,18 +126,19 @@ Double_t THaEpics::GetTimeStamp( const char* tag, UInt_t event) const
   return ep[k].GetTimeStamp();
 }
 
+//_____________________________________________________________________________
 vector<EpicsChan> THaEpics::GetChan(const char *tag) const
 {
   // Return the vector of Epics data for 'tag' 
   // where 'tag' is the name of the Epics variable.
-  vector<EpicsChan> ep;
-  ep.clear();
   auto pm = epicsData.find(string(tag));
-  if (pm != epicsData.end()) ep = pm->second;
-  return ep;
+  if (pm != epicsData.end())
+    return pm->second;
+  else
+    return {};
 }
 
-
+//_____________________________________________________________________________
 UInt_t THaEpics::FindEvent( const vector<EpicsChan>& ep, UInt_t event )
 {
   // Return the index in the vector of Epics data 
@@ -157,8 +158,8 @@ UInt_t THaEpics::FindEvent( const vector<EpicsChan>& ep, UInt_t event )
   }
   return myidx;
 }
-        
 
+//_____________________________________________________________________________
 int THaEpics::LoadData( const UInt_t* evbuffer, UInt_t event)
 { 
   // load data from the event buffer 'evbuffer' 

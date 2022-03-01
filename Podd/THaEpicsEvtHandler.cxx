@@ -60,8 +60,8 @@ time_t THaEpicsEvtHandler::GetTime( const char* tag, UInt_t event ) const {
 
 TString THaEpicsEvtHandler::GetString( const char* tag, UInt_t event ) const {
   assert( IsLoaded(tag) );
-  if ( !fEpics ) return TString("nothing");
-  return TString(fEpics->GetString(tag, event).c_str());
+  if ( !fEpics ) return {"nothing"};
+  return {fEpics->GetString(tag, event).c_str()};
 }
 
 Int_t THaEpicsEvtHandler::Analyze( THaEvData* evdata ) {
