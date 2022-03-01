@@ -52,7 +52,7 @@ Double_t THaEpicsEvtHandler::GetData( const char* tag, UInt_t event ) const {
   return fEpics->GetData(tag, event);
 }
 
-Double_t THaEpicsEvtHandler::GetTime( const char* tag, UInt_t event ) const {
+time_t THaEpicsEvtHandler::GetTime( const char* tag, UInt_t event ) const {
   assert( IsLoaded(tag) );
   if ( !fEpics ) return 0;
   return fEpics->GetTimeStamp(tag, event);

@@ -25,6 +25,9 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#ifdef __GLIBC__
+#include "Textvars.h"   // for Podd::Tokenize
+#endif
 
 using namespace std;
 
@@ -32,7 +35,40 @@ static int DEBUGL = 0;
 
 namespace Decoder {
 
-void THaEpics::Print() {
+//_____________________________________________________________________________
+void EpicsChan::MakeTime()
+{
+  // Convert dtime string (formatted as "%a %b %e %H:%M:%S %Z %Y", see
+  // strftime(3)) to Unix time.
+
+  struct tm ts{};
+  string dt{dtime};
+  timestamp = -1;
+#ifdef __GLIBC__
+  // Simple workaround for lack of time zone support in Linux's strptime.
+  // This assumes that the current machine's local time zone is the same as
+  // that of the time stamp. Doing better than this is complicated since the
+  // time stamp encodes the time zone as a letter abbreviation (e.g. "EDT"),
+  // not a numerical offset (e.g. -0400), and there seems to be no library
+  // support under Linux for looking up the latter from the former.
+  vector<string> tok;
+  Podd::Tokenize(dtime, " ", tok);
+  if( tok.size() != 6 )
+    return;
+  dt = tok[0]+" "+tok[1]+" "+tok[2]+" "+tok[3]+" "+tok[5];
+  const char* r = strptime(dt.c_str(), "%a %b %e %H:%M:%S %Y", &ts);
+  ts.tm_isdst = -1;
+#else
+  const char* r = strptime(dt.c_str(), "%a %b %e %H:%M:%S %Z %Y", &ts);
+#endif
+  if( !r || r-dt.c_str()-dt.length() != 0 )
+    return;
+  timestamp = mktime(&ts);
+}
+
+//_____________________________________________________________________________
+void THaEpics::Print()
+{
   cout << "\n\n====================== \n";
   cout << "Print of Epics Data : "<<endl;
   Int_t j = 0;

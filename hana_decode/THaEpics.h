@@ -14,6 +14,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <ctime>
 //#include "Decoder.h"
 
 namespace Decoder {
@@ -37,25 +38,20 @@ public:
   UInt_t      GetEvNum()     const { return evnum;  };
   std::string GetTag()       const { return tag;    };
   std::string GetDate()      const { return dtime;  };
-  Double_t    GetTimeStamp() const { return timestamp; };
+  time_t      GetTimeStamp() const { return timestamp; };
   std::string GetString()    const { return svalue; };
   std::string GetUnits()     const { return units;  };
     
 private:
-  std::string tag,dtime;
-  UInt_t evnum;
-  std::string svalue, units;
-  Double_t dvalue,timestamp;
+  std::string tag;       // Variable name
+  std::string dtime;     // Timestamp as string
+  UInt_t      evnum;     // Most recent physics event number seen
+  std::string svalue;    // String data
+  std::string units;     // Data units
+  Double_t    dvalue;    // Numerical value of string data (0 if cannot convert)
+  time_t      timestamp; // Unix time representation of dtime
 
-  void MakeTime() {
-    // time is a continuous parameter.  funny things happen
-    // at midnight or new month, but you'll figure it out.
-    char t1[41],t2[41],t3[41],t4[41];
-    int day = 0, hour = 0, min = 0, sec = 0;
-    sscanf(dtime.c_str(),"%40s %40s %6d %6d:%6d:%6d %40s %40s",
-           t1,t2,&day,&hour,&min,&sec,t3,t4);
-    timestamp = 3600*24*day + 3600*hour + 60*min + sec;
-  }
+  void MakeTime();
 };
 
 class THaEpics {
@@ -68,7 +64,7 @@ public:
    Double_t GetData( const char* tag, UInt_t event= 0 ) const;
 // Get tagged string value nearest 'event'
    std::string GetString( const char* tag, UInt_t event= 0 ) const;
-   Double_t GetTimeStamp( const char* tag, UInt_t event= 0 ) const;
+   time_t GetTimeStamp( const char* tag, UInt_t event= 0 ) const;
    Int_t LoadData( const UInt_t* evbuffer, UInt_t event= 0 );  // load the data
    Bool_t IsLoaded(const char* tag) const;
    void Print();

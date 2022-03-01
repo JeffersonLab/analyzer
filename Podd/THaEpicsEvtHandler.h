@@ -30,7 +30,7 @@ public:
    virtual Int_t End( THaRunBase* r=nullptr );
    Bool_t IsLoaded(const char* tag) const;
    Double_t GetData( const char* tag, UInt_t event = 0 ) const;
-   Double_t GetTime( const char* tag, UInt_t event = 0 ) const;
+   time_t GetTime( const char* tag, UInt_t event = 0 ) const;
    TString GetString( const char* tag, UInt_t event = 0 ) const;
 
 private:
