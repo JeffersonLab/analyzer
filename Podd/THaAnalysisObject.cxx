@@ -34,6 +34,7 @@
 #include <cassert>
 #include <iomanip>
 #include <type_traits>
+#include <limits>
 
 using namespace std;
 using namespace Podd;
@@ -812,7 +813,8 @@ void THaAnalysisObject::WriteValue( T val, int p, int w )
   if( std::is_floating_point<T>::value && val < kBig )
     cout << fixed << setprecision(p) << setw(w) << val;
   else if( std::is_integral<T>::value && val != THaVar::kInvalidInt &&
-           TMath::Abs(val) < 10 * w )
+           val != numeric_limits<T>::max() && val < 10 * static_cast<T>(w) &&
+           (std::is_unsigned<T>::value || -val < 10 * w) )
     cout << setw(w) << val;
   else
     cout << " --- ";
@@ -824,21 +826,7 @@ void THaAnalysisObject::WriteValue( T val, int p, int w )
 template void THaAnalysisObject::WriteValue<Double_t>( Double_t val, int p=0, int w=5 );
 template void THaAnalysisObject::WriteValue<Float_t>( Float_t val, int p=0, int w=5 );
 template void THaAnalysisObject::WriteValue<Int_t>( Int_t val, int p=0, int w=5 );
-
-template<>
-void THaAnalysisObject::WriteValue<UInt_t>( UInt_t val, int /*p*/, int w )
-{
-  // Helper function for printing debug information -- for unsigned int
-  ios_base::fmtflags fmt = cout.flags();
-  streamsize prec = cout.precision();
-  if( val != THaVar::kInvalidInt && val != kMaxUInt &&
-      val < 10 * static_cast<UInt_t>(w) )
-    cout << setw(w) << val;
-  else
-    cout << " --- ";
-  cout.flags(fmt);
-  cout.precision(prec);
-}
+template void THaAnalysisObject::WriteValue<UInt_t>( UInt_t val, int p=0, int w=5 );
 
 #endif
 
