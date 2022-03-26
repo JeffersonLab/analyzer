@@ -593,22 +593,31 @@ Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key,
   // Values with time stamps later than 'date' are ignored.
   // This allows incremental organization of the database where
   // only changes are recorded with time stamps.
-  // Return 0 if success, 1 if key not found, <0 if unexpected error.
+  // Return values:
+  //    0: success
+  //    1: key not found
+  //   -1: unexpected error (errno != 0)
+  // -255: bad argument
 
   if( !file || !key ) return -255;
+
+  static const string here("LoadDBvalue");
+  constexpr Int_t bufsiz = 256;
+  unique_ptr<char[]> buf{new char[bufsiz]};
+  char* const bufp = buf.get();
+
   TDatime keydate(950101, 0), prevdate(950101, 0);
+  bool found = false, do_ignore = false;
+  string dbline;
+  vector<string> lines;
 
   errno = 0;
   errtxt.clear();
   rewind(file);
+  if( errno )
+    goto err;
 
-  constexpr Int_t bufsiz = 256;
-  unique_ptr<char[]> buf{new char[bufsiz]};
-
-  bool found = false, do_ignore = false;
-  string dbline;
-  vector<string> lines;
-  while( ReadDBline(file, buf.get(), bufsiz, dbline) != EOF ) {
+  while( ReadDBline(file, bufp, bufsiz, dbline) != EOF ) {
     if( dbline.empty() ) continue;
     // Replace text variables in this database line, if any. Multi-valued
     // variables are supported here, although they are only sensible on the LHS
@@ -622,8 +631,8 @@ Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key,
           // Found a matching key for a newer date than before
           found = true;
           prevdate = keydate;
-          // we do not set do_ignore to true here so that the _last_, not the first,
-          // of multiple identical keys is evaluated.
+          // we do not set do_ignore to true here so that the _last_, not the
+          // first, of multiple identical keys is evaluated.
         }
       } else if( IsDBdate(line, keydate) != 0 )
         do_ignore = (keydate > date || keydate < prevdate);
@@ -631,7 +640,9 @@ Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key,
   }
 
   if( errno ) {
-    perror("LoadDBvalue");
+err:
+    strerror_r(errno, bufp, bufsiz);
+    errtxt = here + bufp;
     return -1;
   }
   return found ? 0 : 1;
@@ -889,7 +900,17 @@ Int_t LoadDatabase( FILE* f, const TDatime& date, const DBRequest* req,
   // Load a list of parameters from the database file 'f' according to
   // the contents of the 'req' structure (see VarDef.h).
 
-  if( !req ) return -255;
+  if( !f ) {
+    ::Error(::Here(here, prefix),
+            "Bad argument FILE* = NULL. Probably file not found. "
+            "Make sure to check for success after opening DB file.");
+    return -255;
+  }
+  if( !req ) {
+    ::Warning(::Here(here, prefix),
+            "Database request is NULL. Nothing loaded.");
+    return 0;
+  }
   if( !prefix ) prefix = "";
   Int_t ret = 0;
   if( loaddb_depth++ == 0 )
@@ -1012,6 +1033,10 @@ Int_t LoadDatabase( FILE* f, const TDatime& date, const DBRequest* req,
           ret = 1 + static_cast<Int_t>(std::distance(req, item));
           break;
         }
+      } else if( ret == -1 ) {  // errno != 0
+        ::Error(::Here(here, loaddb_prefix.c_str()),
+                R"(Key "%s": File read error in %s )",
+                key, errtxt.c_str());
       } else if( ret == -2 ) {  // Unsupported type
         if( item->type >= kDouble && item->type <= kObject2P )
           ::Error(::Here(here, loaddb_prefix.c_str()),
@@ -1024,29 +1049,30 @@ Int_t LoadDatabase( FILE* f, const TDatime& date, const DBRequest* req,
         break;
       } else if( ret == -128 ) {  // Line too long
         ::Error(::Here(here, loaddb_prefix.c_str()),
-                "Text line too long. Fix the database!\n\"%s...\"",
-                errtxt.c_str());
+                R"(Key "%s": Text line too long. Fix the database!\n"%s...")",
+                key, errtxt.c_str());
         break;
       } else if( ret == -129 ) {  // Matrix ncols mismatch
         ::Error(::Here(here, loaddb_prefix.c_str()),
-                "Number of matrix elements not evenly divisible by requested "
-                "number of columns. Fix the database!\n\"%s...\"",
-                errtxt.c_str());
+                R"(Key "%s": Number of matrix elements not evenly divisible)"
+                R"(by requested number of columns. Fix the database!\n"%s...")",
+                key, errtxt.c_str());
         break;
       } else if( ret == -130 ) {  // Vector/array size mismatch
         ::Error(::Here(here, loaddb_prefix.c_str()),
-                "Incorrect number of array elements found for key = %s. "
-                "%u requested, %u found. Fix database.", keystr.c_str(),
+                R"(Key "%s": Incorrect number of array elements found. )"
+                "%u requested, %u found. Fix database.", key,
                 item->nelem, nelem);
         break;
       } else if( ret == -131 ) {  // Error converting string to numerical value
         ::Error(::Here(here, loaddb_prefix.c_str()),
-                "Numerical conversion error: %s. ", errtxt.c_str());
+                R"(Key "%s": Numerical conversion error: %s. )",
+                key, errtxt.c_str());
         break;
       } else {  // other ret < 0: unexpected zero pointer etc.
         ::Error(::Here(here, loaddb_prefix.c_str()),
-                R"(Program error when trying to read database key "%s". )"
-                "CALL EXPERT!", key);
+                R"(Program error %d when trying to read database key "%s". )"
+                "CALL EXPERT!", ret, key);
         break;
       }
     }
