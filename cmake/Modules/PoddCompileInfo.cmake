@@ -2,8 +2,21 @@
 # The actual work is done by a small helper script.
 
 # If shell scripts are not supported on some platform, one could put logic here
-# to select a platform-specfic script/program
+# to select a platform-specific script/program
 set(_compileinfo_cmd get_compileinfo.sh)
+
+# Find git to get the full functionality from get_compileinfo.sh
+# If not found, quietly continue since it is not essential
+find_package(Git QUIET)
+if( Git_FOUND )
+  include(GetGitRevision)
+  get_git_info(_git_hash _git_shortdate _git_date _git_description)
+  if(_git_hash)
+    set(${PROJECT_NAME_UC}_BUILD_DATE     "${_git_shortdate}")
+    set(${PROJECT_NAME_UC}_BUILD_DATETIME "${_git_date}")
+    set(${PROJECT_NAME_UC}_GIT_REVISION   "${_git_description}")
+  endif()
+endif()
 
 find_program(GET_COMPILEINFO ${_compileinfo_cmd}
   HINTS
@@ -16,8 +29,7 @@ if(NOT GET_COMPILEINFO)
     "PoddCompileInfo: Cannot find ${_compileinfo_cmd}. Check your Podd installation.")
 endif()
 
-
-execute_process(COMMAND "${GET_COMPILEINFO}" "${CMAKE_CXX_COMPILER}" "${CMAKE_SOURCE_DIR}"
+execute_process(COMMAND "${GET_COMPILEINFO}" "${CMAKE_CXX_COMPILER}"
   OUTPUT_VARIABLE _compileinfo_out
   ERROR_VARIABLE _compileinfo_err
   OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -25,7 +37,7 @@ execute_process(COMMAND "${GET_COMPILEINFO}" "${CMAKE_CXX_COMPILER}" "${CMAKE_SO
 
 if(_compileinfo_err)
   message(FATAL_ERROR "Error running ${_compileinfo_cmd}:
-_compileinfo_err")
+${_compileinfo_err}")
 endif()
 
 string(REGEX REPLACE "\n" ";" _compileinfo "${_compileinfo_out}")
@@ -34,12 +46,14 @@ if(NOT _compileinfo_len EQUAL 7)
   message(FATAL_ERROR
     "Need exactly 7 items from ${_compileinfo_cmd}, got ${_compileinfo_len}")
 endif()
-list(GET _compileinfo 0 ${PROJECT_NAME_UC}_BUILD_DATE)
-list(GET _compileinfo 1 ${PROJECT_NAME_UC}_BUILD_DATETIME)
-list(GET _compileinfo 2 ${PROJECT_NAME_UC}_PLATFORM)
-list(GET _compileinfo 3 ${PROJECT_NAME_UC}_NODE)
-list(GET _compileinfo 4 ${PROJECT_NAME_UC}_BUILD_USER)
-list(GET _compileinfo 5 ${PROJECT_NAME_UC}_GIT_REVISION)
+if(NOT _git_hash)
+  list(GET _compileinfo 0 ${PROJECT_NAME_UC}_BUILD_DATE)
+  list(GET _compileinfo 1 ${PROJECT_NAME_UC}_BUILD_DATETIME)
+  list(GET _compileinfo 2 ${PROJECT_NAME_UC}_GIT_REVISION)
+endif()
+list(GET _compileinfo 3 ${PROJECT_NAME_UC}_PLATFORM)
+list(GET _compileinfo 4 ${PROJECT_NAME_UC}_NODE)
+list(GET _compileinfo 5 ${PROJECT_NAME_UC}_BUILD_USER)
 list(GET _compileinfo 6 ${PROJECT_NAME_UC}_CXX_VERSION)
 
 unset(_compileinfo_cmd)

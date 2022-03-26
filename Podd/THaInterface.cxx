@@ -177,8 +177,7 @@ void THaInterface::PrintLogo( Bool_t lite )
    else if ( iyear < 1900 )
      mille = 1900 + iyear;
    ostringstream ostr;
-   ostr << months[imonth] << " " << iday << " " << mille;
-   TString root_date = ostr.str().c_str();
+   ostr << iday << " " << months[imonth] << " " << mille;
 
    if( !lite ) {
      Printf("  ************************************************");
@@ -187,7 +186,7 @@ void THaInterface::PrintLogo( Bool_t lite )
      Printf("  *       H A L L A   C++  A N A L Y Z E R       *");
      Printf("  *                                              *");
      Printf("  *  Release %16s %18s *",HA_VERSION,HA_DATE);
-     Printf("  *  Based on ROOT %8s %20s *",root_version,root_date.Data());
+     Printf("  *  Based on ROOT %10s %18s *",root_version,ostr.str().c_str());
 //     Printf("  *             Development version              *");
      Printf("  *                                              *");
      Printf("  *            For information visit             *");
@@ -231,6 +230,7 @@ const char* THaInterface::GetVersionString()
     ostr << "Podd " << HA_VERSION << " " << HA_PLATFORM;
     if( strlen(HA_GITREV) > 0 )
       ostr << " git @" << HA_GITREV;
+    ostr << " " << HA_DATE;
     if( strlen(HA_ROOTVERS) )
       ostr << " ROOT " << HA_ROOTVERS;
     version_string = ostr.str().c_str();
