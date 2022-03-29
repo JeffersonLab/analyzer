@@ -12,11 +12,11 @@
 OUT="$2".tmp
 printf "#define HA_GITREV" > "$OUT"
 if [ "$1" != "nogit" ]; then
-  printf " \"%s\"\n" "$($1 describe --tags --always --long --dirty)" >> "$OUT"
+  printf " \"%s\"\n" "$($1 describe --tags --always --long --dirty 2>/dev/null)" >> "$OUT"
 else
   printf "\n" >> "$OUT"
 fi
-if cmp "$OUT" "$2"; then
+if cmp -s "$OUT" "$2"; then
   # nothing changed, do not rewrite (to prevent unneeded rebuild)
   rm -f "$OUT"
 else
