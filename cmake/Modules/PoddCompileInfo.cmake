@@ -5,22 +5,42 @@
 # to select a platform-specific script/program
 set(_compileinfo_cmd get_compileinfo.sh)
 
-# Find git to get the full functionality from get_compileinfo.sh
-# If not found, quietly continue since it is not essential
+# Find git to get git revision info and commit date.
+# If not found, quietly continue since the code can be built without git.
 find_package(Git QUIET)
 if( Git_FOUND )
   include(GetGitRevision)
-  get_git_info(_git_hash _git_shortdate _git_date _git_description)
+  get_git_info(_git_hash _git_shortdate _git_date)
   if(_git_hash)
     set(${PROJECT_NAME_UC}_BUILD_DATE     "${_git_shortdate}")
     set(${PROJECT_NAME_UC}_BUILD_DATETIME "${_git_date}")
-    set(${PROJECT_NAME_UC}_GIT_REVISION   "${_git_description}")
   endif()
 endif()
 
+set(_get_git_description_cmd get_git_description.sh)
+find_program(GITDESCRIPTION ${_get_git_description_cmd}
+  HINTS ${CMAKE_CURRENT_LIST_DIR}/..
+  PATH_SUFFIXES scripts
+  DOC "External helper program for retrieving git description"
+  )
+if(NOT GITDESCRIPTION)
+  message(FATAL_ERROR
+    "PoddCompileInfo: Cannot find ${_get_git_description_cmd}. Check your Podd installation.")
+endif()
+if(_git_hash)
+  set(_git "${GIT_EXECUTABLE}")
+else()
+  set(_git nogit)
+endif()
+add_custom_target(GitDescription
+  COMMAND "${GITDESCRIPTION}" "${_git}" "${CMAKE_CURRENT_BINARY_DIR}/git_description.h"
+  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+  BYPRODUCTS git-description.h
+  VERBATIM
+  )
+
 find_program(GET_COMPILEINFO ${_compileinfo_cmd}
-  HINTS
-    ${CMAKE_CURRENT_LIST_DIR}/..
+  HINTS ${CMAKE_CURRENT_LIST_DIR}/..
   PATH_SUFFIXES scripts
   DOC "External helper program to report current build metadata"
   )

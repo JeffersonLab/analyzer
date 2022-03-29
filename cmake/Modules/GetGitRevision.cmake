@@ -75,7 +75,7 @@ function(_git_date_to_shortdate _date _shortdate)
     endif()
 endfunction()
 
-function(get_git_info _hashvar _shortdatevar _datevar _dscrptvar)
+function(get_git_info _hashvar _shortdatevar _datevar)
     _git_find_closest_git_dir("${CMAKE_CURRENT_SOURCE_DIR}" GIT_DIR)
 
     if("${ARGN}" STREQUAL "ALLOW_LOOKING_ABOVE_CMAKE_SOURCE_DIR")
@@ -95,7 +95,6 @@ function(get_git_info _hashvar _shortdatevar _datevar _dscrptvar)
         set(${_hashvar}      "GITDIR-NOTFOUND" PARENT_SCOPE)
         set(${_shortdatevar} "GITDIR-NOTFOUND" PARENT_SCOPE)
         set(${_datevar}      "GITDIR-NOTFOUND" PARENT_SCOPE)
-        set(${_dscrptvar}    "GITDIR-NOTFOUND" PARENT_SCOPE)
         return()
     endif()
 
@@ -143,7 +142,6 @@ function(get_git_info _hashvar _shortdatevar _datevar _dscrptvar)
         set(${_hashvar}      "HEAD-NOTFOUND" PARENT_SCOPE)
         set(${_shortdatevar} "HEAD-NOTFOUND" PARENT_SCOPE)
         set(${_datevar}      "HEAD-NOTFOUND" PARENT_SCOPE)
-        set(${_dscrptvar}    "HEAD-NOTFOUND" PARENT_SCOPE)
         return()
     endif()
 
@@ -162,7 +160,7 @@ function(get_git_info _hashvar _shortdatevar _datevar _dscrptvar)
     set(${_hashvar} "${HEAD_HASH}" PARENT_SCOPE)
 
     execute_process(
-      COMMAND "${GIT_EXECUTABLE}" show --no-patch --format=%cD
+      COMMAND "${GIT_EXECUTABLE}" show --no-patch --format=%cD ${HEAD_HASH}
       WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
       RESULT_VARIABLE res
       OUTPUT_VARIABLE out
@@ -178,17 +176,5 @@ function(get_git_info _hashvar _shortdatevar _datevar _dscrptvar)
     else()
         set(${_shortdatevar} "${out}" PARENT_SCOPE)
     endif()
-
-    execute_process(
-      COMMAND "${GIT_EXECUTABLE}" describe --tags --always --long --dirty
-      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-      RESULT_VARIABLE res
-      OUTPUT_VARIABLE out
-      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(NOT res EQUAL 0)
-        set(out "${out}-${res}-NOTFOUND")
-    endif()
-    set(${_dscrptvar} "${out}" PARENT_SCOPE)
 
 endfunction()
