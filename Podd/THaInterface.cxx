@@ -225,14 +225,17 @@ const char* THaInterface::GetVersionString()
 
   static TString version_string;
 
+  //Podd 1.7.1.0-dev git@Release-170-10-gf6087c2f-dirty 29 Mar 2022 macOS 11.6.4 clang++ 13.0.0 ROOT 6.24/06
   if( version_string.IsNull() ) {
     ostringstream ostr;
-    ostr << "Podd " << HA_VERSION << " " << HA_PLATFORM;
+    ostr << "Podd " << HA_VERSION;
     if( strlen(HA_GITREV) > 0 )
-      ostr << " git @" << HA_GITREV;
-    ostr << " " << HA_DATE;
+      ostr << " git@" << HA_GITREV;
+    ostr << " " << HA_DATE << endl;
+    ostr << "Built for " << HA_OSVERS;
+    ostr << " using " << HA_CXXSHORTVERS;
     if( strlen(HA_ROOTVERS) )
-      ostr << " ROOT " << HA_ROOTVERS;
+      ostr << ", ROOT " << HA_ROOTVERS;
     version_string = ostr.str().c_str();
   }
   return version_string.Data();

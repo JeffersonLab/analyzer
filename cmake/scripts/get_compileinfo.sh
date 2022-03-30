@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Helper script for getting build process metadata.
 #
@@ -8,7 +8,7 @@
 #   Exactly 7 lines
 #    current date (DD MMM YYYY)
 #    current date+time+TZ offset (RFC2822)
-#    (empty line)
+#    short OS description
 #    platform string
 #    host name
 #    user name
@@ -16,8 +16,24 @@
 
 date "+%d %b %Y"
 date "+%a, %d %b %Y %H:%M:%S %z"
-# This used to be the git revision, which is now retrieved from within CMake
-echo
+if [ -r /etc/os-release ]; then
+  . /etc/os-release
+  IFS=" " read -ra namearr <<< $NAME
+  echo ${namearr[0]} $VERSION_ID
+else
+  if [ "$(uname -s)" = "Darwin" ]; then
+    NAME="macOS"
+    VERSION_ID="$(sw_vers | grep ProductVersion | cut -f2)"
+  elif [ "$(uname -s)" = "Linux" ]; then
+    NAME="Linux"
+    IFS="." read -ra verarr <<< "$(uname -r)"
+    VERSION_ID=${verarr[0]}.${verarr[1]}
+  else
+    NAME="$(uname -s)"
+    VERSION_ID="$(uname -r)"
+  fi
+  echo $NAME $VERSION_ID
+fi
 echo "$(uname -s)-$(uname -r)-$(uname -m)"
 uname -n
 whoami
