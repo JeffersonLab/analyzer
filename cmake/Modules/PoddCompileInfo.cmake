@@ -32,7 +32,7 @@ if(_git_hash)
 else()
   set(_git nogit)
 endif()
-add_custom_target(GitDescription
+add_custom_target(gitrev
   COMMAND "${GITDESCRIPTION}" "${_git}" "${CMAKE_CURRENT_BINARY_DIR}/git_description.h"
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
   BYPRODUCTS git-description.h
