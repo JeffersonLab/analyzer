@@ -287,15 +287,15 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
   const Int_t nSignCombos = 2; //Number of different sign combinations
   for (int i = 0; i < nSignCombos; i++) {
     Double_t sumX  = 0.0;   //Positions
-    Double_t sumXW = 0.0;
+//    Double_t sumXW = 0.0;
     Double_t sumXX = 0.0;
     Double_t sumY  = 0.0;   //Drift distances
     Double_t sumXY = 0.0;
-    Double_t sumYY = 0.0;
-    Double_t sumXXW= 0.0;
+//    Double_t sumYY = 0.0;
+//    Double_t sumXXW= 0.0;
 
     Double_t W = 0.0;
-    Double_t WW= 0.0;
+//    Double_t WW= 0.0;
 
     if (i == 0)
       for (int j = pivotNum+1; j < GetSize(); j++)
@@ -310,14 +310,14 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
 
       if (w <= 0) continue;
       W     += w;
-      WW    += w*w;
+//      WW    += w*w;
       sumX  += x * w;
-      sumXW += x * w * w;
+//      sumXW += x * w * w;
       sumXX += x * x * w;
-      sumXXW+= x * x * w * w;
+//      sumXXW+= x * x * w * w;
       sumY  += y * w;
       sumXY += x * y * w;
-      sumYY += y * y * w;
+//      sumYY += y * y * w;
     }
 
     // Standard formulae for linear regression (see Bevington)
@@ -493,7 +493,7 @@ void THaVDCCluster::Linear3DFit( Double_t& m, Double_t& b, Double_t& d0 ) const
   Double_t sumX   = 0.0;   //Positions
   Double_t sumXX  = 0.0;
   Double_t sumD   = 0.0;   //Drift distances
-  Double_t sumXD  = 0.0;
+//  Double_t sumXD  = 0.0;
   Double_t sumS   = 0.0;   //sign vector
   Double_t sumSX  = 0.0;
   Double_t sumSD  = 0.0;
@@ -518,7 +518,7 @@ void THaVDCCluster::Linear3DFit( Double_t& m, Double_t& b, Double_t& d0 ) const
     sumX   += x * w;
     sumXX  += x * x * w;
     sumD   += d * w;
-    sumXD  += x * d * w;
+//    sumXD  += x * d * w;
     sumS   += s * w;
     sumSX  += s * x * w;
     sumSD  += s * d * w;
