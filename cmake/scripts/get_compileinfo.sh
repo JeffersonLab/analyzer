@@ -19,7 +19,7 @@ date "+%a, %d %b %Y %H:%M:%S %z"
 if [ -r /etc/os-release ]; then
   . /etc/os-release
   IFS=" " read -ra namearr <<< $NAME
-  echo ${namearr[0]} $VERSION_ID
+  NAME=${namearr[0]}
 else
   if [ "$(uname -s)" = "Darwin" ]; then
     NAME="macOS"
@@ -32,8 +32,8 @@ else
     NAME="$(uname -s)"
     VERSION_ID="$(uname -r)"
   fi
-  echo $NAME $VERSION_ID
 fi
+[ -n "$VERSION_ID" ] && echo $NAME-$VERSION_ID || echo $NAME
 echo "$(uname -s)-$(uname -r)-$(uname -m)"
 uname -n
 whoami
