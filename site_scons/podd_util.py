@@ -215,10 +215,15 @@ import time
 def write_compiledata(env, compiledata):
     if sys.version_info >= (2, 7):
         try:
-            cmd = "git rev-parse HEAD 2>/dev/null"
+            cmd = "git describe --tags --always --long --dirty 2>/dev/null"
             gitrev = subprocess.check_output(cmd, shell=True).rstrip()
         except:
             gitrev = ''
+        try:
+            cmd = "git show --no-patch --format=%cD HEAD 2>/dev/null"
+            gitdate = subprocess.check_output(cmd, shell=True).rstrip()
+        except:
+            gitdate = ''
         try:
             cmd = env.subst('$CXX') + " --version 2>/dev/null | head -1"
             cxxver = subprocess.check_output(cmd, shell=True).rstrip()
@@ -228,14 +233,22 @@ def write_compiledata(env, compiledata):
         # Unicode strings
         if sys.version_info >= (3, 0):
             gitrev = gitrev.decode()
+            gitdate = gitdate.decode()
             cxxver = cxxver.decode()
     else:
         fnull = open(os.devnull, 'w')
         try:
-            gitrev = subprocess.Popen(['git', 'rev-parse', 'HEAD', '2>dev/null'],
+            gitrev = subprocess.Popen(['git', 'describe', '--tags', '--always',
+                                       '--long', '--dirty', '2>dev/null'],
                         stdout=subprocess.PIPE, stderr=fnull).communicate()[0].rstrip()
         except:
             gitrev =''
+        try:
+            gitdate = subprocess.Popen(['git', 'describe', '--tags', '--always',
+                                        '--long', '--dirty', '2>dev/null'],
+                                        stdout=subprocess.PIPE, stderr=fnull).communicate()[0].rstrip()
+        except:
+            gitdate =''
         try:
             outp = subprocess.Popen([env.subst('$CXX'), '--version'],
                                     stdout=subprocess.PIPE, stderr=fnull).communicate()[0]
@@ -251,10 +264,14 @@ def write_compiledata(env, compiledata):
     f.write('#define HA_INCLUDEPATH "%s %s %s"\n' %
             (env.subst('$HA_HallA'), env.subst('$HA_Podd'), env.subst('$HA_DC')))
     f.write('#define HA_VERSION "%s"\n' % env.subst('$HA_VERSION'))
-    f.write('#define HA_DATE "%s"\n' % time.strftime("%b %d %Y"))
-    f.write('#define HA_DATETIME "%s"\n' % time.strftime("%a %b %d %Y"))
-    #f.write('#define HA_DATETIME "%s"\n' % time.strftime("%a %b %d %H:%M:%S %Z %Y"))
-    f.write('#define HA_PLATFORM "%s"\n' % platform.platform())
+    if gitdate:
+        f.write('#define HA_SOURCETIME "%s"\n' % gitdate)
+    else:
+        # Unknown git date (probably building from tarball)
+        f.write('#define HA_SOURCETIME "%s"\n' % time.strftime("%a, %d %b %Y %H:%M:%S %z"))
+    f.write('#define HA_OSVERS "%s"\n' % platform.platform(terse=1))
+    f.write('#define HA_PLATFORM "%s-%s-%s"\n' % (platform.system(), platform.release(), platform.machine()))
+    f.write('#define HA_BUILDTIME "%s"\n' % time.strftime("%a, %d %b %Y %H:%M:%S %z"))
     f.write('#define HA_BUILDNODE "%s"\n' % platform.node())
     f.write('#define HA_BUILDDIR "%s"\n' % os.getcwd())
     try:
@@ -262,11 +279,25 @@ def write_compiledata(env, compiledata):
     except:
         builduser = ''
     f.write('#define HA_BUILDUSER "%s"\n' % builduser)
-    f.write('#define HA_GITREV "%s"\n' % gitrev[:7])
+    f.write('#define HA_GITREV "%s"\n' % gitrev)
     f.write('#define HA_CXXVERS "%s"\n' % cxxver)
+    if cxxver:
+        fields = cxxver.split()
+        if len(fields) >= 2:
+            if fields[0] == 'Apple':
+                cxxver = fields[-1][1:-1]
+            elif fields[0] == 'clang':
+                cxxver = fields[0] + '-' + fields[2]
+            elif fields[0] == 'g++':
+                i=1
+                while i<len(fields) and fields[i][-1] != ')':
+                    i += 1
+                if i+1 < len(fields):
+                    cxxver = fields[0] + '-' + fields[i+1]
+    f.write('#define HA_CXXSHORTVERS "%s"\n' % cxxver)
     f.write('#define HA_ROOTVERS "%s"\n' % env.subst('$ROOTVERS'))
+    f.write('\n')
     f.write('#define ANALYZER_VERSION_CODE %s\n' % env.subst('$VERCODE'))
     f.write('#define ANALYZER_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))\n')
-    f.write('\n')
     f.write('#endif\n')
     f.close()
