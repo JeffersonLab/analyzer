@@ -177,7 +177,10 @@ void THaInterface::PrintLogo( Bool_t lite )
    else if ( iyear < 1900 )
      mille = 1900 + iyear;
    ostringstream ostr;
-   ostr << iday << " " << months[imonth] << " " << mille;
+   ostr << setw(2) << setfill('0') << iday << setfill(' ');
+   ostr << " " << months[imonth] << " " << mille;
+   TString tmp(ostr.str().c_str());
+   const char* root_date = tmp.Data();
 
    if( !lite ) {
      Printf("  ************************************************");
@@ -185,9 +188,11 @@ void THaInterface::PrintLogo( Bool_t lite )
      Printf("  *            W E L C O M E  to  the            *");
      Printf("  *       H A L L A   C++  A N A L Y Z E R       *");
      Printf("  *                                              *");
-     Printf("  *  Release %16s %18s *",HA_VERSION,HA_DATE);
-     Printf("  *  Based on ROOT %10s %18s *",root_version,ostr.str().c_str());
-//     Printf("  *             Development version              *");
+     Printf("  *  Release %16s %18s *", HA_VERSION, GetHaDate());
+     Printf("  *  Based on ROOT %10s %18s *", root_version, root_date);
+     if( strstr(HA_VERSION, "-dev") || strstr(HA_VERSION, "alpha") ||
+         strstr(HA_VERSION, "beta") || strstr(HA_VERSION, "rc") )
+       Printf("  *             Development version              *");
      Printf("  *                                              *");
      Printf("  *            For information visit             *");
      Printf("  * https://redmine.jlab.org/projects/podd/wiki/ *");
@@ -219,19 +224,56 @@ const char* THaInterface::GetVersion()
 }
 
 //_____________________________________________________________________________
+static inline TString extract_short_date( const char* long_date )
+{
+  // Extract date from git %cD format long date string. For example,
+  // "Tue, 29 Mar 2022 22:29:10 -0400" -> "29 Mar 2022"
+  TString d{long_date};
+  Ssiz_t pos = 0, i = 0, start = 0;
+  while( (pos = d.Index(" ", pos)) != kNPOS ) {
+    ++i;
+    if( i == 4 )
+      return d(start, pos-start);
+    while( d[++pos] == ' ' && pos < d.Length() );
+    if( i == 1 )
+      start = pos;
+  }
+  return d;
+}
+
+//_____________________________________________________________________________
+const char* THaInterface::GetHaDate()
+{
+  static TString ha_date;
+
+  if( ha_date.IsNull() ) {
+    bool use_buildtime = true;
+    size_t len = strlen(HA_GITREV);
+    if( len > 0 ) {
+      const char* gitrev = HA_GITREV;
+      use_buildtime = (len > 6 && strcmp(gitrev + len - 6, "-dirty") == 0);
+    }
+    if( use_buildtime )
+      ha_date = extract_short_date(HA_BUILDTIME);
+    else
+      ha_date = extract_short_date(HA_SOURCETIME);
+  }
+  return ha_date;
+}
+
+//_____________________________________________________________________________
 const char* THaInterface::GetVersionString()
 {
   // Get software version string (printed by analyzer -v)
 
   static TString version_string;
 
-  //Podd 1.7.1.0-dev git@Release-170-10-gf6087c2f-dirty 29 Mar 2022 macOS 11.6.4 clang++ 13.0.0 ROOT 6.24/06
   if( version_string.IsNull() ) {
     ostringstream ostr;
     ostr << "Podd " << HA_VERSION;
     if( strlen(HA_GITREV) > 0 )
       ostr << " git@" << HA_GITREV;
-    ostr << " " << HA_DATE << endl;
+    ostr << " " << GetHaDate() << endl;
     ostr << "Built for " << HA_OSVERS;
     ostr << " using " << HA_CXXSHORTVERS;
     if( strlen(HA_ROOTVERS) )
