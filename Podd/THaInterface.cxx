@@ -25,13 +25,10 @@
 #include "THaGlobals.h"
 #include "THaAnalyzer.h"
 //#include "THaFileDB.h"
-#include "Textvars.h"   // for gHaTextars
+#include "Textvars.h"   // for gHaTextvars
 #include "ha_compiledata.h"
 #include <cstring>
 #include <sstream>
-
-//#include "TGXW.h"
-//#include "TVirtualX.h"
 
 using namespace std;
 
@@ -226,7 +223,7 @@ const char* THaInterface::GetVersion()
 //_____________________________________________________________________________
 static inline TString extract_short_date( const char* long_date )
 {
-  // Extract date from git %cD format long date string. For example,
+  // Extract date from git format=%cD long date string. For example,
   // "Tue, 29 Mar 2022 22:29:10 -0400" -> "29 Mar 2022"
   TString d{long_date};
   Ssiz_t pos = 0, i = 0, start = 0;
@@ -234,7 +231,7 @@ static inline TString extract_short_date( const char* long_date )
     ++i;
     if( i == 4 )
       return d(start, pos-start);
-    while( d[++pos] == ' ' && pos < d.Length() );
+    while( d[++pos] == ' ' ); // d[d.Length()] is always '\0', so this is safe
     if( i == 1 )
       start = pos;
   }
@@ -258,7 +255,7 @@ const char* THaInterface::GetHaDate()
     else
       ha_date = extract_short_date(HA_SOURCETIME);
   }
-  return ha_date;
+  return ha_date.Data();
 }
 
 //_____________________________________________________________________________
@@ -290,18 +287,18 @@ TClass* THaInterface::SetDecoder( TClass* c )
   // actually inherits from the standard THaEvData decoder.
   // Returns the decoder class (i.e. its argument) or nullptr if error.
 
+  const char* const here = "THaInterface::SetDecoder";
+
   if( !c ) {
-    ::Error("THaInterface::SetDecoder", "argument is nullptr");
+    ::Error(here, "argument is nullptr");
     return nullptr;
   }
   if( !c->InheritsFrom("THaEvData")) {
-    ::Error("THaInterface::SetDecoder",
-	    "decoder class must inherit from THaEvData");
+    ::Error(here, "decoder class must inherit from THaEvData");
     return nullptr;
   }
 
-  gHaDecoder = c;
-  return gHaDecoder;
+  return gHaDecoder = c;
 }
 
 //_____________________________________________________________________________
