@@ -814,7 +814,7 @@ void THaAnalysisObject::WriteValue( T val, int p, int w )
     cout << fixed << setprecision(p) << setw(w) << val;
   else if( std::is_integral<T>::value && val != THaVar::kInvalidInt &&
            val != numeric_limits<T>::max() && val < 10 * static_cast<T>(w) &&
-           (std::is_unsigned<T>::value || -val < 10 * w) )
+           (std::is_unsigned<T>::value || -val < 10 * static_cast<T>(w)) )
     cout << setw(w) << val;
   else
     cout << " --- ";
