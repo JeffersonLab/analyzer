@@ -29,6 +29,7 @@
 #include "ha_compiledata.h"
 #include <cstring>
 #include <sstream>
+#include <iomanip>
 
 using namespace std;
 
