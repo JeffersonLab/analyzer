@@ -862,7 +862,7 @@ Int_t load_and_assign( FILE* f, const TDatime& date, const char* key,
         nelem = vals.size();
         st = -130;
       } else {
-        memcpy( dest, vals.data(), nelem*sizeof(Double_t));
+        memcpy( dest, vals.data(), nelem*sizeof(T));
       }
     }
   }
