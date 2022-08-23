@@ -23,7 +23,6 @@
 #include <cstdlib>   // for atoi, strtod, strtol etc.
 #include <iterator>  // for std::distance
 #include <ctime>     // for struct tm
-#include <iostream>
 #include <limits>
 #include <algorithm>
 
@@ -1209,6 +1208,62 @@ Int_t SeekDBdate( FILE* file, const TDatime& date, Bool_t end_on_tag )
 }
 
 //_____________________________________________________________________________
+Int_t SeekDBdate( istream& istr, const TDatime& date, Bool_t end_on_tag )
+{
+  // Starting from the current position in input stream 'istr', look for a
+  // date tag matching time stamp 'date'. Position the stream on the
+  // line immediately following the tag. If no tag found, return to
+  // the original position in the stream.
+  // Return zero if not found, 1 otherwise.
+  // Date tags must be in SQL format: [ yyyy-mm-dd hh:mi:ss ].
+  // If 'end_on_tag' is true, end the search at the next non-date tag;
+  // otherwise, search through end of stream.
+  // Useful for sub-segmenting database files.
+
+  //static const char* const here = "SeekDBdate";
+
+  if( !istr.good() )
+    return 0;
+  TDatime tagdate(950101, 0), prevdate(950101, 0);
+  const bool kNoWarn = false;
+
+  auto pos = istr.tellg();
+  if( pos == -1 )
+    return 0;
+
+  string line;
+  decltype(pos) foundpos{-1};
+  bool found = false;
+  while( getline(istr, line) ) {
+    auto lpos = line.find_first_of("!#");
+    if( lpos != string::npos )
+      line.erase(lpos);
+    if( line.find_first_not_of(" \t") == string::npos )
+      continue;
+    if( IsDBdate(line, tagdate, kNoWarn)
+        && tagdate <= date && tagdate >= prevdate ) {
+      prevdate = tagdate;
+      foundpos = istr.tellg();
+      found = true;
+    } else if( end_on_tag && IsTag(line.c_str()) )
+      break;
+  }
+  if( istr.fail() && !istr.eof() ) {
+    cerr << "Error reading database" << endl;
+    found = false;
+  }
+  if( !istr.seekg((found ? foundpos : pos), ios_base::beg) )
+    found = false;
+  return found;
+}
+
+//_____________________________________________________________________________
+Bool_t IsDBtimestamp( const string& line, TDatime& date )
+{
+  return IsDBdate(line, date, true);
+}
+
+//_____________________________________________________________________________
 #ifdef __clang__
 // Clang appears to make implicitly instantiated template functions private
 // symbols when linking optimized code. Prevent this with explicit instantiations.
@@ -1243,4 +1298,3 @@ template Int_t LoadDBmatrix( FILE*, const TDatime&, const char*,
 #endif
 
 } // namespace Podd
-

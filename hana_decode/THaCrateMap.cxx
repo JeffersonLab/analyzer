@@ -101,12 +101,22 @@ UInt_t THaCrateMap::getScalerCrate( UInt_t word) const
 }
 
 //_____________________________________________________________________________
+Int_t THaCrateMap::resetCrate( UInt_t crate )
+{
+  static const CrateInfo_t empty_crateinfo;
+  if( crate >= crdat.size() )
+    return CM_ERR;
+  crdat[crate] = empty_crateinfo;
+  setUnused(crate);
+  return CM_OK;
+}
+
+//_____________________________________________________________________________
 int THaCrateMap::setCrateType( UInt_t crate, const char* type )
 {
   assert(crate < crdat.size());
   string stype(type);
   CrateInfo_t& cr = crdat[crate];
-  cr.crate_used = true;
   cr.crate_type_name = stype;
   if( stype == "fastbus" )
     cr.crate_code = kFastbus;
@@ -120,8 +130,9 @@ int THaCrateMap::setCrateType( UInt_t crate, const char* type )
     cr.crate_used = false;
     cr.crate_type_name = "unknown";
     cr.crate_code = kUnknown;
-    return CM_ERR;
+    return stype == "unused" ? CM_OK : CM_ERR;
   }
+  cr.crate_used = true;
   return CM_OK;
 }
 
@@ -185,11 +196,20 @@ void THaCrateMap::setUsed( UInt_t crate, UInt_t slot )
   auto& cr = crdat[crate];
   cr.crate_used = true;
   cr.sltdat[slot].used = true;
-  if( std::find(used_crates.begin(), used_crates.end(), crate) == used_crates.end() )
+  if( std::find(ALL(used_crates), crate) == used_crates.end() )
     used_crates.push_back(crate);
-  if( std::find(cr.used_slots.begin(), cr.used_slots.end(), slot) == cr.used_slots.end() ) {
+  if( std::find(ALL(cr.used_slots), slot) == cr.used_slots.end() ) {
     cr.used_slots.push_back(slot);
   }
+}
+
+//_____________________________________________________________________________
+void THaCrateMap::setUnused( UInt_t crate )
+{
+  auto jt = std::find(ALL(used_crates), crate);
+  if( jt != used_crates.end() )
+    used_crates.erase(jt);
+  crdat[crate].crate_used = false;
 }
 
 //_____________________________________________________________________________
@@ -198,15 +218,12 @@ void THaCrateMap::setUnused( UInt_t crate, UInt_t slot )
   assert( crate < crdat.size() && slot < crdat[crate].sltdat.size() );
   auto& cr = crdat[crate];
   cr.sltdat[slot].used = false;
-  auto it = std::find(cr.used_slots.begin(), cr.used_slots.end(), slot);
+  auto it = std::find(ALL(cr.used_slots), slot);
   if( it != cr.used_slots.end() ) {
     cr.used_slots.erase(it);
   }
-  if( cr.used_slots.empty() ) {
-    auto jt = std::find(used_crates.begin(), used_crates.end(), crate);
-    if( jt != used_crates.end() )
-      used_crates.erase(jt);
-  }
+  if( cr.used_slots.empty() )
+    setUnused(crate);
 }
 
 //_____________________________________________________________________________
@@ -345,10 +362,114 @@ Int_t THaCrateMap::loadConfig( string& line, string& cfgstr )
 }
 
 //_____________________________________________________________________________
+Int_t THaCrateMap::ParseCrateInfo( const std::string& line, UInt_t& crate )
+{
+  static const char* const here = "THaCrateMap::ParseCrateInfo";
+
+  char ctype[21];
+  if( sscanf(line.c_str(), "Crate %u type %20s", &crate, ctype) == 2 ) {
+    if( !(resetCrate(crate) == CM_OK && setCrateType(crate, ctype) == CM_OK) ) {
+      cerr << "THaCrateMap:: fatal ERROR 2  setCrateType " << endl;
+      return CM_ERR;
+    }
+    // for a scaler crate, get the 'name' or location as well
+    auto& cr = crdat[crate];
+    if( cr.crate_code == kScaler ) {
+      if( sscanf(line.c_str(), "Crate %*u type %*s %20s", ctype) != 1 ) {
+        cerr << "THaCrateMap:: fatal ERROR 3   " << endl;
+        return CM_ERR;
+      }
+      TString scaler_name(ctype);
+      scaler_name.ReplaceAll("\"", ""); // drop extra quotes
+      cr.scalerloc = scaler_name;
+    }
+    return CM_OK;
+    //in_crate = cr.crate_used;  // false for ctype == "unused"
+    //continue; // onto the next line
+  }
+  Error(here, "Invalid/incomplete Crate definition: \"%s\"",
+        line.c_str());
+  return CM_ERR;
+}
+
+//_____________________________________________________________________________
+Int_t THaCrateMap::CrateInfo_t::ParseSlotInfo( THaCrateMap* crmap, UInt_t crate,
+                                               string& line )
+{
+  // 'line' is expected to be the definition for a single module (slot).
+  // Parse it and fill corresponding element of the sltdat array.
+
+  // Check for and extract any configuration string given on the line and,
+  // if found, remove it from line and put a copy in cfgstr.
+  // This is primarily intended for bank-decoded VME and scaler modules.
+  string cfgstr;
+  if( crate_code == kVME /*or code == kScaler*/ ) {
+    Int_t st = crmap->loadConfig(line, cfgstr);
+    if( st != CM_OK )
+      return st;
+  }
+
+  // The line is of the format
+  //        slot  model  [clear header mask nchan ndata ]
+  // where clear, header, mask, nchan and ndata are optional.
+  //
+  // Another option is "bank decoding":  all data in this CODA bank
+  // belongs to this slot and model.  The line has the format
+  //        slot  model  bank
+
+  // Default values
+  Int_t  cword = 1, imodel = 0;
+  UInt_t slot = kMaxUInt;
+  UInt_t mask = 0, iheader = 0, ichan = MAXCHAN, idata = MAXDATA;
+
+  Int_t nread = sscanf(line.c_str(), "%u %d %d %x %x %u %u",
+                       &slot, &imodel, &cword, &iheader, &mask, &ichan, &idata);
+  // must have at least the slot and model numbers
+  if( nread < 2 ) {
+    cerr << "THaCrateMap:: fatal ERROR 4   " << endl << "Bad line " << endl
+         << line << endl
+         << "    Warning: a bad line could cause wrong decoding !" << endl;
+    return CM_ERR;
+  }
+
+  if (nread > 5 )
+    crmap->setModel(crate,slot,imodel,ichan,idata);
+  else
+    crmap->setModel(crate,slot,imodel);
+
+  SlotInfo_t& slt = sltdat[slot];
+  if( nread == 3 )
+    slt.bank = cword;
+  else if( nread > 3 ) {
+    slt.clear = cword;
+    slt.header = iheader;
+    if( nread > 4 )
+      slt.headmask = mask;
+  }
+  slt.cfgstr = std::move(cfgstr);
+
+  return CM_OK;
+}
+
+//_____________________________________________________________________________
+Int_t THaCrateMap::SetBankInfo()
+{
+  for( auto& iused: used_crates ) {
+    auto& cr = crdat[iused];
+    assert(!cr.used_slots.empty());
+    sort(ALL(cr.used_slots));
+    auto slot_is_bank = [&]( UInt_t idx ) { return cr.sltdat[idx].bank >= 0; };
+    cr.bank_structure = any_of(ALL(cr.used_slots), slot_is_bank);
+    cr.all_banks = all_of(ALL(cr.used_slots), slot_is_bank);
+  }
+  sort(ALL(used_crates));
+  return 0;
+}
+
+//_____________________________________________________________________________
 int THaCrateMap::init(const string& the_map)
 {
-  // initialize the crate-map according to the lines in the string 'the_map'
-  // parse each line separately, to ensure that the format is correct
+  // Initialize the crate map according to the lines in the string 'the_map'
 
   const char* const here = "THaCrateMap::init(string)";
 
@@ -369,112 +490,72 @@ int THaCrateMap::init(const string& the_map)
   string line; line.reserve(128);
   istringstream s(the_map);
   Int_t found_tscrate=0;
+  TDatime keydate(950101, 0), prevdate(950101, 0);
+  bool do_ignore = false, in_crate = false;
+  int lineno = 0;
 
   while( getline(s, line) ) {
-    auto pos = line.find_first_of("!#");    // drop comments
+    ++lineno;
+    // Drop comments
+    auto pos = line.find_first_of("!#");
     if( pos != string::npos )
       line.erase(pos);
-
+    // Skip empty or blank lines
     if( line.find_first_not_of(" \t") == string::npos )
-      continue; // empty or blank line
+      continue;
 
-    pos = line.find("TSROC");
-    if( pos != string::npos ) {
-	sscanf(line.c_str(), "TSROC %u", &fTSROC);
-        found_tscrate = 1;
-        continue;
+    // Check for timestamps. Employ the algorithm from Podd::LoadDBvalue, i.e.
+    // read data for timestamps <= init time and newer than prior timestamps.
+    // This may lead to certain crates being defined multiple times as its
+    // parameters are updated for a new validity period.
+    // To remove a previously-defined crate after a certain time stamp, use
+    // crate type "unused".
+    if( Podd::IsDBtimestamp(line, keydate) ) {
+      do_ignore = (keydate > fInitTime || keydate < prevdate);
+      in_crate = false;
+      continue;
+    } else if( do_ignore )
+      continue;
+    prevdate = keydate;
+
+    // Recognize TSROC definition at start of map (or right after a timestamp)
+    if( !in_crate && line.find("TSROC") != string::npos ) {
+      sscanf(line.c_str(), " TSROC %u", &fTSROC);
+      found_tscrate = 1;
+      continue;
     }
 
-// Make the line "==== Crate" not care about how many "=" chars or other
-// chars before "Crate", but lines beginning in # are still a comment
+    Int_t ret = CM_OK;
+
     pos = line.find("Crate");
-    if( pos != string::npos )
+    if( pos != string::npos ) {
+      // Make the line "==== Crate" not care about how many "=" chars or other
+      // chars before "Crate", except that lines beginning with '#' or '!' are
+      // still a comment (filtered out above).
       line.erase(0, pos);
-
-// set the next CRATE number and type
-
-    char ctype[21];
-    if( sscanf(line.c_str(), "Crate %u type %20s", &crate, ctype) == 2 ) {
-      if( crate >= crdat.size() || setCrateType(crate, ctype) != CM_OK ) {
-        cerr << "THaCrateMap:: fatal ERROR 2  setCrateType " << endl;
-	return CM_ERR;
-      }
-      // for a scaler crate, get the 'name' or location as well
-      if( crdat[crate].crate_code == kScaler ) {
-        if( sscanf(line.c_str(), "Crate %*u type %*s %20s", ctype) != 1 ) {
-          cerr << "THaCrateMap:: fatal ERROR 3   " << endl;
-	  return CM_ERR;
-	}
-	TString scaler_name(ctype);
-        scaler_name.ReplaceAll("\"", ""); // drop extra quotes
-        crdat[crate].scalerloc = scaler_name;
-      }
+      // Set the next CRATE number and type
+      if( (ret = ParseCrateInfo(line, crate)) != CM_OK )
+        return ret;
+      in_crate = crdat[crate].crate_used;  // false for crate type "unused"
       continue; // onto the next line
     }
-
-    // Extract any configuration string given on the line and, if found,
-    // remove it from line and put a copy in cfgstr. This is primarily intended
-    // for bank-decoded VME and scaler modules.
-    string cfgstr;
-    auto code = crdat[crate].crate_code;
-    if( code == kVME /*or code == kScaler*/ ) {
-      Int_t st = loadConfig(line, cfgstr);
-      if( st != CM_OK )
-        return st;
-    }
-
-    // The line is of the format:
-    //        slot#  model#  [clear header  mask  nchan ndata ]
-    // where clear, header, mask, nchan and ndata are optional interpreted in
-    // that order.
-    // Another option is "bank decoding" :  all data in this CODA bank
-    // belongs to this slot and model.  The line has the format
-    //        slot#  model#  bank#
-
-    // Default values:
-    Int_t  cword = 1, imodel = 0;
-    UInt_t slot = kMaxUInt;
-    UInt_t mask = 0, iheader = 0, ichan = MAXCHAN, idata = MAXDATA;
-    // must read at least the slot and model numbers
-    Int_t nread = sscanf(line.c_str(),"%u %d %d %x %x %u %u",
-                         &slot,&imodel,&cword,&iheader,&mask,&ichan,&idata);
-    if( nread < 2 ) {
-      // unexpected input
-      cerr << "THaCrateMap:: fatal ERROR 4   " << endl << "Bad line " << endl << line << endl;
-      cerr << "    Warning: a bad line could cause wrong decoding !" << endl;
+    if( crate == kMaxUInt || !in_crate ) {
+      Error(here, "db_%s.dat:%d: Expected Crate definition.\n"
+                  "For example: \"==== Crate 5 type vme\". "
+                  "Found instead: \"%s\"",
+            fDBfileName.c_str(), lineno, line.c_str());
       return CM_ERR;
     }
 
-    if (nread > 5 )
-      setModel(crate,slot,imodel,ichan,idata);
-    else
-      setModel(crate,slot,imodel);
-
-    SlotInfo_t& slt = crdat[crate].sltdat[slot];
-    if( nread == 3 )
-      slt.bank = cword;
-    else if( nread > 3 ) {
-      slt.clear = cword;
-      slt.header = iheader;
-      if( nread > 4 )
-        slt.headmask = mask;
-    }
-    slt.cfgstr = std::move(cfgstr);
+    if( (ret = crdat[crate].ParseSlotInfo(this, crate, line)) != CM_OK )
+      return ret;
   }
 
-  for( auto& iused : used_crates ) {
-    auto& cr = crdat[iused];
-    assert( !cr.used_slots.empty() );
-    sort(ALL(cr.used_slots));
-    auto slot_is_bank = [&]( UInt_t idx ) { return cr.sltdat[idx].bank >= 0; };
-    cr.bank_structure = any_of(ALL(cr.used_slots), slot_is_bank);
-    cr.all_banks = all_of(ALL(cr.used_slots), slot_is_bank);
-  }
-  sort(ALL(used_crates));
+  SetBankInfo();
 
   if ( !found_tscrate ) {
     cout << "THaCrateMap::WARNING:  Did not find TSROC.  Using default " << fTSROC << endl;
-    cout << "THaCrateMap:: It may be ok for SBS, though."<<endl;
+//    cout << "THaCrateMap:: It may be ok for SBS, though."<<endl;
   }
 
   return CM_OK;

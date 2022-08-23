@@ -62,7 +62,8 @@ class THaCrateMap {
      bool crateUsed( UInt_t crate ) const;               // True if crate is used
      bool slotUsed( UInt_t crate, UInt_t slot ) const;   // True if slot in crate is used
      bool slotClear( UInt_t crate, UInt_t slot ) const;  // Decide if not clear ea event
-     void setUnused( UInt_t crate, UInt_t slot );   // Disables this crate,slot
+     void setUnused( UInt_t crate, UInt_t slot );   // Disables this slot in crate
+     void setUnused( UInt_t crate );                // Disables this crate
      int  init(const std::string& the_map);         // Initialize from text-block
      int  init(ULong64_t time = 0);                 // Initialize by Unix time.
      int  init( FILE* fi, const char* fname );      // Initialize from given file
@@ -105,6 +106,7 @@ class THaCrateMap {
      class CrateInfo_t {            // Crate Information data descriptor
      public:
        CrateInfo_t();
+       Int_t ParseSlotInfo( THaCrateMap* crmap, UInt_t crate, std::string& line );
        ECrateCode  crate_code;
        std::string crate_type_name;
        std::string scalerloc;
@@ -119,12 +121,15 @@ class THaCrateMap {
      std::vector<UInt_t> used_crates;
 
      Int_t  loadConfig( std::string& line, std::string& cfgstr );
+     Int_t  resetCrate( UInt_t crate );
      Int_t  setCrateType( UInt_t crate, const char* stype ); // set the crate type
      Int_t  setModel( UInt_t crate, UInt_t slot, Int_t mod,
                       UInt_t nchan= MAXCHAN,
                       UInt_t ndata= MAXDATA );           // set the module type
      void   setUsed( UInt_t crate, UInt_t slot );
      Int_t  SetModelSize( UInt_t crate, UInt_t slot, UInt_t model );
+     Int_t  ParseCrateInfo( const std::string& line, UInt_t& crate );
+     Int_t  SetBankInfo();
 
      static Int_t readFile( FILE* fi, std::string& text );
 
@@ -301,4 +306,3 @@ const std::vector<UInt_t>& THaCrateMap::GetUsedSlots( UInt_t crate ) const
 }
 
 #endif
-

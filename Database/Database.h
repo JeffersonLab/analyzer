@@ -11,10 +11,12 @@
 
 #include "VarDef.h"
 #include "Textvars.h"
+#include "TDatime.h"
 #include <cstdio>  // for FILE
 #include <vector>
 #include <string>
 #include <type_traits>
+#include <iostream>
 
 class TObjArray;
 class TDatime;
@@ -54,6 +56,9 @@ Int_t    LoadDatabase( FILE* file, const TDatime& date, const DBRequest* request
 Int_t    SeekDBdate( FILE* file, const TDatime& date, Bool_t end_on_tag = false );
 Int_t    SeekDBconfig( FILE* file, const char* tag, const char* label = "config",
                        Bool_t end_on_tag = false );
+
+Int_t    SeekDBdate( std::istream& istr, const TDatime& date, Bool_t end_on_tag = false );
+Bool_t   IsDBtimestamp( const std::string& line, TDatime& keydate );
 
 }  // namespace Podd
 
