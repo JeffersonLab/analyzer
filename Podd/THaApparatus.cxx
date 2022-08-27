@@ -67,13 +67,9 @@ Int_t THaApparatus::AddDetector( THaDetector* pdet, Bool_t quiet, Bool_t first )
   // The detector object must be allocated by the caller, but will be
   // deleted by the apparatus.
 
-  auto* theDet = dynamic_cast<THaDetector*>(pdet);
-  if( !theDet ) {
-    Error(Here("AddDetector()"), "Detector %s is not a THaDetector. "
-                                 "Not added.", pdet->GetName());
-    delete pdet;
+  if( !pdet )
     return -1;
-  }
+
   if( fDetectors->FindObject(pdet->GetName()) ) {
     if( !quiet )
       Error("THaApparatus", "Detector with name %s already exists for this"
