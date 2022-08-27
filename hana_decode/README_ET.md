@@ -1,40 +1,36 @@
-
-This file:  README_ET  in ./hana_decode_VERS  (VERS = 1.4 or later)
-Author: Robert Michaels, Jefferson Lab, Hall A.
-
-RE: Usage of ET in Hall A C++/Root Analyzer
-===========================================
+Usage of ET in Hall A C++/Root Analyzer
+=======================================
 
 I. GENERAL REMARKS
-==================
+------------------
 
-   The Event Transfer (ET) system was invented by the Jlab DAQ
-   group for obtaining data online, and for inserting data into the
-   datastream.  It is documented at:
-   coda.jlab.org/coda/Users_Guide/2_1_guide/API/ET/3.1/table_of_contents.htm
-   
-   The CODA classes written by me are "wrappers" around the ET 
-   library (in the case of THaEtClient) and around the EVIO library
-   (in the case of THaCodaFile).  These two derive from abstract
-   class THaCodaData.  The main advantages of this scheme is 
-   to allow a common interface bwteen files and ET, and to 
-   provide a simple, safe usage (e.g. users cannot cause deadtime).
-   More info is at hallaweb.jlab.org/equipment/daq/codaclass.html
+The Event Transfer (ET) system was invented by the Jlab DAQ
+group for obtaining data online, and for inserting data into the
+datastream.  It is documented at:
+coda.jlab.org/coda/Users_Guide/2_1_guide/API/ET/3.1/table_of_contents.htm
 
-   The example listed in the above URL, which is also in tstcoda_main.C
-   in the hana_decode directory, makes it clear how to use the 
-   interface.  The codaclasses are available separately, and 
-   compile on SunOS with CC compiler as well as Linux (RedHat 6.2) 
-   with g++ compiler.
+The CODA classes written by me are "wrappers" around the ET 
+library (in the case of THaEtClient) and around the EVIO library
+(in the case of THaCodaFile).  These two derive from abstract
+class THaCodaData.  The main advantages of this scheme is 
+to allow a common interface bwteen files and ET, and to 
+provide a simple, safe usage (e.g. users cannot cause deadtime).
+More info is at hallaweb.jlab.org/equipment/daq/codaclass.html
+
+The example listed in the above URL, which is also in tstcoda_main.C
+in the hana_decode directory, makes it clear how to use the 
+interface.  The codaclasses are available separately, and 
+compile on SunOS with CC compiler as well as Linux (RedHat 6.2) 
+with g++ compiler.
 
 
 II. SPECIFIC COMPILATION INSTRUCTIONS
-=====================================
+-------------------------------------
 
-   Follow these steps to implement the CODA interface. 
-   There is more than one way to do it, but here is a simple way.
-   The code referred to here is presently in
-   haplix7:/home/rom/haAna/ana_0.5
+Follow these steps to implement the CODA interface. 
+There is more than one way to do it, but here is a simple way.
+The code referred to here is presently in
+haplix7:/home/rom/haAna/ana_0.5
 
  --------
 | STEP 1 |  The main Makefile needs a flag ONLINE_ET turned on.

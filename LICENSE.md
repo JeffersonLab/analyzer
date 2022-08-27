@@ -1,6 +1,6 @@
 BSD 3-Clause License
 
-Copyright (c) 2000-2018, Jefferson Lab.
+Copyright (c) 2000-2022, Jefferson Lab.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
