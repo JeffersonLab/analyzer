@@ -52,9 +52,7 @@ public:
   void     SetNthit(UInt_t num)       { fNthit  = num; }
 
   // Functor for ordering hits
-  class ByWireThenTime :
-    public std::binary_function< THaVDCHit*, THaVDCHit*, bool >
-  {
+  class ByWireThenTime {
   public:
     bool operator() ( const THaVDCHit* a, const THaVDCHit* b ) const
     {

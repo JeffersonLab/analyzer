@@ -2158,7 +2158,7 @@ static int ParseVariations( FILE* fi, vector<string>& variations )
 }
 
 //-----------------------------------------------------------------------------
-class MatchesOneOf : public unary_function<string,bool>
+class MatchesOneOf
 {
 public:
   explicit MatchesOneOf( multiset<Filenames_t>& filenames ) : fFnames(filenames) {}

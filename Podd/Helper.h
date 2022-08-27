@@ -55,9 +55,7 @@ namespace Podd {
   }
 
   //___________________________________________________________________________
-  template< typename Container > struct SizeMul :
-    public std::binary_function< typename Container::size_type, Container,
-				 typename Container::size_type >
+  template< typename Container > struct SizeMul
   {
     // Function object to get the product of the sizes of the containers in a
     // container, ignoring empty ones
