@@ -11,18 +11,19 @@
 #include "TDatime.h"
 #include <cstdio>        // for EOF
 #include <memory>
+#include <string>
 
 class THaRunParameters;
 class THaEvData;
 
 class THaRunBase : public TNamed {
-  
+
 public:
   explicit THaRunBase( const char* description="" );
   THaRunBase( const THaRunBase& run );
   virtual THaRunBase& operator=( const THaRunBase& rhs );
   virtual ~THaRunBase();
-  
+
   virtual bool operator==( const THaRunBase& ) const;
   virtual bool operator!=( const THaRunBase& ) const;
   virtual bool operator< ( const THaRunBase& ) const;
@@ -74,10 +75,16 @@ public:
   virtual void         SetType( UInt_t type );
   virtual Int_t        Update( const THaEvData* evdata );
 
-  enum EInfoType { kDate      = BIT(0), 
+  enum EInfoType { kDate      = BIT(0),
 		   kRunNumber = BIT(1),
 		   kRunType   = BIT(2),
-		   kPrescales = BIT(3) };
+		   kPrescales = BIT(3),
+                   kDAQInfo   = BIT(4) };
+
+  // DAQ configuration strings (usually database file dumps) from user event
+  size_t               GetNConfig() const;
+  const std::string&   GetDAQConfig( size_t i ) const;
+  const std::string&   GetDAQInfo( const std::string& key ) const;
 
 protected:
   UInt_t        fNumber;        // Run number

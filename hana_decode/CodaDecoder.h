@@ -69,6 +69,7 @@ protected:
   virtual Int_t  init_slotdata();
   virtual Int_t  interpretCoda3( const UInt_t* buffer );
   virtual Int_t  trigBankDecode( const UInt_t* evbuffer );
+  Int_t daqConfigDecode( const UInt_t* evbuf );   //FIXME: BCI: make virtual
   Int_t prescale_decode_coda2( const UInt_t* evbuffer );
   Int_t prescale_decode_coda3( const UInt_t* evbuffer );
   void  dump( const UInt_t* evbuffer ) const;

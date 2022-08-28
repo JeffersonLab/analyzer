@@ -11,10 +11,10 @@
 #include "THaRunBase.h"
 #include "THaRunParameters.h"
 #include "THaEvData.h"
+#include "DAQconfig.h"
 #include "TClass.h"
 #include "TError.h"
 #include <iostream>
-#include <vector>
 
 using namespace std;
 
@@ -33,6 +33,8 @@ THaRunBase::THaRunBase( const char* description ) :
   // Normal & default constructor
 
   ClearEventRange();
+  //FIXME: BCI: should be in RunParameters
+  DAQInfoExtra::AddTo(fExtra);
 }
 
 //_____________________________________________________________________________
@@ -108,35 +110,54 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
   // Inspect decoded event data 'evdata' for run parameter data (e.g. prescale
   // factors) and, if any found, extract the parameters and store them here.
 
+  static const char* const here = "THaRunBase::Update";
+
   if( !evdata )
     return -1;
 
   Int_t ret = 0;
   // Run date & number
   if( evdata->IsPrestartEvent() ) {
+    fDataRead |= kDate|kRunNumber|kRunType;
     if( !fAssumeDate ) {
       fDate.Set( evdata->GetRunTime() );
       fDataSet |= kDate;
     }
     SetNumber( evdata->GetRunNum() );
     SetType( evdata->GetRunType() );
-    fDataRead |= kDate|kRunNumber|kRunType;
+    fDataSet  |= kRunNumber|kRunType;
     ret = 1;
   }
   // Prescale factors
   if( evdata->IsPrescaleEvent() ) {
+    fDataRead |= kPrescales;
     for(int i=0; i<fParam->GetPrescales().GetSize(); i++) {
       Int_t psfact = evdata->GetPrescaleFactor(i+1);
       if( psfact == -1 ) {
-	Error( "THaRunBase", "Failed to decode prescale factor for trigger %d. "
+	Error( here, "Failed to decode prescale factor for trigger %d. "
 	       "Check raw data file for format errors.", i );
 	return -2;
       }
       fParam->Prescales()[i] = psfact;
     }
     fDataSet  |= kPrescales;
-    fDataRead |= kPrescales;
     ret = 2;
+  }
+#define CFGEVT Decoder::DAQCONFIG_FILE2
+  if( evdata->GetEvType() == CFGEVT ) {
+    fDataRead |= kDAQInfo;
+    auto* srcifo = DAQInfoExtra::GetFrom(evdata->GetExtra());
+    if( !srcifo ) {
+      Warning( here, "Failed to decode DAQ config info from event %u",
+               CFGEVT );
+      return -3;
+    }
+    auto* ifo = DAQInfoExtra::GetFrom(fExtra);
+    assert(ifo);     // else bug in constructor
+    // Copy info to local run parameters. NB: This may be several MB of data.
+    *ifo = *srcifo;
+    fDataSet |= kDAQInfo;
+    ret = CFGEVT;
   }
   return ret;
 }
@@ -313,7 +334,7 @@ Int_t THaRunBase::Init()
 
   if( !HasInfo(fDataRequired) ) {
     vector<TString> errmsg = { "run date", "run number", "run type",
-                               "prescale factors" };
+                               "prescale factors", "DAQ info" };
     TString errtxt("Missing run parameters: ");
     UInt_t i = 0, n = 0;
     for( auto& msg : errmsg ) {
@@ -386,6 +407,9 @@ void THaRunBase::Print( Option_t* opt ) const
   cout << "Prescales set/rd/req:  "
        << HasInfo(kPrescales) << " " << HasInfoRead(kPrescales) << " "
        << (Bool_t)((kPrescales & fDataRequired) == kPrescales) << endl;
+  cout << "DAQInfo set/rd/req:    "
+       << HasInfo(kDAQInfo) << " " << HasInfoRead(kDAQInfo) << " "
+       << (Bool_t)((kDAQInfo & fDataRequired) == kDAQInfo) << endl;
 
   if( fParam )
     fParam->Print(opt);
@@ -480,7 +504,7 @@ void THaRunBase::SetDataRequired( UInt_t mask )
   // run->SetDataRequired( THaRunBase::kDate );
   //
 
-  UInt_t all_info = kDate | kRunNumber | kRunType | kPrescales;
+  UInt_t all_info = kDate | kRunNumber | kRunType | kPrescales | kDAQInfo;
   if( (mask & all_info) != mask ) {
     Warning( "THaRunBase::SetDataRequired", "Illegal bit(s) 0x%x in bitmask "
 	     "argument ignored. See EInfoType.", (mask & ~all_info) );
@@ -547,6 +571,39 @@ void THaRunBase::SetRunParamClass( const char* classname )
   // Set class of run parameters to use
 
   fRunParamClass = classname;
+}
+
+//_____________________________________________________________________________
+size_t THaRunBase::GetNConfig() const
+{
+  auto* ifo = DAQInfoExtra::GetFrom(fExtra);
+  if( !ifo )
+    return 0;
+  return ifo->strings.size();
+}
+
+//_____________________________________________________________________________
+const string& THaRunBase::GetDAQConfig( size_t i ) const
+{
+  static const string nullstr;
+  auto* ifo = DAQInfoExtra::GetFrom(fExtra);
+  if( !ifo || i >= ifo->strings.size() )
+    return nullstr;
+  return ifo->strings[i];
+}
+
+//_____________________________________________________________________________
+const string& THaRunBase::GetDAQInfo( const std::string& key ) const
+{
+  static const string nullstr;
+  auto* ifo = DAQInfoExtra::GetFrom(fExtra);
+  if( !ifo )
+    return nullstr;
+  const auto& keyval = ifo->keyval;
+  auto it = keyval.find(key);
+  if( it == keyval.end() )
+    return nullstr;
+  return it->second;
 }
 
 //_____________________________________________________________________________

@@ -20,6 +20,7 @@
 #include <vector>
 #include <array>
 #include <memory>
+#include <string>
 
 class THaBenchmark;
 
@@ -142,6 +143,8 @@ public:
   static UInt_t GetInstances() { return fgInstances.CountBits(); }
 
   Decoder::THaCrateMap* GetCrateMap() const { return fMap.get(); }
+
+  TObject* GetExtra() const { return fExtra; }
 
   // Reporting level
   void SetVerbose( Int_t level );

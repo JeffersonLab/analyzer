@@ -243,6 +243,8 @@ Int_t THaRun::PrescanFile()
       cout << "Prestart at " << nev << endl;
     else if( st == 2 )
       cout << "Prescales at " << nev << endl;
+    else if( st == Decoder::DAQCONFIG_FILE2 )
+      cout << "DAQ info at " << nev << endl;
     else if( st < 0 ) {
       status = READ_ERROR;
       break;

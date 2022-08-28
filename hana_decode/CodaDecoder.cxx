@@ -11,7 +11,9 @@
 #include "THaCrateMap.h"
 #include "THaBenchmark.h"
 #include "THaUsrstrutils.h"
+#include "DAQconfig.h"
 #include "TError.h"
+#include "TList.h"
 #include <iostream>
 #include <stdexcept>
 #include <algorithm>
@@ -51,6 +53,7 @@ CodaDecoder::CodaDecoder() :
   fDebugFile->open("bobstuff.txt");
   *fDebugFile<< "Debug my stuff "<<endl<<endl;
 #endif
+  DAQInfoExtra::AddTo(fExtra);
 }
 
 //_____________________________________________________________________________
@@ -163,6 +166,12 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
       ret = prescale_decode_coda3(evbuffer);
     }
     if (ret != HED_OK ) return ret;
+  }
+
+  else if( event_type == DAQCONFIG_FILE2 ) {
+    if( (ret = daqConfigDecode(evbuffer)) != HED_OK) {
+      return ret;
+    }
   }
 
   else if( event_type <= MAX_PHYS_EVTYPE && !PrescanModeEnabled() ) {
@@ -339,6 +348,58 @@ Int_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer )
     evt_time = *(const uint64_t*)tbank.TSROC;
   if( tbank.withTriggerBits() )
     trigger_bits = tbank.TSROC[2]; // trigger bits of first event in block
+
+  return HED_OK;
+}
+
+//_____________________________________________________________________________
+Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
+{
+  // Decode DAQ configuration event. This is usually a dump of several
+  // database files, one segment of type string per file.
+  // Each such segment is saved as a (longish) string internally.
+  // Also parses the VTP configuration file (the first of the strings)
+  // into key/value pairs.
+
+  const char* const here = "CodaDecoder::daqConfigDecode";
+
+  if( !evbuf )
+    return -1;
+  auto* cfg = DAQInfoExtra::GetFrom(fExtra);
+  if( !cfg )
+    return -2;
+  cfg->clear();
+
+#define CFGEVT Decoder::DAQCONFIG_FILE2
+  const auto* p = evbuf;
+  const UInt_t evlen = evbuf[0] + 1;
+  ++p;
+  if( (*p >> 16) != CFGEVT ||                    // Bank tag == event type
+      ((*p & 0xFF00) >> 8) != 0x10 ) {           // Data type == 0x10 (Bank)
+    Error(here, "Invalid bank tag %#x in event type %u", *p, CFGEVT);
+    return -3;
+  }
+  ++p;
+  while( p - evbuf < evlen ) {
+    size_t len = *p;   // Bank length in 32-bit words excluding length word
+    if( len == 0 || p + len + 1 > evbuf + evlen ) {
+      Error(here, "Invalid length %lu in event type %u", len, CFGEVT);
+      return -4;
+    }
+    ++p;
+    unsigned int type = (*p & 0x3F00) >> 8;
+    if( type == 0x03 ) {                         // Data type == 0x03 (char)
+      size_t pad = (*p & 0xC000) >> 14;          // Padding bytes
+      const auto* c = reinterpret_cast<const char*>(p + 1);
+      cfg->strings.emplace_back(c, c + 4 * (len - 1) - pad);
+    } else {
+      Warning(here, "Unsupported data segment type %u in event type %u",
+              type, CFGEVT);
+    }
+    p += len;
+  }
+  // Parse first string to key/value pairs
+  cfg->parse(0);
 
   return HED_OK;
 }
@@ -1172,7 +1233,7 @@ Int_t CodaDecoder::prescale_decode_coda3(const UInt_t* evbuffer)
   //     3 ....... 5
   //     5 ....... 17
   //    10 ....... 513
-  
+
   static const char* const here = "prescale_decode_coda3";
 
   assert( evbuffer );
@@ -1186,7 +1247,7 @@ Int_t CodaDecoder::prescale_decode_coda3(const UInt_t* evbuffer)
 				      "ps9", "ps10", "ps11", "ps12" };
   // TS registers -->
   // don't have these yet for CODA3.  hmmm... that reminds me to do it.
-  if( event_type == TS_PRESCALE_EVTYPE) {  
+  if( event_type == TS_PRESCALE_EVTYPE) {
     // this is more authoritative
     for( UInt_t j = 0; j < 8; j++ ) {
       UInt_t k = j + HEAD_OFF1;
@@ -1210,7 +1271,7 @@ Int_t CodaDecoder::prescale_decode_coda3(const UInt_t* evbuffer)
       return HED_ERR;  //oops, event too short?
     THaUsrstrutils sut;
     sut.string_from_evbuffer(evbuffer+HEAD_OFF2, event_length-HEAD_OFF2);
-    
+
     for( Int_t trig = 0; trig < MAX_PSFACT; trig++ ) {
       long ps = sut.getSignedInt(pstr[trig]);
       if( ps == -1 ) {
