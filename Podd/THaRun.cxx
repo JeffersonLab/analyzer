@@ -209,7 +209,10 @@ Bool_t THaRun::ProvidesInitInfo()
 //_____________________________________________________________________________
 Int_t THaRun::PrescanFile()
 {
-  static const char* const here = "PrescanFile";
+  static const char* const here = "THaRun::PrescanFile";
+  // Scan at least 'minscan' number of events regardless of info required
+  //FIXME: BCI: configurable member variable
+  static const UInt_t minscan = 50;
 
   unique_ptr<THaEvData> evdata{static_cast<THaEvData*>(gHaDecoder->New())};
   // Disable advanced processing
@@ -219,7 +222,7 @@ Int_t THaRun::PrescanFile()
   evdata->SetDataVersion(GetCodaVersion());
   UInt_t nev = 0;
   Int_t status = READ_OK;
-  while( nev < fMaxScan && !HasInfo(fDataRequired) &&
+  while( (nev < minscan || (nev < fMaxScan && !HasInfo(fDataRequired))) &&
          (status = ReadEvent()) == READ_OK ) {
 
     // Decode events. Skip bad events.
