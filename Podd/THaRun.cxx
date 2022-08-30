@@ -242,16 +242,16 @@ Int_t THaRun::PrescanFile()
     // Inspect event and extract run parameters if appropriate
     Int_t st = Update(evdata.get());
     //FIXME: debug
-    if( st == 1 )
-      cout << "Prestart at " << nev << endl;
-    else if( st == 2 )
-      cout << "Prescales at " << nev << endl;
-    else if( st == Decoder::DAQCONFIG_FILE2 )
-      cout << "DAQ info at " << nev << endl;
-    else if( st < 0 ) {
+    if( st < 0 ) {
       status = READ_ERROR;
       break;
     }
+    if( st & (1<<0) )
+      cout << "Prestart at " << nev << endl;
+    if( st & (1<<1) )
+      cout << "Prescales at " << nev << endl;
+    if( st & (1<<2) )
+      cout << "DAQ info at " << nev << endl;
   }//end while
 
   return status;

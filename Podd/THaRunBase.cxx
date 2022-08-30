@@ -126,7 +126,7 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
     SetNumber( evdata->GetRunNum() );
     SetType( evdata->GetRunType() );
     fDataSet  |= kRunNumber|kRunType;
-    ret = 1;
+    ret |= (1<<0);
   }
   // Prescale factors
   if( evdata->IsPrescaleEvent() ) {
@@ -141,15 +141,16 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
       fParam->Prescales()[i] = psfact;
     }
     fDataSet  |= kPrescales;
-    ret = 2;
+    ret |= (1<<1);
   }
-#define CFGEVT Decoder::DAQCONFIG_FILE2
-  if( evdata->GetEvType() == CFGEVT ) {
+#define CFGEVT1 Decoder::DAQCONFIG_FILE1
+#define CFGEVT2 Decoder::DAQCONFIG_FILE2
+  if( evdata->GetEvType() == CFGEVT1 || evdata->GetEvType() == CFGEVT2 ) {
     fDataRead |= kDAQInfo;
     auto* srcifo = DAQInfoExtra::GetFrom(evdata->GetExtra());
     if( !srcifo ) {
-      Warning( here, "Failed to decode DAQ config info from event %u",
-               CFGEVT );
+      Warning( here, "Failed to decode DAQ config info from event type %u",
+               evdata->GetEvType() );
       return -3;
     }
     auto* ifo = DAQInfoExtra::GetFrom(fExtra);
@@ -157,7 +158,7 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
     // Copy info to local run parameters. NB: This may be several MB of data.
     *ifo = *srcifo;
     fDataSet |= kDAQInfo;
-    ret = CFGEVT;
+    ret |= (1<<2);
   }
   return ret;
 }

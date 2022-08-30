@@ -87,6 +87,9 @@ Int_t CodaDecoder::Init()
   Int_t ret = THaEvData::Init();
   if( ret != HED_OK ) return ret;
   FindUsedSlots();
+  auto* cfg = DAQInfoExtra::GetFrom(fExtra);
+  if( cfg )
+    cfg->clear();
   return ret;
 }
 
@@ -168,7 +171,7 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
     if (ret != HED_OK ) return ret;
   }
 
-  else if( event_type == DAQCONFIG_FILE2 ) {
+  else if( event_type == DAQCONFIG_FILE1 || event_type == DAQCONFIG_FILE2 ) {
     if( (ret = daqConfigDecode(evbuffer)) != HED_OK) {
       return ret;
     }
@@ -368,38 +371,42 @@ Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
   auto* cfg = DAQInfoExtra::GetFrom(fExtra);
   if( !cfg )
     return -2;
-  cfg->clear();
+  size_t nbefore = cfg->strings.size();
 
-#define CFGEVT Decoder::DAQCONFIG_FILE2
+#define CFGEVT1 Decoder::DAQCONFIG_FILE1
+#define CFGEVT2 Decoder::DAQCONFIG_FILE2
   const auto* p = evbuf;
   const UInt_t evlen = evbuf[0] + 1;
   ++p;
-  if( (*p >> 16) != CFGEVT ||                    // Bank tag == event type
+  auto evtyp = (*p >> 16);                       // Bank tag == event type
+  if( (evtyp != CFGEVT1 && evtyp != CFGEVT2) ||
       ((*p & 0xFF00) >> 8) != 0x10 ) {           // Data type == 0x10 (Bank)
-    Error(here, "Invalid bank tag %#x in event type %u", *p, CFGEVT);
+    Error(here, "Invalid bank tag %#x in event type %u", *p, evtyp);
     return -3;
   }
   ++p;
   while( p - evbuf < evlen ) {
     size_t len = *p;   // Bank length in 32-bit words excluding length word
     if( len == 0 || p + len + 1 > evbuf + evlen ) {
-      Error(here, "Invalid length %lu in event type %u", len, CFGEVT);
+      Error(here, "Invalid length %lu in event type %u", len, evtyp);
       return -4;
     }
     ++p;
-    unsigned int type = (*p & 0x3F00) >> 8;
-    if( type == 0x03 ) {                         // Data type == 0x03 (char)
+    unsigned int dtyp = (*p & 0x3F00) >> 8;
+    if( dtyp == 0x03 ) {                         // Data type == 0x03 (char)
       size_t pad = (*p & 0xC000) >> 14;          // Padding bytes
       const auto* c = reinterpret_cast<const char*>(p + 1);
       cfg->strings.emplace_back(c, c + 4 * (len - 1) - pad);
     } else {
       Warning(here, "Unsupported data segment type %u in event type %u",
-              type, CFGEVT);
+              dtyp, evtyp);
     }
     p += len;
   }
   // Parse first string to key/value pairs
-  cfg->parse(0);
+  const size_t iparse = 0;
+  if( iparse >= nbefore )
+    cfg->parse(0);
 
   return HED_OK;
 }
