@@ -28,16 +28,18 @@ struct DAQconfig {
 
 class DAQInfoExtra : public TObject {
 public:
-  DAQInfoExtra() = default;
+  DAQInfoExtra();
   virtual TObject* Clone( const char* newname = "" ) const {
     return new DAQInfoExtra(*this);
   }
   static void AddTo( TObject*& p, DAQInfoExtra* obj = nullptr );
+  static DAQInfoExtra* GetExtraInfo( TObject* p );
   static DAQconfig* GetFrom( TObject* p );
 
   DAQconfig fDAQconfig;
+  UInt_t fMinScan;
 
-  ClassDef(DAQInfoExtra, 1)
+  ClassDef(DAQInfoExtra, 2)
 };
 
 //_____________________________________________________________________________

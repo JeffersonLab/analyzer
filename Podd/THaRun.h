@@ -30,6 +30,7 @@ public:
   virtual void         Print( Option_t* opt="" ) const;
   virtual Int_t        SetFilename( const char* name );
           void         SetNscan( UInt_t n );
+          void         SetMinScan( UInt_t n );
 
 protected:
 

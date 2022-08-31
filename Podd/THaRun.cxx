@@ -12,6 +12,7 @@
 #include "THaEvData.h"
 #include "THaCodaFile.h"
 #include "THaGlobals.h"
+#include "DAQconfig.h"
 #include "TClass.h"
 #include "TError.h"
 #include "TSystem.h"
@@ -212,7 +213,8 @@ Int_t THaRun::PrescanFile()
   static const char* const here = "THaRun::PrescanFile";
   // Scan at least 'minscan' number of events regardless of info required
   //FIXME: BCI: configurable member variable
-  static const UInt_t minscan = 50;
+  auto* ifo = DAQInfoExtra::GetExtraInfo(fExtra);
+  const UInt_t minscan = ifo ? ifo->fMinScan : 50;
 
   unique_ptr<THaEvData> evdata{static_cast<THaEvData*>(gHaDecoder->New())};
   // Disable advanced processing
@@ -391,6 +393,18 @@ void THaRun::SetNscan( UInt_t n )
   // Set number of events to prescan during Init(). Default is 5000.
 
   fMaxScan = n;
+}
+
+//_____________________________________________________________________________
+void THaRun::SetMinScan( UInt_t n )
+{
+  // Set minimum number of events to prescan during Init(), regardless of
+  // fDataRequired. Default is 50.
+
+  //FIXME: BCI make member variable
+  auto* ifo = DAQInfoExtra::GetExtraInfo(fExtra);
+  if( ifo )
+    ifo->fMinScan = n;
 }
 
 //_____________________________________________________________________________

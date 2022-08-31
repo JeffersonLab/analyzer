@@ -19,6 +19,11 @@
 using namespace std;
 
 //_____________________________________________________________________________
+DAQInfoExtra::DAQInfoExtra()
+  : fMinScan(50)
+{}
+
+//_____________________________________________________________________________
 size_t DAQconfig::parse( size_t i )
 {
   // Parse string with index 'i' into key/value pairs stored in 'keyval' map.
@@ -76,10 +81,8 @@ void DAQInfoExtra::AddTo( TObject*& p, DAQInfoExtra* obj )
 }
 
 //_____________________________________________________________________________
-DAQconfig* DAQInfoExtra::GetFrom( TObject* p )
+DAQInfoExtra* DAQInfoExtra::GetExtraInfo( TObject* p )
 {
-  // Get DAQconnfig object from p, which can either be the object or a TList*.
-
   auto* ifo = dynamic_cast<DAQInfoExtra*>(p);
   if( !ifo ) {
     auto* lst = dynamic_cast<TList*>(p);
@@ -91,6 +94,15 @@ DAQconfig* DAQInfoExtra::GetFrom( TObject* p )
       }
     }
   }
+  return ifo;
+}
+
+//_____________________________________________________________________________
+DAQconfig* DAQInfoExtra::GetFrom( TObject* p )
+{
+  // Get DAQconnfig object from p, which can either be the object or a TList*.
+
+  auto* ifo = GetExtraInfo(p);
   return ifo ? &ifo->fDAQconfig : nullptr;
 }
 
