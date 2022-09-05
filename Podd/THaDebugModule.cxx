@@ -24,13 +24,24 @@
 
 using namespace std;
 
+enum EFlags {
+  kStop,     // Wait for key press after every event
+  kCount,    // Run for fCount events
+  kQuiet     // Run quietly (don't print variables)
+};
+
 //_____________________________________________________________________________
-THaDebugModule::THaDebugModule( const char* var_list, const char* test ) :
-  THaPhysicsModule("DebugModule",var_list),
-  fVarString(var_list), fFlags(kStop), fCount(0), fTestExpr(test), fTest(nullptr)
+THaDebugModule::THaDebugModule( const char* var_list, const char* test )
+  : THaPhysicsModule("DebugModule", var_list)
+  , fVarString(var_list)
+  , fFlags(0)
+  , fCount(0)
+  , fTestExpr(test)
+  , fTest(nullptr)
 {
   // Normal constructor.
 
+  SETBIT(fFlags, kStop);
   fIsSetup = false;
 }
 
@@ -49,8 +60,13 @@ THaAnalysisObject::EStatus THaDebugModule::Init( const TDatime& run_time )
 
   fVars.clear();
 
-  if( THaPhysicsModule::Init( run_time ))
+  if( THaPhysicsModule::Init(run_time) )
     return fStatus;
+
+  // fIsSetup is set by the default DefineVariables, but we use it as a flag
+  // to trigger lazy initialization of our variables/cuts list in Process(),
+  // so we need to unset it explicitly here.
+  fIsSetup = false;
 
   return fStatus = kOK;
 }
@@ -65,42 +81,42 @@ Int_t THaDebugModule::THaDebugModule::ParseList()
 
   Int_t nopt = fVarString.GetNOptions();
   if( nopt > 0 ) {
-    for( Int_t i=0; i<nopt; i++ ) {
+    for( Int_t i = 0; i < nopt; i++ ) {
       const char* opt = fVarString.GetOption(i);
-      if( !strcmp(opt,"NOSTOP") )
-	fFlags &= ~kStop;
+      if( !strcmp(opt, "NOSTOP") )
+        CLRBIT(fFlags, kStop);
       else {
-	// Regexp matching
-	bool found = false;
-	TRegexp re( opt, true);
-	// We can inspect analysis variables and cuts/tests
-	if( gHaVars ) {
-	  TIter next( gHaVars );
-	  while( TObject* obj = next() ) {
-	    TString s = obj->GetName();
-	    if( s.Index(re) != kNPOS ) {
-	      found = true;
-	      fVars.push_back(obj);
-	    }
-	  }
-	}
-	if( gHaCuts ) {
-	  const TList* lst = gHaCuts->GetCutList();
-	  if( lst ) {
-	    TIter next( lst );
-	    while( TObject* obj = next() ) {
-	      TString s = obj->GetName();
-	      if( s.Index(re) != kNPOS ) {
-		found = true;
-		fVars.push_back(obj);
-	      }
-	    }
-	  }
-	}
-	if( !found ) {
-	  Warning( Here("ParseList"), 
-		   "Global variable or cut %s not found. Skipped.", opt );
-	}
+        // Regexp matching
+        bool found = false;
+        TRegexp re(opt, true);
+        // We can inspect analysis variables and cuts/tests
+        if( gHaVars ) {
+          TIter next(gHaVars);
+          while( TObject* obj = next() ) {
+            TString s = obj->GetName();
+            if( s.Index(re) != kNPOS ) {
+              found = true;
+              fVars.push_back(obj);
+            }
+          }
+        }
+        if( gHaCuts ) {
+          const TList* lst = gHaCuts->GetCutList();
+          if( lst ) {
+            TIter next(lst);
+            while( TObject* obj = next() ) {
+              TString s = obj->GetName();
+              if( s.Index(re) != kNPOS ) {
+                found = true;
+                fVars.push_back(obj);
+              }
+            }
+          }
+        }
+        if( !found ) {
+          Warning(Here("ParseList"),
+                  "Global variable or cut %s not found. Skipped.", opt);
+        }
       }
     }
   }
@@ -112,21 +128,21 @@ void THaDebugModule::Print( Option_t* opt ) const
 {
   // Print details of the defined variables
 
-  THaPhysicsModule::Print( opt );
+  THaPhysicsModule::Print(opt);
   if( fIsSetup ) {
     if( !fTestExpr.IsNull() ) {
-      if( fTest ) 
-	fTest->Print();
+      if( fTest )
+        fTest->Print();
       else
-	cout << "Test name: " << fTestExpr << " (undefined)\n";
+        cout << "Test name: " << fTestExpr << " (undefined)\n";
     }
     cout << "Number of variables: " << fVars.size() << endl;
-    for( const auto* obj : fVars ) {
+    for( const auto* obj: fVars ) {
       cout << obj->GetName() << "  ";
     }
     cout << endl;
   } else {
-    if( !fTestExpr.IsNull()) 
+    if( !fTestExpr.IsNull() )
       cout << "Test name: " << fTestExpr << endl;
     cout << "(Module not initialized)\n";
   }
@@ -136,7 +152,7 @@ void THaDebugModule::Print( Option_t* opt ) const
 void THaDebugModule::PrintEvNum( const THaEvData& evdata ) const
 {
   // Print current event number
-  cout << "======>>>>>> Event " << (UInt_t)evdata.GetEvNum() << endl;
+  cout << "======>>>>>> Event " << (UInt_t) evdata.GetEvNum() << endl;
 }
 
 //_____________________________________________________________________________
@@ -149,56 +165,55 @@ Int_t THaDebugModule::Process( const THaEvData& evdata )
   // able to use existing tests.
   if( !fIsSetup ) {
     ParseList();
-    if( !fTestExpr.IsNull()) {
-      fTest = new THaCut( fName+"_Test", fTestExpr, fName+"_Block" );
+    if( !fTestExpr.IsNull() ) {
+      fTest = new THaCut(fName + "_Test", fTestExpr, fName + "_Block");
       // Expression error?
-      if( !fTest || fTest->IsZombie()) {
-	delete fTest; fTest = nullptr;
+      if( !fTest || fTest->IsZombie() ) {
+        delete fTest;
+        fTest = nullptr;
       }
     }
     fIsSetup = true;
   }
-  bool good = true;
-  if ( fTest && !fTest->EvalCut()) good = false;
-  
+  bool good = !fTest || fTest->EvalCut();
+
   // Print() the variables
-  if( good && (fFlags & kQuiet) == 0) {
-    PrintEvNum( evdata );
-    auto it = fVars.begin();
-    for( ; it != fVars.end(); ++it ) {
+  if( good && !TESTBIT(fFlags, kQuiet) ) {
+    PrintEvNum(evdata);
+    for( const auto& var: fVars ) {
       const char* opt = "";
-      if( (*it)->IsA()->InheritsFrom("THaVar") ) 
-	opt = "FULL";
-      (*it)->Print(opt);
+      if( var->IsA()->InheritsFrom("THaVar") )
+        opt = "FULL";
+      var->Print(opt);
     }
   }
 
-  if( (fFlags & kCount) && --fCount <= 0 ) {
-    fFlags |= kStop;
-    fFlags &= ~kCount;
-    if( !good ) PrintEvNum( evdata );
+  if( TESTBIT(fFlags, kCount) && --fCount <= 0 ) {
+    SETBIT(fFlags, kStop);
+    CLRBIT(fFlags, kCount);
+    if( !good )
+      PrintEvNum(evdata);
     good = true;
   }
-  if( (fFlags & kStop) && good ) {
+  if( good && TESTBIT(fFlags, kStop) ) {
     // Wait for user input
     cout << "RETURN: continue, H: run 100 events, R: run to end, F: finish quietly, Q: quit\n";
     char c = 0;
     cin.clear();
-    while( !cin.eof() && cin.get(c) && !strchr("\nqQhHrRfF",c)) {}
+    while( !cin.eof() && cin.get(c) && !strchr("\nqQhHrRfF", c) ) {}
     if( c != '\n' )
-      while( !cin.eof() && cin.get() != '\n') {}
+      while( !cin.eof() && cin.get() != '\n' ) {}
     if( tolower(c) == 'q' )
       return kTerminate;
     else if( tolower(c) == 'h' ) {
-      fFlags |= kCount;
-      fFlags &= ~kStop;
+      SETBIT(fFlags, kCount);
+      CLRBIT(fFlags, kStop);
       fCount = 100;
-    }
-    else if( tolower(c) == 'r' )
-      fFlags &= ~kStop;
+    } else if( tolower(c) == 'r' )
+      CLRBIT(fFlags, kStop);
     else if( tolower(c) == 'f' ) {
-      fFlags &= ~kStop;
-      fFlags |= kQuiet;
+      CLRBIT(fFlags, kStop);
+      SETBIT(fFlags, kQuiet);
     }
   }
 
