@@ -1,9 +1,10 @@
 #ifndef ANALYZER_COMPILEDATA_H
 #define ANALYZER_COMPILEDATA_H
 
-// For HA_GITREV
-#include "git_description.h"
+// For @PROJECT_NAME@_GITREV
+#include "git_description_@PROJECT_NAME@.h"
 
+#define HA_GITREV       @PROJECT_NAME@_GITREV
 #define HA_INCLUDEPATH  "@CMAKE_INSTALL_FULL_INCLUDEDIR@"
 #define HA_VERSION      "@PROJECT_VERSION@@EXTVERS@"
 #define HA_SOURCETIME   "@PODD_SOURCE_DATETIME@"

@@ -4,7 +4,7 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // THaInterface
-// 
+//
 //////////////////////////////////////////////////////////////////////////
 
 #include "TRint.h"
@@ -30,6 +30,8 @@ public:
 
 protected:
   static THaInterface*  fgAint;  //Pointer indicating that interface already exists
+
+  static TString extract_short_date( const char* long_date );
 
   ClassDef(THaInterface,0)  //Hall A Analyzer Interactive Interface
 };

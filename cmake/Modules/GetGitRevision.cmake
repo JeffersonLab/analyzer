@@ -137,7 +137,7 @@ function(get_git_info _hashvar _datevar)
     set(HEAD_FILE "${GIT_DATA}/HEAD")
     configure_file("${HEAD_SOURCE_FILE}" "${HEAD_FILE}" COPYONLY)
 
-    configure_file("${CMAKE_SOURCE_DIR}/cmake/templates/GrabGitRef.cmake.in"
+    configure_file("${CMAKE_CURRENT_LIST_DIR}/../templates/GrabGitRef.cmake.in"
                    "${GIT_DATA}/GrabGitRef.cmake" @ONLY)
     include("${GIT_DATA}/GrabGitRef.cmake")
 

@@ -6,11 +6,12 @@
 #   $1: git executable path,
 #       or "nogit" if no git support, resulting in empty definition
 #   $2: output file
+#   $3: preprocessor variable to #define
 # Output:
 #   Current git description written to $2
 
 OUT="$2".tmp
-printf "#define HA_GITREV" > "$OUT"
+printf "#define $3" > "$OUT"
 if [ "$1" != "nogit" ]; then
   printf " \"%s\"\n" "$($1 describe --tags --always --long --dirty 2>/dev/null)" >> "$OUT"
 else
@@ -23,4 +24,3 @@ else
   # description changed, or $2 does not yet exist -> update $2
   mv -f "$OUT" "$2"
 fi
-

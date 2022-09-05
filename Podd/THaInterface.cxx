@@ -62,9 +62,9 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   }
 
   if( !noLogo )
-    PrintLogo();
+    THaInterface::PrintLogo();
 
-  SetPrompt("analyzer [%d] ");
+  THaInterface::SetPrompt("analyzer [%d] ");
   gHaVars    = new THaVarList;
   gHaCuts    = new THaCutList( gHaVars );
   gHaApps    = new TList;
@@ -198,13 +198,7 @@ void THaInterface::PrintLogo( Bool_t lite )
      Printf("  ************************************************");
    }
 
-#ifdef R__UNIX
-   //   if (!strcmp(gGXW->GetName(), "X11TTF"))
-   //   Printf("\nFreeType Engine v1.1 used to render TrueType fonts.");
-#endif
-
    gInterpreter->PrintIntro();
-
 }
 
 //_____________________________________________________________________________
@@ -222,7 +216,7 @@ const char* THaInterface::GetVersion()
 }
 
 //_____________________________________________________________________________
-static inline TString extract_short_date( const char* long_date )
+TString THaInterface::extract_short_date( const char* long_date )
 {
   // Extract date from git format=%cD long date string. For example,
   // "Tue, 29 Mar 2022 22:29:10 -0400" -> "29 Mar 2022"
