@@ -84,7 +84,7 @@ void PipeliningModule::Init( const char* configstr )
   // # slot   model   bank   configuration string
   //   10      250    2501   cfg: debug=1
 
-  VmeModule::Init();  // standard Init
+  Init();  // standard Init
 
   UInt_t debug = 0;
   vector<ConfigStrReq> req = { { "debug", debug } };
