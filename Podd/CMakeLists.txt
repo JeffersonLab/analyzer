@@ -104,7 +104,7 @@ install(TARGETS ${LIBNAME}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
 install(FILES
-  ${allheaders} "${CMAKE_CURRENT_BINARY_DIR}/git_description.h"
+  ${allheaders} "${CMAKE_CURRENT_BINARY_DIR}/git_description_${PROJECT_NAME}.h"
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #----------------------------------------------------------------------------
