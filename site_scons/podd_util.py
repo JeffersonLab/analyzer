@@ -156,12 +156,11 @@ def build_library(env, sotarget, src, extrahdrs = [], extradicthdrs = [],
         if versioned:
             shlinkflags.append('-Wl,-compatibility_version,'+env.subst('$SOVERSION'))
             shlinkflags.append('-Wl,-current_version,'+env.subst('$VERSION'))
-        # SCons (as of version 4?) now seems to do this for us
-        # try:
-        #     for rp in env['RPATH']:
-        #         shlinkflags.append('-Wl,-rpath,'+rp)
-        # except KeyError:
-        #     pass
+        try:
+            for rp in env['RPATH']:
+                shlinkflags.append('-Wl,-rpath,'+rp)
+        except KeyError:
+            pass
     else:
         print('build_library: Error: unsupported platform')
         Exit(3)

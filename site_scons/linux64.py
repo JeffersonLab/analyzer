@@ -18,7 +18,7 @@ def config(env,args):
     cxxversion = env.subst('$CXXVERSION')
 
     if float(cxxversion[0:2])>=4.0:
-        env.Append(CXXFLAGS = env.Split('-Wextra -Wno-missing-field-initializers'))
+        env.Append(CXXFLAGS = env.Split('-Wextra -Wno-missing-field-initializers -Wno-maybe-uninitialized'))
         if not int(debug):
             env.Append(CXXFLAGS = '-Wno-unused-parameter')
 
