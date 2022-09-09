@@ -429,7 +429,7 @@ Int_t THaAnalyzer::InitModules(
     try {
       retval = theModule->Init( run_time );
     }
-    catch( exception& e ) {
+    catch( const exception& e ) {
       Error(here, "Exception %s caught during initialization of module "
 	     "%s (%s). Analyzer initialization failed.",
             e.what(), theModule->GetName(), theModule->GetTitle() );
@@ -1270,7 +1270,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
       return (code == kOK) ? kSkip : code;
 
   } // end try
-  catch( exception& e ) {
+  catch( const exception& e ) {
     TString module_name = (obj != nullptr) ? obj->GetName() : "unknown";
     TString module_desc = (obj != nullptr) ? obj->GetTitle() : "unknown";
     Error( here, "Caught exception %s in module %s (%s) during %s analysis "
@@ -1299,7 +1299,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
     // Write to output file
     if( fOutput ) fOutput->Process();
   }
-  catch( exception& e ) {
+  catch( const exception& e ) {
     Error( here, "Caught exception %s during output of event %u. "
 	   "Terminating analysis.", e.what(), fNev );
     code = kFatal;
