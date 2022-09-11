@@ -29,7 +29,7 @@ class THaOutput;
 class TObjArray;
 
 class THaAnalysisObject : public TNamed {
-  
+
 public:
   enum EStatus { kOK = 0, kInitError = -8, kFileError = -9, kNotinit = -10 };
   enum EType   { kVarDef, kRVarDef };
@@ -37,12 +37,12 @@ public:
 
   THaAnalysisObject();  // only for ROOT I/O
   THaAnalysisObject( const THaAnalysisObject& ) = delete;
-  THaAnalysisObject( const THaAnalysisObject&& ) = delete;
+  THaAnalysisObject( THaAnalysisObject&& ) = delete;
   THaAnalysisObject& operator=( const THaAnalysisObject& ) = delete;
-  THaAnalysisObject& operator=( const THaAnalysisObject&& ) = delete;
+  THaAnalysisObject& operator=( THaAnalysisObject&& ) = delete;
 
   virtual ~THaAnalysisObject();
-  
+
   virtual Int_t        Begin( THaRunBase* r=nullptr );
   virtual void         Clear( Option_t* ="" ) {} // override TNamed::Clear()
   virtual Int_t        End( THaRunBase* r=nullptr );
