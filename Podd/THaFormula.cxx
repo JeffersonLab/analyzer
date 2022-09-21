@@ -156,7 +156,7 @@ Int_t THaFormula::Init( const char* name, const char* expression )
 }
 
 //_____________________________________________________________________________
-THaFormula::THaFormula( const THaFormula& rhs ) :
+THaFormula::THaFormula( const THaFormula& rhs ) : // NOLINT(misc-no-recursion)
   TFormula(rhs), fVarDef(rhs.fVarDef),
   fVarList(rhs.fVarList), fCutList(rhs.fCutList), fInstance(0)
 {
@@ -180,7 +180,7 @@ THaFormula& THaFormula::operator=( const THaFormula& rhs )
 }
 
 //_____________________________________________________________________________
-THaFormula::FVarDef_t::FVarDef_t( const FVarDef_t& rhs )
+THaFormula::FVarDef_t::FVarDef_t( const FVarDef_t& rhs ) // NOLINT(misc-no-recursion)
   : type(rhs.type), obj(rhs.obj), index(rhs.index)
 {
   if( (type == kFormula || type == kVarFormula) && rhs.obj != nullptr )
@@ -285,7 +285,7 @@ Bool_t THaFormula::IsString(Int_t oper) const
 }
 
 //_____________________________________________________________________________
-Double_t THaFormula::DefinedValue( Int_t i )
+Double_t THaFormula::DefinedValue( Int_t i ) // NOLINT(misc-no-recursion)
 {
   // Get value of i-th variable in the formula
   // If the i-th variable is a cut, return its last result
@@ -696,7 +696,7 @@ Double_t THaFormula::Eval()
 }
 
 //_____________________________________________________________________________
-Double_t THaFormula::EvalInstance( Int_t instance )
+Double_t THaFormula::EvalInstance( Int_t instance ) // NOLINT(misc-no-recursion)
 {
   // Evaluate this formula
 
@@ -717,7 +717,7 @@ Double_t THaFormula::EvalInstance( Int_t instance )
 }
 
 //_____________________________________________________________________________
-Int_t THaFormula::GetNdataUnchecked() const
+Int_t THaFormula::GetNdataUnchecked() const // NOLINT(misc-no-recursion)
 {
   // Return minimum of sizes of all referenced arrays
 
@@ -755,7 +755,7 @@ Int_t THaFormula::GetNdataUnchecked() const
 }
 
 //_____________________________________________________________________________
-Int_t THaFormula::GetNdata() const
+Int_t THaFormula::GetNdata() const // NOLINT(misc-no-recursion)
 {
   // Get number of available instances of this formula
 
