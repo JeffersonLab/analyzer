@@ -12,23 +12,39 @@
 #include "THaRunParameters.h"
 #include "THaEvData.h"
 #include "DAQconfig.h"
+#include "THaPrintOption.h"
 #include "TClass.h"
 #include "TError.h"
 #include <iostream>
+#include <algorithm>  // std::copy, std::equal
+#include <iterator>   // std::begin, std::end
 
 using namespace std;
 
 static const int UNDEFDATE = 19950101;
 static const char* NOTINIT = "uninitialized run";
 static const char* DEFRUNPARAM = "THaRunParameters";
+static constexpr UInt_t DEFEVTRANGE[2]{1, kMaxUInt};
 
 //_____________________________________________________________________________
-THaRunBase::THaRunBase( const char* description ) :
-  TNamed(NOTINIT, description ),
-  fNumber(-1), fType(0), fDate(UNDEFDATE,0), fEvtRange{1,kMaxUInt}, fNumAnalyzed(0),
-  fDBRead(false), fIsInit(false), fOpened(false), fAssumeDate(false),
-  fDataSet(0), fDataRead(0), fDataRequired(kDate), fParam(nullptr),
-  fRunParamClass(DEFRUNPARAM), fDataVersion(0), fExtra(nullptr)
+THaRunBase::THaRunBase( const char* description )
+  : TNamed(NOTINIT, description )
+  , fNumber(-1)
+  , fType(0)
+  , fDate(UNDEFDATE,0)
+  , fEvtRange{DEFEVTRANGE[0], DEFEVTRANGE[1]}
+  , fNumAnalyzed(0)
+  , fDBRead(false)
+  , fIsInit(false)
+  , fOpened(false)
+  , fAssumeDate(false)
+  , fDataSet(0)
+  , fDataRead(0)
+  , fDataRequired(kDate)
+  , fParam(nullptr)
+  , fRunParamClass(DEFRUNPARAM)
+  , fDataVersion(0)
+  , fExtra(nullptr)
 {
   // Normal & default constructor
 
@@ -38,22 +54,30 @@ THaRunBase::THaRunBase( const char* description ) :
 }
 
 //_____________________________________________________________________________
-THaRunBase::THaRunBase( const THaRunBase& rhs ) :
-  TNamed( rhs ), fNumber(rhs.fNumber), fType(rhs.fType),
-  fDate(rhs.fDate), fEvtRange{rhs.fEvtRange[0],rhs.fEvtRange[1]},
-  fNumAnalyzed(rhs.fNumAnalyzed), fDBRead(rhs.fDBRead),
-  fIsInit(rhs.fIsInit), fOpened(false), fAssumeDate(rhs.fAssumeDate),
-  fDataSet(rhs.fDataSet), fDataRead(rhs.fDataRead),
-  fDataRequired(rhs.fDataRequired), fParam(nullptr),
-  fRunParamClass(rhs.fRunParamClass), fDataVersion(rhs.fDataVersion),
-  fExtra(nullptr)
+THaRunBase::THaRunBase( const THaRunBase& rhs )
+  : TNamed(rhs)
+  , fNumber(rhs.fNumber)
+  , fType(rhs.fType)
+  , fDate(rhs.fDate)
+  , fEvtRange{rhs.fEvtRange[0], rhs.fEvtRange[1]}
+  , fNumAnalyzed(rhs.fNumAnalyzed)
+  , fDBRead(rhs.fDBRead)
+  , fIsInit(rhs.fIsInit)
+  , fOpened(false)
+  , fAssumeDate(rhs.fAssumeDate)
+  , fDataSet(rhs.fDataSet)
+  , fDataRead(rhs.fDataRead)
+  , fDataRequired(rhs.fDataRequired)
+  , fParam(nullptr)
+  , fRunParamClass(rhs.fRunParamClass)
+  , fDataVersion(rhs.fDataVersion)
+  , fExtra(nullptr)
 {
   // Copy ctor
 
   // NB: the run parameter object might inherit from THaRunParameters
   if( rhs.fParam ) {
-    fParam.reset(static_cast<THaRunParameters*>(rhs.fParam->IsA()->New()));
-    *fParam = *rhs.fParam;
+    fParam.reset(dynamic_cast<THaRunParameters*>(rhs.fParam->Clone()));
   }
   if( rhs.fExtra )
     fExtra = rhs.fExtra->Clone();
@@ -70,8 +94,7 @@ THaRunBase& THaRunBase::operator=(const THaRunBase& rhs)
      fNumber     = rhs.fNumber;
      fType       = rhs.fType;
      fDate       = rhs.fDate;
-     fEvtRange[0] = rhs.fEvtRange[0];
-     fEvtRange[1] = rhs.fEvtRange[1];
+     copy(begin(rhs.fEvtRange), end(rhs.fEvtRange), begin(fEvtRange));
      fNumAnalyzed = rhs.fNumAnalyzed;
      fDBRead     = rhs.fDBRead;
      fIsInit     = rhs.fIsInit;
@@ -81,8 +104,7 @@ THaRunBase& THaRunBase::operator=(const THaRunBase& rhs)
      fDataRead   = rhs.fDataRead;
      fDataRequired = rhs.fDataRequired;
      if( rhs.fParam ) {
-       fParam.reset(static_cast<THaRunParameters*>(rhs.fParam->IsA()->New()));
-       *fParam = *rhs.fParam;
+       fParam.reset(dynamic_cast<THaRunParameters*>(rhs.fParam->Clone()));
      } else
        fParam    = nullptr;
      fRunParamClass = rhs.fRunParamClass;
@@ -205,8 +227,9 @@ void THaRunBase::Clear( Option_t* opt )
   // Reset the run object as if freshly constructed.
   // However, when opt=="INIT", keep an explicitly set event range and run date
 
-  TString sopt(opt);
-  bool doing_init = (sopt == "INIT");
+  THaPrintOption sopt(opt);
+  sopt.ToUpper();
+  bool doing_init = (sopt.Contains("INIT"));
 
   Close();
   fName = NOTINIT;
@@ -223,9 +246,10 @@ void THaRunBase::Clear( Option_t* opt )
   else
     ClearDate();
 
-  // Likewise, if initializing, keep any explicitly set event range
+  // Likewise, if initializing, keep any explicitly set parameters
   if( !doing_init ) {
     ClearEventRange();
+    fDataVersion = 0;
   }
 }
 
@@ -244,8 +268,7 @@ void THaRunBase::ClearEventRange()
 {
   // Reset the range of events to analyze
 
-  fEvtRange[0] = 1;
-  fEvtRange[1] = kMaxUInt;
+  copy(begin(DEFEVTRANGE), end(DEFEVTRANGE), begin(fEvtRange));
 }
 
 //_____________________________________________________________________________
@@ -287,9 +310,6 @@ Int_t THaRunBase::Init()
 
   static const char* const here = "THaRunBase::Init";
 
-  Int_t retval = READ_OK;
-  //FIXME fIsInit = false;
-
   // Set up the run parameter object
   fParam = nullptr;
   const char* s = fRunParamClass.Data();
@@ -312,15 +332,13 @@ Int_t THaRunBase::Init()
     return READ_FATAL;
   }
 
-  // Clear selected parameters (matters for re-init)
+  // Clear selected parameters (matters for re-init). This calls Close().
   Clear("INIT");
 
   // Open the data source.
-  if( !IsOpen() ) {
-    retval = Open();
-    if( retval )
-      return retval;
-  }
+  Int_t retval = Open();
+  if( retval )
+    return retval;
 
   // Get initial information - e.g., prescan the data source for
   // the required run date
@@ -373,29 +391,36 @@ Bool_t THaRunBase::IsOpen() const
 void THaRunBase::Print( Option_t* opt ) const
 {
   // Print definition of run
-  TString sopt(opt);
+  THaPrintOption sopt(opt);
   sopt.ToUpper();
-  if( sopt =="NAMEDESC" ) {
-    cout << "\"" << fName << "\"";
-    if( !fTitle.IsNull() )
-      cout << " (" << fTitle << ")";
+  if( sopt.Contains("NAMEDESC") ) {
+    cout << "\"" << GetName() << "\"";
+    if( strcmp( GetTitle(), "") != 0 )
+      cout << "  \"" << GetTitle() << "\"";
     return;
   }
 
-  TNamed::Print( opt );
-  cout << "Run number: " << fNumber << endl;
-  cout << "Run date:   " << fDate.AsString() << endl;
-  cout << "Requested event range: " << fEvtRange[0] << "-"
-       << fEvtRange[1] << endl;
+  cout << IsA()->GetName() << "  \"" << GetName() << "\"";
+  if( strcmp( GetTitle(), "") != 0 )
+    cout << "  \"" << GetTitle() << "\"" << endl;
+  cout << "Run number:   " << fNumber << endl;
+  cout << "Run date:     " << fDate.AsString() << endl;
+  cout << "Data version: " << fDataVersion << endl;
+  cout << "Requested event range: ";
+  if( std::equal(begin(fEvtRange), end(fEvtRange), begin(DEFEVTRANGE)) )
+    cout << "all";
+  else
+    cout << fEvtRange[0] << "-" << fEvtRange[1];
+  cout << endl;
 
-  if( sopt == "STARTINFO" )
+  if( sopt.Contains("STARTINFO") )
     return;
 
   cout << "Analyzed events:       " << fNumAnalyzed << endl;
   cout << "Assume Date:           " << fAssumeDate << endl;
   cout << "Database read:         " << fDBRead << endl;
-  cout << "Initialized  :         " << fIsInit << endl;
-  cout << "Opened       :         " << fOpened << endl;
+  cout << "Initialized:           " << fIsInit << endl;
+  cout << "Opened:                " << fOpened << endl;
   cout << "Date set/read/req:     "
        << HasInfo(kDate) << " " << HasInfoRead(kDate) << " "
        << (Bool_t)((kDate & fDataRequired) == kDate) << endl;
