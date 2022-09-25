@@ -30,6 +30,7 @@ public:
   virtual UInt_t GetPrescaleFactor( UInt_t trigger ) const;
   virtual void   SetRunTime( ULong64_t tloc );
   virtual Int_t  SetDataVersion( Int_t version ) { return SetCodaVersion(version); }
+  //FIXME: this one should call SetDataVersion, not the other way round
           Int_t  SetCodaVersion( Int_t version );
 
   virtual Bool_t DataCached() { return fMultiBlockMode && !fBlockIsDone; }
@@ -52,6 +53,8 @@ public:
     explicit coda_format_error( const char* what_arg )
       : std::runtime_error(what_arg) {}
   };
+
+  static UInt_t InterpretBankTag( UInt_t tag );
 
 protected:
   virtual Int_t  LoadIfFlagData(const UInt_t* evbuffer);
@@ -101,6 +104,7 @@ protected:
   Bool_t fMultiBlockMode, fBlockIsDone;
   UInt_t tsEvType, bank_tag, block_size;
 
+public:
   class TBOBJ {
   public:
      TBOBJ() : blksize(0), tag(0), nrocs(0), len(0), tsrocLen(0), evtNum(0),
@@ -125,6 +129,7 @@ protected:
      const uint32_t *TSROC;     /* Pointer to Trigger Supervisor ROC segment data */
    };
 
+protected:
    TBOBJ tbank;
 
    ClassDef(CodaDecoder,0) // Decoder for CODA event buffer
