@@ -182,7 +182,7 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
   }
 
   else if( event_type <= MAX_PHYS_EVTYPE && !PrescanModeEnabled() ) {
-    if( fDataVersion != 2 &&
+    if( fDataVersion == 3 &&
         (ret = trigBankDecode(evbuffer)) != HED_OK ) {
       return ret;
     }
@@ -208,7 +208,7 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
   if( fDoBench ) fBench->Stop("clearEvent");
 
   if( fDataVersion == 3 ) {
-    event_num = ++evcnt_coda3;
+    event_num = tbank.evtNum;
     FindRocsCoda3(evbuffer);
   } else {
     event_num = evbuffer[4];
