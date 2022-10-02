@@ -22,6 +22,7 @@
 #include <iomanip>
 #include <cassert>
 #include <stdexcept>
+#include <sstream>
 
 using namespace std;
 
@@ -100,10 +101,11 @@ THaRun& THaRun::operator=(const THaRunBase& rhs)
     THaCodaRun::operator=(rhs);
     fCodaData = MKCODAFILE;
     try {
-      const auto& obj = dynamic_cast<const THaRun&>(rhs);
-      fFilename = obj.fFilename;
-      fMaxScan  = obj.fMaxScan;
-      FindSegmentNumber();
+      const auto& run = dynamic_cast<const THaRun&>(rhs);
+      fFilename = run.fFilename;
+      fMaxScan  = run.fMaxScan;
+      fSegment  = run.fSegment;
+      fStream   = run.fStream;
     }
     catch( const std::bad_cast& ) {
       fFilename.Clear();  // will need to call SetFilename()
@@ -174,7 +176,7 @@ Int_t THaRun::Open()
   fOpened = false;
   Int_t st = fCodaData->codaOpen( fFilename );
   if( st == CODA_OK ) {
-    // Get CODA version from data; however, if a version was set by
+    // Get CODA version from data; however, if a version was set
     // explicitly by the user, use that instead
     if( GetCodaVersion() < 0 ) {
       Error( here, "Cannot determine CODA version from file. "
@@ -431,36 +433,53 @@ Bool_t THaRun::FindSegmentNumber()
   if( fFilename.IsNull() )
     return false;
 
+  TString dummy;
+  return StdFindSegmentNumber(fFilename, dummy, fSegment, fStream);
+}
+
+//_____________________________________________________________________________
+Bool_t THaRun::StdFindSegmentNumber( const TString& filename, TString& stem,
+                                     Int_t& segment, Int_t& stream )
+{
   try {
     TRegexp re1(fgRe1);
     TRegexp re2(fgRe2);
+    if( re1.Status() != TRegexp::kOK || re2.Status() != TRegexp::kOK ) {
+      ostringstream ostr;
+      ostr << "Error compiling regular expressions: "
+           << re1.Status() << " " << re2.Status() << endl;
+      throw std::runtime_error(ostr.str());
+    }
     Ssiz_t pos{};
-    if( (pos = fFilename.Index(re2)) != kNPOS ) {
+    if( (pos = filename.Index(re2)) != kNPOS ) {
+      stem = filename(0, pos);
       ++pos;
-      assert(pos < fFilename.Length());
-      Ssiz_t pos2 = fFilename.Index(".", pos);
-      assert(pos2 != kNPOS && pos2+1 < fFilename.Length());
-      TString sStream = fFilename(pos, pos2 - pos);
+      assert(pos < filename.Length());
+      Ssiz_t pos2 = filename.Index(".", pos);
+      assert(pos2 != kNPOS && pos2+1 < filename.Length());
+      TString sStream = filename(pos, pos2 - pos);
       ++pos2;
-      TString sSegmnt = fFilename(pos2, fFilename.Length() - pos2);
-      fStream  = sStream.Atoi();
-      fSegment = sSegmnt.Atoi();
-    } else if( (pos = fFilename.Index(re1)) != kNPOS ) {
+      TString sSegmnt = filename(pos2, filename.Length() - pos2);
+      stream  = sStream.Atoi();
+      segment = sSegmnt.Atoi();
+    } else if( (pos = filename.Index(re1)) != kNPOS ) {
+      stem = filename(0, pos);
       ++pos;
-      assert(pos < fFilename.Length());
-      TString sSegmnt = fFilename(pos, fFilename.Length() - pos);
-      fSegment = sSegmnt.Atoi();
+      assert(pos < filename.Length());
+      TString sSegmnt = filename(pos, filename.Length() - pos);
+      stream = -1;
+      segment = sSegmnt.Atoi();
     } else {
       // If neither expression matches, this run does not have the standard
       // segment/stream info in its file name. Leave both segment and stream
       // numbers unset and report success.
-      fSegment = fStream = -1;
+      segment = stream = -1;
     }
   }
   catch ( const exception& e ) {
     cerr << "Error parsing segment and/or stream number in run file name "
-         << "\"" << fFilename << "\": " << e.what() << endl;
-    fSegment = fStream = -1;
+         << "\"" << filename << "\": " << e.what() << endl;
+    segment = stream = -1;
     return false;
   }
   return true;

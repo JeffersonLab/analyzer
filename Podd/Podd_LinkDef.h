@@ -115,6 +115,9 @@
 #pragma link C++ class Podd::DetectorData+;
 #pragma link C++ class Podd::ADCData+;
 #pragma link C++ class Podd::PMTData+;
+#pragma link C++ class Podd::MultiFileRun+;
+#pragma link C++ class Podd::MultiFileRun::StreamInfo+;
+#pragma link C++ class Podd::MultiFileRun::FileInfo+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;
