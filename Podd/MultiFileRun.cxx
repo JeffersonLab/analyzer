@@ -782,6 +782,14 @@ void MultiFileRun::PrintStreamInfo() const
 }
 
 //_____________________________________________________________________________
+void MultiFileRun::ClearStreams()
+{
+  fLastUsedStream = -1;
+  fStreams.clear();
+  fIsInit = false;
+}
+
+//_____________________________________________________________________________
 Int_t MultiFileRun::SetFilename( const char* name )
 {
   // Set the file name pattern for the input file(s).
@@ -803,9 +811,7 @@ Int_t MultiFileRun::SetFilename( const char* name )
 
   // Assume we have to reinitialize. A new file name generally means a new
   // run date, run number, etc.
-  fLastUsedStream = -1;
-  fStreams.clear();
-  fIsInit = false;
+  ClearStreams();
 
   CheckWarnAbsFilename();
 
@@ -817,6 +823,38 @@ bool MultiFileRun::SetPathList( std::vector<std::string> pathlist )
 {
   fPathList = std::move(pathlist);
   return CheckWarnAbsFilename();
+}
+
+//_____________________________________________________________________________
+void MultiFileRun::SetFirstSegment( Int_t n )
+{
+  if( n < 0 ) n = 0;
+  fFirstSegment = n;
+  ClearStreams();
+}
+
+//_____________________________________________________________________________
+void MultiFileRun::SetFirstStream( Int_t n )
+{
+  if( n < 0 ) n = 0;
+  fFirstStream = n;
+  ClearStreams();
+}
+
+//_____________________________________________________________________________
+void MultiFileRun::SetMaxSegments( Int_t n )
+{
+  if( n < 0 ) n = 0;
+  fMaxSegments = n;
+  ClearStreams();
+}
+
+//_____________________________________________________________________________
+void MultiFileRun::SetMaxStreams( Int_t n )
+{
+  if( n < 0 ) n = 0;
+  fMaxStreams = n;
+  ClearStreams();
 }
 
 //_____________________________________________________________________________
@@ -869,6 +907,82 @@ void MultiFileRun::ExpandFileName( string& str ) const
     throw std::invalid_argument(s);
   }
   str = path.Data();
+}
+
+//_____________________________________________________________________________
+UInt_t MultiFileRun::GetNFiles() const
+{
+  size_t nfiles = 0;
+  for( const auto& stream: fStreams ) {
+    nfiles += stream.fFiles.size();
+  }
+  return nfiles;
+}
+
+//_____________________________________________________________________________
+UInt_t MultiFileRun::GetNStreams() const
+{
+  return fStreams.size();
+}
+
+//_____________________________________________________________________________
+Int_t MultiFileRun::GetStartSegment() const
+{
+  Int_t minseg = kMaxInt;
+  for( const auto& stream: fStreams ) {
+    for( const auto& file: stream.fFiles ) {
+      if( file.fSegment < minseg )
+        minseg = file.fSegment;
+    }
+  }
+  return minseg;
+}
+
+//_____________________________________________________________________________
+Int_t MultiFileRun::GetLastSegment() const
+{
+  Int_t maxseg = kMinInt;
+  for( const auto& stream: fStreams ) {
+    for( const auto& file: stream.fFiles ) {
+      if( file.fSegment > maxseg )
+        maxseg = file.fSegment;
+    }
+  }
+  return maxseg;
+}
+
+//_____________________________________________________________________________
+Int_t MultiFileRun::GetStartStream() const
+{
+  Int_t minstr = kMaxInt;
+  for( const auto& stream: fStreams ) {
+    if( stream.fID < minstr )
+      minstr = stream.fID;
+  }
+  return minstr;
+}
+
+//_____________________________________________________________________________
+Int_t MultiFileRun::GetLastStream() const
+{
+  Int_t maxstr = kMinInt;
+  for( const auto& stream: fStreams ) {
+    if( stream.fID > maxstr )
+      maxstr = stream.fID;
+  }
+  return maxstr;
+}
+
+//_____________________________________________________________________________
+vector<string> MultiFileRun::GetFiles() const
+{
+  vector<string> files;
+  for( const auto& stream: fStreams ) {
+    for( const auto& file: stream.fFiles ) {
+      files.push_back(file.fPath);
+    }
+  }
+  return files;
 }
 
 //_____________________________________________________________________________

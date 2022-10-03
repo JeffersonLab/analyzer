@@ -112,7 +112,29 @@ public:
   virtual Int_t  SetFilename( const char* name );
   bool           SetPathList( std::vector<std::string> pathlist );
 
-  Bool_t IsNameRegexp() const { return fNameIsRegexp; }
+  // These getters will return valid data after Init()
+  // Number of input files found in all streams
+  UInt_t         GetNFiles() const;
+  // Number of streams found
+  UInt_t         GetNStreams() const;
+  // Lowest segment number found in any stream (>= fFirstSegment)
+  Int_t          GetStartSegment() const;
+  // Highest segment number found in any stream
+  Int_t          GetLastSegment() const;
+  // Lowest stream number found (-1 = no stream index found)
+  Int_t          GetStartStream() const;
+  // Highest stream number found (-1 = no stream index found)
+  Int_t          GetLastStream() const;
+  // Complete list of input files found
+  std::vector<std::string> GetFiles() const;
+
+  // Configuration of segment/stream ranges. If called, must Init() again
+  void           SetFirstSegment( Int_t n );
+  void           SetFirstStream( Int_t n );
+  void           SetMaxSegments( Int_t n );
+  void           SetMaxStreams( Int_t n );
+
+  Bool_t         IsNameRegexp() const       { return fNameIsRegexp; }
 
   struct FileInfo final {
     FileInfo() : fSegment{-1} {}
@@ -159,6 +181,7 @@ public:
   } __attribute__((aligned(64)));
 
 protected:
+  // Configuration
   std::string fFilenamePattern;        // File name pattern (wildcard or regexp)
   std::vector<std::string> fPathList;  // List of search paths
   std::vector<StreamInfo>  fStreams;   // Event streams to process
@@ -167,6 +190,7 @@ protected:
   UInt_t fMaxSegments;                 // Maximum number of segments to process
   UInt_t fMaxStreams;                  // Maximum number of streams to process
   Bool_t fNameIsRegexp;                // File name is a regular expression
+  // Working data
   Int_t  fLastUsedStream;              //! Index of last stream that was read
   Int_t  fNActive;                     //! Number of active streams
   UInt_t fNevRead;                     //! Number of events read
@@ -176,6 +200,7 @@ protected:
   virtual Int_t  FindNextStream() const;
 
   bool  CheckWarnAbsFilename();
+  void  ClearStreams();
   void  ExpandFileName( std::string& str ) const;
   bool  HasWildcards( const std::string& path ) const;
   void  PrintStreamInfo() const;
