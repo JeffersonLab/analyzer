@@ -901,8 +901,6 @@ Int_t THaAnalyzer::SetCountMode( Int_t mode )
   // If mode >= 0 and mode is one of kCountAll, kCountPhysics, or kCountRaw,
   // then set the mode. If mode >= 0 but unknown, return -mode.
   // If mode < 0, don't change the mode but return the current count mode.
-  //
-  // Changing the counting mode should only be necessary in special cases.
 
   if( mode < 0 )
     return fCountMode;

@@ -105,6 +105,9 @@ public:
     kTracking, kReconstruct, kPhysics
   };
 
+  // For SetCountMode
+  enum ECountMode { kCountPhysics, kCountAll, kCountRaw };
+
 protected:
   // Test and histogram blocks
   class Stage_t {
@@ -134,8 +137,6 @@ protected:
     UInt_t      count;
     const char* description;
   };
-
-  enum ECountMode { kCountPhysics, kCountAll, kCountRaw };
 
   TFile*         fFile;            //The ROOT output file.
   THaOutput*     fOutput;          //Flexible ROOT output (tree, histograms)
