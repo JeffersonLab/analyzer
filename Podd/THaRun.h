@@ -46,8 +46,10 @@ protected:
   virtual TString  GetInitInfoFileName( TString fname );
   virtual TString  FindInitInfoFile( const TString& fname );
 
+  static Bool_t    StdFindSegmentNumber( const TString& filename, TString& stem,
+                                         Int_t& segment, Int_t& stream );
+
   ClassDef(THaRun,7)  // A run based on a CODA data file on disk
 };
-
 
 #endif

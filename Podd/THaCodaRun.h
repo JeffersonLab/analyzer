@@ -12,19 +12,20 @@
 #include <memory>
 
 class THaCodaRun : public THaRunBase {
-  
+
 public:
   explicit THaCodaRun( const char* description="" );
   THaCodaRun( const THaCodaRun& rhs );
   virtual THaCodaRun& operator=( const THaRunBase& );
   virtual ~THaCodaRun();
-  
+
   virtual Int_t          Close();
   virtual const UInt_t*  GetEvBuffer() const;
   virtual Bool_t         IsOpen() const;
   virtual Int_t          ReadEvent();
   virtual Int_t          GetDataVersion();
   virtual Int_t          SetDataVersion( Int_t version );
+  //FIXME: these two should call Get/SetDataVersion, not the other way round
   Int_t                  GetCodaVersion();
   Int_t                  SetCodaVersion( Int_t version );
 

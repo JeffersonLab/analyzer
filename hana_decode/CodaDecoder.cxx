@@ -182,7 +182,7 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
   }
 
   else if( event_type <= MAX_PHYS_EVTYPE && !PrescanModeEnabled() ) {
-    if( fDataVersion != 2 &&
+    if( fDataVersion == 3 &&
         (ret = trigBankDecode(evbuffer)) != HED_OK ) {
       return ret;
     }
@@ -208,7 +208,7 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
   if( fDoBench ) fBench->Stop("clearEvent");
 
   if( fDataVersion == 3 ) {
-    event_num = ++evcnt_coda3;
+    event_num = tbank.evtNum;
     FindRocsCoda3(evbuffer);
   } else {
     event_num = evbuffer[4];
@@ -277,32 +277,9 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer)
   data_type  = (evbuffer[1] & 0xff00) >> 8;
   block_size = evbuffer[1] & 0xff;
 
-  if( bank_tag >= 0xff00 ) { /* CODA Reserved bank type */
+  event_type = InterpretBankTag(bank_tag);
 
-    switch( bank_tag ) {
-
-    case 0xffd1:
-      event_type = PRESTART_EVTYPE;
-      break;
-    case 0xffd2:
-      event_type = GO_EVTYPE;
-      break;
-    case 0xffd4:
-      event_type = END_EVTYPE;
-      break;
-    case 0xff50:
-    case 0xff58: // Physics event with sync bit
-    case 0xFF78:
-    case 0xff70:
-      event_type = 1;    // for CODA 3.* physics events are type 1.
-      break;
-    default:
-      cout << "CodaDecoder:: WARNING:  Undefined CODA 3 event type" << endl;
-    }
-  } else { /* User event type */
-
-    event_type = bank_tag;  // ET-insertions
-
+  if( bank_tag < 0xff00 ) { // User event type
     if( fDebug > 1 )    // if set, character data gets printed.
       debug_print(evbuffer);
 
@@ -315,6 +292,42 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer)
                 << "  evt_time " << GetEvTime() << endl;
 
   return HED_OK;
+}
+
+//_____________________________________________________________________________
+UInt_t CodaDecoder::InterpretBankTag( UInt_t tag )
+{
+  UInt_t evtyp{};
+
+  if( tag >= 0xff00 ) { // CODA Reserved bank type
+    switch( tag ) {
+      case 0xffd1:
+        evtyp = PRESTART_EVTYPE;
+        break;
+      case 0xffd2:
+        evtyp = GO_EVTYPE;
+        break;
+      case 0xffd4:
+        evtyp = END_EVTYPE;
+        break;
+      case 0xff50:
+      case 0xff58:      // Physics event with sync bit
+      case 0xFF78:
+      case 0xff70:
+        evtyp = 1;      // for CODA 3.* physics events are type 1.
+        break;
+      default:          // Undefined CODA 3 event type
+        cerr << "CodaDecoder:: WARNING:  Undefined CODA 3 event type, tag = "
+             << "0x" << hex << tag << dec << endl;
+        evtyp = 0;
+        //FIXME evtyp = 0 could also be a user event type ...
+        // maybe throw an exception here?
+    }
+  } else {              // User event type
+    evtyp = tag;        // ET-insertions
+  }
+
+  return evtyp;
 }
 
 //_____________________________________________________________________________
@@ -484,11 +497,9 @@ uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
     if( slen != 2*(1 + (withRunInfo() ? 1 : 0) + (withTimeStamp() ? blkSize : 0)))
       throw coda_format_error("Invalid length for Trigger Bank seg 1");
     const auto* q = (const uint64_t*) (p + 1);
-    evtNum = *q++;
-    if( withRunInfo() )
-      runInfo = *q++;
-    if( withTimeStamp() )
-      evTS = q;
+    evtNum  = *q++;
+    runInfo = withRunInfo()   ? *q++ : 0;
+    evTS    = withTimeStamp() ? q    : nullptr;
     p += slen + 1;
   }
   if( p-evbuffer >= len )
@@ -511,6 +522,8 @@ uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
   //   uint64_t roc_time_stamp;
   //   uint32_t roc_trigger_bits;   // this is optional!
   // } roc_segment[blkSize];
+  TSROC = nullptr;
+  tsrocLen = 0;
   for( uint32_t i = 0; i < nrocs; ++i ) {
     if( p-evbuffer >= len )
       throw coda_format_error("Past end of bank while scanning trigger bank segments");

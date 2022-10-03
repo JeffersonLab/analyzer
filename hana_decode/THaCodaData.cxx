@@ -45,7 +45,8 @@ Int_t THaCodaData::getCodaVersion()
     codaClose();
     return -1;
   }
-  cout << "Evio file EvioVersion = "<< EvioVersion << endl;
+  //TODO debug message
+  //cout << "Evio file EvioVersion = "<< EvioVersion << endl;
   return (EvioVersion < 4) ? 2 : 3;
 }
 
@@ -107,7 +108,7 @@ void THaCodaData::staterr(const char* tried_to, Int_t status) const
 //_____________________________________________________________________________
 Int_t THaCodaData::ReturnCode( Int_t evio_retcode )
 {
-  // Convert EVIO return codes to THaRunBase codes
+  // Convert EVIO return codes to THaCodaData codes
 
   switch( static_cast<UInt_t>(evio_retcode) ) {
 

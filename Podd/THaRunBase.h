@@ -21,8 +21,9 @@ class THaRunBase : public TNamed {
 public:
   explicit THaRunBase( const char* description="" );
   THaRunBase( const THaRunBase& run );
-  virtual THaRunBase& operator=( const THaRunBase& rhs );
+  virtual THaRunBase& operator=( const THaRunBase& rhs ); //TODO make non-virtual?
   virtual ~THaRunBase();
+  //TODO Implement Clone() and use in THaAnalyzer
 
   virtual bool operator==( const THaRunBase& ) const;
   virtual bool operator!=( const THaRunBase& ) const;
@@ -105,7 +106,7 @@ protected:
   TObject*      fExtra;         // Additional member data (for binary compat.)
 
   virtual Int_t ReadDatabase();
-  virtual Int_t ReadInitInfo( Int_t level = 0);
+  virtual Int_t ReadInitInfo( Int_t level = 0 );
 
   ClassDef(THaRunBase,6)       // Base class for run objects
 };
