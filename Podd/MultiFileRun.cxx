@@ -347,9 +347,16 @@ Int_t MultiFileRun::AddFile( const TString& file, const TString& dir )
     if( jt == files.end() )
       files.emplace_back(path.Data(), stem.Data(), seg);
     else {
-      cerr << "Duplicate segment number: " << jt->fPath << " : " << path
-           << endl;
-      return READ_ERROR;
+      if( jt->fStem == stem ) {
+        cerr << "Warning: Duplicate segment number: "
+             << jt->fPath << " : " << path << endl
+             << "Ignoring apparently identical file " << path << endl;
+      } else {
+        cerr << "Error: Duplicate segment number: "
+             << jt->fPath << " : " << path << endl
+             << "Files seem different, check your filename pattern." << endl;
+        return READ_ERROR;
+      }
     }
   }
   return READ_OK;
