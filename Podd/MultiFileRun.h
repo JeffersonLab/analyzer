@@ -127,6 +127,8 @@ public:
   Int_t          GetLastStream() const;
   // Complete list of input files found
   std::vector<std::string> GetFiles() const;
+  // Number of successful calls to ReadEvent()
+  UInt_t         GetNevRead() const { return fNevRead; }
 
   // Configuration of segment/stream ranges. If called, must Init() again
   void           SetFirstSegment( Int_t n );
@@ -134,7 +136,9 @@ public:
   void           SetMaxSegments( Int_t n );
   void           SetMaxStreams( Int_t n );
 
-  Bool_t         IsNameRegexp() const       { return fNameIsRegexp; }
+  // True if filename pattern is to be interpreted as a full ROOT TRegexp,
+  // false if interpreted as a wildcard expression
+  Bool_t         IsNameRegexp() const { return fNameIsRegexp; }
 
   struct FileInfo final {
     FileInfo() : fSegment{-1} {}

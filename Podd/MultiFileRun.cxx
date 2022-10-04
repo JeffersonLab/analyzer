@@ -53,10 +53,6 @@ MultiFileRun::MultiFileRun( const char* filenamePattern,
 
   // Expand environment variables and leading "~" in file name pattern
   ExpandFileName(fFilenamePattern);
-
-  // Post-2021 Hall A runs normally contain these items. Additional items
-  // within the first minscan (= 50) events will be picked up automatically.
-  fDataRequired = kDate|kRunNumber;
 }
 
 //_____________________________________________________________________________
@@ -100,7 +96,7 @@ MultiFileRun::MultiFileRun( const MultiFileRun& rhs )
   , fNActive{0}
   , fNevRead{0}
 {
-  fCodaData.reset(); // Not used
+  fCodaData.reset(); // Not used. THaRun copy c'tor sets it
 }
 
 //_____________________________________________________________________________
@@ -111,6 +107,7 @@ MultiFileRun& MultiFileRun::operator=(const THaRunBase& rhs)
   if( this != &rhs ) {
     THaRun::operator=(rhs);
 
+    fCodaData.reset();  // Not used. THaRun::operator= sets it
     fLastUsedStream = -1;
     fNActive = 0;
     fNevRead = 0;
