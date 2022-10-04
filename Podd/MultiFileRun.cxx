@@ -746,9 +746,9 @@ void MultiFileRun::Print( Option_t* opt ) const
              fFilenamePattern.substr(0, fPathList.front().length())) ) {
     cout << "Search path";
     if( fPathList.size() > 1 )
-      cout << "s:";
+      cout << "s:" << endl;
     else
-      cout << ":" << endl;
+      cout << ":";
     for( const auto& path: fPathList ) {
       cout << "  " << path << endl;
     }
@@ -773,17 +773,14 @@ void MultiFileRun::Print( Option_t* opt ) const
 //_____________________________________________________________________________
 void MultiFileRun::PrintStreamInfo() const
 {
-  if( fStreams.size() > 1
-      || (!fStreams.empty() && fStreams.front().fFiles.size() > 1 ) ) {
-    for( const auto& stream: fStreams ) {
-      if( stream.fID >= 0 )
-        cout << "Stream " << stream.fID;
-      else
-        cout << "Default stream";
-      cout << ": " << endl;
-      for( const auto& file: stream.fFiles ) {
-        cout << "  " << file.fPath << endl;
-      }
+  for( const auto& stream: fStreams ) {
+    if( stream.fID >= 0 )
+      cout << "Stream " << stream.fID;
+    else
+      cout << "Default stream";
+    cout << ": " << endl;
+    for( const auto& file: stream.fFiles ) {
+      cout << "  " << file.fPath << endl;
     }
   }
 }

@@ -402,7 +402,8 @@ void THaRunBase::Print( Option_t* opt ) const
 
   cout << IsA()->GetName() << "  \"" << GetName() << "\"";
   if( strcmp( GetTitle(), "") != 0 )
-    cout << "  \"" << GetTitle() << "\"" << endl;
+    cout << "  \"" << GetTitle() << "\"";
+  cout << endl;
   cout << "Run number:   " << fNumber << endl;
   cout << "Run date:     " << fDate.AsString() << endl;
   cout << "Data version: " << fDataVersion << endl;
