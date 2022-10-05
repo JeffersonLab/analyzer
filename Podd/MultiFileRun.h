@@ -92,6 +92,10 @@ public:
                          const char* description = "",
                          bool is_regex = false );
   explicit MultiFileRun( std::vector<std::string> pathList,
+                         const char* filenamePattern = "",
+                         const char* description = "",
+                         bool is_regex = false );
+  explicit MultiFileRun( std::vector<std::string> pathList,
                          std::vector<std::string> fileList,
                          const char* description = "",
                          bool is_regex = false );

@@ -109,6 +109,15 @@ MultiFileRun::MultiFileRun( const char* filenamePattern,
 }
 
 //_____________________________________________________________________________
+MultiFileRun::MultiFileRun( std::vector<std::string> pathList,
+                            const char* filenamePattern, const char* description,
+                            bool is_regex )
+  : MultiFileRun(std::move(pathList),
+                 vector<string>{filenamePattern},
+                 description, is_regex)
+{}
+
+//_____________________________________________________________________________
 MultiFileRun::MultiFileRun( vector<string> pathList, vector<string> fileList,
                             const char* description, bool is_regex )
   : THaRun("", description)
