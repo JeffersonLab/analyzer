@@ -80,6 +80,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <utility>
 
 class TRegexp;
 
@@ -91,7 +92,7 @@ public:
                          const char* description = "",
                          bool is_regex = false );
   explicit MultiFileRun( std::vector<std::string> pathList,
-                         const char* filenamePattern = "",
+                         std::vector<std::string> fileList,
                          const char* description = "",
                          bool is_regex = false );
   MultiFileRun( const MultiFileRun& run );
@@ -111,6 +112,8 @@ public:
   virtual Int_t  ReadEvent();
   virtual Int_t  SetFilename( const char* name );
   bool           SetPathList( std::vector<std::string> pathlist );
+  void           SetFlags( UInt_t set ) { fFlags = set; }
+  UInt_t         GetFlags() const { return fFlags; }
 
   // These getters will return valid data after Init()
   // Number of input files found in all streams
@@ -184,16 +187,23 @@ public:
     ClassDef(StreamInfo, 1)  // CODA stream descriptor for MultiFileRun
   } __attribute__((aligned(64)));
 
+  //TODO: not yet implemented, may change
+  enum EFlags {
+    kRequireAllSegments,     // Require all segments in range present
+    kRequireAllFiles         // Require all non-wildcard files present
+  };
+
 protected:
   // Configuration
-  std::string fFilenamePattern;        // File name pattern (wildcard or regexp)
+  std::vector<std::string> fFileList;  // File name pattern (wildcard or regexp)
   std::vector<std::string> fPathList;  // List of search paths
   std::vector<StreamInfo>  fStreams;   // Event streams to process
   Int_t  fFirstSegment;                // First segment number to process
   Int_t  fFirstStream;                 // First stream number to process
   UInt_t fMaxSegments;                 // Maximum number of segments to process
   UInt_t fMaxStreams;                  // Maximum number of streams to process
-  Bool_t fNameIsRegexp;                // File name is a regular expression
+  UInt_t fFlags;                       // Flags (see EFlags)
+  Bool_t fNameIsRegexp;                // Interpret path/file names as TRegexp
   // Working data
   Int_t  fLastUsedStream;              //! Index of last stream that was read
   Int_t  fNActive;                     //! Number of active streams
@@ -206,22 +216,25 @@ protected:
   bool  CheckWarnAbsFilename();
   void  ClearStreams();
   void  ExpandFileName( std::string& str ) const;
-  bool  HasWildcards( const std::string& path ) const;
+  bool  HasWildcards( const TString& str ) const;
   void  PrintStreamInfo() const;
+  void  PrintFileInfo() const;
 
 private:
+  using path_t = std::pair<TString,TString>;
   Int_t AddFile( const TString& file, const TString& dir );
-  Int_t ScanForFilename( const TString& path, const TString& pattern,
-                         bool regex_mode );
-  Int_t ScanForSubdirs( const TString& path,
+  Int_t ScanForFilename( const path_t& path, bool regex_mode );
+  Int_t ScanForSubdirs( const TString& curdir,
                         const std::vector<TString>& splitpath, Int_t level,
                         bool regex_mode );
   Int_t DescendInto( const TString& curpath,
                      const std::vector<TString>& splitpath, Int_t level );
+  Int_t BuildInputListFromWildcardDir( const path_t& path );
+  Int_t BuildInputListFromTopDir( const path_t& path );
   Int_t CheckFilesConsistency();
   void  SortStreams();
 
-  ClassDef(MultiFileRun, 1)            // CODA data from multiple files
+  ClassDef(MultiFileRun, 2)            // CODA data from multiple files
 };
 
 } //namespace Podd

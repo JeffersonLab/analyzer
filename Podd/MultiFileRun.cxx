@@ -35,15 +35,64 @@ using namespace Decoder;
 
 namespace Podd {
 
+//__________________________________________________________________________
+static TString GetDirName(const char *pathname)
+{
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,22,0)
+  // This code taken from ROOT 6.22's TSystem.cxx
+  if( !pathname || !strchr(pathname, '/') )
+    return ".";
+
+  auto pathlen = strlen(pathname);
+
+  const char* r = pathname + pathlen - 1;
+  // First skip the trailing '/'
+  while( (r > pathname) && (*r == '/') )
+    --r;
+  // Then find the next non slash
+  while( (r > pathname) && (*r != '/') )
+    --r;
+
+  // Then skip duplicate slashes
+  // Note the 'r>buf' is a strict comparison to allows '/topdir' to return '/'
+  while( (r > pathname) && (*r == '/') )
+    --r;
+  // If all was cut away, we encountered a rel. path like 'subdir/'
+  // and ended up at '.'.
+  if( (r == pathname) && (*r != '/') )
+    return ".";
+
+  return TString(pathname, r + 1 - pathname); // NOLINT(modernize-return-braced-init-list)
+#else
+  return gSystem->GetDirName(pathname).Data();
+#endif
+}
+
+//_____________________________________________________________________________
+static inline TString JoinPath( const TString& base, const TString& to_join )
+{
+  if( base.IsNull() )
+    return to_join;
+  return base + (base.EndsWith("/") ? "" : "/") + to_join;
+}
+
+//_____________________________________________________________________________
+static inline string JoinPath( const string& base, const string& to_join )
+{
+  if( base.empty() )
+    return to_join;
+  return base + (base[base.length()-1] == '/' ? "" : "/") + to_join;
+}
+
 //_____________________________________________________________________________
 MultiFileRun::MultiFileRun( const char* filenamePattern,
                             const char* description, bool is_regex )
-  : THaRun(filenamePattern, description)
-  , fFilenamePattern{filenamePattern}
+  : THaRun("", description)
   , fFirstSegment{0}
   , fFirstStream{0}
   , fMaxSegments{0}
   , fMaxStreams{0}
+  , fFlags{0}
   , fNameIsRegexp{is_regex}
   , fLastUsedStream{-1}
   , fNActive{0}
@@ -51,21 +100,25 @@ MultiFileRun::MultiFileRun( const char* filenamePattern,
 {
   fCodaData.reset(); // Not used
 
+  if( filenamePattern && *filenamePattern )
+    fFileList.emplace_back(filenamePattern);
+
   // Expand environment variables and leading "~" in file name pattern
-  ExpandFileName(fFilenamePattern);
+  auto expand_name = [this]( string& f) { ExpandFileName(f); };
+  for_each(ALL(fFileList), expand_name);
 }
 
 //_____________________________________________________________________________
-MultiFileRun::MultiFileRun( std::vector<std::string> pathList,
-                            const char* filenamePattern,
+MultiFileRun::MultiFileRun( vector<string> pathList, vector<string> fileList,
                             const char* description, bool is_regex )
-  : THaRun(filenamePattern, description)
-  , fFilenamePattern{filenamePattern}
+  : THaRun("", description)
+  , fFileList{std::move(fileList)}
   , fPathList{std::move(pathList)}
   , fFirstSegment{0}
   , fFirstStream{0}
   , fMaxSegments{0}
   , fMaxStreams{0}
+  , fFlags{0}
   , fNameIsRegexp{is_regex}
   , fLastUsedStream{-1}
   , fNActive{0}
@@ -74,9 +127,9 @@ MultiFileRun::MultiFileRun( std::vector<std::string> pathList,
   fCodaData.reset(); // Not used
 
   // Expand environment variables and leading "~" in file paths
-  ExpandFileName(fFilenamePattern);
-  for( auto& path: fPathList )
-    ExpandFileName(path);
+  auto expand_name = [this]( string& f) { ExpandFileName(f); };
+  for_each(ALL(fFileList), expand_name);
+  for_each(ALL(fPathList), expand_name);
 
   CheckWarnAbsFilename();
 }
@@ -84,13 +137,14 @@ MultiFileRun::MultiFileRun( std::vector<std::string> pathList,
 //_____________________________________________________________________________
 MultiFileRun::MultiFileRun( const MultiFileRun& rhs )
   : THaRun(rhs)
-  , fFilenamePattern{rhs.fFilenamePattern}
+  , fFileList{rhs.fFileList}
   , fPathList{rhs.fPathList}
   , fStreams{rhs.fStreams}
   , fFirstSegment{rhs.fFirstSegment}
   , fFirstStream{rhs.fFirstStream}
   , fMaxSegments{rhs.fMaxSegments}
   , fMaxStreams{rhs.fMaxStreams}
+  , fFlags{rhs.fFlags}
   , fNameIsRegexp{rhs.fNameIsRegexp}
   , fLastUsedStream{-1}
   , fNActive{0}
@@ -113,21 +167,23 @@ MultiFileRun& MultiFileRun::operator=(const THaRunBase& rhs)
     fNevRead = 0;
     try {
       const auto& mfr = dynamic_cast<const MultiFileRun&>(rhs);
-      fFilenamePattern = mfr.fFilenamePattern;
+      fFileList = mfr.fFileList;
       fPathList        = mfr.fPathList;
       fStreams         = mfr.fStreams;
       fFirstSegment    = mfr.fFirstSegment;
       fFirstStream     = mfr.fFirstStream;
       fMaxSegments     = mfr.fMaxSegments;
       fMaxStreams      = mfr.fMaxStreams;
+      fFlags           = mfr.fFlags;
       fNameIsRegexp    = mfr.fNameIsRegexp;
     }
     catch( const std::bad_cast& ) {
       // Assigning from a different class. Not a good idea, but anyway.
-      fFilenamePattern = fFilename;
+      fFileList.assign(1, string{fFilename});
       fPathList.clear();
       fFirstSegment = fFirstStream = 0;
       fMaxSegments = fMaxStreams = 0;
+      fFlags = 0;
       fNameIsRegexp = false;
     }
   }
@@ -329,7 +385,7 @@ Int_t MultiFileRun::AddFile( const TString& file, const TString& dir )
   if( StdFindSegmentNumber(file, stem, seg, str)
       && (seg == -1 || seg >= fFirstSegment)
       && (str == -1 || str >= fFirstStream) ) {
-    TString path = (dir != ".") ? dir + "/" + file : file;
+    TString path = (dir != ".") ? JoinPath(dir, file) : file;
     auto it = find_if(ALL(fStreams), [str]( const StreamInfo& ifo ) {
       return ifo.fID == str;
     });
@@ -387,13 +443,13 @@ void MultiFileRun::SortStreams()
 }
 
 //_____________________________________________________________________________
-static vector<TString> SplitPath( const string& path )
+static vector<TString> SplitPath( const TString& path )
 {
   vector<TString> vs;
   TString dirn = path;
   while( dirn != "/" && dirn != "." ) {
     vs.emplace_back(gSystem->BaseName(dirn));
-    dirn = gSystem->GetDirName(dirn);
+    dirn = GetDirName(dirn);
   }
   vs.emplace_back(dirn);  // top directory
   reverse(ALL(vs));
@@ -401,20 +457,19 @@ static vector<TString> SplitPath( const string& path )
 }
 
 //_____________________________________________________________________________
-static inline TString JoinPath( const TString& base, const TString& to_join )
-{
-  return base + (base.EndsWith("/") ? "" : "/") + to_join;
-}
-
-//_____________________________________________________________________________
 static bool item_is_dir( const TString& itempath )
 {
   FileStat_t buf;
   Int_t ret = gSystem->GetPathInfo(itempath, buf);
-  assert(ret == 0); // 'itempath' definitely exists at this point
-  return ( ret == 0 && R_ISDIR(buf.fMode)
-           && !gSystem->AccessPathName(itempath, kReadPermission)
-           && !gSystem->AccessPathName(itempath, kExecutePermission) );
+  if( ret != 0 || !R_ISDIR(buf.fMode) )
+    return false;
+  if( gSystem->AccessPathName(itempath, kReadPermission) ||
+      gSystem->AccessPathName(itempath, kExecutePermission) ) {
+    cerr << "Warning: Directory " << itempath
+         << " is not accessible. Check permissions." << endl;
+    return false;
+  }
+  return true;
 };
 
 //_____________________________________________________________________________
@@ -422,9 +477,61 @@ static bool item_is_not_dir( const TString& itempath )
 {
   FileStat_t buf;
   Int_t ret = gSystem->GetPathInfo(itempath, buf);
-  assert(ret == 0); // 'itempath' definitely exists at this point
   return ( ret == 0 && !R_ISDIR(buf.fMode) );
 };
+
+//_____________________________________________________________________________
+static bool item_exists( const TString& itempath )
+{
+  FileStat_t buf;
+  Int_t ret = gSystem->GetPathInfo(itempath, buf);
+  return ( ret == 0 );
+};
+
+//_____________________________________________________________________________
+bool MultiFileRun::HasWildcards( const TString& str ) const
+{
+  // Return true if 'path' should be interpreted as a regular expression.
+  // This searches for the first occurrence of a character that will be treated
+  // specially, so that 'path' needs to be "compiled" by TRegexp.
+
+  // TODO this is hard to test (too many possible cases) and so this function
+  //  may still be buggy for edge cases.
+
+  string spath = str.Data();
+  if( !fNameIsRegexp ) {
+    // ROOT's TRegexp with wildcard = true supports shell-style wildcards
+    // including character ranges like '[a-z]', but also '[a-z]+'.
+    return spath.find_first_of("?*[") != string::npos;
+  }
+  // Handle full (= non-wildcard) regular expressions.
+  // These characters immediately give away the string as a regexp:
+  auto is_regex_char = []( string::value_type c ) {
+    return (c == '.' || c == '[' ||
+            c == '*' || c == '+' || c == '?');
+  };
+  string::size_type pos = 0;
+  while( true ) {
+    pos = spath.find_first_of("^$.[*+?\\", pos);
+    if( pos == string::npos )
+      return false;
+    auto c = spath[pos];
+    if( is_regex_char(c) )
+      return true;
+    // ROOT TRegexp treats '^' and '$' as normal characters except at the start
+    // and end of the expression, respectively. So, except at those positions,
+    // these characters alone do not make 'path' a regexp. (They make path an
+    // invalid directory name, but that is checked elsewhere.)
+    if( (c == '^' && pos == 0) || (c == '$' && pos + 1 == spath.length()) )
+      return true;
+    // A '\' requires regex treatment only if it precedes one of the special
+    // regex characters. Otherwise, C-string interpretation applies, e.g. "\t"
+    if( c == '\\' && pos + 1 < spath.length()
+        && is_regex_char(spath[pos + 1]) )
+      return true;
+    ++pos;
+  }
+}
 
 //_____________________________________________________________________________
 static Int_t ForEachMatchItemInDir(
@@ -437,57 +544,58 @@ static Int_t ForEachMatchItemInDir(
     cerr << "Directory " << dir << " unexpectedly cannot be opened." << endl;
     return THaRunBase::READ_ERROR;
   }
-  while( TString item = gSystem->GetDirEntry(dirp) ) {
-    if( item.IsNull() )
-      break;
-    if( item == "." || item == ".." )
+  Int_t ret = THaRunBase::READ_OK;
+  while( const char* entry = gSystem->GetDirEntry(dirp) ) {
+    if( strcmp(entry, ".") == 0 || strcmp(entry, "..") == 0 )
       continue;
     Ssiz_t len = 0;
+    TString item = entry;
     if( match_re.Index(item, &len) == 0 && len == item.Length() ) {
-       Int_t ret = action(dir, item);
-       if( ret ) {
-         gSystem->FreeDirectory(dirp);
-         return ret;
-       }
+        ret = action(dir, item);
+       if( ret != THaRunBase::READ_OK )
+         goto exit;
     }
   }
+ exit:
   gSystem->FreeDirectory(dirp);
-  return THaRunBase::READ_OK;
+  return ret;
 }
 
 //_____________________________________________________________________________
-Int_t MultiFileRun::ScanForFilename
-  ( const TString& path, const TString& pattern, bool regex_mode )
+Int_t MultiFileRun::ScanForFilename( const path_t& path, bool regex_mode )
 {
   auto add_file = [this]( const TString& curpath, const TString& file ) -> Int_t
   {
     auto itempath = JoinPath(curpath, file);
-    if( item_is_not_dir(itempath) ) {
-      return AddFile(file, curpath);
-    } else {
-      cerr << itempath << " is a directory. Expected file." << endl;
+    if( item_exists(itempath) ) {
+      if( item_is_not_dir(itempath) ) {
+        return AddFile(file, curpath);
+      } else {
+        cerr << itempath << " is a directory. Expected file." << endl;
+      }
     }
     return READ_OK;
   };
 
-  if( HasWildcards(pattern.Data()) ) {
-    TRegexp file_re(
-      gSystem->BaseName(pattern), !regex_mode);
+  const TString& dir = path.first;
+  const TString& file = path.second;
+  if( HasWildcards(file) ) {
+    TRegexp file_re(file, !regex_mode);
     if( file_re.Status() != TRegexp::kOK ) {
-      cerr << "Bad filename pattern \"" << pattern << "\", err = "
+      cerr << "Bad filename pattern \"" << file << "\", err = "
            << file_re.Status() << endl;
       return READ_ERROR;
     }
-    return ForEachMatchItemInDir(path, file_re, add_file);
+    return ForEachMatchItemInDir(dir, file_re, add_file);
 
   } else {
-    return add_file(path, pattern);
+    return add_file(dir, file);
   }
 }
 
 //_____________________________________________________________________________
 Int_t MultiFileRun::ScanForSubdirs   // NOLINT(misc-no-recursion)
-  ( const TString& path, const std::vector<TString>& splitpath, Int_t level,
+  ( const TString& curdir, const std::vector<TString>& splitpath, Int_t level,
     bool regex_mode )
 {
   auto do_directory = [this, level, &splitpath]  // NOLINT(misc-no-recursion)
@@ -503,16 +611,16 @@ Int_t MultiFileRun::ScanForSubdirs   // NOLINT(misc-no-recursion)
   };
 
   const auto& subdir = splitpath[level];
-  if( HasWildcards(subdir.Data()) ) {
+  if( HasWildcards(subdir) ) {
     TRegexp subdir_re(subdir, !regex_mode);
     if( subdir_re.Status() != TRegexp::kOK ) {
       cerr << "Bad directory pattern \"" << subdir << "\", err = "
            << subdir_re.Status() << endl;
       return READ_ERROR;
     }
-    return ForEachMatchItemInDir(path, subdir_re, do_directory);
+    return ForEachMatchItemInDir(curdir, subdir_re, do_directory);
   } else {
-    return do_directory(path, subdir);
+    return do_directory(curdir, subdir);
   }
 }
 
@@ -520,55 +628,37 @@ Int_t MultiFileRun::ScanForSubdirs   // NOLINT(misc-no-recursion)
 Int_t MultiFileRun::DescendInto  // NOLINT(misc-no-recursion)
   ( const TString& curpath, const std::vector<TString>& splitpath, Int_t level )
 {
-  if( level >= SSIZE(splitpath) ) {
+  if( level+1 >= SSIZE(splitpath) ) {
     // Base case: Lowest directory level. Look for the filename pattern.
-    return ScanForFilename(curpath, fFilenamePattern, fNameIsRegexp);
+    return ScanForFilename({curpath, splitpath[level]}, fNameIsRegexp);
   }
   return ScanForSubdirs(curpath, splitpath, level, fNameIsRegexp);
 }
 
 //_____________________________________________________________________________
-bool MultiFileRun::HasWildcards( const string& path ) const
+Int_t MultiFileRun::BuildInputListFromWildcardDir( const path_t& path )
 {
-  // Return true if 'path' should be interpreted as a regular expression.
-  // This searches for the first occurrence of a character that will be treated
-  // specially, so that 'path' needs to be "compiled" by TRegexp.
-
-  // TODO this is hard to test (too many possible cases) and so this function
-  //  may still be buggy for edge cases.
-
-  if( !fNameIsRegexp ) {
-    // ROOT's TRegexp with wildcard = true supports shell-style wildcards
-    // including character ranges like '[a-z]', but also '[a-z]+'.
-    return path.find_first_of("?*[") != string::npos;
+  // Make a vector of directory path components
+  auto splitpath = SplitPath(path.first);
+  // The last element is the file name
+  splitpath.push_back(path.second);
+  assert(!splitpath.empty());
+  const auto topdir = splitpath[0];
+  if( item_is_dir(topdir) ) {
+    Int_t ret = DescendInto(topdir, splitpath, 1);
+    if( ret != READ_OK )
+      return ret;
   }
-  // Handle full (= non-wildcard) regular expressions.
-  // These characters immediately give away the string as a regexp:
-  auto is_regex_char = []( string::value_type c ) {
-    return (c == '.' || c == '[' ||
-            c == '*' || c == '+' || c == '?');
-  };
-  string::size_type pos = 0;
-  while( true ) {
-    pos = path.find_first_of("^$.[*+?\\", pos);
-    if( pos == string::npos )
-      return false;
-    auto c = path[pos];
-    if( is_regex_char(c) )
-      return true;
-    // ROOT TRegexp treats '^' and '$' as normal characters except at the start
-    // and end of the expression, respectively. So, except at those positions,
-    // these characters alone do not make 'path' a regexp. (They make path an
-    // invalid directory name, but that is checked elsewhere.)
-    if( (c == '^' && pos == 0) || (c == '$' && pos + 1 == path.length()) )
-      return true;
-    // A '\' requires regex treatment only if it precedes one of the special
-    // regex characters. Otherwise, C-string interpretation applies, e.g. "\t"
-    if( c == '\\' && pos + 1 < path.length()
-        && is_regex_char(path[pos + 1]) )
-      return true;
-    ++pos;
+  return READ_OK;
+}
+
+//_____________________________________________________________________________
+Int_t MultiFileRun::BuildInputListFromTopDir( const path_t& path )
+{
+  if( item_is_dir(path.first) ) {
+    return ScanForFilename(path, fNameIsRegexp);
   }
+  return READ_OK;
 }
 
 //_____________________________________________________________________________
@@ -576,23 +666,33 @@ bool MultiFileRun::HasWildcards( const string& path ) const
 Int_t MultiFileRun::BuildInputList()
 {
   if( fPathList.empty() )
-    fPathList.emplace_back(gSystem->GetDirName(fFilenamePattern.c_str()));
+    fPathList.emplace_back(".");
 
+  vector<path_t> candidates;
   for( const auto& dir: fPathList ) {
-    assert(!dir.empty());
-    if( HasWildcards(dir) ) {
+    if( dir.empty() )
+      continue;
+    for( const auto& file: fFileList ) {
+      if( file.empty() )
+        continue;
+      TString fullpath = JoinPath(dir, file);
+      candidates.emplace_back(GetDirName(fullpath),
+                              gSystem->BaseName(fullpath));
+    }
+  }
+
+  for( const auto& path: candidates ) {
+    Int_t ret; // NOLINT(cppcoreguidelines-init-variables)
+    if( HasWildcards(path.first) ) {
       // Traverse directory tree, resolving wildcard/regexp in directory names
-      auto dircomp = SplitPath(dir);
-      assert(!dircomp.empty());
-      const auto topdir = dircomp[0];
-      Int_t ret = DescendInto(topdir, dircomp, 1);
-      if( ret ) return ret;
+      ret = BuildInputListFromWildcardDir(path);
     } else {
       // If the directory path contains no wildcards/regexp, simply scan
       // that directory directly
-      Int_t ret = ScanForFilename(dir, fFilenamePattern, fNameIsRegexp);
-      if( ret ) return ret;
+      ret = BuildInputListFromTopDir(path);
     }
+    if( ret != READ_OK )
+      return ret;
   }
   if( fStreams.empty() ) {
     cerr << "MultiFileRun::Open: no matching files found" << endl;
@@ -614,7 +714,7 @@ Int_t MultiFileRun::Open()
   if( IsOpen() )
     return READ_OK;
 
-  if( fFilenamePattern.empty() ) {
+  if( fFileList.empty() ) {
     cerr << "CODA file name not set. Cannot open the run." << endl;
     return READ_FATAL;  // filename not set
   }
@@ -731,16 +831,17 @@ void MultiFileRun::Print( Option_t* opt ) const
   THaPrintOption sopt(opt);
   sopt.ToUpper();
   if( sopt.Contains("NAMEDESC") ) {
-    cout << "\"file://" << fFilenamePattern << "\"";
+    auto files = GetFiles();
+    cout << "\"file://"
+         << ( !files.empty() ? files[0].c_str() : "(not set)" ) << "\"";
+    if( files.size() > 1 )
+      cout << " etc. (" << files.size() << " files)";
     if( strcmp(GetTitle(), "") != 0 )
       cout << "  \"" << GetTitle() << "\"";
     return;
   }
   THaCodaRun::Print(opt); // NOLINT(bugprone-parent-virtual-call)
-  if( fPathList.size() > 1
-      || (!fPathList.empty()
-          && fPathList.front() !=
-             fFilenamePattern.substr(0, fPathList.front().length())) ) {
+  if( !fPathList.empty() ) {
     cout << "Search path";
     if( fPathList.size() > 1 )
       cout << "s:" << endl;
@@ -750,12 +851,7 @@ void MultiFileRun::Print( Option_t* opt ) const
       cout << "  " << path << endl;
     }
   }
-  cout << "File name";
-  if( HasWildcards(fFilenamePattern) )
-    cout << (fNameIsRegexp ? " (regexp): " : " (wildcards): ");
-  else
-    cout << ": ";
-  cout << fFilenamePattern << endl;
+  PrintFileInfo();
   if( fFirstSegment != 0 )
     cout << "First segment:         " << fFirstSegment << endl;
   if( fMaxSegments != 0 )
@@ -765,6 +861,26 @@ void MultiFileRun::Print( Option_t* opt ) const
   if( fMaxStreams != 0 )
     cout << "Max streams:           " << fMaxStreams << endl;
   PrintStreamInfo();
+}
+
+//_____________________________________________________________________________
+void MultiFileRun::PrintFileInfo() const
+{
+  if( !fFileList.empty() ) {
+    cout << "File name";
+    if( fFileList.size() > 1 )
+      cout << "s";
+    if( any_of(ALL(fFileList),
+               [this]( const string& f ) { return HasWildcards(f); }) )
+      cout << (fNameIsRegexp ? " (regexp): " : " (wildcards): ");
+    else
+      cout << ": ";
+    if( fFileList.size() > 1 )
+      cout << endl;
+    for( const auto& file: fFileList ) {
+      cout << "  " << file << endl;
+    }
+  }
 }
 
 //_____________________________________________________________________________
@@ -794,6 +910,7 @@ void MultiFileRun::ClearStreams()
 Int_t MultiFileRun::SetFilename( const char* name )
 {
   // Set the file name pattern for the input file(s).
+  // This sets to list of files to one entry.
   // If the name changes, the existing input, if any, will be closed.
   // Return -1 if illegal name, 1 if name not changed, 0 otherwise.
 
@@ -804,11 +921,11 @@ Int_t MultiFileRun::SetFilename( const char* name )
     return -1;
   }
 
-  if( fFilenamePattern == name )
+  if( fFileList.size() == 1 && fFileList[0] == name )
     return 1;
 
   Close();
-  fFilenamePattern = name;
+  fFileList.assign(1, name);
 
   // Assume we have to reinitialize. A new file name generally means a new
   // run date, run number, etc.
@@ -885,12 +1002,14 @@ Bool_t MultiFileRun::FindSegmentNumber()
 //_____________________________________________________________________________
 bool MultiFileRun::CheckWarnAbsFilename()
 {
-  if( fFilenamePattern.length() > 0 && fFilenamePattern.front() == '/'
-      && !fPathList.empty() ) {
-    cerr << "MultiFileRun: Warning: file name is an absolute path, but "
-            "path list also specified. Ignoring path list." << endl;
-    fPathList.clear();
-    return true;
+  for( const auto& file: fFileList ) {
+    if( file.length() > 0 && file.front() == '/' && !fPathList.empty() ) {
+      cerr << "MultiFileRun: Warning: file name " << file
+           << " is an absolute path, but path list also specified. "
+              "Ignoring path list." << endl;
+      fPathList.clear();
+      return true;
+    }
   }
   return false;
 }
