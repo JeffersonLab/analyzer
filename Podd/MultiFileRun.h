@@ -194,7 +194,8 @@ public:
   //TODO: not yet implemented, may change
   enum EFlags {
     kRequireAllSegments,     // Require all segments in range present
-    kRequireAllFiles         // Require all non-wildcard files present
+    kRequireAllFiles,        // Require all non-wildcard files present
+    kDoNotSkipDupFileNames   // Keep searching even if file already found
   };
 
 protected:
@@ -237,6 +238,7 @@ private:
   Int_t BuildInputListFromTopDir( const path_t& path );
   Int_t CheckFilesConsistency();
   void  SortStreams();
+  void  AssembleFilePaths( std::vector<path_t>& candidates );
 
   ClassDef(MultiFileRun, 2)            // CODA data from multiple files
 };
