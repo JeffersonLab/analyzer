@@ -18,8 +18,12 @@ option(PODD_SET_RPATH "Set RPATH on installed executables & libraries" ON)
 #----------------------------------------------------------------------------
 # Project-specific build flags
 if(CMAKE_SYSTEM_NAME MATCHES Darwin)
-  set(CMAKE_SHARED_LINKER_FLAGS
-    "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-undefined,dynamic_lookup")
+  if(CMAKE_CXX_COMPILER_ID STREQUAL AppleClang
+    AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
+    # Deprecated linker option that was needed with older macOS
+    set(CMAKE_SHARED_LINKER_FLAGS
+      "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-undefined,dynamic_lookup")
+  endif()
   list(REMOVE_DUPLICATES CMAKE_SHARED_LINKER_FLAGS)
 endif()
 
@@ -152,7 +156,7 @@ macro(set_diagnostic_flags)
   endif()
 
   if(CMAKE_GENERATOR STREQUAL Ninja)
-    if(CMAKE_CXX_COMPILER MATCHES Clang)
+    if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
       check_cxx_compiler_flag(-fcolor-diagnostics cxx-compiler-supports-color-diagnostics)
       if(cxx-compiler-supports-color-diagnostics)
         set(${PROJECT_NAME_UC}_DIAG_FLAGS "${${PROJECT_NAME_UC}_DIAG_FLAGS} -fcolor-diagnostics")
