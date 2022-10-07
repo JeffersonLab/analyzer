@@ -158,4 +158,14 @@
 #pragma link C++ function THaVar::THaVar( const char*, const char*, std::vector<double>&, const Int_t* );
 #pragma link C++ function THaVar::THaVar( const char*, const char*, std::vector<float>&, const Int_t* );
 
+#pragma read                             \
+  sourceClass="Podd::MultiFileRun"       \
+  source="std::string fFilenamePattern"  \
+  version="[1]"                          \
+  targetClass="Podd::MultiFileRun"       \
+  target="fFileList"                     \
+  embed="true"                           \
+  include="vector,string,iostream"       \
+  code="{ fFileList.assign(1, onfile.fFilenamePattern); }"
+
 #endif
