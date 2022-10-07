@@ -17,9 +17,9 @@
 #include <iostream>
 #include <cassert>
 #include <type_traits>   // std::make_signed
-#include <functional>    // std::function
 #include <limits>
 #include <set>
+#include <numeric>       // std::iota
 
 using namespace std;
 using namespace Decoder;
@@ -65,7 +65,7 @@ static TString GetDirName(const char *pathname)
 
   return TString(pathname, r + 1 - pathname); // NOLINT(modernize-return-braced-init-list)
 #else
-  return gSystem->GetDirName(pathname).Data();
+  return gSystem->GetDirName(pathname);
 #endif
 }
 
@@ -107,6 +107,8 @@ MultiFileRun::MultiFileRun( const char* filenamePattern,
   // Expand environment variables and leading "~" in file name pattern
   auto expand_name = [this]( string& f) { ExpandFileName(f); };
   for_each(ALL(fFileList), expand_name);
+
+  ResetBit(kResolvingWildcard);
 }
 
 //_____________________________________________________________________________
@@ -114,7 +116,7 @@ MultiFileRun::MultiFileRun( std::vector<std::string> pathList,
                             const char* filenamePattern, const char* description,
                             bool is_regex )
   : MultiFileRun(std::move(pathList),
-                 vector<string>{filenamePattern},
+                 vector<string>{(filenamePattern ? filenamePattern : "")},
                  description, is_regex)
 {}
 
@@ -142,6 +144,8 @@ MultiFileRun::MultiFileRun( vector<string> pathList, vector<string> fileList,
   for_each(ALL(fPathList), expand_name);
 
   CheckWarnAbsFilename();
+
+  ResetBit(kResolvingWildcard);
 }
 
 //_____________________________________________________________________________
@@ -481,7 +485,7 @@ static bool item_is_dir( const TString& itempath )
     return false;
   }
   return true;
-};
+}
 
 //_____________________________________________________________________________
 static bool item_is_not_dir( const TString& itempath )
@@ -489,7 +493,7 @@ static bool item_is_not_dir( const TString& itempath )
   FileStat_t buf;
   Int_t ret = gSystem->GetPathInfo(itempath, buf);
   return ( ret == 0 && !R_ISDIR(buf.fMode) );
-};
+}
 
 //_____________________________________________________________________________
 static bool item_exists( const TString& itempath )
@@ -497,7 +501,7 @@ static bool item_exists( const TString& itempath )
   FileStat_t buf;
   Int_t ret = gSystem->GetPathInfo(itempath, buf);
   return ( ret == 0 );
-};
+}
 
 //_____________________________________________________________________________
 bool MultiFileRun::HasWildcards( const TString& str ) const
@@ -545,7 +549,7 @@ bool MultiFileRun::HasWildcards( const TString& str ) const
 }
 
 //_____________________________________________________________________________
-static Int_t ForEachMatchItemInDir(
+Int_t MultiFileRun::ForEachMatchItemInDir(
   const TString& dir, const TRegexp& match_re,
   const std::function<Int_t( const TString&, const TString& )>& action )
 {
@@ -553,9 +557,10 @@ static Int_t ForEachMatchItemInDir(
   assert( dirp ); // else item_is_dir() faulty
   if( !dirp ) {
     cerr << "Directory " << dir << " unexpectedly cannot be opened." << endl;
-    return THaRunBase::READ_ERROR;
+    return READ_ERROR;
   }
-  Int_t ret = THaRunBase::READ_OK;
+  Int_t ret = READ_OK;
+  SetBit(kResolvingWildcard);
   while( const char* entry = gSystem->GetDirEntry(dirp) ) {
     if( strcmp(entry, ".") == 0 || strcmp(entry, "..") == 0 )
       continue;
@@ -563,16 +568,17 @@ static Int_t ForEachMatchItemInDir(
     TString item = entry;
     if( match_re.Index(item, &len) == 0 && len == item.Length() ) {
       ret = action(dir, item);
-      if( ret == THaRunBase::READ_EOF ) {
+      if( ret == READ_EOF ) {
         // Don't quit if file was found since there may be more matches
-        ret = THaRunBase::READ_OK;
+        ret = READ_OK;
         continue;
       }
-      if( ret != THaRunBase::READ_OK )
+      if( ret != READ_OK )
         goto exit;
     }
   }
  exit:
+  ResetBit(kResolvingWildcard);
   gSystem->FreeDirectory(dirp);
   return ret;
 }
@@ -620,7 +626,7 @@ Int_t MultiFileRun::ScanForSubdirs   // NOLINT(misc-no-recursion)
     auto itempath = JoinPath(curpath, subdir);
     if( item_is_dir(itempath) ) {
       return DescendInto(itempath, splitpath, level + 1);
-    } else {
+    } else if( !TestBit(kResolvingWildcard) ) {
       cerr << itempath << " is not a directory" << endl;
     }
     return READ_OK;
@@ -681,33 +687,49 @@ Int_t MultiFileRun::BuildInputListFromTopDir( const path_t& path )
 // Build a list of unique directory/filename pairs to search
 void MultiFileRun::AssembleFilePaths( std::vector<path_t>& candidates )
 {
-  if( fPathList.empty() )
-    fPathList.emplace_back("");
+  // Sort file names and remove duplicates
+  vector<string> file_list = fFileList;
+  std::sort(ALL(file_list));
+  auto last = std::unique(ALL(file_list));
+  file_list.erase(last, file_list.end());
 
-  for( const auto& file: fFileList ) {
-    if( file.empty() )
+  // Add any file names that are absolute paths to the beginning of the list
+  // of path candidates. Usually this is just a single entry if the class was
+  // constructed with the basic constructor taking a single filename pattern.
+  for( const auto& file: file_list ) {
+    if( file.empty() || file.front() != '/' )
       continue;
-    bool abs_filepath = (file.front() == '/');
-    if( abs_filepath ) {
-      candidates.emplace_back(GetDirName(file.c_str()),
-                              gSystem->BaseName(file.c_str()));
-    } else {
-      for( const auto& dir: fPathList ) {
-        TString fullpath = JoinPath(dir, file);
-        candidates.emplace_back(GetDirName(fullpath),
-                                gSystem->BaseName(fullpath));
-      }
+    candidates.emplace_back(GetDirName(file.c_str()),
+                            gSystem->BaseName(file.c_str()));
+  }
+
+  // If the path list is empty, make a temporary dummy entry so the loop
+  // below actually runs and records the filenames with relative paths.
+  bool temp_pathlist = false;
+  if( fPathList.empty() ) {
+    temp_pathlist = true;
+    fPathList.emplace_back("");
+  }
+
+  // Add all combinations of paths and file names to the list of candidates.
+  // Maintain the order of the path list as given by the user, so that can put
+  // fast/likely locations first, for example.
+  for( const auto& dir: fPathList ) {
+    for( const auto& file: file_list ) {
+      if( file.empty() || file.front() == '/' )
+        continue;
+      TString fullpath = JoinPath(dir, file);
+      path_t cand_path{GetDirName(fullpath),
+                       gSystem->BaseName(fullpath)};
+      // Disregard exact duplicates, however they may have gotten here.
+      // Wildcards may still lead to duplicates; those will be caught later.
+      if( std::find(ALL(candidates), cand_path) == candidates.end() )
+        candidates.emplace_back(std::move(cand_path));
     }
   }
-  if( candidates.size() > 1 ) {
-    // Group directories together for more efficient access to the filesystem
-    std::sort(ALL(candidates), []( const path_t& a, const path_t& b ) {
-      return a.first < b.first;
-    });
-    // Remove exact duplicates
-    auto last = std::unique(ALL(candidates));
-    candidates.erase(last, candidates.end());
-  }
+
+  if( temp_pathlist )
+    fPathList.clear();
 }
 
 //_____________________________________________________________________________
@@ -987,10 +1009,26 @@ Int_t MultiFileRun::SetFilename( const char* name )
 }
 
 //_____________________________________________________________________________
-bool MultiFileRun::SetPathList( std::vector<std::string> pathlist )
+bool MultiFileRun::SetFileList( vector<std::string> filelist )
 {
+  if( fFileList == filelist )
+    return true;
+  Close();
+  fFileList = std::move(filelist);
+  ClearStreams();
+  CheckWarnAbsFilename();
+  return false;
+}
+
+//_____________________________________________________________________________
+bool MultiFileRun::SetPathList( vector<std::string> pathlist )
+{
+  if( fPathList == pathlist )
+    return true;
+  Close();
   fPathList = std::move(pathlist);
-  return CheckWarnAbsFilename();
+  ClearStreams();
+  return false;
 }
 
 //_____________________________________________________________________________
@@ -1052,15 +1090,16 @@ Bool_t MultiFileRun::FindSegmentNumber()
 //_____________________________________________________________________________
 bool MultiFileRun::CheckWarnAbsFilename()
 {
+  bool found = false;
   for( const auto& file: fFileList ) {
     if( file.length() > 0 && file.front() == '/' && !fPathList.empty() ) {
       cerr << "MultiFileRun: Warning: file name " << file
            << " is an absolute path, but path list also specified. "
               "Will ignore path list for this file." << endl;
-      return true;
+      found = true;
     }
   }
-  return false;
+  return found;
 }
 
 //_____________________________________________________________________________

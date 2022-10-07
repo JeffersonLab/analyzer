@@ -7,9 +7,9 @@
 //
 // This class presents multiple CODA input files as if they were a
 // single file through the THaRun API. It supports files split into
-// consecutive "segments", files written in parallel by CODA in multi-
-// stream mode, and a combination of both. Both CODA 2 and CODA 3 file
-// formats are supported, as with THaRun.
+// consecutive "segments", files written in parallel by CODA in
+// multi-stream mode, and a combination of both. Both CODA 2 and CODA 3
+// file formats are supported, as with THaRun.
 //
 // For convenience, wildcard and regular expression file names are
 // supported. File directory paths can be either part of the file name,
@@ -81,6 +81,7 @@
 #include <string>
 #include <memory>
 #include <utility>
+#include <functional>    // std::function
 
 class TRegexp;
 
@@ -115,6 +116,7 @@ public:
   virtual void   Print( Option_t* opt="" ) const;
   virtual Int_t  ReadEvent();
   virtual Int_t  SetFilename( const char* name );
+  bool           SetFileList( std::vector<std::string> filelist );
   bool           SetPathList( std::vector<std::string> pathlist );
   void           SetFlags( UInt_t set ) { fFlags = set; }
   UInt_t         GetFlags() const { return fFlags; }
@@ -147,7 +149,7 @@ public:
   // false if interpreted as a wildcard expression
   Bool_t         IsNameRegexp() const { return fNameIsRegexp; }
 
-  struct FileInfo final {
+  struct FileInfo {
     FileInfo() : fSegment{-1} {}
     FileInfo( std::string path, std::string stem, Int_t seg );
     bool operator< ( const FileInfo& rhs ) const {
@@ -156,10 +158,10 @@ public:
     std::string fPath;       // Full file path
     std::string fStem;       // File basename stem (without stream/segment no)
     Int_t       fSegment;    // File segment number
-    ClassDef(FileInfo, 1)    // CODA file descriptor for MultiFileRun
+    ClassDefNV(FileInfo, 1)    // CODA file descriptor for MultiFileRun
   } __attribute__((aligned(64)));
 
-  struct StreamInfo final {
+  struct StreamInfo {
     StreamInfo();
     explicit StreamInfo( Int_t id );
     StreamInfo( const StreamInfo& rhs );
@@ -188,7 +190,7 @@ public:
   private:
     Int_t OpenCurrent();
     Int_t FetchEventNumber();
-    ClassDef(StreamInfo, 1)  // CODA stream descriptor for MultiFileRun
+    ClassDefNV(StreamInfo, 1)  // CODA stream descriptor for MultiFileRun
   } __attribute__((aligned(64)));
 
   //TODO: not yet implemented, may change
@@ -226,19 +228,23 @@ protected:
   void  PrintFileInfo() const;
 
 private:
-  using path_t = std::pair<TString,TString>;
+  using path_t = std::pair<TString, TString>;
   Int_t AddFile( const TString& file, const TString& dir );
+  Int_t BuildInputListFromWildcardDir( const path_t& path );
+  Int_t BuildInputListFromTopDir( const path_t& path );
+  Int_t CheckFilesConsistency();
+  Int_t DescendInto( const TString& curpath,
+                     const std::vector<TString>& splitpath, Int_t level );
+  Int_t ForEachMatchItemInDir( const TString& dir, const TRegexp& match_re,
+        const std::function<Int_t( const TString&, const TString& )>& action );
   Int_t ScanForFilename( const path_t& path, bool regex_mode );
   Int_t ScanForSubdirs( const TString& curdir,
                         const std::vector<TString>& splitpath, Int_t level,
                         bool regex_mode );
-  Int_t DescendInto( const TString& curpath,
-                     const std::vector<TString>& splitpath, Int_t level );
-  Int_t BuildInputListFromWildcardDir( const path_t& path );
-  Int_t BuildInputListFromTopDir( const path_t& path );
-  Int_t CheckFilesConsistency();
   void  SortStreams();
   void  AssembleFilePaths( std::vector<path_t>& candidates );
+
+  enum { kResolvingWildcard = BIT(18) };
 
   ClassDef(MultiFileRun, 2)            // CODA data from multiple files
 };
