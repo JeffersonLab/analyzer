@@ -117,6 +117,38 @@ UInt_t PipeliningModule::LoadBlock( THaSlotData* sldat,
 }
 
 //_____________________________________________________________________________
+Long64_t PipeliningModule::VerifyBlockTrailer(
+  const UInt_t* evbuffer, UInt_t pos, UInt_t len, Long64_t ibeg,
+  Long64_t iend ) const
+{
+  if( iend > 0 ) {
+    // Verify that the word count reported in the block trailer agrees with
+    // the trailer's position in the buffer.
+    UInt_t nwords_inblock = evbuffer[iend] & 0x3FFFFF;
+    if( ibeg + nwords_inblock == iend + 1 )
+      // All good
+      return iend;
+  } else {
+    // Block header without matching block trailer, should not happen
+    goto notfound;
+  }
+  // Apparent misidentification: keep searching until hitting the buffer end
+  if( ++iend < pos+len ) {
+    cerr << "WARNING: Block trailer misidentification, slot " << fSlot
+         << ", roc " << fCrate << ", data 0x" << hex << evbuffer[iend-1] << dec
+         << ". Attempting recovery." << endl;
+    return -iend;
+  } else {
+ notfound:
+    cerr << "ERROR: Block trailer NOT found, slot " << fSlot
+         << ", roc " << fCrate << ". Corrupt data. Giving up." << endl;
+    cout << "Block data:" << endl;
+    PrintBlock(evbuffer, pos, len);
+    return 0;
+  }
+}
+
+//_____________________________________________________________________________
 UInt_t PipeliningModule::LoadBank( THaSlotData* sldat,
                                    const UInt_t* evbuffer,
                                    UInt_t pos, UInt_t len )
@@ -144,22 +176,28 @@ UInt_t PipeliningModule::LoadBank( THaSlotData* sldat,
     // of them) between here and the block trailer, save their positions,
     // then proceed with decoding the first block
     evtblk.reserve(block_size + 1);
-    auto iend = FindEventsInBlock(evbuffer, ibeg+1, len+pos-(ibeg+1),
-                                  kEventHeader, kBlockTrailer, evtblk, fSlot);
-    if( iend == -1 )
-      //TODO Block header without matching block trailer, should not happen
-      iend = pos+len-1;
+    Long64_t iend = ibeg+1;
+    while( true ) {
+      iend = FindEventsInBlock(evbuffer, iend, len+pos-iend,
+                               kEventHeader, kBlockTrailer, evtblk, fSlot);
+      if( (iend = VerifyBlockTrailer(evbuffer, pos, len, ibeg, iend)) > 0 )
+        break;
+      if( iend == 0 )
+        return 0;
+      iend = -iend;
+    }
     assert( ibeg >= pos && iend > ibeg && iend < pos+len ); // trivially
 
     if( evtblk.empty() )
-      //TODO missing event header, should not happen
+      //TODO missing event headers, should not happen
       evtblk.push_back(ibeg+1);
     // evtblk should have exactly block_size elements now
     evtblk.push_back(iend + 1); // include block trailer
 
-    // Because the module decoders expect a block header at the start of every
+    // Because our module decoders expect a block header at the start of every
     // event block, we must unfortunately copy the event block here so that we
     // have a writable buffer where we can prepend the block header.
+    // This could probably be avoided, but we'd have to rewrite all decoders.
     size_t blklen = iend + 1 - ibeg;
     fBuffer.resize(blklen);
     memcpy(fBuffer.data(), evbuffer+ibeg, blklen * sizeof(fBuffer[0]));
@@ -172,12 +210,17 @@ UInt_t PipeliningModule::LoadBank( THaSlotData* sldat,
     return LoadNextEvBuffer(sldat);
 
   } else {
-    // Single block: Find end of block and let the module decode it
-    auto iend = FindIDWord(evbuffer, ibeg+1, len+pos-(ibeg+1),
-                           kBlockTrailer, fSlot);
-    if( iend == -1 )
-      //TODO Block header without matching block trailer, should not happen
-      iend = pos+len-1;
+    // Single block: Find end of block and let the module decode the event
+    Long64_t iend = ibeg+1;
+    while( true ) {
+      iend = FindIDWord(evbuffer, iend, len+pos-iend,
+                        kBlockTrailer, fSlot);
+      if( (iend = VerifyBlockTrailer(evbuffer, pos, len, ibeg, iend)) > 0 )
+        break;
+      if( iend == 0 )
+        return 0;
+      iend = -iend;
+    }
     assert( ibeg >= pos && iend > ibeg && iend < pos+len ); // trivially
 
     return LoadSlot(sldat, evbuffer, ibeg, iend+1-ibeg);
