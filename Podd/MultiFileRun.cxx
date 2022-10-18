@@ -19,7 +19,6 @@
 #include <type_traits>   // std::make_signed
 #include <limits>
 #include <set>
-#include <numeric>       // std::iota
 
 using namespace std;
 using namespace Decoder;
@@ -193,7 +192,7 @@ MultiFileRun& MultiFileRun::operator=(const THaRunBase& rhs)
     }
     catch( const std::bad_cast& ) {
       // Assigning from a different class. Not a good idea, but anyway.
-      fFileList.assign(1, string{fFilename});
+      fFileList.assign(1, string{fFilename.Data()});
       fPathList.clear();
       fFirstSegment = fFirstStream = 0;
       fMaxSegments = fMaxStreams = 0;
