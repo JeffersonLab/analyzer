@@ -29,8 +29,17 @@ using namespace Decoder;
 # define MKCODAFILE unique_ptr<Decoder::THaCodaFile>(new Decoder::THaCodaFile)
 #endif
 #define ALL(c) (c).begin(), (c).end()
-#define SINT(i) static_cast<std::make_signed<decltype(i)>::type>(\
-(i) > std::numeric_limits<std::make_signed<decltype(i)>::type>::max() ? -1 :(i))
+
+// Cast unsigned to signed where unsigned is expected to be within signed range
+template<typename T, typename enable_if
+  <is_integral<T>::value && is_unsigned<T>::value, bool>::type = true>
+static inline typename std::make_signed<T>::type SINT(T uint) {
+#ifndef NDEBUG
+  if( uint > std::numeric_limits<typename std::make_signed<T>::type>::max() )
+    throw std::out_of_range("Unsigned integer out of signed integer range");
+#endif
+  return static_cast<typename std::make_signed<T>::type>(uint);
+}
 #define SSIZE(c) SINT((c).size())
 
 namespace Podd {

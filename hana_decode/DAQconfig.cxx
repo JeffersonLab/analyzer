@@ -58,7 +58,7 @@ size_t DAQconfig::parse( size_t i )
 }
 
 //_____________________________________________________________________________
-void DAQInfoExtra::AddTo( TObject*& p, DAQInfoExtra* obj )
+void DAQInfoExtra::AddTo( TObject*& p, TObject* obj )
 {
   // Add a DAQInfoExtra 'obj' to 'p', which is typically some class's fExtra
   // variable. If p is non-NULL and an object, convert it to a TList

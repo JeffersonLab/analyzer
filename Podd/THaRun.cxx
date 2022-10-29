@@ -19,7 +19,6 @@
 #include "TSystem.h"
 #include "TRegexp.h"
 #include <iostream>
-#include <iomanip>
 #include <cassert>
 #include <stdexcept>
 #include <sstream>
@@ -450,7 +449,7 @@ Bool_t THaRun::StdFindSegmentNumber( const TString& filename, TString& stem,
            << re1.Status() << " " << re2.Status() << endl;
       throw std::runtime_error(ostr.str());
     }
-    Ssiz_t pos{};
+    Ssiz_t pos;
     if( (pos = filename.Index(re2)) != kNPOS ) {
       stem = filename(0, pos);
       ++pos;

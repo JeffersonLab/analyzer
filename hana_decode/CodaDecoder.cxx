@@ -28,23 +28,22 @@ using namespace std;
 namespace Decoder {
 
 //_____________________________________________________________________________
-CodaDecoder::CodaDecoder() :
-  THaEvData(),
-  nroc(0),
-  irn(MAXROC, 0),
-  fbfound(MAXROC*MAXSLOT_FB, false),
-  psfact(MAX_PSFACT, kMaxUInt),
-  buffmode{false},
-  synchmiss{false},
-  synchextra{false},
-  fdfirst(true),
-  chkfbstat(1),
-  evcnt_coda3(0),
-  fMultiBlockMode{false},
-  fBlockIsDone{false},
-  tsEvType{0},
-  bank_tag{0},
-  block_size{0}
+CodaDecoder::CodaDecoder()
+  : nroc(0)
+  , irn(MAXROC, 0)
+  , fbfound(MAXROC*MAXSLOT_FB, false)
+  , psfact(MAX_PSFACT, kMaxUInt)
+  , buffmode{false}
+  , synchmiss{false}
+  , synchextra{false}
+  , fdfirst(true)
+  , chkfbstat(1)
+  , evcnt_coda3(0)
+  , fMultiBlockMode{false}
+  , fBlockIsDone{false}
+  , tsEvType{0}
+  , bank_tag{0}
+  , block_size{0}
 {
   bankdat.reserve(32);
   // Please leave these 3 lines for me to debug if I need to.  thanks, Bob

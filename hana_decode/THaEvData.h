@@ -238,7 +238,7 @@ protected:
 //=============== inline functions ================================
 
 //Utility function to index into the crateslot array
-inline UInt_t THaEvData::idx( UInt_t crate, UInt_t slot ) const {
+inline UInt_t THaEvData::idx( UInt_t crate, UInt_t slot ) const { // NOLINT(readability-convert-member-functions-to-static)
   return slot+Decoder::MAXSLOT*crate;
 }
 //Like idx() const, but initializes empty slots

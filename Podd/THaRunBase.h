@@ -65,7 +65,7 @@ public:
   virtual Bool_t       IsOpen()         const;
   virtual void         Print( Option_t* opt="" ) const;
   virtual void         SetDate( const TDatime& date );
-          void         SetDate( UInt_t tloc );
+          void         SetDate( UInt_t tloc );  //FIXME take 64-bit time
 	  void         SetDataRequired( UInt_t mask ); // mask is OR of EInfoType
   virtual Int_t        SetDataVersion( Int_t version );
           void         SetFirstEvent( UInt_t n );

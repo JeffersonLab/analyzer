@@ -29,7 +29,7 @@ static constexpr UInt_t DEFEVTRANGE[2]{1, kMaxUInt};
 //_____________________________________________________________________________
 THaRunBase::THaRunBase( const char* description )
   : TNamed(NOTINIT, description )
-  , fNumber(-1)
+  , fNumber(0)
   , fType(0)
   , fDate(UNDEFDATE,0)
   , fEvtRange{DEFEVTRANGE[0], DEFEVTRANGE[1]}
