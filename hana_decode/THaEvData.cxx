@@ -424,5 +424,13 @@ Int_t THaEvData::SetDataVersion( Int_t version )
 }
 
 //_____________________________________________________________________________
+void THaEvData::SetRunInfo( UInt_t num, UInt_t type, ULong64_t tloc )
+{
+  run_num = num;
+  run_type = type;
+  SetRunTime(tloc);
+}
+
+//_____________________________________________________________________________
 ClassImp(THaEvData)
 ClassImp(THaBenchmark)

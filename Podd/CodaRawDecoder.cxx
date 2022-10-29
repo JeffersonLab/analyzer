@@ -26,8 +26,8 @@ CodaRawDecoder::CodaRawDecoder()
   // Register standard global variables for event header data
   if( gHaVars ) {
     VarDef vars[] = {
-        { "runnum",    "Run number",     kInt,    0, &run_num },
-        { "runtype",   "CODA run type",  kInt,    0, &run_type },
+        { "runnum",    "Run number",     kUInt,   0, &run_num },
+        { "runtype",   "CODA run type",  kUInt,   0, &run_type },
         { "runtime",   "CODA run time",  kULong,  0, &fRunTime },
         { "evnum",     "Event number",   kUInt,   0, &event_num },
         { "evtyp",     "Event type",     kUInt,   0, &event_type },

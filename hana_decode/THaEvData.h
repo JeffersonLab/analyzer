@@ -156,6 +156,9 @@ public:
   void SetCrateMapName( const char* name );
   static void SetDefaultCrateMapName( const char* name );
 
+  // For THaRun to set info found during prescan FIXME BCI make virtual?
+  void SetRunInfo( UInt_t num, UInt_t type, ULong64_t tloc );
+
 protected:
   // Control bits in TObject::fBits used by decoders
   enum {

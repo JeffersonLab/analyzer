@@ -621,6 +621,12 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     }
     new_decoder = true;
   }
+  // Set run-level info that was retrieved when initializing the run.
+  // In case we analyze a continuation segment, fEvtData may not see
+  // the event(s) where these data come from (usually Prestart).
+  fEvData->SetRunInfo(run->GetNumber(),
+                      run->GetType(),
+                      run->GetDate().Convert());
 
   // Deal with the run.
   bool new_run   = ( !fRun || *fRun != *run );
