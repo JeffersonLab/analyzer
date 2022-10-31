@@ -28,6 +28,7 @@
 #include "TMath.h"
 #include "VarDef.h"
 #include "THaApparatus.h"
+#include "Helper.h"
 
 #include <cstring>
 #include <vector>
@@ -42,8 +43,6 @@
 #endif
 
 using namespace std;
-
-#define ALL(c) (c).begin(), (c).end()
 
 //_____________________________________________________________________________
 THaVDCPlane::THaVDCPlane( const char* name, const char* description,

@@ -23,6 +23,7 @@
 #include "TVirtualMutex.h"
 #include "TMath.h"
 #include "DataType.h"
+#include "Helper.h"
 
 #include <cstring>
 #include <cassert>
@@ -37,8 +38,6 @@ const Option_t* const THaFormula::kPRINTBRIEF = "BRIEF";
 
 enum EFuncCode { kLength, kSum, kMean, kStdDev, kMax, kMin,
 		 kGeoMean, kMedian, kIteration, kNumSetBits };
-
-#define ALL(c) (c).begin(), (c).end()
 
 //_____________________________________________________________________________
 static inline Int_t NumberOfSetBits( UInt_t v )
@@ -295,7 +294,7 @@ Double_t THaFormula::DefinedValue( Int_t i )
   // kCutScaler and kCutNCalled give # times a cut passed and # times
   // a cut has been evaluated.  These types can only exist if hcana's
   // THcFormula is used.
-  // 
+  //
 
   assert( i>=0 && i<(Int_t)fVarDef.size() );
 

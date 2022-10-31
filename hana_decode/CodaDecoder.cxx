@@ -12,6 +12,7 @@
 #include "THaBenchmark.h"
 #include "THaUsrstrutils.h"
 #include "DAQconfig.h"
+#include "Helper.h"
 #include "TError.h"
 #include "TList.h"
 #include <iostream>
@@ -22,8 +23,6 @@
 #include <sstream>
 
 using namespace std;
-
-#define ALL(c) (c).begin(), (c).end()
 
 namespace Decoder {
 

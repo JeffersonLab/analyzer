@@ -48,7 +48,7 @@ VectorObjVar.cxx             VectorVar.cxx
 compiledata = 'ha_compiledata.h'
 write_compiledata(baseenv,compiledata)
 
-extrahdrs = ['Helper.h','DataType.h','OptionalType.h','optional.hpp',compiledata]
+extrahdrs = ['DataType.h','OptionalType.h','optional.hpp',compiledata]
 
 poddlib = build_library(baseenv, libname, src, extrahdrs,
                         extradicthdrs = ['THaGlobals.h'], useenv = False,

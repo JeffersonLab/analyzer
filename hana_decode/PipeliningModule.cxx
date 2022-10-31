@@ -8,12 +8,11 @@
 
 #include "PipeliningModule.h"
 #include "THaSlotData.h"
+#include "Helper.h"
 #include <iostream>
 #include <cstring>     // for memcpy
 #include <algorithm>   // for std::transform
 #include <utility>     // for std::swap
-
-#define ALL(c) (c).begin(), (c).end()
 
 using namespace std;
 

@@ -10,7 +10,7 @@ set(SUBPROJECT_NAME Database)
 set(src Database.cxx Textvars.cxx VarType.cxx)
 
 string(REPLACE .cxx .h headers "${src}")
-set(allheaders ${headers} VarDef.h)
+set(allheaders ${headers} VarDef.h Helper.h)
 
 #----------------------------------------------------------------------------
 # libPoddDB

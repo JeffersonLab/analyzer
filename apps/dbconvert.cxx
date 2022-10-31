@@ -46,14 +46,13 @@
 #include "THaDetMap.h"
 #include "THaString.h"  // for Split()
 #include "Decoder.h"    // for MAXROC, MAXSLOT
+#include "Helper.h"
 
 #define kInitError THaAnalysisObject::kInitError
 #define kOK        THaAnalysisObject::kOK
 
 using namespace std;
 using namespace Podd;
-
-#define ALL(c) (c).begin(), (c).end()
 
 static bool IsDBdate( const string& line, time_t& date );
 static bool IsDBcomment( const string& line );

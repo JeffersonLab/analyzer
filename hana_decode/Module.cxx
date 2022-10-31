@@ -9,14 +9,13 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "Module.h"
-#include "Textvars.h"
+#include "Textvars.h"  // for Podd::Tokenize
+#include "Helper.h"
 #include "TError.h"
 #include <algorithm>
 #include <stdexcept>
 #include <sstream>
 #include <cassert>
-
-#define ALL(c) (c).begin(), (c).end()
 
 using namespace std;
 

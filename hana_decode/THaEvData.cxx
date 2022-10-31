@@ -21,6 +21,7 @@
 
 #include "THaEvData.h"
 #include "Module.h"
+#include "Helper.h"
 #include "THaSlotData.h"
 #include "THaCrateMap.h"
 #include "THaBenchmark.h"
@@ -37,8 +38,6 @@
 
 using namespace std;
 using namespace Decoder;
-
-#define ALL(c) (c).begin(), (c).end()
 
 // Instances of this object
 TBits THaEvData::fgInstances;

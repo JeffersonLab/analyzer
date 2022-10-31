@@ -13,6 +13,7 @@
 #include "THaTrackProj.h"
 #include "VarDef.h"
 #include "VarType.h"
+#include "Helper.h"
 #include "THaTrack.h"
 #include "TClonesArray.h"
 #include "TMath.h"
@@ -23,8 +24,6 @@
 #include <cstdlib>
 #include <algorithm>
 #include <memory>
-
-#define ALL(c) (c).begin(), (c).end()
 
 using namespace std;
 using namespace Podd;

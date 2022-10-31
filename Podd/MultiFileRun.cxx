@@ -12,12 +12,11 @@
 #include "CodaDecoder.h"
 #include "TRegexp.h"
 #include "TSystem.h"
+#include "Helper.h"
 #include <utility>
 #include <algorithm>
 #include <iostream>
 #include <cassert>
-#include <type_traits>   // std::make_signed
-#include <limits>
 #include <set>
 
 using namespace std;
@@ -28,19 +27,6 @@ using namespace Decoder;
 #else
 # define MKCODAFILE unique_ptr<Decoder::THaCodaFile>(new Decoder::THaCodaFile)
 #endif
-#define ALL(c) (c).begin(), (c).end()
-
-// Cast unsigned to signed where unsigned is expected to be within signed range
-template<typename T, typename enable_if
-  <is_integral<T>::value && is_unsigned<T>::value, bool>::type = true>
-static inline typename std::make_signed<T>::type SINT(T uint) {
-#ifndef NDEBUG
-  if( uint > std::numeric_limits<typename std::make_signed<T>::type>::max() )
-    throw std::out_of_range("Unsigned integer out of signed integer range");
-#endif
-  return static_cast<typename std::make_signed<T>::type>(uint);
-}
-#define SSIZE(c) SINT((c).size())
 
 namespace Podd {
 

@@ -1,5 +1,5 @@
-#ifndef Podd_Helper
-#define Podd_Helper
+#ifndef Podd_Helper_
+#define Podd_Helper_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
@@ -12,11 +12,38 @@
 #include "Rtypes.h"
 #include <vector>
 #include <cassert>
-#include <functional>
 #include <algorithm>
 #include <iterator>
+#include <type_traits>   // std::make_signed
+#include <iostream>
+#ifndef NDEBUG
+# include <limits>
+#endif
+
+#define ALL( c ) (c).begin(), (c).end()
 
 namespace Podd {
+
+  //___________________________________________________________________________
+  // Cast unsigned to signed where unsigned is expected to be within signed range
+  template<typename T, typename std::enable_if
+    <std::is_integral<T>::value && std::is_unsigned<T>::value, bool>::type = true>
+  static inline typename std::make_signed<T>::type SINT( T uint )
+  {
+#ifndef NDEBUG
+    if( uint > std::numeric_limits<typename std::make_signed<T>::type>::max() )
+      throw std::out_of_range("Unsigned integer out of signed integer range");
+#endif
+    return static_cast<typename std::make_signed<T>::type>(uint);
+  }
+
+#if __cplusplus >= 201402L
+  template<typename Container>
+  static inline auto SSIZE( const Container& c) { return SINT(c.size()); }
+#else
+  // No auto return type in C++11, so we do it on the cheap
+# define SSIZE(c) SINT((c).size())
+#endif
 
   //___________________________________________________________________________
   template< typename VectorElem > inline void
@@ -164,7 +191,6 @@ namespace Podd {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-} // end namespace TreeSearch
+} // end namespace Podd
 
-
-#endif
+#endif  // Podd_Helper_

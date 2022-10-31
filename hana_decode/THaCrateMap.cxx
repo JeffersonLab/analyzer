@@ -17,6 +17,7 @@
 
 #include "Decoder.h"
 #include "THaCrateMap.h"
+#include "Helper.h"
 #include "Database.h"
 #include "TError.h"
 #include "TSystem.h"
@@ -32,8 +33,6 @@
 #include <memory>   // for unique_ptr
 #include <algorithm> // for std::find, std::sort
 #include <array>
-
-#define ALL(c) (c).begin(), (c).end()
 
 // This is a well-known problem with strerror_r
 #if defined(__linux__) && (defined(_GNU_SOURCE) || !(_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE > 600))

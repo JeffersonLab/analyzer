@@ -13,13 +13,12 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaCodaData.h"
+#include "Helper.h"
 #include "TMath.h"
 #include "evio.h"
 #include <cassert>
 #include <iostream>
 #include <algorithm>
-
-#define ALL(c) (c).begin(), (c).end()
 
 using namespace std;
 

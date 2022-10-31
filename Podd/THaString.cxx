@@ -6,11 +6,10 @@
 
 #include "THaString.h"
 #include "Textvars.h"   // For Podd::vsplit
+#include "Helper.h"
 #include <algorithm>
 #include <cctype>
 #include <sstream>
-
-#define ALL(c) (c).begin(), (c).end()
 
 using namespace std;
 

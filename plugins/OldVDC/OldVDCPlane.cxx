@@ -27,6 +27,7 @@
 #include "VarDef.h"
 #include "THaApparatus.h"
 #include "THaTriggerTime.h"
+#include "Helper.h"
 
 #include <cstring>
 #include <cassert>
@@ -35,8 +36,6 @@
 #include <iomanip>
 
 using namespace std;
-
-#define ALL(c) (c).begin(), (c).end()
 
 // Defaults for typical VDC operation. Can be overridden via set functions.
 // Configurable via database in version 1.6 and later.

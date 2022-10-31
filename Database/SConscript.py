@@ -17,7 +17,7 @@ dbenv.Replace(LIBS = [], RPATH=[])
 
 # Database library
 dblib = build_library(dbenv, libname, src,
-                      extrahdrs = ['VarDef.h'],
+                      extrahdrs = ['VarDef.h','Helper.h'],
                       dictname = altname,
                       versioned = True
                       )

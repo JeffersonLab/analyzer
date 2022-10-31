@@ -10,6 +10,7 @@
 
 #include "THaDetMap.h"
 #include "Decoder.h"
+#include "Helper.h"
 #include <iostream>
 #include <iomanip>
 #include <stdexcept>
@@ -19,8 +20,6 @@
 
 using namespace std;
 using namespace Decoder;
-
-#define ALL(c) (c).begin(), (c).end()
 
 // "Database" of known frontend module numbers and types
 // FIXME: load from db_cratemap
@@ -238,7 +237,7 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
   // are automatically calculated for each module, assuming the numbers are
   // sequential.
   //
-  // By default, an existing map is overwritten. If the flag kDoNotClear 
+  // By default, an existing map is overwritten. If the flag kDoNotClear
   // is present, then the data are appended.
   //
   // The return value is the number of modules successfully added,

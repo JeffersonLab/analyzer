@@ -13,6 +13,7 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaCodaFile.h"
+#include "Helper.h"
 #include "TSystem.h"
 #include "evio.h"
 #include <iostream>
@@ -20,8 +21,6 @@
 #include <algorithm>
 
 using namespace std;
-
-#define ALL(c) (c).begin(), (c).end()
 
 namespace Decoder {
 

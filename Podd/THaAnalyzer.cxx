@@ -55,8 +55,6 @@ using namespace std;
 using namespace Decoder;
 using namespace Podd;
 
-#define ALL(c) (c).begin(), (c).end()
-
 const char* const THaAnalyzer::kMasterCutName = "master";
 const char* const THaAnalyzer::kDefaultOdefFile = "output.def";
 

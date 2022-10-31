@@ -12,6 +12,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaPrintOption.h"
+#include "Helper.h"
 #include <iostream>
 #include <algorithm>
 #include <cctype>   // ::tolower, ::toupper
@@ -19,8 +20,6 @@
 #include <limits>
 
 ClassImp(THaPrintOption)
-
-#define ALL(c) (c).begin(), (c).end()
 
 using namespace std;
 
