@@ -88,7 +88,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   // back to the compile-time directories (which may have moved!)
   TString s = gSystem->Getenv("ANALYZER");
   if( s.IsNull() ) {
-    s = HA_INCLUDEPATH;
+    s = HA_INCLUDEPATH "";
   } else {
     // Give preference to $ANALYZER/include
     TString p = s+"/include";
@@ -186,10 +186,10 @@ void THaInterface::PrintLogo( Bool_t lite )
      Printf("  *            W E L C O M E  to  the            *");
      Printf("  *       H A L L A   C++  A N A L Y Z E R       *");
      Printf("  *                                              *");
-     Printf("  *  Release %16s %18s *", HA_VERSION, GetHaDate());
+     Printf("  *  Release %16s %18s *", HA_VERSION "", GetHaDate());
      Printf("  *  Based on ROOT %10s %18s *", root_version, root_date);
-     if( strstr(HA_VERSION, "-dev") || strstr(HA_VERSION, "alpha") ||
-         strstr(HA_VERSION, "beta") || strstr(HA_VERSION, "rc") )
+     if( strstr(HA_VERSION "", "-dev") || strstr(HA_VERSION "", "alpha") ||
+         strstr(HA_VERSION "", "beta") || strstr(HA_VERSION "", "rc") )
        Printf("  *             Development version              *");
      Printf("  *                                              *");
      Printf("  *            For information visit             *");
@@ -212,7 +212,7 @@ TClass* THaInterface::GetDecoder()
 const char* THaInterface::GetVersion()
 {
   // Get software version
-  return HA_VERSION;
+  return HA_VERSION "";
 }
 
 //_____________________________________________________________________________
@@ -240,15 +240,15 @@ const char* THaInterface::GetHaDate()
 
   if( ha_date.IsNull() ) {
     bool use_buildtime = true;
-    size_t len = strlen(HA_GITREV);
+    size_t len = strlen(HA_GITREV "");
     if( len > 0 ) {
-      const char* gitrev = HA_GITREV;
+      const char* gitrev = HA_GITREV "";
       use_buildtime = (len > 6 && strcmp(gitrev + len - 6, "-dirty") == 0);
     }
     if( use_buildtime )
-      ha_date = extract_short_date(HA_BUILDTIME);
+      ha_date = extract_short_date(HA_BUILDTIME "");
     else
-      ha_date = extract_short_date(HA_SOURCETIME);
+      ha_date = extract_short_date(HA_SOURCETIME "");
   }
   return ha_date.Data();
 }
@@ -262,14 +262,14 @@ const char* THaInterface::GetVersionString()
 
   if( version_string.IsNull() ) {
     ostringstream ostr;
-    ostr << "Podd " << HA_VERSION;
-    if( strlen(HA_GITREV) > 0 )
-      ostr << " git@" << HA_GITREV;
+    ostr << "Podd " << HA_VERSION "";
+    if( strlen(HA_GITREV "") > 0 )
+      ostr << " git@" << HA_GITREV "";
     ostr << " " << GetHaDate() << endl;
-    ostr << "Built for " << HA_OSVERS;
-    ostr << " using " << HA_CXXSHORTVERS;
-    if( strlen(HA_ROOTVERS) )
-      ostr << ", ROOT " << HA_ROOTVERS;
+    ostr << "Built for " << HA_OSVERS "";
+    ostr << " using " << HA_CXXSHORTVERS "";
+    if( strlen(HA_ROOTVERS "") )
+      ostr << ", ROOT " << HA_ROOTVERS "";
     version_string = ostr.str().c_str();
   }
   return version_string.Data();

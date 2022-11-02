@@ -15,7 +15,7 @@ printf "#define $3" > "$OUT"
 if [ "$1" != "nogit" ]; then
   printf " \"%s\"\n" "$($1 describe --tags --always --long --dirty 2>/dev/null)" >> "$OUT"
 else
-  printf "\n" >> "$OUT"
+  printf " \"\"\n" >> "$OUT"
 fi
 if cmp -s "$OUT" "$2"; then
   # nothing changed, do not rewrite (to prevent unneeded rebuild)
