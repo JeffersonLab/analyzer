@@ -39,7 +39,7 @@ get_filename_component(_gitdescmoddir ${CMAKE_CURRENT_LIST_FILE} PATH)
 # function returns an empty string via _git_dir_var.
 #
 # Example: Given a path C:/bla/foo/bar and assuming C:/bla/.git exists and
-# neither foo nor bar contain a file/directory .git. This wil return
+# neither foo nor bar contain a file/directory .git. This will return
 # C:/bla/.git
 #
 function(_git_find_closest_git_dir _start_dir _git_dir_var)
@@ -93,13 +93,16 @@ function(get_git_info _hashvar _datevar)
         # Otherwise the command will return an empty string.
         #
         execute_process(
+            # Requires at least git 2.13 for --show-superproject-working-tree
+            # and preferably git 2.20, which contains an important bugfix
+            # for this option.
             COMMAND "${GIT_EXECUTABLE}" rev-parse
                     --show-superproject-working-tree
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             OUTPUT_VARIABLE out
             ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
         if(NOT "${out}" STREQUAL "")
-            # If out is empty, GIT_DIR/CMAKE_CURRENT_SOURCE_DIR is in a submodule
+            # If out is not empty, GIT_DIR/CMAKE_CURRENT_SOURCE_DIR is in a submodule
             file(READ ${GIT_DIR} submodule)
             string(REGEX REPLACE "gitdir: (.*)$" "\\1" GIT_DIR_RELATIVE
                                  ${submodule})
@@ -143,15 +146,24 @@ function(get_git_info _hashvar _datevar)
 
     set(${_hashvar} "${HEAD_HASH}" PARENT_SCOPE)
 
+    if(NOT GIT_VERSION_STRING VERSION_LESS 2)
+        # git >= v2 supports --no-patch
+        set(_no_patch "--no-patch")
+    endif()
+
     execute_process(
-      COMMAND "${GIT_EXECUTABLE}" show --no-patch --format=%cD ${HEAD_HASH}
+      COMMAND "${GIT_EXECUTABLE}" show ${_no_patch} --format=%cD ${HEAD_HASH}
       WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
       RESULT_VARIABLE res
-      OUTPUT_VARIABLE out
+      OUTPUT_VARIABLE out_lines
       ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    if(NOT res EQUAL 0)
-        set(out "${out}-${res}-NOTFOUND")
+    if(res EQUAL 0 AND out_lines)
+        # The first line of the output holds the commit date we're after
+        string(REGEX REPLACE "\n" ";" out_list "${out_lines}")
+        list(GET out_list 0 out)
+    else()
+        set(out "DATE-NOTFOUND")
     endif()
     set(${_datevar} "${out}" PARENT_SCOPE)
 
