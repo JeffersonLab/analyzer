@@ -25,6 +25,8 @@
 #include <ctime>     // for struct tm
 #include <limits>
 #include <algorithm>
+#include <type_traits>
+#include <iostream>
 
 using namespace std;
 
@@ -442,8 +444,8 @@ inline Bool_t IsAssignment( const string& str )
     return false;
   assert(pos > 0);
   // '!=', '<=', '>=' or '=='
-  return !(str[pos - 1] == '!' || str[pos - 1] == '<' || str[pos - 1] == '>' ||
-           (pos + 1 < str.length() && str[pos + 1] == '='));
+  return str[pos - 1] != '!' && str[pos - 1] != '<' && str[pos - 1] != '>' &&
+           (pos + 1 >= str.length() || str[pos + 1] != '=');
 }
 
 } // end anonymous namespace

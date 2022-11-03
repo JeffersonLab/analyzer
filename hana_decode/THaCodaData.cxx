@@ -25,12 +25,11 @@ using namespace std;
 namespace Decoder {
 
 //_____________________________________________________________________________
-THaCodaData::THaCodaData() :
-  handle(0),
-  verbose(1),
-  fIsGood(true)
-{
-}
+THaCodaData::THaCodaData()
+  : handle{0}
+  , verbose{1}
+  , fIsGood{true}
+{}
 
 //_____________________________________________________________________________
 Int_t THaCodaData::getCodaVersion()

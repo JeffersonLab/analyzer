@@ -13,6 +13,7 @@
 #include "Decoder.h"
 #include "TString.h"
 #include <vector>
+#include <string>
 
 class TTree;
 
@@ -25,10 +26,14 @@ static const UInt_t defaultDT = 4;
 class ScalerLoc { // Utility class used by THaScalerEvtHandler
  public:
   ScalerLoc( TString nm, TString desc, UInt_t idx, UInt_t sl,
-             UInt_t ich, UInt_t iki ) :
-    name(std::move(nm)), description(std::move(desc)), index(idx), islot(sl),
-    ichan(ich), ikind(iki) {};
-  ~ScalerLoc() = default;
+             UInt_t ich, UInt_t iki )
+    : name(std::move(nm))
+    , description(std::move(desc))
+    , index(idx)
+    , islot(sl)
+    , ichan(ich)
+    , ikind(iki)
+    {}
   TString name, description;
   UInt_t index, islot, ichan, ikind;
 };
@@ -52,6 +57,11 @@ protected:
    void AddVars( const TString& name, const TString& desc, UInt_t iscal,
                  UInt_t ichan, UInt_t ikind );
    void DefVars();
+   void ParseVariable( const std::vector<std::string>& dbline );
+   void ParseMap( const char* cbuf, const std::vector<std::string>& dbline );
+   void VerifySlots();
+   void SetIndices();
+   void AssignNormScaler();
 
    std::vector<Decoder::GenScaler*> scalers;
    std::vector<ScalerLoc*> scalerloc;

@@ -15,7 +15,7 @@
 //      concatenated with the name of the global variables, for uniqueness.
 //      The list of global variables and how they are tied to the
 //      scaler module and channels is in the scaler.map file, or could
-//      be hardcoded here.   
+//      be hardcoded here.
 //      NOTE: if you don't have the scaler map file (e.g. db_LeftScalevt.dat)
 //      there will be no variable output to the Trees.
 //
@@ -23,14 +23,13 @@
 //       gHaEvtHandlers->Add (new THaScalerEvtHandler("Left","HA scaler event type 140"));
 //
 //   To enable debugging you may try this in the setup script
-// 
+//
 //     THaScalerEvtHandler *lscaler = new THaScalerEvtHandler("Left","HA scaler event type 140");
 //     lscaler->SetDebugFile("LeftScaler.txt");
 //     gHaEvtHandlers->Add (lscaler);
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "THaEvtTypeHandler.h"
 #include "THaScalerEvtHandler.h"
 #include "Scaler3800.h"
 #include "Scaler3801.h"
@@ -42,52 +41,63 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <cctype>      // isspace
 #include "THaVarList.h"
 #include "VarDef.h"
 #include "THaString.h"
+#include "Textvars.h"  // Podd::vsplit
+#include "Helper.h"
 #include "TTree.h"
 
 using namespace std;
 using namespace Decoder;
-using namespace THaString;
+using THaString::CmpNoCase;
+using Podd::vsplit;
 
-THaScalerEvtHandler::THaScalerEvtHandler(const char *name,
-    const char* description)
-  : THaEvtTypeHandler(name,description), evcount(0), fNormIdx(-1),
-    fNormSlot(-1), dvars(nullptr), fScalerTree(nullptr)
-{
-}
+THaScalerEvtHandler::THaScalerEvtHandler(const char *name, const char* description)
+  : THaEvtTypeHandler(name, description)
+  , evcount(0)
+  , fNormIdx(kMaxUInt)
+  , fNormSlot(kMaxUInt)
+  , dvars(nullptr)
+  , fScalerTree(nullptr)
+{}
 
 THaScalerEvtHandler::~THaScalerEvtHandler()
 {
+  Podd::DeleteContainer(scalerloc);
+  Podd::DeleteContainer(scalers);
+  delete [] dvars;
   delete fScalerTree;
 }
 
 Int_t THaScalerEvtHandler::End( THaRunBase* )
 {
-  if (fScalerTree) fScalerTree->Write();
+  if( fScalerTree )
+    fScalerTree->Write();
   return 0;
 }
 
 Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
 {
-  if ( !IsMyEvent(evdata->GetEvType()) ) return -1;
+  if( !IsMyEvent(evdata->GetEvType()) )
+    return -1;
 
-  if (fDebugFile) {
-    *fDebugFile << endl << "---------------------------------- "<<endl<<endl;
-    *fDebugFile << "\nEnter THaScalerEvtHandler  for fName = "<<fName<<endl;
+  if( fDebugFile ) {
+    *fDebugFile << endl << "---------------------------------- " << endl << endl;
+    *fDebugFile << "\nEnter THaScalerEvtHandler  for fName = " << fName << endl;
     EvDump(evdata);
   }
 
-  if (!fScalerTree) {
+  if( !fScalerTree ) {
 
     TString sname1 = "TS";
     TString sname2 = sname1 + fName;
     TString sname3 = fName + "  Scaler Data";
 
-    if (fDebugFile) {
-      *fDebugFile << "\nAnalyze 1st time for fName = "<<fName<<endl;
-      *fDebugFile << sname2 << "      " <<sname3<<endl;
+    if( fDebugFile ) {
+      *fDebugFile << "\nAnalyze 1st time for fName = " << fName << endl;
+      *fDebugFile << sname2 << "      " << sname3 << endl;
     }
 
     fScalerTree = new TTree(sname2.Data(),sname3.Data());
@@ -109,9 +119,9 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
   // Parse the data, load local data arrays.
 
   UInt_t ndata = evdata->GetEvLength();
-  if (ndata >= MAXTEVT) {
+  if( ndata >= MAXTEVT ) {
     cout << "THaScalerEvtHandler:: ERROR: Event length crazy " << endl;
-    ndata = MAXTEVT-1;
+    ndata = MAXTEVT - 1;
   }
 
   if (fDebugFile)
@@ -122,64 +132,187 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
   const UInt_t *pstop = p+ndata;
   Bool_t ifound = false;
 
-  while (p < pstop) {
-    if (fDebugFile) {
-      *fDebugFile << "p  and  pstop  "<<p<<"   "<<pstop<<"   "<<hex<<*p<<"   "<<dec<<endl;
+  while( p < pstop ) {
+    if( fDebugFile ) {
+      *fDebugFile << "p  and  pstop  " << p << "   " << pstop
+                  << "   " << hex << *p << "   " << dec << endl;
     }
     Int_t nskip = 1;
-    for (size_t j=0; j<scalers.size(); j++) {
+    for( size_t j = 0; j < scalers.size(); j++ ) {
       nskip = scalers[j]->Decode(p);
-      if (fDebugFile && nskip > 1) {
-	*fDebugFile << "\n===== Scaler # "<<j<<"     fName = "<<fName<<"   nskip = "<<nskip<<endl;
-	scalers[j]->DebugPrint(fDebugFile);
+      if( fDebugFile && nskip > 1 ) {
+        *fDebugFile << "\n===== Scaler # " << j << "     fName = " << fName
+                    << "   nskip = " << nskip << endl;
+        scalers[j]->DebugPrint(fDebugFile);
       }
-      if (nskip > 1) {
-	ifound = true;
-	break;
+      if( nskip > 1 ) {
+        ifound = true;
+        break;
       }
     }
     p = p + nskip;
   }
 
-  if (fDebugFile) {
-    *fDebugFile << "Finished with decoding.  "<<endl;
-    *fDebugFile << "   Found flag   =  "<<ifound<<endl;
+  if( fDebugFile ) {
+    *fDebugFile << "Finished with decoding.  " << endl;
+    *fDebugFile << "   Found flag   =  " << ifound << endl;
   }
 
   // L-HRS has headers which are different from R-HRS, but both are
   // event type 140 and come here.  If you found no headers, it was
   // the other arms event type.  (The arm is fName).
 
-  if (!ifound)
+  if( !ifound )
     return 0;
 
   // The correspondence between dvars and the scaler and the channel
   // will be driven by a scaler.map file, or could be hard-coded.
 
-  for (size_t i = 0; i < scalerloc.size(); i++) {
+  for( size_t i = 0; i < scalerloc.size(); i++ ) {
     UInt_t idx = scalerloc[i]->index;
     UInt_t ichan = scalerloc[i]->ichan;
-    if (fDebugFile) *fDebugFile << "Debug dvars "<<i<<"  "<<idx<<"  "<<ichan<<endl;
+    if( fDebugFile )
+      *fDebugFile << "Debug dvars " << i << "  " << idx << "  " << ichan << endl;
     if( idx < scalers.size() && ichan < MAXCHAN ) {
-      if (scalerloc[i]->ikind == ICOUNT) dvars[i] = scalers[idx]->GetData(ichan);
-      if (scalerloc[i]->ikind == IRATE)  dvars[i] = scalers[idx]->GetRate(ichan);
-      if (fDebugFile) *fDebugFile << "   dvars  "<<scalerloc[i]->ikind<<"  "<<dvars[i]<<endl;
+      if( scalerloc[i]->ikind == ICOUNT )
+        dvars[i] = scalers[idx]->GetData(ichan);
+      if( scalerloc[i]->ikind == IRATE )
+        dvars[i] = scalers[idx]->GetRate(ichan);
+      if( fDebugFile )
+        *fDebugFile << "   dvars  " << scalerloc[i]->ikind
+                    << "  " << dvars[i] << endl;
     } else {
-      cout << "THaScalerEvtHandler:: ERROR:: incorrect index "<<i<<"  "<<idx<<"  "<<ichan<<endl;
+      cout << "THaScalerEvtHandler:: ERROR:: incorrect index " << i
+           << "  " << idx << "  " << ichan << endl;
     }
   }
 
   evcount += 1.0;
 
-  for( auto* s : scalers )
+  for( auto* s: scalers )
     s->Clear();
 
-  if (fDebugFile) *fDebugFile << "scaler tree ptr  "<<fScalerTree<<endl;
+  if( fDebugFile )
+    *fDebugFile << "scaler tree ptr  " << fScalerTree << endl;
 
-  if (fScalerTree)
+  if( fScalerTree )
     fScalerTree->Fill();
 
   return 1;
+}
+
+// Helper functions for Init()
+void THaScalerEvtHandler::ParseVariable( const vector<string>& dbline )
+{
+  string sdesc;
+  for( size_t j = 5; j < dbline.size(); j++ ) {
+    sdesc += " ";
+    sdesc += dbline[j];
+  }
+  Int_t islot = atoi(dbline[1].c_str());
+  Int_t ichan = atoi(dbline[2].c_str());
+  Int_t ikind = atoi(dbline[3].c_str());
+  if( fDebugFile )
+    *fDebugFile << "add var " << dbline[1] << "   desc = " << sdesc
+                << "    islot= " << islot << "  " << ichan
+                << "  " << ikind << endl;
+  TString tsname(dbline[4].c_str());
+  TString tsdesc(sdesc.c_str());
+  AddVars(tsname, tsdesc, islot, ichan, ikind);
+}
+
+void THaScalerEvtHandler::ParseMap( const char* cbuf, const vector<string>& dbline )
+{
+  using ssiz_t = decltype(scalers)::size_type;
+  Int_t imodel = 0;
+  UInt_t icrate = 0, islot = 0, inorm = 0, header = 0, mask = 0;
+  char cdum[21];
+  sscanf(cbuf, "%20s %d %u %u %x %x %u \n",
+         cdum, &imodel, &icrate, &islot, &header, &mask, &inorm);
+  if( fNormSlot != inorm )
+    cout << "THaScalerEvtHandler:: WARN: contradictory norm slot " << inorm << endl;
+  fNormSlot = inorm;  // slot number used for normalization.  This variable is not used but is checked.
+  UInt_t clkchan = kMaxUInt;
+  Double_t clkfreq = 1;
+  if( dbline.size() > 8 ) {
+    clkchan = atoi(dbline[7].c_str());
+    clkfreq = static_cast<Double_t>( atoi(dbline[8].c_str()) );
+  }
+  if( fDebugFile ) {
+    *fDebugFile << "map line " << dec << imodel << "  " << icrate
+                << "  " << islot << endl;
+    *fDebugFile << "   header  0x" << hex << header << "  0x" << mask
+                << dec << "  " << inorm << "  " << clkchan
+                << "  " << clkfreq << endl;
+  }
+  switch( imodel ) {
+    case 560:
+      scalers.push_back(new Scaler560(icrate, islot));
+      break;
+    case 1151:
+      scalers.push_back(new Scaler1151(icrate, islot));
+      break;
+    case 3800:
+      scalers.push_back(new Scaler3800(icrate, islot));
+      break;
+    case 3801:
+      scalers.push_back(new Scaler3801(icrate, islot));
+      break;
+    default:
+      break;
+  }
+  if( !scalers.empty() ) {
+    ssiz_t idx = scalers.size() - 1;
+    scalers[idx]->SetHeader(header, mask);
+// The normalization slot has the clock in it, so we automatically recognize it.
+// fNormIdx is the index in scaler[] and
+// fNormSlot is the slot#, checked for consistency
+    if( clkchan != kMaxUInt ) {
+      scalers[idx]->SetClock(defaultDT, clkchan, clkfreq);
+      fNormIdx = idx;
+      if( islot != fNormSlot )
+        cout << "THaScalerEvtHandler:: WARN: contradictory norm slot ! "
+             << islot << endl;
+      if( fDebugFile )
+        *fDebugFile << "Setting scaler clock ... channel = "
+                    << clkchan << " ... freq = " << clkfreq
+                    << "  fNormIdx = " << fNormIdx
+                    << "  fNormSlot = " << fNormSlot
+                    << "  slot = " << islot << endl;
+    }
+  }
+}
+
+void THaScalerEvtHandler::AssignNormScaler()
+{
+  if( fNormIdx < scalers.size() ) {
+    UInt_t i = 0;
+    for( auto* scaler: scalers ) {
+      if( i++ == fNormIdx )
+        continue;
+      scaler->LoadNormScaler(scalers[fNormIdx]);
+    }
+  }
+}
+
+void THaScalerEvtHandler::VerifySlots()
+{
+  for( size_t i1 = 0; i1 < scalers.size() - 1; i1++ ) {
+    for( size_t i2 = i1 + 1; i2 < scalers.size(); i2++ ) {
+      if( scalers[i1]->GetSlot() == scalers[i2]->GetSlot() )
+        cout << "THaScalerEvtHandler:: WARN:  same slot defined twice" << endl;
+    }
+  }
+}
+
+void THaScalerEvtHandler::SetIndices()
+{
+  for( size_t i = 0; i < scalers.size(); i++ ) {
+    for( auto& loc: scalerloc ) {
+      if( loc->islot == scalers[i]->GetSlot() )
+        loc->index = i;
+    }
+  }
 }
 
 THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
@@ -202,98 +335,32 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
 
   FILE *fi = Podd::OpenDBFile(sname.Data(), date);
   if ( !fi ) {
-    cout << "Cannot find db file for "<<fName<<" scaler event handler"<<endl;
+    cout << "Cannot find db file for " << fName << " scaler event handler" << endl;
     return kFileError;
   }
 
-  using ssiz_t = decltype(scalers)::size_type;
-  const string scomment = "#";
+  const char comment = '#';
   const string svariable = "variable";
   const string smap = "map";
-  vector<string> dbline;
 
-  while( fgets(cbuf,LEN,fi) != nullptr) {
+  while( fgets(cbuf, LEN, fi) ) {
     if (fDebugFile) *fDebugFile << "string input "<<cbuf<<endl;
-    dbline = Podd::vsplit(cbuf);
-    if (!dbline.empty()) {
-      auto pos1 = FindNoCase(dbline[0],scomment);
-      if (pos1 != string::npos) continue;
-      pos1 = FindNoCase(dbline[0],svariable);
-      if (pos1 != string::npos && dbline.size()>4) {
-	string sdesc;
-	for (size_t j=5; j<dbline.size(); j++) {
-          sdesc += " ";
-          sdesc += dbline[j];
-        }
-	Int_t islot = atoi(dbline[1].c_str());
-	Int_t ichan = atoi(dbline[2].c_str());
-	Int_t ikind = atoi(dbline[3].c_str());
-	if (fDebugFile)
-	  *fDebugFile << "add var "<<dbline[1]<<"   desc = "<<sdesc<<"    islot= "<<islot<<"  "<<ichan<<"  "<<ikind<<endl;
-	TString tsname(dbline[4].c_str());
-	TString tsdesc(sdesc.c_str());
-	AddVars(tsname,tsdesc,islot,ichan,ikind);
-      }
-      pos1 = FindNoCase(dbline[0],smap);
-      if (pos1 != string::npos && dbline.size()>6) {
-	Int_t imodel = 0;
-	UInt_t icrate = 0, islot = 0, inorm = 0, header = 0, mask = 0;
-	char cdum[21];
-	sscanf(cbuf,"%20s %d %u %u %x %x %u \n",
-               cdum, &imodel, &icrate, &islot, &header, &mask, &inorm);
-        if( fNormSlot != inorm )
-          cout << "THaScalerEvtHandler:: WARN: contradictory norm slot "<<inorm<<endl;
-        fNormSlot = inorm;  // slot number used for normalization.  This variable is not used but is checked.
-	UInt_t clkchan = kMaxUInt;
-	Double_t clkfreq = 1;
-	if (dbline.size()>8) {
-          clkchan = atoi(dbline[7].c_str());
-          clkfreq = static_cast<Double_t>( atoi(dbline[8].c_str()) );
-	}
-	if (fDebugFile) {
-	  *fDebugFile << "map line "<<dec<<imodel<<"  "<<icrate<<"  "<<islot<<endl;
-	  *fDebugFile <<"   header  0x"<<hex<<header<<"  0x"<<mask<<dec<<"  "<<inorm<<"  "<<clkchan<<"  "<<clkfreq<<endl;
-	}
-        switch( imodel ) {
-        case 560:
-          scalers.push_back(new Scaler560(icrate, islot));
-          break;
-        case 1151:
-          scalers.push_back(new Scaler1151(icrate, islot));
-          break;
-        case 3800:
-          scalers.push_back(new Scaler3800(icrate, islot));
-          break;
-        case 3801:
-          scalers.push_back(new Scaler3801(icrate, islot));
-          break;
-        default:
-          break;
-        }
-	if( !scalers.empty() ) {
-	  ssiz_t idx = scalers.size()-1;
-	  scalers[idx]->SetHeader(header, mask);
-// The normalization slot has the clock in it, so we automatically recognize it.
-// fNormIdx is the index in scaler[] and 
-// fNormSlot is the slot#, checked for consistency
-          if( clkchan != kMaxUInt ) {
-             scalers[idx]->SetClock(defaultDT, clkchan, clkfreq);
-             fNormIdx = idx;
-             if (islot != fNormSlot) cout << "THaScalerEvtHandler:: WARN: contradictory norm slot ! "<<islot<<endl;  
- 	     if (fDebugFile) *fDebugFile <<"Setting scaler clock ... channel = "<<clkchan<<" ... freq = "<<clkfreq<<"   fNormIdx = "<<fNormIdx<<"  fNormSlot = "<<fNormSlot<<"  slot = "<<islot<<endl;
-	  }
-	}
-      }
+    const vector<string> dbline = vsplit(cbuf);
+    if( dbline.empty() )
+      continue;
+    assert(!dbline.front().empty() && !isspace(dbline.front()[0])); // else bug in vsplit
+    if( dbline.front()[0] == comment )
+      continue;
+
+    if( dbline.size() > 4 && CmpNoCase(dbline.front(), svariable) == 0 ) {
+      ParseVariable(dbline);
+    }
+    else if( dbline.size() > 6 && CmpNoCase(dbline.front(), smap) == 0 ) {
+      ParseMap(cbuf, dbline);
     }
   }
   // need to do LoadNormScaler after scalers created and if fNormIdx found.
-  if( fNormIdx < scalers.size() ) {
-    UInt_t i = 0;
-    for( auto* s : scalers ) {
-      if( i++ == fNormIdx ) continue;
-      s->LoadNormScaler(scalers[fNormIdx]);
-    }
-  }
+  AssignNormScaler();
 
 #ifdef HARDCODED
   // This code is superseded by the parsing of a map file above.  It's another way ...
@@ -344,22 +411,11 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
   }
 #endif
 
-// Verify that the slots are not defined twice
+  // Verify that the slots are not defined twice
+  VerifySlots();
 
-  for (size_t i1=0; i1 < scalers.size()-1; i1++) {
-    for (size_t i2=i1+1; i2 < scalers.size(); i2++) {
-      if (scalers[i1]->GetSlot()==scalers[i2]->GetSlot())
-	cout << "THaScalerEvtHandler:: WARN:  same slot defined twice"<<endl;
-    }
-  }
-// Identify indices of scalers[] vector to variables.
-  for (size_t i=0; i < scalers.size(); i++) {
-    for( auto& loc : scalerloc ) {
-      if( loc->islot == scalers[i]->GetSlot() )
-        loc->index = i;
-    }
-  }
-
+  // Identify indices of scalers[] vector to variables.
+  SetIndices();
 
   if(fDebugFile) {
     *fDebugFile << "THaScalerEvtHandler:: Name of scaler bank "<<fName<<endl;
@@ -370,7 +426,7 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
     }
   }
 
-  fclose(fi);
+  fclose(fi); // NOLINT(cert-err33-c)  // read-only file, should always succeed
   return kOK;
 }
 
@@ -387,20 +443,25 @@ void THaScalerEvtHandler::DefVars()
 {
   // called after AddVars has finished being called.
   size_t Nvars = scalerloc.size();
-  if (Nvars == 0) return;
+  if( Nvars == 0 )
+    return;
+  delete [] dvars;
   dvars = new Double_t[Nvars];  // dvars is a member of this class
-  memset(dvars, 0, Nvars*sizeof(Double_t));
-  if (gHaVars) {
-    if(fDebugFile) *fDebugFile << "THaScalerEVtHandler:: Have gHaVars "<<gHaVars<<endl;
+  memset(dvars, 0, Nvars * sizeof(Double_t));
+  if( gHaVars ) {
+    if( fDebugFile )
+      *fDebugFile << "THaScalerEVtHandler:: Have gHaVars " << gHaVars << endl;
   } else {
-    cout << "No gHaVars ?!  Well, that's a problem !!"<<endl;
+    cout << "No gHaVars ?!  Well, that's a problem !!" << endl;
     return;
   }
-  if(fDebugFile) *fDebugFile << "THaScalerEvtHandler:: scalerloc size "<<scalerloc.size()<<endl;
+  if( fDebugFile )
+    *fDebugFile << "THaScalerEvtHandler:: scalerloc size " << scalerloc.size() << endl;
   const Int_t* count = nullptr;
-  for (size_t i = 0; i < scalerloc.size(); i++) {
-    gHaVars->DefineByType(scalerloc[i]->name.Data(), scalerloc[i]->description.Data(),
-			  &dvars[i], kDouble, count);
+  for( size_t i = 0; i < scalerloc.size(); i++ ) {
+    gHaVars->DefineByType(scalerloc[i]->name.Data(),
+                          scalerloc[i]->description.Data(),
+                          &dvars[i], kDouble, count);
   }
 }
 

@@ -19,6 +19,7 @@
 #include "THaCrateMap.h"
 #include "Helper.h"
 #include "Database.h"
+#include "Textvars.h"
 #include "TError.h"
 #include "TSystem.h"
 #include "TString.h"
@@ -179,7 +180,9 @@ int THaCrateMap::SetModelSize( UInt_t crate, UInt_t slot, UInt_t model )
     { 250, 16, 20000 },  // FADC 250
   }};
   const auto* item =
-    find_if(ALL(modelpar), [model]( const ModelPar_t& modelParam ) { return model == modelParam.model; });
+    find_if(ALL(modelpar), [model]( const ModelPar_t& modelParam ) {
+      return model == modelParam.model;
+    });
   if( item != modelpar.end() ) {
     crdat[crate].sltdat[slot].nchan = item->nchan;
     crdat[crate].sltdat[slot].ndata = item->ndata;

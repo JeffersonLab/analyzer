@@ -10,32 +10,39 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "BankData.h"
-#include "THaString.h"
 #include "THaVar.h"
 #include "THaVarList.h"
 #include "CodaDecoder.h"
 #include "THaGlobals.h"
-#include "Helper.h"
+#include "Textvars.h"   // vsplit
 #include <sstream>
 #include <iterator>
+#include <cctype>       // isspace
 
 using namespace std;
-using namespace THaString;
 using namespace Decoder;
+using Podd::vsplit;
 
 //_____________________________________________________________________________
 class BankLoc { // Utility class used by BankData
 public:
   BankLoc(std::string svar, Int_t iroc, Int_t ibank, Int_t ioff, Int_t inum)
-    : svarname(std::move(svar)), roc(iroc), bank(ibank), offset(ioff),
-      numwords(inum) {}
+    : svarname(std::move(svar))
+    , roc(iroc)
+    , bank(ibank)
+    , offset(ioff)
+    , numwords(inum)
+    {}
   std::string svarname;
   Int_t roc,bank,offset,numwords;
 };
 
 //_____________________________________________________________________________
-BankData::BankData( const char* name, const char* description) :
-  THaPhysicsModule(name,description), Nvars(0), dvars(nullptr), vardata(nullptr)
+BankData::BankData( const char* name, const char* description)
+  : THaPhysicsModule(name,description)
+  , Nvars(0)
+  , dvars(nullptr)
+  , vardata(nullptr)
 {
   // Normal constructor.
 }
@@ -79,11 +86,6 @@ Int_t BankData::ReadDatabase( const TDatime& date )
 {
   // Read the parameters of this module from the run database
 
-  const int LEN = 200;
-  char cbuf[LEN];
-  const string scomment = "#";
-  vector<string> dbline;
-
 //  const char* const here = "ReadDatabase";
 
   // Read database
@@ -93,31 +95,34 @@ Int_t BankData::ReadDatabase( const TDatime& date )
 
   RemoveVariables();
 
-  while( fgets(cbuf, LEN, fi) != nullptr) {
-    std::string sinput(cbuf);
-    if(fDebug) cout << "database line = " << sinput << endl;
-    dbline = Podd::vsplit(sinput);
-    std::string svar;
-    Int_t iroc = 0,  ibank = 0, ioff = 0,  inum = 1;
-    if(dbline.size() > 2) {
-      auto pos1 = FindNoCase(dbline[0],scomment);
-      if (pos1 != string::npos) continue;
-      svar = dbline[0];
-      iroc  = atoi(dbline[1].c_str());
-      ibank = atoi(dbline[2].c_str());
-      if (dbline.size()>3) {
-	  ioff = atoi(dbline[3].c_str());
-	  if (dbline.size()>4) {
-	    inum = atoi(dbline[4].c_str());
-	  }
-	}
-      }
-     if(svar.empty()) continue;
-     if (fDebug) cout << "svar " << svar << "  len " << svar.length()
-                      << "  iroc " << iroc << "  ibank " << ibank
-                      << "  offset " << ioff << "  num " << inum << endl;
-    banklocs.emplace_back(new BankLoc(svar, iroc, ibank, ioff, inum));
+  const int LEN = 200;
+  char cbuf[LEN];
+  const char comment = '#';
 
+  while( fgets(cbuf, LEN, fi) ) {
+    if( fDebug )
+      cout << "database line = " << cbuf << endl;
+    const vector<string> dbline = vsplit(cbuf);
+    if( dbline.size() <= 2 )
+      continue;
+    assert(!dbline.front().empty() && !isspace(dbline.front()[0])); // else bug in vsplit
+    if( dbline.front()[0] == comment )
+      continue;
+    const string& svar = dbline[0];
+    Int_t iroc  = atoi(dbline[1].c_str());
+    Int_t ibank = atoi(dbline[2].c_str());
+    Int_t ioff = 0, inum = 1;
+    if (dbline.size()>3) {
+      ioff = atoi(dbline[3].c_str());
+      if (dbline.size()>4) {
+        inum = atoi(dbline[4].c_str());
+      }
+    }
+    assert(!svar.empty());
+    if (fDebug) cout << "svar " << svar << "  len " << svar.length()
+                     << "  iroc " << iroc << "  ibank " << ibank
+                     << "  offset " << ioff << "  num " << inum << endl;
+    banklocs.emplace_back(new BankLoc(svar, iroc, ibank, ioff, inum));
   }
 
   Int_t maxwords = 1, ibank = 0;
@@ -146,8 +151,8 @@ Int_t BankData::ReadDatabase( const TDatime& date )
   if( Nvars > 0 ) {
     dvars = new Double_t[Nvars];
     //DEBUG?
-    for (Int_t i=0; i<Nvars; i++)
-      dvars[i]=40+i;
+    for( Int_t i = 0; i < Nvars; i++ )
+      dvars[i] = 40 + i;
   }
 
   // warning to myself:  do NOT call DefineVariables() here, it will lead to
@@ -156,7 +161,7 @@ Int_t BankData::ReadDatabase( const TDatime& date )
 
   fStatus = kOK;
 
-  fclose(fi);
+  fclose(fi); // NOLINT(cert-err33-c)  // read-only file, should always succeed
   return fStatus;
 }
 

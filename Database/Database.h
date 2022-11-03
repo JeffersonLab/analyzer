@@ -10,16 +10,16 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "VarDef.h"
-#include "Textvars.h"
-#include "TDatime.h"
 #include <cstdio>  // for FILE
 #include <vector>
 #include <string>
-#include <type_traits>
-#include <iostream>
+
+// For backward compatibility with existing client code
+#include "Textvars.h"
+#include "TDatime.h"
 
 class TObjArray;
-class TDatime;
+//class TDatime;
 class TString;
 
 // Helper function for error messages

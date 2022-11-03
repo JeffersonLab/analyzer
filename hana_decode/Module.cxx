@@ -23,11 +23,26 @@ namespace Decoder {
 
 //_____________________________________________________________________________
 Module::Module(UInt_t crate, UInt_t slot)
-  : TNamed(), fCrate(crate), fSlot(slot), fHeader(0), fHeaderMask(0xffffffff),
-    fBank(-1), fWordsExpect(0), fWordsSeen(0), fWdcntMask(0), fWdcntShift(0),
-    fModelNum(-1), fNumChan(0), fMode(0), block_size(1), IsInit(false),
-    fMultiBlockMode(false), fBlockIsDone(false), fFirmwareVers(0),
-    fDebug(0), fDebugFile(nullptr), fExtra(nullptr)
+  : fCrate{crate}
+  , fSlot{slot}
+  , fHeader{0}
+  , fHeaderMask{0xffffffff}
+  , fBank{-1}
+  , fWordsExpect{0}
+  , fWordsSeen{0}
+  , fWdcntMask{0}
+  , fWdcntShift{0}
+  , fModelNum{-1}
+  , fNumChan{0}
+  , fMode{0}
+  , block_size{1}
+  , IsInit{false}
+  , fMultiBlockMode{false}
+  , fBlockIsDone{false}
+  , fFirmwareVers{0}
+  , fDebug{0}
+  , fDebugFile{nullptr}
+  , fExtra{nullptr}
 {
   // Warning: see comments at Init()
 }

@@ -4,7 +4,7 @@
 //
 // THaOutput
 //
-// Defines the tree and histogram output for THaAnalyzer.  
+// Defines the tree and histogram output for THaAnalyzer.
 // This class reads a file 'output.def' (an example is in /examples)
 // to define which global variables, including arrays, and formulas
 // (THaFormula's), and histograms go to the ROOT output.
@@ -63,7 +63,7 @@ public:
      { fAssign.clear(); }
   void AddAssign(const string& input) {
 // Add optional assignments.  The input must
-// be of the form "epicsvar=number" 
+// be of the form "epicsvar=number"
 // epicsvar can be a string with spaces if
 // and only if its enclosed in single spaces.
 // E.g. "Yes=1" "No=2", "'RF On'", etc
@@ -106,7 +106,7 @@ public:
         return pm.second;
       }
     }
-    return 0;  
+    return 0;
   };
   Double_t Eval(const TString& input) {
     return Eval(string(input.Data()));
@@ -127,7 +127,7 @@ THaOdata::THaOdata( const THaOdata& other )
 
 //_____________________________________________________________________________
 THaOdata& THaOdata::operator=(const THaOdata& rhs )
-{ 
+{
   if( this != &rhs ) {
     tree = rhs.tree; name = rhs.name;
     if( nsize < rhs.nsize ) {
@@ -135,7 +135,7 @@ THaOdata& THaOdata::operator=(const THaOdata& rhs )
     }
     ndata = rhs.ndata; memcpy( data, rhs.data, nsize*sizeof(Double_t));
   }
-  return *this;   
+  return *this;
 }
 
 //_____________________________________________________________________________
@@ -157,7 +157,7 @@ Bool_t THaOdata::Resize(Int_t i)
   static const Int_t MAX = 1<<16;
   if( i > MAX ) return true;
   Int_t newsize = nsize;
-  while ( i >= newsize ) { newsize *= 2; } 
+  while ( i >= newsize ) { newsize *= 2; }
   auto* tmp = new Double_t[newsize];
   memcpy( tmp, data, nsize*sizeof(Double_t) );
   delete [] data; data = tmp; nsize = newsize;
@@ -178,7 +178,7 @@ THaOutput::THaOutput()
 }
 
 //_____________________________________________________________________________
-THaOutput::~THaOutput() 
+THaOutput::~THaOutput()
 {
   // Destructor
 
@@ -203,7 +203,7 @@ THaOutput::~THaOutput()
 }
 
 //_____________________________________________________________________________
-Int_t THaOutput::Init( const char* filename ) 
+Int_t THaOutput::Init( const char* filename )
 {
   // Initialize output system. Required before anything can happen.
   //
@@ -214,7 +214,7 @@ Int_t THaOutput::Init( const char* filename )
 	 << " re-initialized. Keeping existing definitions." << endl;
     cout << "Global Variables are being re-attached and formula/cuts"
 	 << " are being re-compiled." << endl;
-    
+
     // Assign pointers and recompile stuff reliant on pointers.
 
     if ( Attach() ) return -4;
@@ -235,7 +235,7 @@ Int_t THaOutput::Init( const char* filename )
 
   Int_t err = LoadFile( filename );
   if( fgDoBench && err != 0 ) fgBench.Stop("Init");
-    
+
   if( err == -1 ) {
     return 0;       // No error if file not found, but please
   }                    // read the instructions.
@@ -286,7 +286,7 @@ Int_t THaOutput::Init( const char* filename )
     if( fgVerbose > 2 )
       pform->LongPrint();  // for debug
 // Add variables (i.e. those var's used by the formula) to tree.
-// Reason is that TTree::Draw() may otherwise fail with ERROR 26 
+// Reason is that TTree::Draw() may otherwise fail with ERROR 26
     vector<string> avar = pform->GetVars();
     for( const auto& str : avar ) {
       string svar = StripBracket(str);
@@ -337,17 +337,17 @@ Int_t THaOutput::Init( const char* filename )
   for( auto* pVhist : fHistos ) {
 
 // After initializing formulas and cuts, must sort through
-// histograms and potentially reassign variables.  
-// A histogram variable or cut is either a string (which can 
-// encode a formula) or an externally defined THaVform. 
+// histograms and potentially reassign variables.
+// A histogram variable or cut is either a string (which can
+// encode a formula) or an externally defined THaVform.
     sfvarx = pVhist->GetVarX();
     sfvary = pVhist->GetVarY();
     for( auto* pVform : fFormulas ) {
       string stemp(pVform->GetName());
-      if (CmpNoCase(sfvarx,stemp) == 0) { 
+      if (CmpNoCase(sfvarx,stemp) == 0) {
 	pVhist->SetX(pVform);
       }
-      if (CmpNoCase(sfvary,stemp) == 0) { 
+      if (CmpNoCase(sfvary,stemp) == 0) {
 	pVhist->SetY(pVform);
       }
     }
@@ -355,7 +355,7 @@ Int_t THaOutput::Init( const char* filename )
       scut   = pVhist->GetCutStr();
       for( auto* pcut : fCuts ) {
         string stemp(pcut->GetName());
-        if (CmpNoCase(scut,stemp) == 0) { 
+        if (CmpNoCase(scut,stemp) == 0) {
 	  pVhist->SetCut(pcut);
         }
       }
@@ -371,9 +371,9 @@ Int_t THaOutput::Init( const char* filename )
       fEpicsVar[i] = -1e32;
       string epicsbr = CleanEpicsName(fEpicsKey[i]->GetName());
       string tinfo = epicsbr + "/D";
-      fTree->Branch(epicsbr.c_str(), &fEpicsVar[i], 
+      fTree->Branch(epicsbr.c_str(), &fEpicsVar[i],
         tinfo.c_str(), kNbout);
-      fEpicsTree->Branch(epicsbr.c_str(), &fEpicsVar[i], 
+      fEpicsTree->Branch(epicsbr.c_str(), &fEpicsVar[i],
         tinfo.c_str(), kNbout);
     }
     auto* extras = static_cast<OutputExtras*>(fExtra);
@@ -396,7 +396,7 @@ Int_t THaOutput::Init( const char* filename )
   return 0;
 }
 
-void THaOutput::BuildList( const vector<string>& vdata) 
+void THaOutput::BuildList( const vector<string>& vdata)
 {
   // Build list of EPICS variables and
   // SCALER variables to add to output.
@@ -432,12 +432,12 @@ void THaOutput::BuildList( const vector<string>& vdata)
 
 
 //_____________________________________________________________________________
-Int_t THaOutput::Attach() 
+Int_t THaOutput::Attach()
 {
   // Get the pointers for the global variables
   // Also, sets the size of the fVariables and fArrays vectors
   // according to the size of the related names array
-  
+
   if( !gHaVars ) return -2;
 
   UInt_t NAry = fArrayNames.size();
@@ -445,7 +445,7 @@ Int_t THaOutput::Attach()
 
   fVariables.resize(NVar);
   fArrays.resize(NAry);
-  
+
   // simple variable-type names
   for (UInt_t ivar = 0; ivar < NVar; ivar++) {
     auto* pvar = gHaVars->Find(fVNames[ivar].c_str());
@@ -495,18 +495,18 @@ Int_t THaOutput::Attach()
   for (auto & hist : fHistos) {
     hist->ReAttach();
   }
-     
+
   return 0;
 
 }
 
 //_____________________________________________________________________________
-Int_t THaOutput::ProcEpics(THaEvData *evdata, THaEpicsEvtHandler *epicshandle)  
+Int_t THaOutput::ProcEpics(THaEvData *evdata, THaEpicsEvtHandler *epicshandle)
 {
   // Process the EPICS data, this fills the trees.
 
   if ( !epicshandle ) return 0;
-  if ( !epicshandle->IsMyEvent(evdata->GetEvType()) 
+  if ( !epicshandle->IsMyEvent(evdata->GetEvType())
        || fEpicsKey.empty() || !fEpicsTree ) return 0;
   if( fgDoBench ) fgBench.Begin("EPICS");
   auto* extras = static_cast<OutputExtras*>(fExtra);
@@ -538,7 +538,7 @@ Int_t THaOutput::ProcEpics(THaEvData *evdata, THaEpicsEvtHandler *epicshandle)
 }
 
 //_____________________________________________________________________________
-Int_t THaOutput::Process() 
+Int_t THaOutput::Process()
 {
   // Process the variables, formulas, and histograms.
   // This is called by THaAnalyzer.
@@ -572,13 +572,13 @@ Int_t THaOutput::Process()
     Int_t i = pvar->GetLen();
     bool first = true;
     while( i-- > 0 ) {
-      // FIXME: for better efficiency, should use pointer to data and 
+      // FIXME: for better efficiency, should use pointer to data and
       // Fill(int n,double* data) method in case of a contiguous array
       Double_t x = pvar->GetValue(i);
       if( x == kMinInt ) x = kBig;
       if (pdat->Fill(i,x) != 1) {
 	if( fgVerbose>0 && first ) {
-	  cerr << "THaOutput::ERROR: storing too much variable sized data: " 
+	  cerr << "THaOutput::ERROR: storing too much variable sized data: "
 	       << pvar->GetName() <<"  "<<pvar->GetLen()<<endl;
 	  first = false;
 	}
@@ -600,7 +600,7 @@ Int_t THaOutput::Process()
 }
 
 //_____________________________________________________________________________
-Int_t THaOutput::End() 
+Int_t THaOutput::End()
 {
   if( fgDoBench ) fgBench.Begin("End");
 
@@ -626,10 +626,10 @@ Int_t THaOutput::End()
 }
 
 //_____________________________________________________________________________
-Int_t THaOutput::LoadFile( const char* filename ) 
+Int_t THaOutput::LoadFile( const char* filename )
 {
   // Process the file that defines the output
-  
+
   const char* const here = "THaOutput::LoadFile";
 
   if( !filename || !*filename || strspn(filename," ") == strlen(filename) ) {
@@ -690,7 +690,7 @@ Int_t THaOutput::LoadFile( const char* filename )
       continue;
     for( auto& str : lines ) {
       // Split the line into tokens separated by whitespace
-      strvect = Split(str);
+      strvect = vsplit(str);
       bool special_before = (fOpenEpics);
       BuildList(strvect);
       bool special_now = (fOpenEpics);
@@ -733,7 +733,7 @@ Int_t THaOutput::LoadFile( const char* filename )
 	  continue;
 	}
 	fHistos.push_back(new THaVhist(svkey,sname,stitle));
-	// Tentatively assign variables and cuts as strings. 
+	// Tentatively assign variables and cuts as strings.
 	// Later will check if they are actually THaVform's.
 	fHistos.back()->SetX(nx, xlo, xhi, sfvarx);
 	if (ikey == kH2f || ikey == kH2d) {
@@ -780,17 +780,17 @@ Int_t THaOutput::LoadFile( const char* filename )
 //_____________________________________________________________________________s
 string THaOutput::svPrefix(string& histtype)
 {
-// If the arg is a string for a histogram type, we strip the initial 
+// If the arg is a string for a histogram type, we strip the initial
 // "s" or "v".  If the first character is "s" we set fIsScalar true.
   const int ldebug=0;
   fIsScalar = false;
   string sresult = histtype;
   if (ldebug) cout << "svPrefix  histogram  type = "<<histtype<<"   histtype length  "<<histtype.length()<<endl;
-// For histograms `histtype' is of the form "XthNY" 
+// For histograms `histtype' is of the form "XthNY"
 // with X="s" or "v" and N=1 or 2,  Y = "f" or "d"
 // For example, "sth1f".  Note it always has length 5
-  if (histtype.length() != 5) return sresult;  
-  string sfirst = histtype.substr(0,1); 
+  if (histtype.length() != 5) return sresult;
+  string sfirst = histtype.substr(0,1);
   if (ldebug) cout << "sfirst = "<<sfirst<<endl;
   if(CmpNoCase(sfirst,"s")==0) fIsScalar = true;
   sresult=histtype.substr(1);
@@ -812,7 +812,7 @@ Int_t THaOutput::FindKey(const string& key) const
 {
   // Return integer flag corresponding to
   // case-insensitive keyword "key" if it exists
-  
+
   // Map of keywords to internal logical type numbers
   class KeyMap {
   public:
@@ -843,7 +843,7 @@ Int_t THaOutput::FindKey(const string& key) const
 string THaOutput::StripBracket(const string& var) const
 {
 // If the string contains "[anything]", we strip
-// it away.  In practice this should not be fatal 
+// it away.  In practice this should not be fatal
 // because your variable will still show up in the tree.
   static const string open_brack("[");
   static const string close_brack("]");
@@ -853,7 +853,7 @@ string THaOutput::StripBracket(const string& var) const
   if ((pos1 != string::npos) &&
       (pos2 != string::npos)) {
       result = var.substr(0,pos1);
-      result += var.substr(pos2+1,var.length());    
+      result += var.substr(pos2+1,var.length());
 //      cout << "THaOutput:WARNING:: Stripping away";
 //      cout << "unwanted brackets from "<<var<<endl;
   } else {
@@ -1070,8 +1070,8 @@ void THaOutput::Print() const
 //_____________________________________________________________________________
 Int_t THaOutput::ChkHistTitle(Int_t iden, const string& sline)
 {
-// Parse the string that defines the histogram.  
-// The title must be enclosed in single quotes (e.g. 'my title').  
+// Parse the string that defines the histogram.
+// The title must be enclosed in single quotes (e.g. 'my title').
 // Ret value 'result' means:  -1 == error,  1 == everything ok.
   Int_t result = -1;
   stitle = "";   sfvarx = "";  sfvary  = "";
@@ -1105,15 +1105,15 @@ Int_t THaOutput::ChkHistTitle(Int_t iden, const string& sline)
        sscanf(stemp[6].c_str(),"%16f",&ylo);
        sscanf(stemp[7].c_str(),"%16f",&yhi);
        if (ssize == 9) {
-         iscut = 1; scut = stemp[8]; 
+         iscut = 1; scut = stemp[8];
        }
        result = 2;
      }
   }
   if (result != 1 && result != 2) return -1;
-  if ((iden == kH1f || iden == kH1d) && 
+  if ((iden == kH1f || iden == kH1d) &&
        result == 1) return 1;  // ok
-  if ((iden == kH2f || iden == kH2d) && 
+  if ((iden == kH2f || iden == kH2d) &&
        result == 2) return 1;  // ok
   return -1;
 }

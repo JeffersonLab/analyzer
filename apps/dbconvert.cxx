@@ -6,7 +6,6 @@
 // and later format
 
 #include <iostream>
-#include <fstream>
 #include <sstream>
 #include <iomanip>
 #include <utility>
@@ -27,7 +26,6 @@
 #include <limits>
 #include <iterator>
 #include <algorithm>
-#include <sys/types.h>
 #include <sys/stat.h> // for stat/lstat
 #include <sys/ioctl.h> // for ioctl to get terminal windows size
 #include <dirent.h>   // for opendir/readdir
@@ -368,7 +366,7 @@ static inline string TZfromOffset( long off )
 
   ldiv_t d = ldiv( std::abs(off), static_cast<long>(3600) );
   if( d.quot > 24 )
-    return string();
+    return {};
   ostringstream ostr;
   // Flip the sign. Input is east of UTC, $TZ uses west of UTC.
   ostr << "OFFS" << ((off >= 0) ? "-" : "+");
@@ -827,7 +825,7 @@ Value_t MakeValue( const T* array, size_t size = 1 )
     w = max(w, ostr.str().size()-len);
     if( i+1 < size ) ostr << "  ";
   }
-  return Value_t(ostr.str(), size, w);
+  return {ostr.str(), size, w};
 }
 
 //-----------------------------------------------------------------------------
@@ -865,7 +863,7 @@ MakeDetmapElemValue( const unique_ptr<THaDetMap>& pmap, UInt_t n, size_t extras 
     len = ostr.str().size();
     ostr << d->GetModel(); w = max(ostr.str().size()-len,w);
   }
-  return Value_t(ostr.str(), 4+extras, w);
+  return {ostr.str(), 4+extras, w};
 }
 
 //-----------------------------------------------------------------------------
@@ -882,16 +880,17 @@ Value_t MakeValueP( const unique_ptr<THaDetMap>& detmap, size_t extras )
     nelem += v.nelem;
     if( i+1 != detmap->GetSize() ) ostr << " ";
   }
-  return Value_t(ostr.str(), nelem, w);
+  return {ostr.str(), nelem, w};
 }
 
 //-----------------------------------------------------------------------------
 template<> inline
-Value_t MakeValue( const TVector3* vec3, size_t )
+Value_t MakeValue( const TVector3* vec3, size_t size )
 {
-  Double_t darr[3];
+  size = 3;
+  Double_t darr[size];
   vec3->GetXYZ( darr );
-  return MakeValue( darr, 3 );
+  return MakeValue( darr, size );
 }
 
 //-----------------------------------------------------------------------------
@@ -996,10 +995,10 @@ static int WriteAllKeysForTime( ofstream& ofs,
 				time_t tstamp, bool find_first = false )
 {
   // Write all keys in the range [first,last) to 'ofs' whose timestamp is exactly
-  // 'tstamp'. If 'find_first' is true, modify the logic: If the key has a time-
-  // stamp equal to 'tstamp', use it (as before), but if such a timestamp does
-  // not exist, use the largest timestamp preceding 'tstamp' (validity started
-  // before this time, but extends into it).
+  // 'tstamp'. If 'find_first' is true, modify the logic: If the key has a
+  // timestamp equal to 'tstamp', use it (as before), but if such a timestamp
+  // does not exist, use the largest timestamp preceding 'tstamp' (validity
+  // started before this time, but extends into it).
 
   int nwritten = 0;
   bool header_done = false;
@@ -1152,13 +1151,19 @@ static int WriteFileDB( const string& target_dir, const vector<string>& subdirs 
       // whose validity started before this directory's time and extends
       // into its range. To do this, we need a different key finding logic,
       // enabled with the find_first parameter of WriteAllKeysForTime.
-      int nw = WriteAllKeysForTime( ofs, range.first, range.second,
+#ifndef NDEBUG
+      int nw =
+#endif
+        WriteAllKeysForTime( ofs, range.first, range.second,
 				    dir_from, true );
 
       // All following keys are found and written using their exact time stamp
       for( auto tt = tstamps.upper_bound(dir_from); tt != tstamps.end() &&
 	     *tt < dir_until; ++tt ) {
-	nw += WriteAllKeysForTime( ofs, range.first, range.second, *tt );
+#ifndef NDEBUG
+	nw +=
+#endif
+        WriteAllKeysForTime( ofs, range.first, range.second, *tt );
       }
       ofs.close();
       // Don't create empty files (should never happen)
@@ -1746,7 +1751,7 @@ static void DefaultMap()
     { "R.vdc",      kVDC },
     { "L.vdc",      kVDC },
     // Ignore top-level Beam apparatus db files - these are actually never read.
-    // Instead, the apparatus's detector read db_urb.BPMA.dat etc.
+    // Instead, the detectors of the apparatus read db_urb.BPMA.dat etc.
     { "beam",       kNone },
     { "R_beam",     kNone },
     { "L_beam",     kNone },
@@ -1819,7 +1824,7 @@ static inline string GetDetName( const string& fname )
 
 //-----------------------------------------------------------------------------
 template<typename Action>
-static int ForAllFilesInDir( const string& sdir, Action action, int depth = 0 )
+static int ForAllFilesInDir( const string& sdir, Action action, int depth = 0 ) // NOLINT(misc-no-recursion)
 {
   int n_add = 0;
   errno = 0;
@@ -1884,7 +1889,7 @@ public:
                   const time_t start_time )
     : fFilenames(filenames), fSubdirs(subdirs), fStart(start_time) {}
 
-  int operator() ( const string& dir, const string& fname, int depth )
+  int operator() ( const string& dir, const string& fname, int depth ) // NOLINT(misc-no-recursion)
   {
     int n_add = 0;
     string fpath = MakePath( dir, fname );
@@ -1930,7 +1935,7 @@ public:
   explicit DeleteDBFile( bool do_all = false ) :
     fDoAll(do_all), fMustRewind(false) {}
 
-  int operator() ( const string& dir, const string& fname, int depth )
+  int operator() ( const string& dir, const string& fname, int depth ) // NOLINT(misc-no-recursion)
   {
     time_t date{};
     struct stat sb{};
@@ -2602,7 +2607,8 @@ static int CopyFiles( const string& target_dir, const vector<string>& subdirs,
 	  ofs << endl;
       }
       reset_tz();
-      fclose(fi);
+      if( fclose(fi) != 0 )
+        Warning(Here(__FUNCTION__), "Error closing file %s", path.c_str());
     }
     ofs.close();
     // TODO: check if file is empty (may happen because of in-file timestamps)
@@ -3155,19 +3161,19 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
   fDetMap->Clear();
   fDetMapHasModel = false;
   while (true) {
-    Int_t crate, slot, first, last, first_chan;
+    Int_t crate, slot, chanLo, chanHi, logicalFirst;
     int pos = -1;
     if( fgets(buf,LEN,fi) == nullptr ) return ErrPrint(fi,here);
-    int n = sscanf( buf, "%6d %6d %6d %6d %6d %n",
-		    &crate, &slot, &first, &last, &first_chan, &pos );
+    int n = sscanf(buf, "%6d %6d %6d %6d %6d %n",
+                   &crate, &slot, &chanLo, &chanHi, &logicalFirst, &pos );
     if( crate < 0 ) break;
     if( n < 5 ) return ErrPrint(fi,here);
     Int_t model=atoi(buf+pos); // if there is no model number given, set to zero
     if( model != 0 )
       fDetMapHasModel = true;
-    if( CheckDetMapInp(crate,slot,first,last,buf,here) )
+    if( CheckDetMapInp(crate, slot, chanLo, chanHi, buf, here) )
       return kInitError;
-    fDetMap->AddModule( crate, slot, first, last, first_chan, model );
+    fDetMap->AddModule(crate, slot, chanLo, chanHi, logicalFirst, model );
   }
   UInt_t nval = nelem;
   if( fDetMap->GetTotNumChan() != 2*nval ) {
@@ -3255,18 +3261,18 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   fDetMap->Clear();
   while (true) {
     int pos = -1;
-    Int_t crate, slot, first, last, first_chan;
+    Int_t crate, slot, chanLo, chanHi, logicalFirst;
     if( fgets(buf,LEN,fi ) == nullptr ) return ErrPrint(fi,here);
-    int n = sscanf( buf, "%6d %6d %6d %6d %6d %n",
-                    &crate, &slot, &first, &last, &first_chan, &pos );
+    int n = sscanf(buf, "%6d %6d %6d %6d %6d %n",
+                   &crate, &slot, &chanLo, &chanHi, &logicalFirst, &pos );
     if( crate < 0 ) break;
     if( n < 5 ) return ErrPrint(fi,here);
     Int_t model=atoi(buf+pos); // if there is no model number given, set to zero
     if( model != 0 )
       fDetMapHasModel = true;
-    if( CheckDetMapInp(crate,slot,first,last,buf,here) )
+    if( CheckDetMapInp(crate, slot, chanLo, chanHi, buf, here) )
       return kInitError;
-    fDetMap->AddModule( crate, slot, first, last, first_chan, model );
+    fDetMap->AddModule(crate, slot, chanLo, chanHi, logicalFirst, model );
   }
   UInt_t nval = nelem;
   if( fDetMap->GetTotNumChan() != 4*nval ) {
@@ -3353,9 +3359,9 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
 
   // Read calibration data
 
-  // Most scintillator databases have two data lines in each section, one for left,
-  // one for right paddles, without a separator comment. Hence we must read the first
-  // line without the check for "too many values".
+  // Most scintillator databases have two data lines in each section, one for
+  // left, one for right paddles, without a separator comment. Hence, we must
+  // read the first line without the check for "too many values".
 
   // Left pads TDC offsets
   Int_t err = ReadBlock(fi,fLOff.get(),fNelem,here,flags|kStopAtNval|kQuietOnTooMany);
@@ -3479,14 +3485,14 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   fDetMap->Clear();
   while( ReadComment(fi,buf,LEN) );
   while (true) {
-    Int_t crate, slot, first, last;
+    Int_t crate, slot, chanLo, chanHi;
     if( fgets(buf,LEN,fi ) == nullptr ) return ErrPrint(fi,here);
-    int n = sscanf( buf, "%6d %6d %6d %6d", &crate, &slot, &first, &last );
+    int n = sscanf(buf, "%6d %6d %6d %6d", &crate, &slot, &chanLo, &chanHi );
     if( crate < 0 ) break;
     if( n < 4 ) return ErrPrint(fi,here);
-    if( CheckDetMapInp(crate,slot,first,last,buf,here) )
+    if( CheckDetMapInp(crate, slot, chanLo, chanHi, buf, here) )
       return kInitError;
-    fDetMap->AddModule( crate, slot, first, last );
+    fDetMap->AddModule(crate, slot, chanLo, chanHi );
   }
   UInt_t nval = nelem;
   if( fDetMap->GetTotNumChan() != nval ) {
@@ -3498,7 +3504,7 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
 
   // Read channel map
   fChanMap.resize(nelem);
-  if( ReadBlock(fi,&fChanMap[0],nelem,here,flags|kRequireGreaterZero) )
+  if( ReadBlock(fi,fChanMap.data(),nelem,here,flags|kRequireGreaterZero) )
     return kInitError;
 
   bool trivial = true;
@@ -3650,47 +3656,48 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
   const int LEN=100;
   char buf[LEN];
   char *filestatus = nullptr;
-  char keyword[LEN];
+  ostringstream keyword;
 
-  snprintf(keyword,LEN,"[%s_detmap]",fRealName.c_str());
+  keyword << "[" << fRealName << "_detmap]";
   do {
-    filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=nullptr)&&(strncmp(buf,keyword,LEN-1)!=0));
-  if (filestatus==nullptr) {
-    Error( Here(here), "Unexpected end of BPM configuration file");
+    filestatus = fgets(buf, LEN, fi);
+  } while( filestatus != nullptr && keyword.str() != buf );
+  if( filestatus == nullptr ) {
+    Error(Here(here), "Unexpected end of BPM configuration file");
     return kInitError;
   }
 
   fDetMap->Clear();
-  int first_chan, crate, dummy, slot, first, last, modulid = 0;
+  int logicalFirst, crate, dummy, slot, chanLo, chanHi, modulid = 0;
   do {
     if( fgets(buf,LEN,fi ) == nullptr ) return ErrPrint(fi,here);
-    int n = sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
-                   &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
+    int n = sscanf(buf, "%6d %6d %6d %6d %6d %6d %6d",
+                   &logicalFirst, &crate, &dummy, &slot, &chanLo, &chanHi, &modulid);
     if( n < 1 ) return ErrPrint(fi,here);
     if( n == 7 )
       fDetMapHasModel = true;
-    if( CheckDetMapInp(crate,slot,first,last,buf,here) )
+    if( CheckDetMapInp(crate, slot, chanLo, chanHi, buf, here) )
       return kInitError;
-    if (first_chan>=0 && n >= 6 ) {
-      if ( fDetMap->AddModule(crate, slot, first, last, first_chan, modulid) <0 ) {
+    if ( logicalFirst >= 0 && n >= 6 ) {
+      if ( fDetMap->AddModule(crate, slot, chanLo, chanHi, logicalFirst, modulid) < 0 ) {
 	Error( Here(here), "Couldn't add BPM to DetMap");
 	return kInitError;
       }
     }
-  } while (first_chan>=0);
+  } while ( logicalFirst >= 0);
   if( fDetMap->GetTotNumChan() != 4 ) {
     Error( Here(here), "Invalid BPM detector map.\n Needs to define exactly 4 "
 	   "channels. Has %d.", fDetMap->GetTotNumChan() );
     return kInitError;
   }
 
-  snprintf(keyword,LEN,"[%s]",fRealName.c_str());
+  keyword.str("");
+  keyword << "[" << fRealName << "]";
   do {
-    filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=nullptr)&&(strncmp(buf,keyword,LEN-1)!=0));
-  if (filestatus==nullptr) {
-    Error( Here(here), "Unexpected end of BPM configuration file");
+    filestatus = fgets(buf, LEN, fi);
+  } while( filestatus != nullptr && keyword.str() != buf );
+  if( filestatus == nullptr ) {
+    Error(Here(here), "Unexpected end of BPM configuration file");
     return kInitError;
   }
 
@@ -3732,36 +3739,36 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
   const int LEN=100;
   char buf[LEN];
   char *filestatus = nullptr;
-  char keyword[LEN];
+  ostringstream keyword;
 
   // Seek our detmap section (e.g. "Raster_detmap")
-  snprintf(keyword,LEN,"[%s_detmap]",fRealName.c_str());
+  keyword << "[" << fRealName << "_detmap]";
   do {
-    filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=nullptr)&&(strncmp(buf,keyword,LEN-1)!=0));
-  if (filestatus==nullptr) {
-    Error( Here(here), "Unexpected end of raster configuration file");
+    filestatus = fgets(buf, LEN, fi);
+  } while( filestatus != nullptr && keyword.str() != buf );
+  if( filestatus == nullptr ) {
+    Error(Here(here), "Unexpected end of raster configuration file");
     return kInitError;
   }
 
   fDetMap->Clear();
-  int first_chan, crate, dummy, slot, first, last, modulid = 0;
+  int logicalFirst, crate, dummy, slot, chanLo, chanHi, modulid = 0;
   do {
     if( fgets(buf,LEN,fi ) == nullptr ) return ErrPrint(fi,here);
-    int n = sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
-                   &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
+    int n = sscanf(buf, "%6d %6d %6d %6d %6d %6d %6d",
+                   &logicalFirst, &crate, &dummy, &slot, &chanLo, &chanHi, &modulid);
     if( n < 1 ) return ErrPrint(fi,here);
     if( n == 7 )
       fDetMapHasModel = true;
-    if( CheckDetMapInp(crate,slot,first,last,buf,here) )
+    if( CheckDetMapInp(crate, slot, chanLo, chanHi, buf, here) )
       return kInitError;
-    if (first_chan>=0 && n >= 6 ) {
-      if ( fDetMap->AddModule(crate, slot, first, last, first_chan, modulid) <0 ) {
+    if ( logicalFirst >= 0 && n >= 6 ) {
+      if ( fDetMap->AddModule(crate, slot, chanLo, chanHi, logicalFirst, modulid) < 0 ) {
 	Error( Here(here), "Couldn't add Raster to DetMap");
 	return kInitError;
       }
     }
-  } while (first_chan>=0);
+  } while ( logicalFirst >= 0);
   if( fDetMap->GetTotNumChan() != 4 ) {
     Error( Here(here), "Invalid raster detector map.\n Needs to define exactly 4 "
 	   "channels. Has %d.", fDetMap->GetTotNumChan() );
@@ -3769,12 +3776,13 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
   }
 
   // Seek our database section
-  snprintf(keyword,LEN,"[%s]",fRealName.c_str());
+  keyword.str("");
+  keyword << "[" << fRealName << "]";
   do {
-    filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=nullptr)&&(strncmp(buf,keyword,LEN-1)!=0));
-  if (filestatus==nullptr) {
-    Error( Here(here), "Unexpected end of raster configuration file");
+    filestatus = fgets(buf, LEN, fi);
+  } while( filestatus != nullptr && keyword.str() != buf );
+  if( filestatus == nullptr ) {
+    Error(Here(here), "Unexpected end of raster configuration file");
     return kInitError;
   }
 
@@ -4300,7 +4308,11 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
   fNelem = nWires;
 
   // Load z, wire beginning position, wire spacing, and wire angle
-  sscanf( buff, "%15lf %15lf %15lf %15lf", &fZ, &fWBeg, &fWSpac, &fWAngle );
+  if( sscanf(buff, "%15lf %15lf %15lf %15lf",
+             &fZ, &fWBeg, &fWSpac, &fWAngle) != 4 ) {
+    Error(Here(here), "Error reading VDC geometry info, line %s", buff);
+    return kInitError;
+  }
   fOrigin.SetXYZ( 0.0, 0.0, fZ );
 
   // Load drift velocity (will be used to initialize crude Time to Distance
@@ -4557,7 +4569,7 @@ int Shower::Save( time_t start, const string& version ) const
   AddToMap( prefix+"nrows",     MakeValue(&fNrows), start, version );
 
   if( !fChanMap.empty() )
-    AddToMap( prefix+"chanmap", MakeValue(&fChanMap[0], fChanMap.size()),
+    AddToMap( prefix+"chanmap", MakeValue(fChanMap.data(), fChanMap.size()),
 	      start, version, fNcols );
 
   AddToMap( prefix+"xy",        MakeValue(fXY,2),   start, version );
@@ -4647,7 +4659,7 @@ int TriggerTime::Save( time_t start, const string& version ) const
 
   AddToMap( prefix+"tdc_res",  MakeValue(&fTDCRes),   start, version );
   AddToMap( prefix+"glob_off", MakeValue(&fGlOffset), start, version );
-  AddToMap( prefix+"trigdef",  MakeValue(&fTrgDef[0],fTrgDef.size()), start, version );
+  AddToMap( prefix+"trigdef",  MakeValue(fTrgDef.data(),fTrgDef.size()), start, version );
 
   return 0;
 }
@@ -4727,7 +4739,7 @@ int VDC::Save( time_t start, const string& version ) const
   if( TestBit(fCommon,kTTDConv) )
     AddToMap( prefix+"ttd.converter", MakeValue(&pl.fTTDConv),       start, version );
   if( TestBit(fCommon,kTTDPar) )
-    AddToMap( prefix+"ttd.param",     MakeValue(&pl.fTTDPar[0],9),   start, version, -4 );
+    AddToMap( prefix+"ttd.param",     MakeValue(pl.fTTDPar.data(),9),   start, version, -4 );
   if( TestBit(fCommon,kT0Resolution) )
     AddToMap( prefix+"t0.res",        MakeValue(&pl.fT0Resolution),  start, version );
   if( TestBit(fCommon,kMinClustSize) )
@@ -4769,7 +4781,7 @@ int VDC::Plane::Save( time_t start, const string& version ) const
     AddToMap( prefix+"wire.spacing",  MakeValue(&fWSpac),         start, version );
   AddToMap( prefix+"wire.angle",      MakeValue(&fWAngle),        start, version );
   if( !fBadWires.empty() )
-    AddToMap( prefix+"wire.badlist",    MakeValue(&fBadWires[0],fBadWires.size()),
+    AddToMap( prefix+"wire.badlist",    MakeValue(fBadWires.data(),fBadWires.size()),
 	      start, version );
   if( !TestBit(cbits,kDriftVel) )
     AddToMap( prefix+"driftvel",      MakeValue(&fDriftVel),      start, version );
@@ -4779,12 +4791,12 @@ int VDC::Plane::Save( time_t start, const string& version ) const
     AddToMap( prefix+"tdc.max",       MakeValue(&fMaxTime),       start, version );
   if( !TestBit(cbits,kTDCRes) )
     AddToMap( prefix+"tdc.res",       MakeValue(&fTDCRes),        start, version );
-  AddToMap( prefix+"tdc.offsets",     MakeValue(&fTDCOffsets[0],fNelem),
+  AddToMap( prefix+"tdc.offsets",     MakeValue(fTDCOffsets.data(),fNelem),
 	    start, version, 8 );
   if( !TestBit(cbits,kTTDConv) )
     AddToMap( prefix+"ttd.converter", MakeValue(&fTTDConv),       start, version );
   if( !TestBit(cbits,kTTDPar) )
-    AddToMap( prefix+"ttd.param",     MakeValue(&fTTDPar[0],9),   start, version, -4 );
+    AddToMap( prefix+"ttd.param",     MakeValue(fTTDPar.data(),9),   start, version, -4 );
   if( !TestBit(cbits,kT0Resolution) )
     AddToMap( prefix+"t0.res",        MakeValue(&fT0Resolution),  start, version );
   if( !TestBit(cbits,kMinClustSize) )

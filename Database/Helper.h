@@ -34,7 +34,7 @@ namespace Podd {
     if( uint > std::numeric_limits<typename std::make_signed<T>::type>::max() )
       throw std::out_of_range("Unsigned integer out of signed integer range");
 #endif
-    return static_cast<typename std::make_signed<T>::type>(uint);
+    return uint;  // implicitly cast to return type
   }
 
 #if __cplusplus >= 201402L
@@ -110,22 +110,26 @@ namespace Podd {
       return *this;
     }
     const UniqueCombo operator++(int)
-    { UniqueCombo clone(*this); ++*this; return clone; }
+    {
+      UniqueCombo clone(*this); ++*this; return clone;
+    }
     const vint_t& operator()() const { return fCurrent; }
     const vint_t& operator*()  const { return fCurrent; }
     bool operator==( const UniqueCombo& rhs ) const
-    { return ( fN == rhs.fN and fCurrent == rhs.fCurrent ); }
+    {
+      return ( fN == rhs.fN and fCurrent == rhs.fCurrent );
+    }
     bool operator!=( const UniqueCombo& rhs ) const { return !(*this==rhs); }
     explicit operator bool() const  { return fGood; }
     bool operator!() const { return !((bool)*this); }
 
   private:
-    bool recursive_plus( vint_t::size_type pos ) {
+    bool recursive_plus( vint_t::size_type pos ) { // NOLINT(misc-no-recursion)
       if( fCurrent[pos] < fN+int(pos-fCurrent.size()) ) {
 	++fCurrent[pos];
 	return true;
       }
-      if( pos==0 )
+      if( pos == 0 )
 	return false;
       if( recursive_plus(pos-1) ) {
 	fCurrent[pos] = fCurrent[pos-1]+1;
@@ -150,7 +154,7 @@ namespace Podd {
   inline void DeleteContainer( Container& c )
   {
     // Delete all elements of given container of pointers
-    std::for_each( c.begin(), c.end(), DeleteObject() );
+    std::for_each( ALL(c), DeleteObject() );
     c.clear();
   }
 
@@ -159,7 +163,7 @@ namespace Podd {
   inline void DeleteContainerOfContainers( ContainerOfContainers& cc )
   {
     // Delete all elements of given container of containers of pointers
-    std::for_each( cc.begin(), cc.end(),
+    std::for_each( ALL(cc),
 	      DeleteContainer<typename ContainerOfContainers::value_type> );
     cc.clear();
   }
@@ -172,7 +176,7 @@ namespace Podd {
 
     v = v - ((v >> 1) & 0x55555555);
     v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-    return (((v + (v >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+    return SINT((((v + (v >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24);
   }
 
   //_____________________________________________________________________________
@@ -182,7 +186,7 @@ namespace Podd {
     if( arr.empty() ) {
       std::cout << "(empty)";
     } else {
-      std::copy( arr.begin(), --arr.end(),
+      std::copy( arr.begin(), arr.end()-1,
           std::ostream_iterator<VectorElem>(std::cout, ", ") );
       std::cout << arr.back();
     }
