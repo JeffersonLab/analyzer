@@ -31,7 +31,8 @@ namespace Podd {
   static inline typename std::make_signed<T>::type SINT( T uint )
   {
 #ifndef NDEBUG
-    if( uint > std::numeric_limits<typename std::make_signed<T>::type>::max() )
+    if( uint > static_cast<decltype(uint)>(
+                 std::numeric_limits<typename std::make_signed<T>::type>::max()))
       throw std::out_of_range("Unsigned integer out of signed integer range");
 #endif
     return uint;  // implicitly cast to return type

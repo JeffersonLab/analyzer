@@ -28,6 +28,11 @@
 #include <type_traits>
 #include <iostream>
 
+// This is a well-known problem with strerror_r
+#if defined(__linux__) && (defined(_GNU_SOURCE) || !(_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE > 600))
+# define GNU_STRERROR_R
+#endif
+
 using namespace std;
 
 //_____________________________________________________________________________
@@ -642,8 +647,13 @@ Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key,
 
   if( errno ) {
 err:
+#ifdef GNU_STRERROR_R
+    const char* ret = strerror_r(errno, bufp, bufsiz);
+    errtxt = here + ": " + (ret ? ret : "unknown error " + to_string(errno));
+#else
     strerror_r(errno, bufp, bufsiz);
-    errtxt = here + bufp;
+    errtxt = here + ": " + bufp;
+#endif
     return -1;
   }
   return found ? 0 : 1;

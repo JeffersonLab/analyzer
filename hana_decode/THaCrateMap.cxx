@@ -50,7 +50,8 @@ static string StrError()
   char buf[BUFLEN];
 
 #ifdef GNU_STRERROR_R
-  string ret = strerror_r(errno, buf, BUFLEN);
+  const char* s = strerror_r(errno, buf, BUFLEN);
+  string ret = s ? string(s) : string("unknown error ") + to_string(errno);
 #else
   strerror_r(errno, buf, BUFLEN);
   string ret = buf;
