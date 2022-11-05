@@ -947,7 +947,7 @@ void THaAnalyzer::PrintCounters() const
     if( GetCount(i) > w )
       w = GetCount(i);
   }
-  w = IntDigits(w);
+  w = IntDigits(SINT(w));
 
   bool first = true;
   for( Int_t i = 0; i < ncounters; i++ ) {
@@ -1608,7 +1608,7 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
 
   //keep the last run available
   //  gHaRun = nullptr;
-  return fNev;
+  return SINT(fNev);
 }
 
 //_____________________________________________________________________________

@@ -19,6 +19,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "Textvars.h"
+#include "Helper.h"
 #include "TError.h"
 #include <utility>
 #include <cassert>
@@ -54,7 +55,7 @@ void Tokenize( const string& s, const string& delim, vector<string>& tokens )
     tokens.push_back( s.substr(start,pos-start));
     start = s.find_first_not_of(delim,pos);
     pos = s.find_first_of(delim,start);
-  } 
+  }
 }
 
 //_____________________________________________________________________________
@@ -82,16 +83,16 @@ static string ValStr( const vector<string>& s )
 }
 
 //_____________________________________________________________________________
-static ssiz_t Index( const string& s, ssiz_t& ext, ssiz_t start )
+static ssiz_t Index( const string& s, ssiz_t& ext /*, ssiz_t start*/ )
 {
   // Find index of text variable pattern in string 's'. 'ext' is the length
   // of the pattern. Search starts at 'start'.
   // This is equivalent to searching for regexp "\$\{[^\{\}]*\}"
 
-  if( s.empty() || start == string::npos || start+2 >= s.length() )
+  if( s.empty() || /*start == string::npos || start+*/2 >= s.length() )
     return string::npos;
 
-  const char* c = s.c_str() + start, *end;
+  const char* c = s.c_str() /*+ start*/, *end;
   if( (c = strchr(c,'$')) && *(++c) == '{' ) {
     if( !(end = strchr(++c,'}')) ) return string::npos;
     const char *c2;
@@ -231,14 +232,14 @@ void Textvars::Print( Option_t* /*opt*/ ) const
 {
   // Print all text variables
 
-  Ssiz_t maxw = 0;
+  size_t maxw = 0;
   for( const auto& var : fVars ) {
-    Ssiz_t len = var.first.length();
+    size_t len = var.first.length();
     if( len > maxw )
       maxw = len;
   }
   for( const auto& var : fVars ) {
-    cout << "Textvar:  " << setw(maxw) << var.first << " = "
+    cout << "Textvar:  " << setw(int(maxw)) << var.first << " = "
          << ValStr(var.second) << endl;
   }
 }
@@ -254,14 +255,14 @@ Int_t Textvars::Substitute( string& line ) const
   if( ret )
     return ret;
   assert( lines.size() == 1 );
-  line = lines[0];
+  line = std::move(lines[0]);
   return 0;
 }
 
 //_____________________________________________________________________________
 Int_t Textvars::Substitute( vector<string>& lines, bool do_multi ) const
 {
-  // Substitute text variables in the given array of strings. 
+  // Substitute text variables in the given array of strings.
   // Supports multi-valued text variables, where each instance is
   // separated by commas; e.g. arm = "L,R".
   //
@@ -276,11 +277,11 @@ Int_t Textvars::Substitute( vector<string>& lines, bool do_multi ) const
   vector<string> newlines;
   for( auto li = lines.begin(); li != lines.end() && good; ++li ) {
     const string& line = *li;
-    ssiz_t ext = 0, pos = Index( line, ext, 0 );
+    ssiz_t ext = 0, pos = Index( line, ext/*, 0 */);
     if( pos != string::npos ) {
       assert( ext >= 3 );
       Textvars_t::const_iterator it;
-      if( ext > 3 && 
+      if( ext > 3 &&
 	  (it = fVars.find(line.substr(pos+2,ext-3))) != fVars.end() ) {
 	const vector<string>& repl = (*it).second;
 	assert( !repl.empty() );
@@ -313,7 +314,7 @@ Int_t Textvars::Substitute( vector<string>& lines, bool do_multi ) const
   if( !newlines.empty() && good ) {
     // Rescan for multiple and/or nested replacements
     good = ( Substitute( newlines, do_multi ) == 0 );
-    if( good ) 
+    if( good )
       lines.swap( newlines );
   }
 

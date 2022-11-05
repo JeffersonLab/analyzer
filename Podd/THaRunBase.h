@@ -91,6 +91,7 @@ protected:
   UInt_t        fNumber;        // Run number
   UInt_t        fType;          // Run type/mode/etc.
   TDatime       fDate;          // Run date and time
+  //FIXME event counts may overflow, make ULong64_t
   UInt_t        fEvtRange[2];   // Event range to analyze
   UInt_t        fNumAnalyzed;   // Number of physics events actually analyzed
   Bool_t        fDBRead;        // True if database successfully read.

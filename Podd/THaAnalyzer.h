@@ -150,7 +150,7 @@ protected:
   Int_t          fWantCodaVers;    //Version of CODA assumed for file
   std::vector<Stage_t>   fStages;  //Parameters for analysis stages
   std::vector<Counter_t> fCounters;//Statistics counters
-  UInt_t         fNev;             //Number of events read during most recent replay
+  UInt_t         fNev;             //Number of events read during most recent replay //FIXME: make ULong64_t
   UInt_t         fMarkInterval;    //Interval for printing event numbers
   Int_t          fCompress;        //Compression level for ROOT output file
   Int_t          fVerbose;         //Verbosity level

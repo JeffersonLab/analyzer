@@ -43,6 +43,7 @@ using namespace Decoder;
 TBits THaEvData::fgInstances;
 
 const Double_t THaEvData::kBig = 1e38;
+static constexpr auto MAXROCSLOT = MAXROC * MAXSLOT;
 
 // If false, signal attempted use of unimplemented features
 #ifndef NDEBUG
@@ -57,7 +58,7 @@ TString THaEvData::fgDefaultCrateMapName = "cratemap";
 THaEvData::THaEvData() :
   fMap{nullptr},
   // FIXME: allocate dynamically?
-  crateslot(MAXROC * MAXSLOT),
+  crateslot(MAXROCSLOT),
   first_decode{true},
   fTrigSupPS{true},
   fDataVersion{0},
@@ -80,8 +81,8 @@ THaEvData::THaEvData() :
   fDebug{0},
   fExtra{nullptr}
 {
-  fSlotUsed.reserve(MAXROC*MAXSLOT/4);  // Generous space for a typical setup
-  fSlotClear.reserve(MAXROC*MAXSLOT/4);
+  fSlotUsed.reserve(MAXROCSLOT/4);  // Generous space for a typical setup
+  fSlotClear.reserve(MAXROCSLOT/4);
   fgInstances.SetBitNumber(fInstance);
   fInstance++;
 }

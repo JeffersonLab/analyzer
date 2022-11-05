@@ -2,7 +2,7 @@
 //
 //   CodaDecoder
 //
-//    Object Oriented version of decoder
+//    Object-oriented version of decoder
 //    Sept, 2014    R. Michaels
 //
 /////////////////////////////////////////////////////////////////////
@@ -26,11 +26,13 @@ using namespace std;
 
 namespace Decoder {
 
+static constexpr auto MAXROCSLOT_FB = MAXROC * MAXSLOT_FB;
+
 //_____________________________________________________________________________
 CodaDecoder::CodaDecoder()
   : nroc(0)
   , irn(MAXROC, 0)
-  , fbfound(MAXROC*MAXSLOT_FB, false)
+  , fbfound(MAXROCSLOT_FB, false)
   , psfact(MAX_PSFACT, kMaxUInt)
   , buffmode{false}
   , synchmiss{false}
@@ -1120,7 +1122,7 @@ void CodaDecoder::ChkFbSlot( UInt_t roc, const UInt_t* evbuffer, UInt_t ipt,
     if( slot == 0 || slot >= MAXSLOT_FB )  // Used for diagnostic data words
       continue;
     UInt_t index = MAXSLOT_FB*roc + slot;
-    if( slot > 0 && index < MAXROC*MAXSLOT_FB )
+    if( slot > 0 && index < MAXROCSLOT_FB )
       fbfound[index] = true;
   }
 }
@@ -1165,7 +1167,7 @@ void CodaDecoder::ChkFbSlots()
 void CodaDecoder::SetRunTime( ULong64_t tloc )
 {
   // Set run time and re-initialize crate map (and possibly other
-  // database parameters for the new time.
+  // database parameters) for the new time.
 
   if( fRunTime == tloc )
     return;
