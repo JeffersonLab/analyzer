@@ -37,10 +37,14 @@ namespace Podd {
 #endif
     return uint;  // implicitly cast to return type
   }
+  // Trivial case
+  template<typename T, typename std::enable_if
+    <std::is_integral<T>::value && std::is_signed<T>::value, bool>::type = true>
+  static inline T SINT( T ival ) { return ival; }
 
 #if __cplusplus >= 201402L
   template<typename Container>
-  static inline auto SSIZE( const Container& c) { return SINT(c.size()); }
+  static inline auto SSIZE( const Container& c ) { return SINT(c.size()); }
 #else
   // No auto return type in C++11, so we do it on the cheap
 # define SSIZE(c) SINT((c).size())

@@ -717,7 +717,21 @@ T convert_string( const char* p, char*& end )
 }
 
 //_____________________________________________________________________________
-template<typename T, typename S>
+// Function to check if source value of type S will fit into target value
+// of type T. T and S must either both be integer or floating point types.
+// Trivial case of identical types.
+template<typename T, typename S,
+  typename enable_if<is_same<T,S>::value, bool>::type = true>
+static inline bool is_in_range( S )
+{
+  return true;
+}
+
+//_____________________________________________________________________________
+// Non-trivial case of different types.
+// Currently only used for like-signed integers.
+template<typename T, typename S,
+  typename enable_if<not is_same<T,S>::value, bool>::type = true>
 static inline bool is_in_range( S val )
 {
   static_assert( (is_integral<T>::value && is_integral<S>::value) ||
