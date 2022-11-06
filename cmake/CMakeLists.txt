@@ -2,21 +2,24 @@
 # Install project-specific modules and scripts. The module directory will be
 # appended to CMAKE_MODULE_PATH when loading this project's configuration file
 #
-if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Modules)
-  install(DIRECTORY
-    ${CMAKE_CURRENT_SOURCE_DIR}/Modules
-    DESTINATION ${INSTALL_CONFIGDIR}
-    PATTERN "PoddCreate*.cmake" EXCLUDE
-    )
-endif()
+install(DIRECTORY
+  ${CMAKE_CURRENT_LIST_DIR}/Modules
+  DESTINATION ${INSTALL_CONFIGDIR}
+  PATTERN "PoddCreate*.cmake" EXCLUDE
+  )
 
-if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
-  install(DIRECTORY
-    ${CMAKE_CURRENT_SOURCE_DIR}/scripts
-    DESTINATION ${INSTALL_CONFIGDIR}
-    USE_SOURCE_PERMISSIONS
-    )
-endif()
+install(DIRECTORY
+  ${CMAKE_CURRENT_LIST_DIR}/scripts
+  DESTINATION ${INSTALL_CONFIGDIR}
+  USE_SOURCE_PERMISSIONS
+  )
+
+install(DIRECTORY
+  ${CMAKE_CURRENT_LIST_DIR}/templates
+  DESTINATION ${INSTALL_CONFIGDIR}
+  USE_SOURCE_PERMISSIONS
+  FILES_MATCHING PATTERN "GrabGitRef.cmake.in"
+  )
 
 #----------------------------------------------------------------------------
 # Create <Project>Config.cmake and <Project>ConfigVersion.cmake
