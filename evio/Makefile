@@ -1,9 +1,9 @@
 # Makefile for local EVIO build
 
-EVIO = hallac-evio-5.2
-REL = hallac-evio-5.2
-TAR = $(REL).tar.gz
-REPO = hallac_evio
+REL = 5.3
+EVIO = evio-$(REL)
+TAR = v$(REL).tar.gz
+REPO = evio
 URL = https://github.com/JeffersonLab/$(REPO)/archive/$(TAR)
 EVIOLIB = libevio.$(SOSUF)
 SRCDIR = $(EVIO)/src/libsrc
@@ -35,7 +35,6 @@ $(SRCDIR)/Makefile:  $(SRCDIR) Makefile.libsrc
 $(SRCDIR): $(TAR)
 	rm -rf $(EVIO)
 	tar xf $(TAR)
-	mv $(REPO)-$(REL) $(EVIO)
 
 $(TAR):
 ifeq ($(strip $(WGET)),)
