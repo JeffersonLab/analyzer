@@ -25,6 +25,7 @@
 #include "TVector3.h"
 #include "TSystem.h"
 #include "TObjArray.h"
+#include "TObjString.h"
 #include "TVirtualMutex.h"
 #include "TThread.h"
 #include "Varargs.h"
