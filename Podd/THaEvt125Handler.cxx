@@ -6,13 +6,13 @@
 //   Example of an Event Type Handler for event type 125,
 //   the hall C prestart event.
 //
-//   It was tested on some hms data.  However, note that I don't know what 
-//   these data mean yet and I presume the data structure is under development; 
+//   It was tested on some hms data.  However, note that I don't know what
+//   these data mean yet and I presume the data structure is under development;
 //   someone will need to modify this class (and the comments).
 //
 //   To use as a plugin with your own modifications, you can do this in
 //   your analysis script
-//    
+//
 //   gHaEvtHandlers->Add (new THaEvt125Handler("hallcpre","for evtype 125"));
 //
 //   Global variables are defined in Init.  You can see them in Podd, as
@@ -25,7 +25,7 @@
 //
 //   The data can be added to the ROOT Tree "T" using the output
 //   definition file.  Then you can see them, for example as follows
-// 
+//
 //      T->Scan("HCvar1:HCvar2:HCvar3:HCvar4")
 //
 /////////////////////////////////////////////////////////////////////
@@ -47,13 +47,13 @@ THaEvt125Handler::THaEvt125Handler(const char *name, const char* description)
 Float_t THaEvt125Handler::GetData(const std::string& tag)
 {
   // A public method which other classes may use
-  if (theDataMap.find(tag) == theDataMap.end()) 
+  if (theDataMap.find(tag) == theDataMap.end())
     return 0;
   return theDataMap[tag];
 }
 
 
-Int_t THaEvt125Handler::Analyze(THaEvData *evdata) 
+Int_t THaEvt125Handler::Analyze(THaEvData *evdata)
 {
 
   const UInt_t startidx = 3;
@@ -77,7 +77,7 @@ Int_t THaEvt125Handler::Analyze(THaEvData *evdata)
       if (index < NVars) dvars[index] = evdata->GetRawData(i);
     }
 
-  }      
+  }
 
   return 1;
 }
@@ -105,11 +105,12 @@ THaAnalysisObject::EStatus THaEvt125Handler::Init(const TDatime&)
       return kInitError;
   }
   const Int_t* count = nullptr;
-  char cname[80];
-  char cdescription[80];
+  const int LEN = 80;
+  char cname[LEN];
+  char cdescription[LEN];
   for (UInt_t i = 0; i < NVars; i++) {
-    sprintf(cname,"HCvar%d",i+1);
-    sprintf(cdescription,"Hall C event type 125 variable %d",i+1);
+    snprintf(cname, LEN, "HCvar%d", i+1);
+    snprintf(cdescription, LEN, "Hall C event type 125 variable %d", i+1);
     gHaVars->DefineByType(cname, cdescription, &dvars[i], kDouble, count);
   }
 

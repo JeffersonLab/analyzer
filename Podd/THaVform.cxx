@@ -727,8 +727,9 @@ void THaVform::GetForm(Int_t size)
   for (int idx = 0; idx < size; ++idx) {
     string acopy = fStitle;
     string aline = acopy;
-    char num[11];
-    sprintf(num,"%d",idx);
+    const int LEN = 16;
+    char num[LEN];
+    snprintf(num,LEN,"%d",idx);
     for( const auto& sb : fSarray ) {
       vector<string::size_type> ipos;
       string::size_type pos1 = 0;
@@ -763,4 +764,3 @@ void THaVform::GetForm(Int_t size)
 
 
 ClassImp(THaVform)
-

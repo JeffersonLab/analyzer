@@ -558,7 +558,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   // Initialize counters
   int n_exist = 0, n_mod = 0;
 #ifdef WITH_DEBUG
-  int n_oops = 0;
+  //int n_oops = 0;
 #endif
   // How many tracks already exist in the global track array?
   if( tracks )
@@ -645,7 +645,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
         }
 #ifdef WITH_DEBUG
         // FIXME: for debugging
-        n_oops++;
+        //n_oops++;
 #endif
       }
 

@@ -8,7 +8,7 @@
 //  Hall A analyzer.
 //
 //  Variables can be added to the list as follows:
-//  (assumes THaVarList* gHaVars = new THaVarList;)
+//  (assumes THaVarList* gHaVars = new THaVarList)
 //
 //     Double_t x;
 //     gHaVars->Define("x","x variable",x);
@@ -479,8 +479,9 @@ Int_t THaVarList::DefineVariables( const VarDef* list, const char* prefix,
       Warning( errloc, "Variable %s: variable-size arrays must have size=0. "
 	       "Ignoring size.", name.Data() );
     } else if( fixed_array ) {
-      char dimstr[256];
-      sprintf( dimstr, "[%d]", item->size );
+      const int LEN = 32;
+      char dimstr[LEN];
+      snprintf( dimstr, LEN, "[%d]", item->size );
       name.Append(dimstr);
     }
 
