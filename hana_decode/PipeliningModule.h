@@ -48,7 +48,7 @@ public:
    virtual ~PipeliningModule() = default;
 
    using VmeModule::Init;
-   void Init( const char* configstr );
+   virtual void Init( const char* configstr );
    virtual void Clear( Option_t *opt="" );
 
   // Wrappers for LoadSlot methods to allow buffer preprocessing
@@ -60,13 +60,13 @@ public:
 protected:
 
    virtual UInt_t LoadNextEvBuffer( THaSlotData *sldat );
-   UInt_t fBlockHeader;
-   UInt_t data_type_def;
+   UInt_t fBlockHeader;    // Copy of block header word
+   UInt_t data_type_def;   // Data type indicated by most recent header word
 
    // Support for multi-block mode
    VectorUIntNI fBuffer;   // Copy of this module's chunk of the event buffer
    std::vector<Long64_t> evtblk;  // Event header positions
-   UInt_t index_buffer;
+   UInt_t index_buffer;    // Index of next block to be decoded
 
    enum { kBlockHeader = 0, kBlockTrailer = 1, kEventHeader = 2 };
    static Long64_t FindIDWord( const uint32_t* buf, size_t start, size_t len,
@@ -135,7 +135,7 @@ Long64_t PipeliningModule::FindEventsInBlock(
   // slot = 'slot', see FindIDWord for the bit format).
   // While scanning, save any event headers (identified by type = 'evthdr'
   // in vector 'evtpos'.
-  // The buffer is search between [start,start+len).
+  // The buffer is searched between [start,start+len).
   // Returns the offset into 'buf' of the trailer word, or -1 if not found.
 
   const uint32_t HDR = BIT(31) | (slot & 0x1F) << 22;

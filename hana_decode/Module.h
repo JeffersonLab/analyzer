@@ -59,7 +59,7 @@ namespace Decoder {
 
     virtual UInt_t GetOpt( UInt_t /*chan*/, UInt_t /*hit*/) const { return 0; }; //1190
 
-    virtual Int_t  Decode(const UInt_t *p) = 0; // implement in derived class
+    virtual Int_t  Decode(const UInt_t *p) = 0; // FIXME: unused, remove from public interface
     // Loads slot data from [evbuffer,pstop]. pstop points to last word of data
     // This is used in decoding based on header words (roc_decode)
     virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer,
