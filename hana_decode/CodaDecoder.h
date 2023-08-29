@@ -98,6 +98,7 @@ protected:
     UInt_t len;   // length of data including pos, so pos+len-1 = last word of data
   };
   std::vector<BankDat_t> bankdat;
+  BankDat_t* CheckForBank( UInt_t roc, UInt_t slot );
 
   // CODA3 stuff
   UInt_t evcnt_coda3;

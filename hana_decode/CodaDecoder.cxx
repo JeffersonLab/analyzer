@@ -76,7 +76,7 @@ UInt_t CodaDecoder::GetPrescaleFactor( UInt_t trigger_type) const
   }
   if (fDebug > 0) {
     Warning( "CodaDecoder::GetPrescaleFactor", "Requested prescale factor for "
-	     "undefined trigger type %d", trigger_type );
+             "undefined trigger type %d", trigger_type );
   }
   return 0;
 }
@@ -244,7 +244,7 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
     if( fMap->isBankStructure(iroc) ) {
       if( fDebugFile )
         *fDebugFile << "\nCodaDecode::Calling bank_decode "
-                    << i << "   " << iroc << "  " << ipt << "  " << iptmax
+                    << iroc << "  " << ipt << "  " << iptmax
                     << endl;
       /*status =*/   //FIXME use the return value?
       bank_decode(iroc, evbuffer, ipt, iptmax);
@@ -252,9 +252,9 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
 
     if( !fMap->isAllBanks(iroc) ) {
       if( fDebugFile )
-        *fDebugFile << "\nCodaDecode::Calling roc_decode " << i << "   "
-                    << evbuffer << "  " << iroc << "  " << ipt
-                    << "  " << iptmax << endl;
+        *fDebugFile << "\nCodaDecode::Calling roc_decode "
+                    << iroc << "  " << ipt << "  " << iptmax
+                    << endl;
 
       Int_t status = roc_decode(iroc, evbuffer, ipt, iptmax);
 
@@ -541,6 +541,26 @@ uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
 }
 
 //_____________________________________________________________________________
+CodaDecoder::BankDat_t* CodaDecoder::CheckForBank( UInt_t roc, UInt_t slot )
+{
+  // Check if roc/slot belongs to a bank. If so, check if this bank
+  // has been found in the current event. Return pointer to the corresponding
+  // bank data if found, otherwise nullptr.
+  // Internal function used by bank_decode() and LoadFromMultiBlock().
+
+  Int_t bank = fMap->getBank(roc, slot);
+  assert(bank < MAXBANK); // bank numbers are uint16_t
+  if( bank < 0 )
+    return nullptr;
+  UInt_t key = (roc << 16) + bank;
+  auto theBank = find(ALL(bankdat), key);
+  if( theBank == bankdat.end() )
+    // Bank defined in crate map but not present in this event
+    return nullptr;
+  return &(*theBank);
+}
+
+//_____________________________________________________________________________
 Int_t CodaDecoder::LoadFromMultiBlock()
 {
   // LoadFromMultiBlock : This assumes some slots are in multiblock mode.
@@ -556,6 +576,7 @@ Int_t CodaDecoder::LoadFromMultiBlock()
   fBlockIsDone = false;
 
   if( first_decode || fNeedInit ) {
+    assert(false);  // fMultiBlockMode is set in physics_decode, which already does init
     Int_t ret = Init();
     if( ret != HED_OK )
       return ret;
@@ -571,16 +592,25 @@ Int_t CodaDecoder::LoadFromMultiBlock()
     UInt_t roc = irn[i];
     for( auto slot : fMap->GetUsedSlots(roc) ) {
       assert(fMap->slotUsed(roc, slot));
+      // Skip modules in banks if the bank is not present in the current event
+      if( fMap->getBank(roc, slot) >= 0 && !CheckForBank(roc, slot) )
+        continue;
       auto* sd = crateslot[idx(roc, slot)].get();
       auto* mod = sd->GetModule();
       if( !mod )
         continue;
       // for CODA3, cross-check the block size (found in trigger bank and, separately, in modules)
-      if( fDebugFile )
-        *fDebugFile << "cross chk blk size " << roc << "  " << slot << "  "
-                    << mod->GetBlockSize() << "   " << block_size << endl;
-      if( fDataVersion > 2 && mod->GetBlockSize() != block_size ) {
-        cerr << "ERROR::CodaDecoder:: inconsistent block size between trig. bank and module" << endl;
+      if( fDataVersion > 2 ) {
+        auto module_blksz = mod->GetBlockSize();
+        if( fDebugFile )
+          *fDebugFile << "cross chk blk size " << roc << "  " << slot << "  "
+                      << module_blksz << "   " << block_size << endl;
+        if( module_blksz != block_size ) {
+          cerr << "ERROR::CodaDecoder:: inconsistent block size between trig. bank and module "
+               << " in roc/slot = " << roc << "/" << slot << " (\"" << mod->GetName() << "\"), "
+               << "trigger bank blksz = " << block_size << ", module blkz = " << module_blksz
+               << endl;
+        }
       }
       if( mod->IsMultiBlockMode() ) {
         sd->LoadNextEvBuffer();
@@ -778,14 +808,10 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
 
   for( auto slot : fMap->GetUsedSlots(roc) ) {
     assert(fMap->slotUsed(roc,slot));
-    Int_t bank=fMap->getBank(roc,slot);
-    assert( bank < MAXBANK ); // bank numbers are uint16_t
-    if( bank < 0 ) continue;  // skip non-bank mode modules in mixed-mode crate
-    UInt_t key = (roc << 16) + bank;
-    auto theBank = find(ALL(bankdat), key);
-    if( theBank == bankdat.end() )
-      // Bank defined in crate map but not present in this event
-      continue;
+    Int_t bank = fMap->getBank(roc, slot);
+    auto* theBank = CheckForBank(roc, slot);
+    if( !theBank )
+      continue; // skip non-bank mode modules and banks not found in present event
     if (fDebugFile)
       *fDebugFile << "CodaDecoder::bank_decode: loading bank "
                   << roc << "  " << slot << "   " << bank << "  "
@@ -924,8 +950,8 @@ Int_t CodaDecoder::FindRocs(const UInt_t *evbuffer) {
     if( iroc>=MAXROC ) {
 #ifdef FIXME
       if(fDebug>0) {
-	cout << "ERROR in EvtTypeHandler::FindRocs "<<endl;
-	cout << "  illegal ROC number " <<dec<<iroc<<endl;
+        cout << "ERROR in EvtTypeHandler::FindRocs "<<endl;
+        cout << "  illegal ROC number " <<dec<<iroc<<endl;
       }
       if( fDoBench ) fBench->Stop("physics_decode");
 #endif
@@ -1007,8 +1033,8 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
           *fDebugFile << "      "<<dec<<tbank.evtNum+i<<"   "<<tbank.evTS[i]<<"   "<<tbank.evType[i];
           *fDebugFile << endl;
        } else {
-	  *fDebugFile << "     "<<tbank.evtNum+i<<"(No Time Stamp)   "<<tbank.evType[i];
-	  *fDebugFile << endl;
+          *fDebugFile << "     "<<tbank.evtNum+i<<"(No Time Stamp)   "<<tbank.evType[i];
+          *fDebugFile << endl;
        }
        *fDebugFile << endl<<endl;
     }
@@ -1104,7 +1130,7 @@ void CodaDecoder::CompareRocs()
       UInt_t iroc2 = irn[i];
       if (iroc1 == iroc2) {
         ifound = true;
-	break;
+        break;
       }
     }
     if (!ifound) *fDebugFile << "ERROR: CompareRocs:  roc "<<iroc1<<" in cratemap but not found data"<<endl;
@@ -1187,12 +1213,12 @@ Int_t CodaDecoder::prescale_decode_coda2(const UInt_t* evbuffer)
 
   assert( evbuffer );
   assert( event_type == TS_PRESCALE_EVTYPE ||
-	  event_type == PRESCALE_EVTYPE );
+          event_type == PRESCALE_EVTYPE );
   const UInt_t HEAD_OFF1 = 2;
   const UInt_t HEAD_OFF2 = 4;
   static const char* const pstr[] = { "ps1", "ps2", "ps3", "ps4",
-				      "ps5", "ps6", "ps7", "ps8",
-				      "ps9", "ps10", "ps11", "ps12" };
+                                      "ps5", "ps6", "ps7", "ps8",
+                                      "ps9", "ps10", "ps11", "ps12" };
   // TS registers -->
   if( event_type == TS_PRESCALE_EVTYPE) {
     // this is more authoritative
@@ -1200,16 +1226,16 @@ Int_t CodaDecoder::prescale_decode_coda2(const UInt_t* evbuffer)
       UInt_t k = j + HEAD_OFF1;
       UInt_t ps = 0;
       if( k < event_length ) {
-	ps = evbuffer[k];
+        ps = evbuffer[k];
         if( psfact[j] != 0 && ps != psfact[j] ) {
-	  Warning("prescale_decode","Mismatch in prescale factor: "
-		  "Trig %u  oldps %u   TS_PRESCALE %d. Setting to TS_PRESCALE",
-		  j+1,psfact[j],ps);
-	}
+          Warning("prescale_decode","Mismatch in prescale factor: "
+                  "Trig %u  oldps %u   TS_PRESCALE %d. Setting to TS_PRESCALE",
+                  j+1,psfact[j],ps);
+        }
       }
       psfact[j]=ps;
       if (fDebug > 1)
-	cout << "%% TS psfact "<<dec<<j<<"  "<<psfact[j]<<endl;
+        cout << "%% TS psfact "<<dec<<j<<"  "<<psfact[j]<<endl;
     }
   }
   // "prescale.dat" -->
@@ -1225,14 +1251,14 @@ Int_t CodaDecoder::prescale_decode_coda2(const UInt_t* evbuffer)
       if (trig > 7) ps = 1;  // cannot prescale trig 9-12
       ps = ps % psmax;
       if (psfact[trig]==kMaxUInt) // not read before
-	psfact[trig] = ps;
+        psfact[trig] = ps;
       else if (ps != psfact[trig]) {
-	Warning("prescale_decode","Mismatch in prescale factor: "
-		"Trig %d  oldps %d   prescale.dat %d, Keeping old value",
-		trig+1,psfact[trig],ps);
+        Warning("prescale_decode","Mismatch in prescale factor: "
+                "Trig %d  oldps %d   prescale.dat %d, Keeping old value",
+                trig+1,psfact[trig],ps);
       }
       if (fDebug > 1)
-	cout << "** psfact[ "<<trig+1<< " ] = "<<psfact[trig]<<endl;
+        cout << "** psfact[ "<<trig+1<< " ] = "<<psfact[trig]<<endl;
     }
   }
 
@@ -1260,13 +1286,13 @@ Int_t CodaDecoder::prescale_decode_coda3(const UInt_t* evbuffer)
 
   assert( evbuffer );
   assert( event_type == TS_PRESCALE_EVTYPE ||
-	  event_type == PRESCALE_EVTYPE );
+          event_type == PRESCALE_EVTYPE );
   const UInt_t HEAD_OFF1 = 2;
   const UInt_t HEAD_OFF2 = 4;
   UInt_t super_big = 999999;
   static const char* const pstr[] = { "ps1", "ps2", "ps3", "ps4",
-				      "ps5", "ps6", "ps7", "ps8",
-				      "ps9", "ps10", "ps11", "ps12" };
+                                      "ps5", "ps6", "ps7", "ps8",
+                                      "ps9", "ps10", "ps11", "ps12" };
   // TS registers -->
   // don't have these yet for CODA3.  hmmm... that reminds me to do it.
   if( event_type == TS_PRESCALE_EVTYPE) {
@@ -1275,16 +1301,16 @@ Int_t CodaDecoder::prescale_decode_coda3(const UInt_t* evbuffer)
       UInt_t k = j + HEAD_OFF1;
       UInt_t ps = 0;
       if( k < event_length ) {
-	ps = evbuffer[k];
+        ps = evbuffer[k];
         if( psfact[j] != 0 && ps != psfact[j] ) {
-	  Warning(here,"Mismatch in prescale factor: "
-		  "Trig %u  oldps %u   TS_PRESCALE %d. Setting to TS_PRESCALE",
-		  j+1,psfact[j],ps);
-	}
+          Warning(here,"Mismatch in prescale factor: "
+                  "Trig %u  oldps %u   TS_PRESCALE %d. Setting to TS_PRESCALE",
+                  j+1,psfact[j],ps);
+        }
       }
       psfact[j]=ps;
       if (fDebug > 1)
-	cout << "%% TS psfact "<<dec<<j<<"  "<<psfact[j]<<endl;
+        cout << "%% TS psfact "<<dec<<j<<"  "<<psfact[j]<<endl;
     }
   }
   // "prescale.dat" -->
