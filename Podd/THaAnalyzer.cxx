@@ -89,17 +89,34 @@ inline size_t ListToVector( TList* lst, vector<T*>& vec )
 }
 
 //_____________________________________________________________________________
-THaAnalyzer::THaAnalyzer() :
-  fFile(nullptr), fOutput(nullptr), fEpicsHandler(nullptr),
-  fOdefFileName(kDefaultOdefFile), fEvent(nullptr), fWantCodaVers(-1),
-  fNev(0), fMarkInterval(1000), fCompress(1),
-  fVerbose(2), fCountMode(kCountRaw), fBench(nullptr), fPrevEvent(nullptr),
-  fRun(nullptr), fEvData(nullptr),
-  fIsInit(false), fAnalysisStarted(false), fLocalEvent(false),
-  fUpdateRun(true), fOverwrite(true), fDoBench(false),
-  fDoHelicity(false), fDoPhysics(true), fDoOtherEvents(true),
-  fDoSlowControl(true), fFirstPhysics(true), fExtra(nullptr)
-
+THaAnalyzer::THaAnalyzer()
+  : fFile(nullptr)
+  , fOutput(nullptr)
+  , fEpicsHandler(nullptr)
+  , fOdefFileName(kDefaultOdefFile)
+  , fEvent(nullptr)
+  , fWantCodaVers(-1)
+  , fNev(0)
+  , fMarkInterval(1000)
+  , fCompress(1)
+  , fVerbose(2)
+  , fCountMode(kCountRaw)
+  , fBench(nullptr)
+  , fPrevEvent(nullptr)
+  , fRun(nullptr)
+  , fEvData(nullptr)
+  , fIsInit(false)
+  , fAnalysisStarted(false)
+  , fLocalEvent(false)
+  , fUpdateRun(true)
+  , fOverwrite(true)
+  , fDoBench(false)
+  , fDoHelicity(false)
+  , fDoPhysics(true)
+  , fDoOtherEvents(true)
+  , fDoSlowControl(true)
+  , fFirstPhysics(true)
+  , fExtra(nullptr)
 {
   // Default constructor.
 
@@ -901,7 +918,7 @@ void THaAnalyzer::AddEpicsEvtType(Int_t itype)
 //_____________________________________________________________________________
 Int_t THaAnalyzer::SetCountMode( Int_t mode )
 {
-  // Set event counting mode. The default mode is kCountPhysics.
+  // Set the way the internal event counter is defined.
   // If mode >= 0 and mode is one of kCountAll, kCountPhysics, or kCountRaw,
   // then set the mode. If mode >= 0 but unknown, return -mode.
   // If mode < 0, don't change the mode but return the current count mode.
@@ -1476,6 +1493,7 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
 	 << endl;
     cout << endl << "Starting analysis" << endl;
   }
+  // Events prior to fRun->GetFirstEvent() are skipped in MainAnalysis()
   if( fVerbose>2 && fRun->GetFirstEvent()>1 )
     cout << "Skipping " << fRun->GetFirstEvent() << " events" << endl;
 
@@ -1509,9 +1527,7 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
 
     UInt_t evnum = fEvData->GetEvNum();
 
-    // Count events according to the requested mode
-    // Whether to ignore events prior to fRun->GetFirstEvent()
-    // is up to the analysis routines.
+    // Set the event counter according to the requested mode
     switch(fCountMode) {
     case kCountPhysics:
       if( fEvData->IsPhysicsTrigger() )
@@ -1528,8 +1544,11 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
     }
 
     //--- Print marks periodically
-    if( fVerbose>1 && evnum > 0 && (evnum % fMarkInterval == 0))
-      cout << dec << evnum << endl;
+    if( fVerbose > 1 && fNev > 0 && (fNev % fMarkInterval == 0) &&
+        // Avoid duplicates that may occur if a physics event is followed by
+        // non-physics events. Only physics events update the event number.
+        (fCountMode == kCountAll || fEvData->IsPhysicsTrigger()) )
+      cout << dec << fNev << endl;
 
     //--- Update run parameters with current event
     if( fUpdateRun )
