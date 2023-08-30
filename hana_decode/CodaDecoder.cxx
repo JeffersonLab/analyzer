@@ -252,13 +252,21 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
 
     // If at least one module is in a bank, must split the banks for this roc
 
+    Int_t status;
     if( fMap->isBankStructure(iroc) ) {
       if( fDebugFile )
         *fDebugFile << "\nCodaDecode::Calling bank_decode "
                     << iroc << "  " << ipt << "  " << iptmax
                     << endl;
-      /*status =*/   //FIXME use the return value?
-      bank_decode(iroc, evbuffer, ipt, iptmax);
+      try {
+        status = bank_decode(iroc, evbuffer, ipt, iptmax);
+      }
+      catch( const logic_error& e ) {
+        Error("CodaDecoder::bank_decode", "ERROR: %s", e.what());
+        return HED_ERR;
+      }
+      if( status != HED_OK )
+        return status;
     }
 
     if( !fMap->isAllBanks(iroc) ) {
@@ -267,11 +275,15 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
                     << iroc << "  " << ipt << "  " << iptmax
                     << endl;
 
-      Int_t status = roc_decode(iroc, evbuffer, ipt, iptmax);
-
-      if( status )
-        break;   //FIXME do something with status!
-
+      try {
+        status = roc_decode(iroc, evbuffer, ipt, iptmax);
+      }
+      catch( const logic_error& e ) {
+        Error("CodaDecoder::roc_decode", "ERROR: %s", e.what());
+        return HED_ERR;
+      }
+      if( status != HED_OK )
+        return status;
     }
   }
   return HED_OK;
@@ -665,11 +677,11 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
   assert( evbuffer && fMap );
   if( roc >= MAXROC ) {
     ostringstream ostr;
-    ostr << "CodaDecoder::roc_decode: ROC number " << roc << " out of range";
+    ostr << "ROC number " << roc << " out of range";
     throw logic_error(ostr.str());
   }
   if( istop >= event_length )
-    throw logic_error("ERROR:: roc_decode:  stop point exceeds event length (?!)");
+    throw logic_error("Stop point exceeds event length (?!)");
 
   synchmiss = false;
   synchextra = false;
@@ -693,7 +705,7 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
       UInt_t ibit = roc;
       if( !fMsgPrinted.TestBitNumber(ibit) ) {
         Warning("roc_decode", "ROC %d found in data but NOT in cratemap. "
-                           "Ignoring it.", roc);
+                              "Ignoring it.", roc);
         fMsgPrinted.SetBitNumber(ibit);
       }
       return HED_OK;
@@ -757,8 +769,10 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
         // Check if data word at p belongs to the module at the current slot
         UInt_t nwords = sd->LoadIfSlot(p, pstop);
 
-        if( sd->IsMultiBlockMode() ) fMultiBlockMode = true;
-        if( sd->BlockIsDone() ) fBlockIsDone = true;
+        if( sd->IsMultiBlockMode() )
+          fMultiBlockMode = true;
+        if( sd->BlockIsDone() )
+          fBlockIsDone = true;
 
         if( fDebugFile )
           *fDebugFile << "CodaDecode:: roc_decode:: after LoadIfSlot "
@@ -801,11 +815,11 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
   assert( evbuffer && fMap );
   if( roc >= MAXROC ) {
     ostringstream ostr;
-    ostr << "CodaDecoder::bank_decode: ROC number " << roc << " out of range";
+    ostr << "ROC number " << roc << " out of range";
     throw logic_error(ostr.str());
   }
   if( istop >= event_length )
-    throw logic_error("ERROR:: bank_decode:  stop point exceeds event length (?!)");
+    throw logic_error("Stop point exceeds event length (?!)");
 
   if (!fMap->isBankStructure(roc))
     return HED_OK;
