@@ -154,10 +154,11 @@ void THaOdata::AddBranches( TTree* _tree, string _name )
 //_____________________________________________________________________________
 Bool_t THaOdata::Resize(Int_t i)
 {
-  static const Int_t MAX = 1<<16;
+  constexpr Int_t MAX = 1<<20; // 1,048,576 elements ought to be enough for anyone ;-)
   if( i > MAX ) return true;
   Int_t newsize = nsize;
   while ( i >= newsize ) { newsize *= 2; }
+  if( newsize > MAX ) newsize = MAX;
   auto* tmp = new Double_t[newsize];
   memcpy( tmp, data, nsize*sizeof(Double_t) );
   delete [] data; data = tmp; nsize = newsize;
