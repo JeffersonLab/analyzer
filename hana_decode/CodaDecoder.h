@@ -78,6 +78,7 @@ protected:
   Int_t prescale_decode_coda3( const UInt_t* evbuffer );
   void  dump( const UInt_t* evbuffer ) const;
   void  debug_print( const UInt_t* evbuffer ) const;
+  void  PrintBankInfo() const;
 
   // Data
   UInt_t nroc;

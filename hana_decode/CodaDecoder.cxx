@@ -21,6 +21,7 @@
 #include <utility>
 #include <cstring>
 #include <sstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -286,6 +287,16 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
         return status;
     }
   }
+  // Print summary of discovered banks
+  constexpr UInt_t bankinfo_bit = 65;
+  if( !fMsgPrinted.TestBitNumber(bankinfo_bit) ) {
+    if( !bankdat.empty() ) {
+      PrintBankInfo();
+      // Unless we are debugging, print just once at start of run
+      if( fDebug < 2 )
+        fMsgPrinted.SetBitNumber(bankinfo_bit);
+    }
+  }
   return HED_OK;
 }
 
@@ -514,6 +525,37 @@ void CodaDecoder::debug_print( const UInt_t* evbuffer ) const
     // This dump will look exactly like the text file that was inserted.
     for (size_t ii=0; ii<elen; ii++) cout << cbuf[ii];
   }
+}
+
+//_____________________________________________________________________________
+void CodaDecoder::PrintBankInfo() const
+{
+  // Pretty-print bank info in 'bankdat'.
+
+  // Sort banks by ROC, then position in buffer
+  auto banks = bankdat;
+  std::sort(ALL(banks), []( const BankDat_t& a, const BankDat_t& b ) -> bool {
+    if( (a.key >> 16) < (b.key >> 16) )
+      return true;
+    else if( (a.key >> 16) > (b.key >> 16) )
+      return false;
+    return a.pos < b.pos;
+  });
+
+  UInt_t sum = 0;
+  cout << "Banks found (event " << event_num << "):" << endl;
+  cout << " roc  bank     pos     len" << endl;
+  for( const auto& b : banks ) {
+    UInt_t bank = b.key & 0xFFFF;
+    UInt_t roc  = b.key >> 16;
+    cout << dec << setw(4) << roc
+         << setw(6) << bank
+         << setw(8) << b.pos
+         << setw(8) << b.len
+         << endl;
+    sum += b.len;
+  }
+  cout << "Sum" << setw(23) << sum << endl;
 }
 
 //_____________________________________________________________________________
