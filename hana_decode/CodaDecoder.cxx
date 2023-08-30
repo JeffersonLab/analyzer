@@ -39,7 +39,7 @@ CodaDecoder::CodaDecoder()
   , synchextra{false}
   , fdfirst(true)
   , chkfbstat(1)
-  , evcnt_coda3(0)
+  , blkidx(0)
   , fMultiBlockMode{false}
   , fBlockIsDone{false}
   , tsEvType{0}
@@ -122,6 +122,15 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
                              "data. Do not read new events while DataCached() "
                              "returns true!");
     }
+    if( ++blkidx >= block_size ) {
+      throw std::logic_error("Attempt to decode more events in block than "
+                             "available (blkidx >= block_size). Logic error. "
+                             "Call expert.");
+    }
+
+    if( fDataVersion == 3 )
+      LoadTrigBankInfo(blkidx);
+    ++event_num;    // _should_ be sequential
     return LoadFromMultiBlock();
   }
 
@@ -131,6 +140,8 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
   data_type = 0;
   trigger_bits = 0;
   evt_time = 0;
+  bankdat.clear();
+  blkidx = 0;
 
   // Determine event type
   if (fDataVersion == 2) {
@@ -331,6 +342,30 @@ UInt_t CodaDecoder::InterpretBankTag( UInt_t tag )
 }
 
 //_____________________________________________________________________________
+Int_t CodaDecoder::LoadTrigBankInfo( UInt_t i )
+{
+  // CODA3: Load tsEvType, evt_time, and trigger_bits for i-th event
+  // in event block buffer. index_buffer must be < block size.
+
+  assert(i < tbank.blksize);
+  if( i >= tbank.blksize )
+    return -1;
+  tsEvType = tbank.evType[i];      // event type (configuration-dependent)
+  if( tbank.evTS )
+    evt_time = tbank.evTS[i];      // event time (4ns clock, I think)
+  else if( tbank.TSROC ) {
+    UInt_t struct_size = tbank.withTriggerBits() ? 3 : 2;
+    evt_time = *(const uint64_t*) (tbank.TSROC + struct_size * i);
+    // Only the lower 48 bits seem to contain the time
+    evt_time &= 0x0000FFFFFFFFFFFF;
+  }
+  if( tbank.withTriggerBits() )
+    trigger_bits = tbank.TSROC[2 + 3 * i]; // trigger bits
+
+  return 0;
+}
+
+//_____________________________________________________________________________
 Int_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer )
 {
   // Decode the CODA3 trigger bank. Copy relevant data to member variables.
@@ -361,13 +396,7 @@ Int_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer )
   }
 
   // Copy pertinent data to member variables for faster retrieval
-  tsEvType = tbank.evType[0];      // type of first event in block
-  if( tbank.evTS )
-    evt_time = tbank.evTS[0];      // time of first event in block
-  else if( tbank.TSROC )
-    evt_time = *(const uint64_t*)tbank.TSROC;
-  if( tbank.withTriggerBits() )
-    trigger_bits = tbank.TSROC[2]; // trigger bits of first event in block
+  LoadTrigBankInfo(0);  // Load data for first event in block
 
   return HED_OK;
 }
@@ -519,8 +548,8 @@ uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
   // nroc ROC segments containing timestamps and optional
   // data like trigger latch bits:
   // struct {
-  //   uint64_t roc_time_stamp;
-  //   uint32_t roc_trigger_bits;   // this is optional!
+  //   uint64_t roc_time_stamp;     // Lower 48 bits only seem to be the time.
+  //   uint32_t roc_trigger_bits;   // Optional. Typically only in TSROC.
   // } roc_segment[blkSize];
   TSROC = nullptr;
   tsrocLen = 0;
@@ -568,18 +597,17 @@ Int_t CodaDecoder::LoadFromMultiBlock()
   // For other modules not in multiblock mode (e.g. scalers) or other data
   // (e.g. flags) the data remain "stale" until the next block of events.
 
-  if (!fMultiBlockMode) {
+  if( !fMultiBlockMode || fBlockIsDone ) {
     Error("CodaDecoder::LoadFromMultiBlock",
-          "Not in multiblock mode. Logic error. Call expert.");
+          "Not in multiblock mode or block already done. Logic error. "
+          "Call expert.");
     return HED_ERR;
   }
-  fBlockIsDone = false;
-
   if( first_decode || fNeedInit ) {
-    assert(false);  // fMultiBlockMode is set in physics_decode, which already does init
-    Int_t ret = Init();
-    if( ret != HED_OK )
-      return ret;
+    Error("CodaDecoder::LoadFromMultiBlock",
+          "Uninitialized while processing event blocks. Logic error. "
+          "Call expert.");
+    return HED_ERR;
   }
 
   for( auto i : fSlotClear ) {
@@ -608,8 +636,10 @@ Int_t CodaDecoder::LoadFromMultiBlock()
         if( module_blksz != block_size ) {
           cerr << "ERROR::CodaDecoder:: inconsistent block size between trig. bank and module "
                << " in roc/slot = " << roc << "/" << slot << " (\"" << mod->GetName() << "\"), "
-               << "trigger bank blksz = " << block_size << ", module blkz = " << module_blksz
+               << "trigger bank = " << block_size << ", module = " << module_blksz
+               << ". Ignoring module for this event."
                << endl;
+          continue;
         }
       }
       if( mod->IsMultiBlockMode() ) {
@@ -786,7 +816,6 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
                 << "  " << istop << endl;
 
   fBlockIsDone = false;
-  bankdat.clear();
   UInt_t pos = ipt+1;  // ipt points to ROC ID word
   while (pos < istop) {
     UInt_t len = evbuffer[pos];
@@ -818,8 +847,10 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
                   << theBank->pos << "   " << theBank->len << endl;
     auto* sd = crateslot[idx(roc, slot)].get();
     sd->LoadBank(evbuffer, theBank->pos, theBank->len);
-    if (sd->IsMultiBlockMode()) fMultiBlockMode = true;
-    if (sd->BlockIsDone()) fBlockIsDone = true;
+    if( sd->IsMultiBlockMode() )
+      fMultiBlockMode = true;
+    if( sd->BlockIsDone() )
+      fBlockIsDone = true;
   }
 
   if( fDoBench ) fBench->Stop("bank_decode");

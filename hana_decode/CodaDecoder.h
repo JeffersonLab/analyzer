@@ -41,7 +41,8 @@ public:
   virtual Int_t  FillBankData( UInt_t* rdat, UInt_t roc, Int_t bank,
                                UInt_t offset = 0, UInt_t num = 1 ) const;
 
-  UInt_t         GetTSEvtype() const { return tsEvType; }
+  UInt_t         GetTSEvType() const { return tsEvType; }
+  UInt_t         GetBlockIndex() const { return blkidx; }
 
   enum { MAX_PSFACT = 12 };
 
@@ -101,7 +102,7 @@ protected:
   BankDat_t* CheckForBank( UInt_t roc, UInt_t slot );
 
   // CODA3 stuff
-  UInt_t evcnt_coda3;
+  UInt_t blkidx;  // Event block index (0 <= blkidx < block_size)
   Bool_t fMultiBlockMode, fBlockIsDone;
   UInt_t tsEvType, bank_tag, block_size;
 
@@ -115,7 +116,7 @@ public:
      uint32_t Fill( const uint32_t* evbuffer, uint32_t blkSize, uint32_t tsroc );
      bool     withTimeStamp()   const { return (tag & 1) != 0; }
      bool     withRunInfo()     const { return (tag & 2) != 0; }
-     bool     withTriggerBits() const { return (tsrocLen > 2);}
+     bool     withTriggerBits() const { return (tsrocLen > 2*blksize);}
 
      uint32_t blksize;          /* total number of triggers in the Bank */
      uint16_t tag;              /* Trigger Bank Tag ID = 0xff2x */
@@ -131,6 +132,7 @@ public:
    };
 
 protected:
+   Int_t LoadTrigBankInfo( UInt_t index_buffer );
    TBOBJ tbank;
 
    ClassDef(CodaDecoder,0) // Decoder for CODA event buffer
