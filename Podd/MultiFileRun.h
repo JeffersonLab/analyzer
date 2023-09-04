@@ -63,11 +63,13 @@
 //
 // Initialization info is retrieved from segment 0, as with THaRun. If this
 // segment is not part of the input file list, the code will attempt to
-// locate it using the existing logic in THaRun. Currently, it is assumed
-// that segment 0 of any stream provides init info. If only stream 0
-// provides it, for example, it will be necessary to override
-// THaRun::ProvidesInitInfo() and THaRun::FindInitInfoFile. Details
-// obviously depend on the experiment-specific DAQ configuration.
+// locate it in the current run's directory and in any directories in the
+// search path list combined with any directory components in the file list.
+//
+// Currently, it is assumed that segment 0 of any stream provides init info.
+// If only stream 0 provides it, for example, it will be necessary to override
+// THaRun::ProvidesInitInfo() and THaRun::GetInitInfoFileName to reflect that.
+// Details naturally depend on the experiment-specific DAQ configuration.
 //
 // Like THaRun, this class can be persisted through ROOT I/O. This will
 // save, among other data, the paths and stream/segment info of all input
@@ -216,9 +218,10 @@ protected:
   Int_t  fNActive;                     //! Number of active streams
   UInt_t fNevRead;                     //! Number of events read
 
-  virtual Int_t  BuildInputList();
-  virtual Bool_t FindSegmentNumber();
-  virtual Int_t  FindNextStream() const;
+  virtual Int_t    BuildInputList();
+  virtual Bool_t   FindSegmentNumber();
+  virtual Int_t    FindNextStream() const;
+  virtual TString  FindInitInfoFile( const TString& fname );
 
   bool  CheckWarnAbsFilename();
   void  ClearStreams();
@@ -229,20 +232,22 @@ protected:
 
 private:
   using path_t = std::pair<TString, TString>;
+  using action_t = std::function<Int_t( const TString&, const TString& )>;
   Int_t AddFile( const TString& file, const TString& dir );
-  Int_t BuildInputListFromWildcardDir( const path_t& path );
-  Int_t BuildInputListFromTopDir( const path_t& path );
-  Int_t CheckFilesConsistency();
-  Int_t DescendInto( const TString& curpath,
-                     const std::vector<TString>& splitpath, Int_t level );
-  Int_t ForEachMatchItemInDir( const TString& dir, const TRegexp& match_re,
-        const std::function<Int_t( const TString&, const TString& )>& action );
-  Int_t ScanForFilename( const path_t& path, bool regex_mode );
-  Int_t ScanForSubdirs( const TString& curdir,
-                        const std::vector<TString>& splitpath, Int_t level,
-                        bool regex_mode );
-  void  SortStreams();
   void  AssembleFilePaths( std::vector<path_t>& candidates );
+  void  AssembleFilePaths( std::vector<path_t>& candidates,
+                           const std::vector<std::string>& file_list );
+  Int_t BuildInputListFromWildcardDir( const path_t& path, const action_t& action );
+  Int_t BuildInputListFromTopDir( const path_t& path, const action_t& action );
+  Int_t CheckFilesConsistency();
+  Int_t DescendInto( const TString& curpath, const std::vector<TString>& splitpath,
+                     Int_t level, const action_t& action );
+  Int_t ForEachMatchItemInDir( const TString& dir, const TRegexp& match_re,
+                               const action_t& action );
+  Int_t ScanForFilename( const path_t& path, bool regex_mode, const action_t& action );
+  Int_t ScanForSubdirs( const TString& curdir, const std::vector<TString>& splitpath,
+                        Int_t level, bool regex_mode, const action_t& action );
+  void  SortStreams();
 
   enum { kResolvingWildcard = BIT(18) };
 

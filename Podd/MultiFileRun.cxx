@@ -175,7 +175,7 @@ MultiFileRun& MultiFileRun::operator=(const THaRunBase& rhs)
     fNevRead = 0;
     try {
       const auto& mfr = dynamic_cast<const MultiFileRun&>(rhs);
-      fFileList = mfr.fFileList;
+      fFileList        = mfr.fFileList;
       fPathList        = mfr.fPathList;
       fStreams         = mfr.fStreams;
       fFirstSegment    = mfr.fFirstSegment;
@@ -544,8 +544,7 @@ bool MultiFileRun::HasWildcards( const TString& str ) const
 
 //_____________________________________________________________________________
 Int_t MultiFileRun::ForEachMatchItemInDir(
-  const TString& dir, const TRegexp& match_re,
-  const std::function<Int_t( const TString&, const TString& )>& action )
+  const TString& dir, const TRegexp& match_re, const action_t& action )
 {
   auto* dirp = gSystem->OpenDirectory(dir);
   assert( dirp ); // else item_is_dir() faulty
@@ -555,6 +554,7 @@ Int_t MultiFileRun::ForEachMatchItemInDir(
   }
   Int_t ret = READ_OK;
   SetBit(kResolvingWildcard);
+  bool found_exact = false;
   while( const char* entry = gSystem->GetDirEntry(dirp) ) {
     if( strcmp(entry, ".") == 0 || strcmp(entry, "..") == 0 )
       continue;
@@ -564,13 +564,15 @@ Int_t MultiFileRun::ForEachMatchItemInDir(
       ret = action(dir, item);
       if( ret == READ_EOF ) {
         // Don't quit if file was found since there may be more matches
-        ret = READ_OK;
+        found_exact = true;
         continue;
       }
       if( ret != READ_OK )
         goto exit;
     }
   }
+  if( found_exact )
+    ret = READ_EOF;
  exit:
   ResetBit(kResolvingWildcard);
   gSystem->FreeDirectory(dirp);
@@ -578,21 +580,9 @@ Int_t MultiFileRun::ForEachMatchItemInDir(
 }
 
 //_____________________________________________________________________________
-Int_t MultiFileRun::ScanForFilename( const path_t& path, bool regex_mode )
+Int_t MultiFileRun::ScanForFilename( const path_t& path, bool regex_mode,
+                                     const action_t& action )
 {
-  auto add_file = [this]( const TString& curpath, const TString& file ) -> Int_t
-  {
-    auto itempath = JoinPath(curpath, file);
-    if( item_exists(itempath) ) {
-      if( item_is_not_dir(itempath) ) {
-        return AddFile(file, curpath);
-      } else {
-        cerr << itempath << " is a directory. Expected file." << endl;
-      }
-    }
-    return READ_OK;
-  };
-
   const TString& dir = path.first;
   const TString& file = path.second;
   if( HasWildcards(file) ) {
@@ -602,24 +592,24 @@ Int_t MultiFileRun::ScanForFilename( const path_t& path, bool regex_mode )
            << file_re.Status() << endl;
       return READ_ERROR;
     }
-    return ForEachMatchItemInDir(dir, file_re, add_file);
+    return ForEachMatchItemInDir(dir, file_re, action);
 
   } else {
-    return add_file(dir, file);
+    return action(dir, file);
   }
 }
 
 //_____________________________________________________________________________
 Int_t MultiFileRun::ScanForSubdirs   // NOLINT(misc-no-recursion)
   ( const TString& curdir, const std::vector<TString>& splitpath, Int_t level,
-    bool regex_mode )
+    bool regex_mode, const action_t& action )
 {
-  auto do_directory = [this, level, &splitpath]  // NOLINT(misc-no-recursion)
+  auto do_directory = [this, level, &splitpath, &action]  // NOLINT(misc-no-recursion)
     ( const TString& curpath, const TString& subdir ) -> Int_t
   {
     auto itempath = JoinPath(curpath, subdir);
     if( item_is_dir(itempath) ) {
-      return DescendInto(itempath, splitpath, level + 1);
+      return DescendInto(itempath, splitpath, level + 1, action);
     } else if( !TestBit(kResolvingWildcard) ) {
       cerr << itempath << " is not a directory" << endl;
     }
@@ -642,17 +632,19 @@ Int_t MultiFileRun::ScanForSubdirs   // NOLINT(misc-no-recursion)
 
 //_____________________________________________________________________________
 Int_t MultiFileRun::DescendInto  // NOLINT(misc-no-recursion)
-  ( const TString& curpath, const std::vector<TString>& splitpath, Int_t level )
+  ( const TString& curpath, const std::vector<TString>& splitpath, Int_t level,
+    const action_t& action )
 {
   if( level+1 >= SSIZE(splitpath) ) {
     // Base case: Lowest directory level. Look for the filename pattern.
-    return ScanForFilename({curpath, splitpath[level]}, fNameIsRegexp);
+    return ScanForFilename({curpath, splitpath[level]}, fNameIsRegexp, action);
   }
-  return ScanForSubdirs(curpath, splitpath, level, fNameIsRegexp);
+  return ScanForSubdirs(curpath, splitpath, level, fNameIsRegexp, action);
 }
 
 //_____________________________________________________________________________
-Int_t MultiFileRun::BuildInputListFromWildcardDir( const path_t& path )
+Int_t MultiFileRun::BuildInputListFromWildcardDir( const path_t& path,
+                                                   const action_t& action )
 {
   // Make a vector of directory path components
   auto splitpath = SplitPath(path.first);
@@ -661,7 +653,7 @@ Int_t MultiFileRun::BuildInputListFromWildcardDir( const path_t& path )
   assert(!splitpath.empty());
   const auto topdir = splitpath[0];
   if( item_is_dir(topdir) ) {
-    Int_t ret = DescendInto(topdir, splitpath, 1);
+    Int_t ret = DescendInto(topdir, splitpath, 1, action);
     if( ret != READ_OK )
       return ret;
   }
@@ -669,23 +661,25 @@ Int_t MultiFileRun::BuildInputListFromWildcardDir( const path_t& path )
 }
 
 //_____________________________________________________________________________
-Int_t MultiFileRun::BuildInputListFromTopDir( const path_t& path )
+Int_t MultiFileRun::BuildInputListFromTopDir( const path_t& path,
+                                              const action_t& action )
 {
   if( item_is_dir(path.first) ) {
-    return ScanForFilename(path, fNameIsRegexp);
+    return ScanForFilename(path, fNameIsRegexp, action);
   }
   return READ_OK;
 }
 
 //_____________________________________________________________________________
-// Build a list of unique directory/filename pairs to search
-void MultiFileRun::AssembleFilePaths( std::vector<path_t>& candidates )
+void MultiFileRun::AssembleFilePaths( vector<path_t>& candidates,
+                                      const vector<string>& file_list )
 {
+  candidates.clear();
   // Sort file names and remove duplicates
-  vector<string> file_list = fFileList;
-  std::sort(ALL(file_list));
-  auto last = std::unique(ALL(file_list));
-  file_list.erase(last, file_list.end());
+// Changed my mind on this. Let the user decide the order.
+//  std::sort(ALL(file_list));
+//  auto last = std::unique(ALL(file_list));
+//  file_list.erase(last, file_list.end());
 
   // Add any file names that are absolute paths to the beginning of the list
   // of path candidates. Usually this is just a single entry if the class was
@@ -727,11 +721,32 @@ void MultiFileRun::AssembleFilePaths( std::vector<path_t>& candidates )
 }
 
 //_____________________________________________________________________________
+// Build a list of unique directory/filename pairs to search
+void MultiFileRun::AssembleFilePaths( vector<path_t>& candidates )
+{
+  AssembleFilePaths(candidates, fFileList);
+}
+
+//_____________________________________________________________________________
 // Build the list of input files
 Int_t MultiFileRun::BuildInputList()
 {
   vector<path_t> candidates;
   AssembleFilePaths(candidates);
+
+  // Action to perform for a matching file
+  auto add_file = [this]( const TString& curpath, const TString& file ) -> Int_t
+  {
+    auto itempath = JoinPath(curpath, file);
+    if( item_exists(itempath) ) {
+      if( item_is_not_dir(itempath) ) {
+        return AddFile(file, curpath);
+      } else {
+        cerr << itempath << " is a directory. Expected file." << endl;
+      }
+    }
+    return READ_OK;
+  };
 
   // Cache for non-wildcard names already found
   set<TString> files_found;
@@ -743,11 +758,11 @@ Int_t MultiFileRun::BuildInputList()
     Int_t ret;
     if( HasWildcards(path.first) ) {
       // Traverse directory tree, resolving wildcard/regexp in directory names
-      ret = BuildInputListFromWildcardDir(path);
+      ret = BuildInputListFromWildcardDir(path, add_file);
     } else {
       // If the directory path contains no wildcards/regexp, simply scan
       // that directory directly
-      ret = BuildInputListFromTopDir(path);
+      ret = BuildInputListFromTopDir(path, add_file);
     }
     if( ret == READ_EOF ) {
       assert(!HasWildcards(path.second));
@@ -802,7 +817,7 @@ Int_t MultiFileRun::Open()
   fLastUsedStream = 0;
   FindSegmentNumber();
   fFilename = fStreams[fLastUsedStream].GetFilename();
-  fNActive = SSIZE(fStreams);
+  fNActive = static_cast<Int_t>(fStreams.size());
   fOpened = true;
   return READ_OK;
 }
@@ -889,6 +904,78 @@ Int_t MultiFileRun::FindNextStream() const
 #endif
   }
   return ret;
+}
+
+//_____________________________________________________________________________
+// Find a file matching the name pattern returned by GetInitInfoFile().
+// The file must exist on disk and have at least read permissions.
+// - First, in the same directory as the continuation segment.
+// - Then, look in the directories in fPathList
+// Returns an empty string if no matching file can be found.
+TString MultiFileRun::FindInitInfoFile( const TString& fname )
+{
+  // Full path of the file that should contain the init info
+  TString initinfo_file = GetInitInfoFileName(fname);
+  // Check current directory
+  if( !gSystem->AccessPathName(initinfo_file, kReadPermission) )
+    return initinfo_file;
+
+  string base = gSystem->BaseName(initinfo_file);
+  vector<string> file_list;
+  bool have_empty = false;
+  for( const auto& file: fFileList ) {
+    string fdir = GetDirName(file.c_str()).Data();
+    if( fdir == '.' ) {
+      have_empty = true;
+      continue;
+    }
+    file_list.push_back(JoinPath(fdir,base));
+  }
+  if( file_list.empty() || have_empty )
+    file_list.push_back(base);
+
+  // Search the locations in the path list , including directory components
+  // in the file list.
+  // Simplified version of BuildInputList for a single, non-wildcard file name
+  vector<path_t> candidates;
+  AssembleFilePaths( candidates, file_list);
+
+  // Action to perform for a matching file
+  auto set_filename = [&initinfo_file]( const TString& curpath,
+                                        const TString& file ) -> Int_t
+  {
+    auto itempath = JoinPath(curpath, file);
+    if( item_exists(itempath) ) {
+      if( item_is_not_dir(itempath) ) {
+        initinfo_file = itempath;
+        return READ_EOF;
+      } else {
+        cerr << itempath << " is a directory. Expected file." << endl;
+      }
+    }
+    return READ_OK;
+  };
+
+  initinfo_file.Clear();
+  for( const auto& path: candidates ) {
+    Int_t ret;
+    if( HasWildcards(path.first) )  {
+      // Traverse directory tree, resolving wildcard/regexp in directory names
+      ret = BuildInputListFromWildcardDir(path, set_filename);
+    } else {
+      // If the directory path contains no wildcards/regexp, simply scan
+      // that directory directly
+      ret = BuildInputListFromTopDir(path, set_filename);
+    }
+    if( ret == READ_EOF ) {
+      // Non-wildcard file found
+      assert(!HasWildcards(path.second));
+      return initinfo_file;
+    }
+    if( ret != READ_OK )
+      break;
+  }
+  return initinfo_file;
 }
 
 //_____________________________________________________________________________
@@ -991,7 +1078,16 @@ Int_t MultiFileRun::SetFilename( const char* name )
     return 1;
 
   Close();
-  fFileList.assign(1, name);
+
+  string str{name};
+  try {
+    ExpandFileName(str);
+  }
+  catch( std::invalid_argument& e ) {
+    cerr << e.what() << endl;
+    return -1;
+  }
+  fFileList.assign(1, str);
 
   // Assume we have to reinitialize. A new file name generally means a new
   // run date, run number, etc.
@@ -1007,6 +1103,14 @@ bool MultiFileRun::SetFileList( vector<std::string> filelist )
 {
   if( fFileList == filelist )
     return true;
+  auto expand_name = [this]( string& f) { ExpandFileName(f); };
+  try {
+    for_each(ALL(filelist), expand_name);
+  }
+  catch( std::invalid_argument& e ) {
+    cerr << e.what() << endl;
+    return true;
+  }
   Close();
   fFileList = std::move(filelist);
   ClearStreams();
@@ -1019,6 +1123,14 @@ bool MultiFileRun::SetPathList( vector<std::string> pathlist )
 {
   if( fPathList == pathlist )
     return true;
+  auto expand_name = [this]( string& f) { ExpandFileName(f); };
+  try {
+    for_each(ALL(pathlist), expand_name);
+  }
+  catch( std::invalid_argument& e ) {
+    cerr << e.what() << endl;
+    return true;
+  }
   Close();
   fPathList = std::move(pathlist);
   ClearStreams();
