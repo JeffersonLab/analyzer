@@ -765,8 +765,8 @@ Int_t MultiFileRun::BuildInputList()
       ret = BuildInputListFromTopDir(path, add_file);
     }
     if( ret == READ_EOF ) {
-      assert(!HasWildcards(path.second));
-      if( !TESTBIT(fFlags, kDoNotSkipDupFileNames) )
+      if( !HasWildcards(path.second)
+          && !TESTBIT(fFlags, kDoNotSkipDupFileNames) )
         files_found.insert(path.second);
       continue;
     }
@@ -921,6 +921,7 @@ TString MultiFileRun::FindInitInfoFile( const TString& fname )
     return initinfo_file;
 
   string base = gSystem->BaseName(initinfo_file);
+  assert(!HasWildcards(base));
   vector<string> file_list;
   bool have_empty = false;
   for( const auto& file: fFileList ) {
@@ -968,9 +969,9 @@ TString MultiFileRun::FindInitInfoFile( const TString& fname )
       ret = BuildInputListFromTopDir(path, set_filename);
     }
     if( ret == READ_EOF ) {
-      // Non-wildcard file found
-      assert(!HasWildcards(path.second));
-      return initinfo_file;
+      // Found a file suitable to provide init info
+      assert(!initinfo_file.IsNull());
+      break;
     }
     if( ret != READ_OK )
       break;
