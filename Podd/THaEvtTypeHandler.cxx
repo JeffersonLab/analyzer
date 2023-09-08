@@ -76,10 +76,12 @@ void THaEvtTypeHandler::EvDump(THaEvData *evdata) const
   }
 }
 
-THaAnalysisObject::EStatus THaEvtTypeHandler::Init(const TDatime&)
+THaAnalysisObject::EStatus THaEvtTypeHandler::Init(const TDatime& date)
 {
-  fStatus = kOK;
-  return kOK;
+//  fStatus = kOK;
+//  return kOK;
+  SetConfig("default"); // BCI: override ReadRunDatabase instead
+  return THaAnalysisObject::Init(date);
 }
 
 void THaEvtTypeHandler::SetDebugFile(const char *filename) {
