@@ -6,8 +6,8 @@
 //
 // Abstract base class for a detector or subdetector.
 //
-// Derived classes must define all internal variables, a constructor 
-// that registers any internal variables of interest in the global 
+// Derived classes must define all internal variables, a constructor
+// that registers any internal variables of interest in the global
 // physics variable list, and a Decode() method that fills the variables
 // based on the information in the THaEvData structure.
 //
@@ -42,7 +42,7 @@ using namespace Podd;
 TList* THaAnalysisObject::fgModules = nullptr;
 
 //_____________________________________________________________________________
-THaAnalysisObject::THaAnalysisObject( const char* name, 
+THaAnalysisObject::THaAnalysisObject( const char* name,
 				      const char* description ) :
   TNamed(name,description), fPrefix(nullptr), fStatus(kNotinit),
   fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0),
@@ -160,7 +160,7 @@ Int_t THaAnalysisObject::DefineVariablesWrapper( EMode mode )
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::DefineVariables( EMode /* mode */ )
-{ 
+{
   // Default method for defining global variables. Currently does nothing.
   // If there should be any common variables for all analysis objects,
   // define them here.
@@ -183,13 +183,13 @@ Int_t THaAnalysisObject::DefineVarsFromList( const RVarDef* list, EMode mode,
 {
   return DefineVarsFromList(list, kRVarDef, mode, def_prefix, comment_subst);
 }
- 
+
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::DefineVarsFromList( const void* list, EType type,
                                              EMode mode, const char* def_prefix,
                                              const char* comment_subst ) const
 {
-  // Add/delete variables defined in 'list' to/from the list of global 
+  // Add/delete variables defined in 'list' to/from the list of global
   // variables, using prefix of the current apparatus.
   // Internal function that can be called during initialization.
 
@@ -259,8 +259,8 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
 						  const char* classname,
 						  bool do_error )
 {
-  // Locate the object 'name' in the global list of Analysis Modules 
-  // and check if it inherits from 'classname' (if given), and whether 
+  // Locate the object 'name' in the global list of Analysis Modules
+  // and check if it inherits from 'classname' (if given), and whether
   // it is properly initialized.
   // Return pointer to valid object, else return nullptr.
   // If do_error == true (default), also print error message and set fStatus
@@ -376,7 +376,7 @@ const char* THaAnalysisObject::Here( const char* here ) const
   // Used for generating diagnostic messages.
   // The return value points to an internal static buffer that
   // one should not try to delete ;)
-  
+
   return ::Here( here, fPrefix );
 }
 
@@ -416,10 +416,10 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 {
   // Common Init function for THaAnalysisObjects.
   //
-  // Check if this object or any base classes have defined a custom 
-  // ReadDatabase() method. If so, open the database file called 
+  // Check if this object or any base classes have defined a custom
+  // ReadDatabase() method. If so, open the database file called
   // "db_<fPrefix>dat" and, if successful, call ReadDatabase().
-  // 
+  //
   // This implementation will change once the real database is  available.
 
   static const char* const here = "Init";
@@ -446,13 +446,13 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
       // Read the database for this object.
       // Don't bother if this object has not implemented its own database reader.
       if( IsA()->GetMethodAllAny("ReadDatabase") !=
-      gROOT->GetClass("THaAnalysisObject")->GetMethodAllAny("ReadDatabase") ) {
+          gROOT->GetClass("THaAnalysisObject")->GetMethodAllAny("ReadDatabase") ) {
 
         // Call this object's actual database reader
         if( (status = ReadDatabase(date)) )
           throw database_error(status, GetDBFileName());
 
-      } else if( fDebug > 1 ) {
+      } else if( fDebug > 2 ) {
         Info(Here(here), "No ReadDatabase function defined. "
                          "Database not read.");
       }
@@ -514,11 +514,11 @@ Int_t THaAnalysisObject::InitOutput( THaOutput* /* output */ )
 //_____________________________________________________________________________
 void THaAnalysisObject::MakePrefix( const char* basename )
 {
-  // Set up name prefix for global variables. 
+  // Set up name prefix for global variables.
   // Internal function called by constructors of derived classes.
   // If basename != nullptr,
   //   fPrefix = basename  + "." + GetName() + ".",
-  // else 
+  // else
   //   fPrefix = GetName() + "."
 
   delete [] fPrefix;
@@ -553,7 +553,7 @@ Int_t THaAnalysisObject::ReadDatabase( const TDatime& /* date */ )
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::ReadRunDatabase( const TDatime& date )
 {
-  // Default run database reader. Reads one key, <prefix>.config, into 
+  // Default run database reader. Reads one key, <prefix>.config, into
   // fConfig. If not found, fConfig is empty. If fConfig was explicitly
   // set with SetConfig(), the run database is not parsed and fConfig is
   // not touched.
@@ -643,7 +643,7 @@ Bool_t THaAnalysisObject::IntersectPlaneWithRay( const TVector3& xax,
 						 TVector3& intersect )
 {
   // Find intersection point of plane (given by 'xax', 'yax', 'org') with
-  // ray (given by 'ray_start', 'ray_vect'). 
+  // ray (given by 'ray_start', 'ray_vect').
   // Returns true if intersection found, else false (ray parallel to plane).
   // Output is in 'length' and 'intersect', where
   //   intersect = ray_start + length*ray_vect
@@ -879,4 +879,3 @@ TString THaAnalysisObject::GetPrefixName() const
 
 //_____________________________________________________________________________
 ClassImp(THaAnalysisObject)
-
