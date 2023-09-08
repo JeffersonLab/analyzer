@@ -19,6 +19,7 @@
 #include "TSystem.h"
 #include "TRegexp.h"
 #include <iostream>
+#include <iomanip>
 #include <cassert>
 #include <stdexcept>
 #include <sstream>
@@ -263,7 +264,8 @@ Int_t THaRun::PrescanFile()
     if( st & (1<<1) )
       cout << "Prescales at " << nev << endl;
     if( st & (1<<2) )
-      cout << "DAQ info at " << nev << endl;
+      cout << "DAQ info at " << setw(2) << nev
+           << " len " << evdata->GetEvLength() << endl;
   }//end while
 
   if( status != READ_OK )
