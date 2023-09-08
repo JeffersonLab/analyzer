@@ -1332,7 +1332,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 //_____________________________________________________________________________
 Int_t THaAnalyzer::SlowControlAnalysis( Int_t code )
 {
-  // Analyze slow control (EPICS) data and write then to output.
+  // Analyze slow control (EPICS) data and write them to output.
   // Ignores RawDecode results and requested event range, so EPICS
   // data are always analyzed continuously from the beginning of the run.
 
@@ -1386,6 +1386,8 @@ Int_t THaAnalyzer::MainAnalysis()
 {
   // Main analysis carried out for each event
 
+  static const char* const here = "MainAnalysis";
+
   Int_t retval = kOK;
 
   Incr(kNevGood);
@@ -1397,8 +1399,15 @@ Int_t THaAnalyzer::MainAnalysis()
     rawfail = true;
   }
 
+  //FIXME Move to "OtherAnalysis"?
   for( auto* obj : fEvtHandlers ) {
-    obj->Analyze(fEvData);
+    try {
+      obj->Analyze(fEvData);
+    }
+    catch( const exception& e) {
+      // Generic exceptions are not fatal. Print message and continue.
+      Error( here, "%s", e.what() );
+    }
   }
 
   bool evdone = false;
