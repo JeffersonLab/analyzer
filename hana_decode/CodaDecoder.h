@@ -43,7 +43,6 @@ public:
 
   UInt_t         GetTSEvType() const { return tsEvType; }
   UInt_t         GetBlockIndex() const { return blkidx; }
-
   enum { MAX_PSFACT = 12 };
 
   // CODA file format exception, thrown by LoadEvent/LoadFromMultiBlock
@@ -56,6 +55,34 @@ public:
   };
 
   static UInt_t InterpretBankTag( UInt_t tag );
+
+  struct BankInfo {
+    BankInfo() : pos_{0}, len_{0}, tag_{0}, otag_{0}, dtyp_{0}, npad_{0},
+                 blksz_{0}, status_{kOK} {}
+    enum EBankErr  { kOK = 0, kBadArg, kBadLen, kBadPad, kUnsupType };
+    enum EDataSize { kUndef = 0, k8bit = 1, k16bit = 2, k32bit = 4, k64bit = 8 };
+    enum EIntFloat { kInteger = 0, kFloat };
+    enum ESigned   { kUnknown = 0, kUnsigned, kSigned };
+    Int_t Fill( const UInt_t* evbuf, UInt_t pos, UInt_t len );
+    EDataSize GetDataSize() const; // Size of data in bytes/element
+    EIntFloat GetFloat()    const;
+    ESigned   GetSigned()   const;
+    const char* Errtxt()    const;
+    const char* Typtxt()    const;
+    UInt_t    pos_;      // First word of payload
+    UInt_t    len_;      // pos_ + len_ = first word after payload
+    UInt_t    tag_;      // Bank tag
+    UInt_t    otag_;     // Bank tag of "outer" bank if bank of banks
+    UInt_t    dtyp_;     // Data type
+    UInt_t    npad_;     // Number of padding bytes at end of data
+    UInt_t    blksz_;    // Block size (multiple events per buffer)
+    EBankErr  status_;   // Decoding status
+  };
+  static BankInfo GetBank( const UInt_t* evbuf, UInt_t pos, UInt_t len ) {
+    BankInfo ifo;
+    ifo.Fill(evbuf, pos, len);
+    return ifo;
+  }
 
 protected:
   virtual Int_t  LoadIfFlagData(const UInt_t* evbuffer);

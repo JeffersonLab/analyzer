@@ -5,6 +5,7 @@
 #pragma link off all functions;
 
 #pragma link C++ class Decoder::CodaDecoder+;
+#pragma link C++ class Decoder::CodaDecoder::BankInfo+;
 #pragma link C++ class Decoder::Module+;
 #pragma link C++ class Decoder::Module::ModuleType+;
 #pragma link C++ class Decoder::Module::TypeSet_t+;

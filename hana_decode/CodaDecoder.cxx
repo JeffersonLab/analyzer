@@ -425,6 +425,193 @@ Int_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer )
 }
 
 //_____________________________________________________________________________
+Int_t CodaDecoder::BankInfo::Fill(             // NOLINT(misc-no-recursion)
+  const UInt_t* evbuf, UInt_t pos, UInt_t len )
+{
+  if( !evbuf ) {
+    return status_ = kBadArg;
+  }
+  if( len < 3 ) {  // Expect at least 1 bank header + 1 payload word
+    return status_ = kBadArg;
+  }
+  // Bank length
+  const auto* p = evbuf + pos;
+  UInt_t blen = *p;  // number of 32-bit words following this length word
+  if( blen < 2 || blen + 1 > len ) {
+    len_ = blen;
+    return status_ = kBadLen;
+  }
+
+  // Bank header
+  ++p;
+  UInt_t tag   = (*p & 0xFFFF0000) >> 16;
+  UInt_t npad  = (*p & 0x0000C000) >> 14;
+  UInt_t dtyp  = (*p & 0x00003F00) >> 8;
+  UInt_t blksz = (*p & 0x000000FF);
+  // First word of payload
+  ++p;
+  status_ = kOK;
+  switch( dtyp ) {
+    case 0x08: // float64_t (double)
+    case 0x09: // int64_t
+    case 0x0A: // uint64_t
+    case 0x00: // 32-bit unknown
+    case 0x01: // uint32_t
+    case 0x02: // float32_t
+    case 0x0B: // int32_t
+      if( npad != 0 ) {
+        npad_   = npad;
+        status_ = kBadPad;
+      }
+      break;
+
+    case 0x04: // int16_t
+    case 0x05: // uint16_t
+      if( npad != 0 && npad != 2 ) {
+        npad_ = npad;
+        status_ = kBadPad;
+      }
+      break;
+
+    case 0x03: // int8_t   (char)
+    case 0x06: // int8_t   (signed char)
+    case 0x07: // uint8_t  (unsigned char)
+      break;
+
+    case 0x10: // Bank
+      if( otag_ == 0 )
+        otag_ = tag;
+      return Fill(evbuf, pos+2, blen-1);
+      break;
+
+    default: // Segments, composite, etc. not yet supported
+      dtyp_ = dtyp;
+      return status_ = kUnsupType;
+  }
+  pos_   = pos+2;
+  len_   = blen-1;
+  tag_   = tag;
+  dtyp_  = dtyp;
+  npad_  = npad;
+  blksz_ = blksz;
+  return status_;
+}
+
+//_____________________________________________________________________________
+const char* CodaDecoder::BankInfo::Errtxt() const
+{
+  switch( status_ ) {
+    case kOK:
+      return "OK";
+    case kBadArg:
+      return "Bad argument";
+    case kBadLen:
+      return "Invalid length";
+    case kBadPad:
+      return "Invalid padding size";
+    case kUnsupType:
+      return "Unsupported data type";
+  }
+  // Not reached
+  assert(false);
+  return "Unknown error";
+}
+
+//_____________________________________________________________________________
+const char* CodaDecoder::BankInfo::Typtxt() const
+{
+  static const char* typtxt[] = {
+    "32-bit unknown",
+    "uint32_t",
+    "float",
+    "char",
+    "int16_t",
+    "uint16_t",
+    "int8_t",
+    "uint8_t",
+    "double",
+    "int64_t",
+    "uint64_t",
+    "int32_t",
+    "TAGSEGMENT",
+    "SEGMENT",
+    "BANK",
+    "Composite",
+    "BANK"
+  };
+  if( dtyp_ <= 0x10 )
+    return typtxt[dtyp_];
+  if( dtyp_ == 0x20 )
+    return "SEGMENT";
+  if( dtyp_ == 0x21 )
+    return "Hollerit";
+  if( dtyp_ == 0x22 )
+    return "N value";
+  return "Unknown";
+}
+
+//_____________________________________________________________________________
+CodaDecoder::BankInfo::EDataSize CodaDecoder::BankInfo::GetDataSize() const
+{
+  switch( dtyp_ ) {
+    case 0x08: // float64_t (double)
+    case 0x09: // int64_t
+    case 0x0A: // uint64_t
+      return k64bit;
+    case 0x00: // 32-bit unknown
+    case 0x01: // uint32_t
+    case 0x02: // float32_t
+    case 0x0B: // int32_t
+      return k32bit;
+    case 0x04: // int16_t
+    case 0x05: // uint16_t
+      return k16bit;
+    case 0x03: // int8_t   (char)
+    case 0x06: // int8_t   (signed char)
+    case 0x07: // uint8_t  (unsigned char)
+      return k8bit;
+    default:
+      return kUndef;
+  }
+}
+
+//_____________________________________________________________________________
+CodaDecoder::BankInfo::EIntFloat CodaDecoder::BankInfo::GetFloat() const
+{
+  switch( dtyp_ ) {
+    case 0x02: // float32_t (float)
+    case 0x08: // float64_t (double)
+      return kFloat;
+    default:
+      return kInteger;
+  }
+}
+
+//_____________________________________________________________________________
+CodaDecoder::BankInfo::ESigned CodaDecoder::BankInfo::GetSigned() const
+{
+  switch( dtyp_ ) {
+    case 0x02: // float32_t
+    case 0x04: // int16_t
+    case 0x06: // int8_t   (signed char)
+    case 0x08: // float64_t (double)
+    case 0x09: // int64_t
+    case 0x0B: // int32_t
+      return kSigned;
+    case 0x01: // uint32_t
+    case 0x05: // uint16_t
+    case 0x07: // uint8_t  (unsigned char)
+    case 0x0A: // uint64_t
+      return kUnsigned;
+    case 0x00: // 32-bit unknown
+    case 0x03: // int8_t   (char)
+    default:
+      return kUnknown;
+  }
+}
+
+
+//_____________________________________________________________________________
 Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
 {
   // Decode DAQ configuration event. This is usually a dump of several
@@ -436,39 +623,38 @@ Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
   const char* const here = "CodaDecoder::daqConfigDecode";
 
   if( !evbuf )
-    return -1;
+    return HED_FATAL;
   auto* cfg = DAQInfoExtra::GetFrom(fExtra);
   if( !cfg )
-    return -2;
+    return HED_ERR;
   size_t nbefore = cfg->strings.size();
 
 #define CFGEVT1 Decoder::DAQCONFIG_FILE1
 #define CFGEVT2 Decoder::DAQCONFIG_FILE2
-  const auto* p = evbuf;
-  ++p;
-  if( (bank_tag != CFGEVT1 && bank_tag != CFGEVT2) ||
-      data_type != 0x10 ) {                      // Data type == 0x10 (Bank)
-    Error(here, "Invalid bank tag word %#x in event type %u", *p, event_type);
-    return -3;
+  assert(bank_tag == CFGEVT1 || bank_tag == CFGEVT2); // else bug in LoadEvent
+  if( (bank_tag != CFGEVT1 && bank_tag != CFGEVT2) ) {
+    Error(here, "Invalid bank tag word %#x in event type %u",
+          *(evbuf + 1), event_type);
+    return HED_ERR;
   }
-  ++p;
-  while( p - evbuf < event_length ) {
-    size_t len = *p;   // Bank length in 32-bit words excluding length word
-    if( len == 0 || p + len + 1 > evbuf + event_length ) {
-      Error(here, "Invalid length %lu in event type %u", len, event_type);
-      return -4;
+  UInt_t pos = 0;
+  while( pos < event_length ) {
+    auto bankinfo = GetBank(evbuf, pos, event_length);
+    if( bankinfo.status_ != BankInfo::kOK ) {
+      Error( here, "Bank decoding error %s", bankinfo.Errtxt());
+      return HED_ERR;
     }
-    ++p;
-    unsigned int dtyp = (*p & 0x3F00) >> 8;
-    if( dtyp == 0x03 ) {                         // Data type == 0x03 (char)
-      size_t pad = (*p & 0xC000) >> 14;          // Padding bytes
-      const auto* c = reinterpret_cast<const char*>(p + 1);
-      cfg->strings.emplace_back(c, c + 4 * (len - 1) - pad);
+    pos = bankinfo.pos_;
+    auto len = bankinfo.len_;
+    assert(pos + len <= event_length);
+    if( bankinfo.GetDataSize() == BankInfo::k8bit ) {
+      const auto* c = reinterpret_cast<const char*>(evbuf + pos);
+      cfg->strings.emplace_back(c, c + 4 * bankinfo.len_ - bankinfo.npad_);
     } else {
-      Warning(here, "Unsupported data segment type %u in event type %u",
-              dtyp, event_type);
+      Warning(here, "Unsupported data type %#x in event type %u",
+              bankinfo.dtyp_, event_type);
     }
-    p += len;
+    pos += bankinfo.len_;
   }
   // Parse first string to key/value pairs
   const size_t iparse = 0;
