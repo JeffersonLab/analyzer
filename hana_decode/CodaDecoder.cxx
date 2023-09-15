@@ -650,12 +650,12 @@ Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
     assert(pos + len <= event_length);
     if( bankinfo.GetDataSize() == BankInfo::k8bit ) {
       const auto* c = reinterpret_cast<const char*>(evbuf + pos);
-      cfg->strings.emplace_back(c, c + 4 * bankinfo.len_ - bankinfo.npad_);
+      cfg->strings.emplace_back(c, c + 4 * len - bankinfo.npad_);
     } else {
       Warning(here, "Unsupported data type %#x in event type %u",
               bankinfo.dtyp_, event_type);
     }
-    pos += bankinfo.len_;
+    pos += len;
   }
   // Parse first string to key/value pairs
   const size_t iparse = 0;

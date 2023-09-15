@@ -243,6 +243,7 @@ UInt_t Caen1190Module::LoadBank( THaSlotData* sldat, const UInt_t* evbuffer,
   const char* const here = "LoadBank";
 
   // Note: Clear() has been called at this point
+  assert(evtblk.empty());
 
   const UInt_t MINLEN = 10;
   if( len < MINLEN ) {
@@ -257,9 +258,9 @@ UInt_t Caen1190Module::LoadBank( THaSlotData* sldat, const UInt_t* evbuffer,
   // so we have to discover it from the data.
   evtblk.reserve(16);
   UInt_t cur = pos;
-  UInt_t evtnum;
+  UInt_t evtnum = 0;
   Long64_t ihdr;
-  Long64_t itrl;
+  Long64_t itrl = 0;
   while( cur < pos+len &&
          (ihdr = Find1190Word(evbuffer, cur, len+pos-cur,
                               kGlobalHeader, fSlot)) != -1 ) {
