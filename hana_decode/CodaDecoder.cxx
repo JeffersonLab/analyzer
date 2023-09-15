@@ -383,7 +383,8 @@ Int_t CodaDecoder::LoadTrigBankInfo( UInt_t i )
     evt_time &= 0x0000FFFFFFFFFFFF;
   }
   if( tbank.withTriggerBits() )
-    trigger_bits = tbank.TSROC[2 + 3 * i]; // trigger bits
+    // Trigger bits. Only the lower 6 bits seem to contain the actual bits
+    trigger_bits = tbank.TSROC[2 + 3 * i] & 0x3F;
 
   return 0;
 }
