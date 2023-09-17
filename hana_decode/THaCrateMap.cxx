@@ -557,8 +557,8 @@ int THaCrateMap::init(const string& the_map)
   SetBankInfo();
 
   if ( !found_tscrate ) {
-    cout << "THaCrateMap::WARNING:  Did not find TSROC.  Using default " << fTSROC << endl;
-//    cout << "THaCrateMap:: It may be ok for SBS, though."<<endl;
+    cout << "THaCrateMap: WARNING:  Did not find TSROC.  Using default " << fTSROC    << endl
+         << " If this is incorrect, TS info (trigger bits etc.) will be unavailable." << endl;
   }
 
   return CM_OK;
