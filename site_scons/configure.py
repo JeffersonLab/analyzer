@@ -164,8 +164,8 @@ def FindEVIO(env, build_it = True, fail_if_missing = True):
     elif build_it:
         print ("No external EVIO environment configured !!!")
         print ("Using local installation ... ")
-        evio_version = '5.2'
-        evio_revision = 'hallac-evio-%s' % evio_version
+        evio_version = '5.3'
+        evio_revision = 'v%s' % evio_version
         evio_tarfile = evio_revision + ".tar.gz"
         evio_local = os.path.join(env.Dir('.').abspath, 'evio')
         evio_unpack_dir = os.path.join(evio_local,evio_revision)
@@ -178,7 +178,7 @@ def FindEVIO(env, build_it = True, fail_if_missing = True):
                  or not os.path.exists(evio_tarpath):
             # If needed, download EVIO archive
             if not os.path.exists(evio_tarpath):
-                evio_url = 'https://github.com/JeffersonLab/hallac_evio/archive/%s' % evio_tarfile
+                evio_url = 'https://github.com/JeffersonLab/evio/archive/%s' % evio_tarfile
                 print('Dowloading EVIO tarball %s' % evio_url)
                 urlhandle = urllib2.urlopen(evio_url)
                 with open(evio_tarpath, 'wb') as out_file:
