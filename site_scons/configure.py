@@ -81,22 +81,22 @@ def FindROOT(env, need_glibs = True):
             env.Replace(CXX = os.fsdecode(subprocess.check_output(cmd, shell=True).rstrip()))  # @UndefinedVariable
             cmd = root_config + ' --version'
             env.Replace(ROOTVERS = os.fsdecode(subprocess.check_output(cmd, shell=True).rstrip()))  # @UndefinedVariable
-            print ('CXX value Version 3 = ', env['CXX'])
-            print ('ROOTVERS value Version 3 = ', env['ROOTVERS'])
+            #print ('CXX = ', env['CXX'])
+            print ('ROOTVERS = ', env['ROOTVERS'])
         elif (2, 7) <= sys.version_info < (3, 0):
             cmd = root_config + ' --cxx'
             env.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
             cmd = root_config + ' --version'
             env.Replace(ROOTVERS = subprocess.check_output(cmd, shell=True).rstrip())
-            print ('CXX value Version 2 = ', env['CXX'])
-            print ('ROOTVERS value Version 2 = ', env['ROOTVERS'])
+            #print ('CXX = ', env['CXX'])
+            print ('ROOTVERS = ', env['ROOTVERS'])
         elif sys.version_info < (2, 7):
             env.Replace(CXX = subprocess.Popen([root_config, '--cxx'],
                 stdout=subprocess.PIPE).communicate()[0].rstrip())
             env.Replace(ROOTVERS = subprocess.Popen([root_config,
                 '--version'], stdout=subprocess.PIPE).communicate()[0].rstrip())
-            print ('CXX value Version 1 = ', env['CXX'])
-            print ('ROOTVERS value Version 1 = ', env['ROOTVERS'])
+            #print ('CXX = ', env['CXX'])
+            print ('ROOTVERS = ', env['ROOTVERS'])
         if env['PLATFORM'] == 'darwin':
             try:
                 env.Replace(LINKFLAGS = env['LINKFLAGS'].remove('-pthread'))

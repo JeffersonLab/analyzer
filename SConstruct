@@ -8,23 +8,18 @@ import glob
 import sys
 
 EnsureSConsVersion(2,3,0)
-
 baseenv = Environment(ENV = os.environ,tools=["default","disttar","symlink","rootcint"],
                       toolpath=['site_scons'])
 
-sys.path.insert(0,'./site_scons')
-import configure
-import podd_util
-
-# baseenv.Append(verbose = 5)
+#baseenv.Append(verbose = 5)
 
 ####### Hall A Build Environment #############
 baseenv.Append(MAIN_DIR = Dir('.').abspath)
 baseenv.Append(HA_DIR = baseenv.subst('$MAIN_DIR'))
-baseenv.Append(HA_Podd = baseenv.subst('$HA_DIR')+'/Podd')
-baseenv.Append(HA_HallA = baseenv.subst('$HA_DIR')+'/HallA')
-baseenv.Append(HA_DC = baseenv.subst('$HA_DIR')+'/hana_decode')
-baseenv.Append(HA_DB = baseenv.subst('$HA_DIR')+'/Database')
+baseenv.Append(HA_Podd = os.path.join(baseenv.subst('$HA_DIR'),'Podd'))
+baseenv.Append(HA_HallA = os.path.join(baseenv.subst('$HA_DIR'),'HallA'))
+baseenv.Append(HA_DC = os.path.join(baseenv.subst('$HA_DIR'),'hana_decode'))
+baseenv.Append(HA_DB = os.path.join(baseenv.subst('$HA_DIR'),'Database'))
 baseenv.Append(MAJORVERSION = '1')
 baseenv.Append(MINORVERSION = '7')
 baseenv.Append(PATCH = '6')
@@ -43,12 +38,18 @@ baseenv.Append(VERCODE = ivercode)
 baseenv.Append(CPPPATH=[baseenv.subst('$HA_DIR'),baseenv.subst('$HA_HallA'),
                         baseenv.subst('$HA_Podd'),baseenv.subst('$HA_DC'),
                         baseenv.subst('$HA_DB')])
+
+# Installation setup
 install_prefix = os.getenv('SCONS_INSTALL_PREFIX')
 if not install_prefix:
     install_prefix = os.path.join(os.getenv('HOME'),'.local')
 baseenv.Append(INSTALLDIR = install_prefix)
 print('Will use INSTALLDIR = "%s"' % baseenv.subst('$INSTALLDIR'))
 baseenv.Alias('install',baseenv.subst('$INSTALLDIR'))
+
+sys.path.insert(0,os.path.join(baseenv.subst('$HA_DIR'),'site_scons'))
+import configure
+import podd_util
 
 # Default RPATH handling like CMake's default: always set in build location,
 #    delete when installing
