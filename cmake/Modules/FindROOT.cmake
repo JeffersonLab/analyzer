@@ -257,9 +257,9 @@ function(build_root_dictionary dictionary)
       ARGS
         ${ROOTCLING}
         -f ${dictionary}Dict.cxx
-        -s=${libroot}
-        -rmf=${libroot}.rootmap
-        -rml=${libroot}${CMAKE_SHARED_LIBRARY_SUFFIX}
+        -s ${libroot}
+        -rmf ${libroot}.rootmap
+        -rml ${libroot}${CMAKE_SHARED_LIBRARY_SUFFIX}
         ${RGD_OPTIONS}
         INCDIRS "${incdirs}"
         DEFINES "${defines}"
