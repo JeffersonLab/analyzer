@@ -122,6 +122,8 @@ baseenv.Append(LIBPATH=[baseenv.subst('$HA_HallA'),baseenv.subst('$HA_Podd'),
 baseenv.Prepend(LIBS=['HallA','Podd','dc','PoddDB'])
 baseenv.Append(RPATH = [baseenv.subst('$HA_HallA'),baseenv.subst('$HA_Podd'),
                         baseenv.subst('$HA_DC'),baseenv.subst('$HA_DB')])
+# macOS
+baseenv.Append(LINKFLAGS = baseenv.subst('$LINKVERFLAG'))
 
 SConscript(dirs = ['Podd', 'HallA', 'hana_decode', 'Database', 'apps'],
            name='SConscript.py',exports='baseenv')
