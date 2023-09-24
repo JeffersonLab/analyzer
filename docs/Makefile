@@ -11,7 +11,8 @@ doxygen: Doxyfile ROOT.tag
 	doxygen
 
 ROOT.tag:
-	wget https://root.cern.ch/doc/master/ROOT.tag
+	wget https://root.cern.ch/doc/master/ROOT.tag.gz
+	gunzip ROOT.tag.gz
 
 clean:
 	rm -r ROOT.tag $(DOXYGEN_OUTPUT_DIRECTORY)/html
