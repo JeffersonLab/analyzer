@@ -330,7 +330,7 @@ Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
 Int_t IsDBkey( const string& line, const char* key, string& text )
 {
   // Check if 'line' is of the form "key = value" and, if so, whether the key
-  // equals 'key'. Keys are not case-sensitive.
+  // equals 'key'. Keys are case-sensitive.
   // - If there is no '=', then return 0.
   // - If there is a '=', but the left-hand side doesn't match 'key',
   //   then return -1.
@@ -356,7 +356,8 @@ Int_t IsDBkey( const string& line, const char* key, string& text )
   const char* p = eq - 1;
   assert(p >= ln);
   while( *p == ' ' || *p == '\t' ) --p; // find_last_not_of(" \t")
-  if( strncmp(ln, key, p - ln + 1) != 0 ) return -1;
+  size_t keylen = p - ln + 1;
+  if( keylen != strlen(key) || strncmp(ln, key, keylen) != 0 ) return -1;
   // Key matches. Now extract the value, trimming leading whitespace.
   ln = eq + 1;
   assert(!*ln || *(ln + strlen(ln) - 1) != ' '); // Trailing space already trimmed
