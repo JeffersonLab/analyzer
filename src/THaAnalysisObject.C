@@ -970,8 +970,8 @@ static Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
 //_____________________________________________________________________________
 static Int_t IsDBkey( const string& line, const char* key, string& text )
 {
-  // Check if 'line' is of the form "key = value" and, if so, whether the key 
-  // equals 'key'. Keys are not case sensitive.
+  // Check if 'line' is of the form "key = value" and, if so, whether the key
+  // equals 'key'. Keys are case sensitive.
   // - If there is no '=', then return 0.
   // - If there is a '=', but the left-hand side doesn't match 'key',
   //   then return -1. 
@@ -987,18 +987,22 @@ static Int_t IsDBkey( const string& line, const char* key, string& text )
   const char* ln = line.c_str();
   const char* eq = strchr(ln, '=');
   if( !eq ) return 0;
+  // Disregard "==", "!=", "<=", ">="
+  if( (eq > ln && (*(eq-1) == '!' || *(eq-1) == '<' || *(eq-1) == '>')) || *(eq+1) == '=' )
+    return 0;
   // Extract the key
-  while( *ln == ' ' ) ++ln; // find_first_not_of(" ")
+  while( *ln == ' ' || *ln == '\t' ) ++ln; // find_first_not_of(" \t")
   assert( ln <= eq );
   if( ln == eq ) return -1;
   const char* p = eq-1;
   assert( p >= ln );
-  while( *p == ' ' ) --p; // find_last_not_of(" ")
-  if( strncmp(ln, key, p-ln+1) ) return -1;
+  while( *p == ' ' || *p == '\t' ) --p; // find_last_not_of(" \t")
+  size_t keylen = p-ln+1;
+  if( keylen != strlen(key) || strncmp(ln, key, keylen) != 0 ) return -1;
   // Key matches. Now extract the value, trimming leading whitespace.
   ln = eq+1;
-  assert( !*ln || *(ln+strlen(ln)-1) != ' ' ); // Trailing space already trimmed
-  while( *ln == ' ' ) ++ln;
+  assert( !*ln || (*(ln+strlen(ln)-1) != ' ' && *(ln+strlen(ln)-1) != '\t') ); // Trailing space already trimmed
+  while( *ln == ' ' || *ln == '\t' ) ++ln;
   text = ln;
 
   return 1;
@@ -1925,4 +1929,3 @@ void THaAnalysisObject::PrintObjects( Option_t* opt )
 
 //_____________________________________________________________________________
 ClassImp(THaAnalysisObject)
-
