@@ -33,7 +33,7 @@ ifeq ($(MACHINE),Darwin)
 endif
 
 ifndef PLATFORM
-PLATFORM = bin
+export PLATFORM = bin
 endif
 
 ROOTCFLAGS   := $(shell root-config --cflags)
@@ -346,7 +346,7 @@ endif
 
 $(HA_DICT).C: $(RCHDR) $(HA_LINKDEF)
 	@echo "Generating dictionary $(HA_DICT)..."
-	$(ROOTBIN)/rootcint -f $@ -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
+	$(ROOTBIN)/rootcint -f $@ -rml HallA -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 
 
 #---------- Main program -------------------------------------------
@@ -357,7 +357,7 @@ analyzer:	src/main.o $(PODDLIBS)
 clean:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
 		rm -f *.$(SOSUF) *.{a,o,os} *.$(SOSUF).* site_scons/*.pyc *~
-		rm -f $(PROGRAMS) $(HA_DICT).* $(HA_DICT)_rdict.pcm THaDecDict_rdict.pcm
+		rm -f $(PROGRAMS) $(HA_DICT).* $(HA_DICT)_rdict.pcm THaDecDict_rdict.pcm HallA.rootmap
 		cd src; rm -f ha_compiledata.h *.{o,os} *~
 
 realclean:	clean
@@ -381,12 +381,12 @@ endif
 ifneq ($(ANALYZER),$(shell pwd))
 		@echo "Installing in $(ANALYZER) ..."
 		@mkdir -p $(ANALYZER)/{$(PLATFORM),include,src/src,docs,DB,examples,SDK}
-		cp -pu $(SRC) $(HDR) $(HA_LINKDEF) $(ANALYZER)/src/src
-		cp -pu $(HDR) $(ANALYZER)/include
+		cp -p $(SRC) $(HDR) $(HA_LINKDEF) $(ANALYZER)/src/src
+		cp -p $(HDR) $(ANALYZER)/include
 		tar cf - $(shell find examples docs SDK -type f | grep -v '*~') | \
 			tar xf - -C $(ANALYZER)
-		cp -pu Makefile ChangeLog $(ANALYZER)/src
-		cp -pru DB $(ANALYZER)/
+		cp -p Makefile $(ANALYZER)/src
+		cp -pr DB $(ANALYZER)/
 		@echo "Installing in $(ANALYZER)/$(PLATFORM) ..."
 		for lib in $(filter-out $(LIBEVIO), $(PODDLIBS)); do \
 			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib); \
@@ -395,6 +395,7 @@ ifneq ($(ANALYZER),$(shell pwd))
 			cp -af $$lib $$lib.$(SOVERSION) $$lib.$(VERSION) \
 			   $(ANALYZER)/$(PLATFORM) 2>/dev/null; \
 		done
+		cp -p HallA.rootmap $(ANALYZER)/$(PLATFORM)
 		rm -f $(ANALYZER)/$(PLATFORM)/libevio.$(SOSUF)
 ifdef LIBEVIO
 		cp -af $(LIBEVIO) $(ANALYZER)/$(PLATFORM)
@@ -435,4 +436,3 @@ endif
 	@rm -f $*.d.tmp
 
 -include $(DEP)
-

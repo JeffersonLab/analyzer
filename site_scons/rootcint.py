@@ -10,7 +10,9 @@ def generate(env):
     env.RootCint(dictionary,headers[,PCMNAME=pcmfilename])
 
     Generate ROOT dictionary source file "dictionary" from list of class
-    headers "headers"
+    headers "headers". The last item in "headers" must be the LinkDef file.
+    Optional PCMNAME is the name for the pcm and rootmap files, including
+    the leading "lib".
     '''
     bld = Builder(action = Action(rootcint_builder,rootcint_print),
                   emitter = rootcint_emitter)
@@ -33,9 +35,11 @@ def rootcint_emitter(target, source, env):
     if int(env.get('ROOTVERS','0')[0]) >= 6:
         if env['PCMNAME']:
             target.append(env['PCMNAME']+'_rdict.pcm')
+            target.append(env['PCMNAME']+'.rootmap')
         else:
             # Default PCM file name that rootcling generates without -s <pcmname>
             target.append(re.sub(r'\.C\Z','_rdict.pcm',str(target[0])))
+            target.append(re.sub(r'\.C\Z','.rootmap',str(target[0])))
     return target, source
 
 def rootcint_builder(target, source, env):
@@ -55,15 +59,20 @@ def rootcint_builder(target, source, env):
     for f in source:
         headers += str(f) + " "
     if int(env.get('ROOTVERS','6')[0]) >= 6:
-        command = "rootcling -f %s " % dictname
+        command = "rootcling -f %s" % dictname
+        # I know it's dumb to add the _rdict.pcm string in the emitter, only
+        # to remove it again here. But in this way, we can let SCons add
+        # the correct relative path in front this file name instead of
+        # having to add it manually to PCMNAME in the RootCint call.
+        pcmname = re.sub(r'_rdict\.pcm\Z','',str(target[1]))
+        if int(env.get('verbose',0)) > 4:
+            print('rootcint_builder: target = ', target)
+            print('rootcint_builder: pcmname = %s' % pcmname)
         if env['PCMNAME']:
-            # I know it's dumb to add the _rdict.pcm string in the emitter, only
-            # to remove it again here. But in this way, we can let SCons add
-            # the correct relative path in front this file name instead of
-            # having to add it manually to PCMNAME in the RootCint call.
-            pcmname = re.sub(r'_rdict\.pcm\Z','',str(target[1]))
-            command += "-s %s " % pcmname
-        command += "%s %s" % (cpppath,headers)
+            command += " -s %s" % pcmname
+        command += " -rmf " + str(target[2])
+        command += " -rml %s%s " % (os.path.basename(pcmname), env.subst('$SHLIBSUFFIX'))
+        command += " %s %s" % (cpppath,headers)
     else:
         command = "rootcint -f %s -c %s %s" % (dictname,cpppath,headers)
     if int(env.get('VERBOSE','0')) > 0:

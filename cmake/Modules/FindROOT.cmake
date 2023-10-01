@@ -251,23 +251,29 @@ function(build_root_dictionary dictionary)
     else()
       set(pcmname ${dictionary})
     endif()
+    set(libroot lib${pcmname})
     add_custom_command(
-      OUTPUT ${dictionary}Dict.C lib${pcmname}_rdict.pcm
+      OUTPUT ${dictionary}Dict.C ${libroot}_rdict.pcm ${libroot}.rootmap
       COMMAND ${MK_ROOTDICT}
       ARGS
-	${ROOTCLING}
-	-f ${dictionary}Dict.C
-	-s lib${pcmname}
-	${RGD_OPTIONS}
-	INCDIRS "${incdirs}"
-	DEFINES "${defines}"
-	${RGD_UNPARSED_ARGUMENTS}
-	${RGD_LINKDEF}
-	VERBATIM
-	DEPENDS ${RGD_UNPARSED_ARGUMENTS} ${RGD_LINKDEF}
-      )
-    set(PCM_FILE ${CMAKE_CURRENT_BINARY_DIR}/lib${pcmname}_rdict.pcm)
-    install(FILES ${PCM_FILE} DESTINATION ${CMAKE_INSTALL_LIBDIR})
+      ${ROOTCLING}
+      -f ${dictionary}Dict.C
+      -s ${libroot}
+      -rmf ${libroot}.rootmap
+      -rml ${libroot}${CMAKE_SHARED_LIBRARY_SUFFIX}
+      ${RGD_OPTIONS}
+      INCDIRS "${incdirs}"
+      DEFINES "${defines}"
+      ${RGD_UNPARSED_ARGUMENTS}
+      ${RGD_LINKDEF}
+      VERBATIM
+      DEPENDS ${RGD_UNPARSED_ARGUMENTS} ${RGD_LINKDEF}
+    )
+    install(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/${libroot}_rdict.pcm
+      ${CMAKE_CURRENT_BINARY_DIR}/${libroot}.rootmap
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
   else()
     # ROOT5
     add_custom_command(
@@ -275,7 +281,7 @@ function(build_root_dictionary dictionary)
       COMMAND ${MK_ROOTDICT}
       ARGS
 	${ROOTCINT}
-	-f ${dictionary}Dict.C
+	-v2 -f ${dictionary}Dict.C
 	-c ${RGD_OPTIONS}
 	INCDIRS "${incdirs}"
 	DEFINES "${defines}"

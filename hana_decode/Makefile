@@ -282,9 +282,10 @@ endif
 
 THaDecDict.C: $(RCHEAD) haDecode_LinkDef.h
 	@echo "Generating Decoder Dictionary..."
-	$(ROOTBIN)/rootcint -f THaDecDict.C -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
+	$(ROOTBIN)/rootcint -f THaDecDict.C -rml dc -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 ifndef STANDALONE
-	if [ -r THaDecDict_rdict.pcm ]; then cp -p THaDecDict_rdict.pcm  $(LIBDIR); fi
+	if [ -r THaDecDict_rdict.pcm ]; then cp -p THaDecDict_rdict.pcm $(LIBDIR); fi
+	if [ -r rc.rootmap ]; then cp -p rc.rootmap $(LIBDIR); fi
 endif
 
 # create a tar file of ./$(VERS)/* (all code)
@@ -304,15 +305,16 @@ version:
 	tar cvf $(VERS).tar ./$(VERS)
 
 clean:
-	rm -f *.{a,out,o,os} *.$(SOSUF).* core *~ THaDecDict* $(VERS).tar $(PROGS)
+	rm -f *.{a,out,o,os} *.$(SOSUF) *.$(SOSUF).* core *~ THaDecDict* $(VERS).tar $(PROGS) dc.rootmap
 
 realclean:  clean
 	rm -f *.d
 
 install:	all
 	mkdir -p $(ANALYZER)/src/hana_decode $(ANALYZER)/include
-	cp -pu $(SRC) $(HEAD) haDecode_LinkDef.h Makefile $(ANALYZER)/src/hana_decode
-	cp -pu $(HEAD) $(ANALYZER)/include
+	cp -p $(SRC) $(HEAD) haDecode_LinkDef.h Makefile $(ANALYZER)/src/hana_decode
+	cp -p $(HEAD) $(ANALYZER)/include
+	cp -p dc.rootmap $(ANALYZER)/$(PLATFORM)
 
 .PHONY: all static evio tarfile version clean realclean install
 
