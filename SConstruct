@@ -110,6 +110,8 @@ baseenv.Append(LIBPATH=['$HA_SRC','$HA_DC'])
 baseenv.Prepend(LIBS=['HallA','dc'])
 baseenv.Prepend(LIBPATH=['$HA_DIR'])
 baseenv.Append(RPATH = ['$HA_DIR'])
+# macOS
+baseenv.Append(LINKFLAGS = baseenv.subst('$LINKVERFLAG'))
 
 SConscript(dirs = ['src', 'hana_decode','.'],
            name='SConscript.py',exports='baseenv')
