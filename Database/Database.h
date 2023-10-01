@@ -37,9 +37,13 @@ std::vector<std::string> GetDBFileList( const char* name, const TDatime& date,
 FILE*    OpenDBFile( const char* name, const TDatime& date, const char* here = "Podd::OpenDBFile()",
                      const char* filemode = "r", int debug_flag = 0 );
 FILE*    OpenDBFile( const char* name, const TDatime& date, const char* here,
-                     const char* filemode, int debug_flag, const char*& openpath );
+                     const char* filemode, int debug_flag, std::string& openpath );
 Int_t    ReadDBline( FILE* file, char* buf, Int_t bufsiz, std::string& line );
 Bool_t   DBDatesDiffer( const TDatime& a, const TDatime& b );
+
+//FIXME: BCI: To be removed in next version. Do not use.
+FILE*    OpenDBFile( const char* name, const TDatime& date, const char* here,
+                     const char* filemode, int debug_flag, const char*& openpath );
 
 // Access functions for reading key/value pairs from database files
 template<class T> // instantiations available for all supported types (see VarType.h)

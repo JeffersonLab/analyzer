@@ -207,45 +207,70 @@ vector<string> GetDBFileList( const char* name, const TDatime& date,
 
 //_____________________________________________________________________________
 FILE* OpenDBFile( const char* name, const TDatime& date, const char* here,
-                  const char* filemode, int debug_flag, const char*& openpath )
+                  const char* filemode, int debug_flag, string& openpath )
 {
   // Open database file and return a pointer to the C-style file descriptor.
+  // openpath contains the absolute path to the opened file.
 
   // Ensure input is sane
+  openpath.clear();
   if( !name || !*name )
     return nullptr;
   if( !here )
     here = "";
   if( !filemode )
     filemode = "r";
-  openpath = nullptr;
+
+  const bool verbose = (debug_flag > 0);
+  const bool detailed = (debug_flag > 1);
 
   // Get list of database file candidates and try to open them in turn
   FILE* fi = nullptr;
   vector<string> fnames(GetDBFileList(name, date, here));
-  if( !fnames.empty() ) {
-    auto it = fnames.begin();
-    do {
-      if( debug_flag > 1 )
-        cout << "Info in <" << here << ">: Opening database file " << *it;
-      // Open the database file
-      fi = fopen((*it).c_str(), filemode);
+  for( auto& fpath : fnames ) {
+    if( detailed )
+      cout << "Info in <" << here << ">: Opening database file " << fpath;
 
-      if( debug_flag > 1 )
-        if( !fi ) cout << " ... failed" << endl;
-        else cout << " ... ok" << endl;
-      else if( debug_flag > 0 && fi )
-        cout << "<" << here << ">: Opened database file " << *it << endl;
-      // continue until we succeed
-    } while( !fi && ++it != fnames.end() );
-    if( fi )
-      openpath = (*it).c_str();
+    fi = fopen(fpath.c_str(), filemode);
+    if( fi ) {
+      if( detailed )
+	cout << " ... success" << endl;
+      else if( verbose )
+	::Info(here, "Opened database file %s", fpath.c_str());
+
+      if( gSystem->IsAbsoluteFileName(fpath.c_str()) )
+	openpath = std::move(fpath);
+      else {
+	const char* wd = gSystem->WorkingDirectory();
+	if( wd && *wd ) {
+	  openpath = wd;
+	  openpath += "/";
+	}
+	openpath += fpath;
+      }
+      break;
+    }
+    else if( detailed )
+      cout << " ... failed" << endl;
+
+    // continue until we succeed
   }
-  if( !fi && debug_flag > 0 ) {
+  if( !fi && verbose ) {
     ::Error(here, "Cannot open database file db_%s%sdat", name,
             (name[strlen(name) - 1] == '.' ? "" : "."));
   }
+  return fi;
+}
 
+//_____________________________________________________________________________
+// FIXME: Poorly designed. To be removed. Do not use.
+FILE* OpenDBFile( const char* name, const TDatime& date, const char* here,
+		  const char* filemode, int debug_flag, const char*& openpath )
+{
+  string temp;
+  FILE* fi = OpenDBFile(name, date, here, filemode, debug_flag, temp);
+  // Caller must free() openpath.
+  openpath = fi ? strdup(temp.c_str()) : nullptr;
   return fi;
 }
 
@@ -253,8 +278,8 @@ FILE* OpenDBFile( const char* name, const TDatime& date, const char* here,
 FILE* OpenDBFile( const char* name, const TDatime& date, const char* here,
                   const char* filemode, int debug_flag )
 {
-  const char* openpath = nullptr;
-  return OpenDBFile(name, date, here, filemode, debug_flag, openpath);
+  string dummy;
+  return OpenDBFile(name, date, here, filemode, debug_flag, dummy);
 }
 
 //---------- Database utility functions ---------------------------------------
