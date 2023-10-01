@@ -360,7 +360,8 @@ Int_t IsDBkey( const string& line, const char* key, string& text )
   if( keylen != strlen(key) || strncmp(ln, key, keylen) != 0 ) return -1;
   // Key matches. Now extract the value, trimming leading whitespace.
   ln = eq + 1;
-  assert(!*ln || *(ln + strlen(ln) - 1) != ' '); // Trailing space already trimmed
+  assert(!*ln || (*(ln + strlen(ln) - 1) != ' ' &&
+                  *(ln + strlen(ln) - 1) != '\t')); // Trailing space already trimmed
   while( *ln == ' ' || *ln == '\t' ) ++ln;
   text = ln;
 
