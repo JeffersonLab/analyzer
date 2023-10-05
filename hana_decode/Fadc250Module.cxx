@@ -1075,8 +1075,7 @@ void Fadc250Module::UnsupportedType( UInt_t pdat, uint32_t data_type_id )
   // Data type descriptions
   static const vector<string> what_text{ "UNDEFINED TYPE",
                                          "DATA NOT VALID",
-                                         "FILLER WORD",
-                                         "INCORRECT DECODING" };
+                                         "FILLER WORD" };
   // Lookup table data_type -> message number
   static const map<uint32_t, uint32_t> what_map = {
     // undefined type
@@ -1089,10 +1088,12 @@ void Fadc250Module::UnsupportedType( UInt_t pdat, uint32_t data_type_id )
     { 15, 2 }
   };
   auto idx = what_map.find(data_type_def);
+  assert( idx != what_map.end() );  // else logic error in Decode()
+  if( idx == what_map.end() )
+    return;
   // Message index. The last message means this function was called when
   // it shouldn't have been called, i.e. coding error in DecodeOneWord
-  size_t i = (idx == what_map.end()) ? what_text.size() - 1 : idx->second;
-  const string& what = what_text[i];
+  const string& what = what_text[idx->second];
   ostringstream str;
   str << "Fadc250Module::Decode:: " << what
       << " >> data = " << hex << pdat << dec
@@ -1100,7 +1101,7 @@ void Fadc250Module::UnsupportedType( UInt_t pdat, uint32_t data_type_id )
       << endl;
   if( fDebugFile )
     *fDebugFile << str.str();
-  if( idx == what_map.end() )
+  if( fDebug > 2 )
     cerr << str.str();
 #endif
 }
@@ -1178,7 +1179,10 @@ Int_t Fadc250Module::Decode( const UInt_t* pdat )
     case 13: // Undefined type
     case 14: // Data not valid
     case 15: // Filler Word, should be ignored
-      UnsupportedType(data, data_type_id);
+#ifdef WITH_DEBUG
+      if( fDebugFile || fDebug > 2 )
+        UnsupportedType(data, data_type_id);
+#endif
       break;
     default:
       throw logic_error("Fadc250Module: incorrect masking of data_type_def");
