@@ -18,6 +18,7 @@ using namespace std;
 
 //_____________________________________________________________________________
 // Helper function for debugging
+// FIXME: BCI: Make a virtual function. This encoding is specific to Fadc250Module
 static void PrintBlock( const uint32_t* codabuffer, uint32_t pos, uint32_t len )
 {
   size_t idx = pos;
