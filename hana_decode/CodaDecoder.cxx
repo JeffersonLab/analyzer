@@ -854,7 +854,7 @@ Int_t CodaDecoder::LoadFromMultiBlock()
   for( auto i : fSlotClear ) {
     auto* mod = crateslot[i]->GetModule();
     if( mod && mod->IsMultiBlockMode() )
-      crateslot[i]->clearEvent();
+      crateslot[i]->clearEvent();  // CHECKME: Do in loop below?
   }
 
   for( UInt_t i = 0; i < nroc; i++ ) {
@@ -867,7 +867,11 @@ Int_t CodaDecoder::LoadFromMultiBlock()
       auto* sd = crateslot[idx(roc, slot)].get();
       auto* mod = sd->GetModule();
       if( !mod )
-        continue;
+        continue;  // Probably shouldn't ever happen, but if it does, we don't want to crash
+
+      if( !mod->IsMultiBlockMode() )
+        continue;  // Keep non-multiblock modules untouched
+
       // for CODA3, cross-check the block size (found in trigger bank and, separately, in modules)
       if( fDataVersion > 2 ) {
         auto module_blksz = mod->GetBlockSize();
@@ -880,19 +884,13 @@ Int_t CodaDecoder::LoadFromMultiBlock()
                << "trigger bank = " << block_size << ", module = " << module_blksz
                << ". Ignoring module for this event."
                << endl;
-          continue;
+          continue;   // Don't process suspect modules. Bad things may happen.
         }
       }
-      if( mod->IsMultiBlockMode() ) {
-        sd->LoadNextEvBuffer();
-        // Presumes that all modules have the same global block size (see check above)
-        if( sd->BlockIsDone() )
-          fBlockIsDone = true;
-      }
-      // else {
-      // Not really sure what to do with a module that isn't in multi-block mode
-      // while others are ...
-      // }
+      sd->LoadNextEvBuffer();
+      // Presumes that all multiblock modules have the same global block size (see check above)
+      if( sd->BlockIsDone() )
+        fBlockIsDone = true;
     }
   }
   return HED_OK;
