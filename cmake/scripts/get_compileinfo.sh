@@ -18,8 +18,12 @@ date "+%d %b %Y"
 date "+%a, %d %b %Y %H:%M:%S %z"
 if [ -r /etc/os-release ]; then
   . /etc/os-release
-  IFS=" " read -ra namearr <<< $NAME
-  NAME=${namearr[0]}
+  if [ "$ID" = "rhel" ]; then
+    NAME="RHEL"
+  else
+    IFS=" " read -ra namearr <<< $NAME
+    NAME=${namearr[0]}
+  fi 
 else
   if [ "$(uname -s)" = "Darwin" ]; then
     NAME="macOS"
