@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 #----------------------------------------------------------------------------
 # Build utility programs by default
-option(${PROJECT_NAME_UC}_BUILD_UTILS "Build utility programs" ON)
+option(${PROJECT_NAME_UC}_BUILD_UTILS "Build utility programs" OFF)
 
 #----------------------------------------------------------------------------
 # analyzer executable

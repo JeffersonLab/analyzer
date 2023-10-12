@@ -12,7 +12,7 @@ endif()
 
 #----------------------------------------------------------------------------
 # Build options
-option(WITH_DEBUG "Enable support for detailed debug messages" ON)
+option(WITH_DEBUG "Enable additional/verbose debug messages" ON)
 option(PODD_SET_RPATH "Set RPATH on installed executables & libraries" ON)
 
 #----------------------------------------------------------------------------
