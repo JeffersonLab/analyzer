@@ -152,7 +152,7 @@ void THaDebugModule::Print( Option_t* opt ) const
 void THaDebugModule::PrintEvNum( const THaEvData& evdata ) const
 {
   // Print current event number
-  cout << "======>>>>>> Event " << (UInt_t) evdata.GetEvNum() << endl;
+  cout << "======>>>>>> Event " << evdata.GetEvNum() << endl;
 }
 
 //_____________________________________________________________________________

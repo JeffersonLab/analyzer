@@ -22,6 +22,7 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaEpics.h"
+#include "Helper.h"
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -30,6 +31,7 @@
 #endif
 
 using namespace std;
+using Podd::SINT;
 
 namespace Decoder {
 
@@ -98,7 +100,7 @@ Bool_t THaEpics::IsLoaded(const char* tag) const
 }
 
 //_____________________________________________________________________________
-Double_t THaEpics::GetData ( const char* tag, UInt_t event) const
+Double_t THaEpics::GetData( const char* tag, ULong64_t event ) const
 {
   const vector<EpicsChan> ep = GetChan(tag);
   UInt_t k = FindEvent(ep, event);
@@ -107,7 +109,7 @@ Double_t THaEpics::GetData ( const char* tag, UInt_t event) const
 }
 
 //_____________________________________________________________________________
-string THaEpics::GetString ( const char* tag, UInt_t event) const
+string THaEpics::GetString( const char* tag, ULong64_t event ) const
 {
   const vector<EpicsChan> ep = GetChan(tag);
   UInt_t k = FindEvent(ep, event);
@@ -116,7 +118,7 @@ string THaEpics::GetString ( const char* tag, UInt_t event) const
 }
 
 //_____________________________________________________________________________
-time_t THaEpics::GetTimeStamp( const char* tag, UInt_t event) const
+time_t THaEpics::GetTimeStamp( const char* tag, ULong64_t event ) const
 {
   const vector<EpicsChan> ep = GetChan(tag);
   UInt_t k = FindEvent(ep, event);
@@ -137,7 +139,7 @@ vector<EpicsChan> THaEpics::GetChan(const char *tag) const
 }
 
 //_____________________________________________________________________________
-UInt_t THaEpics::FindEvent( const vector<EpicsChan>& ep, UInt_t event )
+UInt_t THaEpics::FindEvent( const std::vector<EpicsChan>& ep, ULong64_t event )
 {
   // Return the index in the vector of Epics data 
   // nearest in event number to event 'event'.
@@ -145,9 +147,9 @@ UInt_t THaEpics::FindEvent( const vector<EpicsChan>& ep, UInt_t event )
     return kMaxUInt;
   UInt_t myidx = ep.size()-1;
   if (event == 0) return myidx;  // return last event 
-  Long64_t min = 9999999;
+  Long64_t min = kMaxLong64;
   for( size_t k = 0; k < ep.size(); k++ ) {
-    Long64_t diff = event - ep[k].GetEvNum();
+    Long64_t diff = SINT(event - ep[k].GetEvNum());
     if( diff < 0 ) diff = -diff;
     if( diff < min ) {
       min = diff;
@@ -158,7 +160,7 @@ UInt_t THaEpics::FindEvent( const vector<EpicsChan>& ep, UInt_t event )
 }
 
 //_____________________________________________________________________________
-int THaEpics::LoadData( const UInt_t* evbuffer, UInt_t event)
+Int_t THaEpics::LoadData( const UInt_t* evbuffer, ULong64_t event )
 { 
   // load data from the event buffer 'evbuffer' 
   // for event nearest 'evnum'.

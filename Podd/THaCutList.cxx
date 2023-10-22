@@ -608,7 +608,7 @@ void THaCutList::SetList( THaVarList* lst )
 }
 
 //______________________________________________________________________________
-UInt_t IntDigits( Int_t n )
+UInt_t IntDigits( Long64_t n )
 { 
   //Get number of printable digits of integer n.
   //Global utility function.

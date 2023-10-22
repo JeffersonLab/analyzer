@@ -44,8 +44,8 @@ public:
   virtual void   Close();
   virtual Int_t  Init( THaRunBase* run );
           Int_t  Init( THaRunBase& run )    { return Init( &run ); }
-  virtual Int_t  Process( THaRunBase* run=nullptr );
-          Int_t  Process( THaRunBase& run ) { return Process(&run); }
+  virtual Long64_t Process( THaRunBase* run = nullptr );
+          Long64_t Process( THaRunBase& run ) { return Process(&run); }
   virtual void   Print( Option_t* opt="" ) const;
 
   void           EnableBenchmarks( Bool_t b = true );
@@ -134,7 +134,7 @@ protected:
     Counter_t( Int_t _key, const char* _description )
       : key(_key), count(0), description(_description) {}
     Int_t       key;
-    UInt_t      count;
+    ULong64_t   count;
     const char* description;
   };
 
@@ -150,7 +150,7 @@ protected:
   Int_t          fWantCodaVers;    //Version of CODA assumed for file
   std::vector<Stage_t>   fStages;  //Parameters for analysis stages
   std::vector<Counter_t> fCounters;//Statistics counters
-  UInt_t         fNev;             //Number of events read during most recent replay //FIXME: make ULong64_t
+  ULong64_t      fNev;             //Number of events read during most recent replay
   UInt_t         fMarkInterval;    //Interval for printing event numbers
   Int_t          fCompress;        //Compression level for ROOT output file
   Int_t          fVerbose;         //Verbosity level
@@ -200,8 +200,8 @@ protected:
 
   // Support methods & data
   void           ClearCounters();
-  UInt_t         GetCount( Int_t which ) const;
-  UInt_t         Incr( Int_t which );
+  ULong64_t      GetCount( Int_t which ) const;
+  ULong64_t      Incr( Int_t which );
   virtual bool   EvalStage( int n );
   virtual void   InitCounters();
   virtual void   InitCuts();
@@ -236,13 +236,13 @@ private:
 };
 
 //---------------- inlines ----------------------------------------------------
-inline UInt_t THaAnalyzer::GetCount( Int_t which ) const
+inline ULong64_t THaAnalyzer::GetCount( Int_t which ) const
 {
   return fCounters[which].count;
 }
 
 //_____________________________________________________________________________
-inline UInt_t THaAnalyzer::Incr( Int_t which )
+inline ULong64_t THaAnalyzer::Incr( Int_t which )
 {
   return ++(fCounters[which].count);
 }

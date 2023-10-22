@@ -29,7 +29,7 @@ CodaRawDecoder::CodaRawDecoder()
         { "runnum",    "Run number",     kUInt,   0, &run_num },
         { "runtype",   "CODA run type",  kUInt,   0, &run_type },
         { "runtime",   "CODA run time",  kLong,   0, &fRunTime },
-        { "evnum",     "Event number",   kUInt,   0, &event_num },
+        { "evnum",     "Event number",   kULong,  0, &event_num },
         { "evtyp",     "Event type",     kUInt,   0, &event_type },
         { "evlen",     "Event length",   kUInt,   0, &event_length },
         { "evtime",    "Event time",     kULong,  0, &evt_time },

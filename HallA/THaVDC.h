@@ -109,7 +109,7 @@ protected:
   // Event data
   TClonesArray*  fLUpairs;  // Candidate pairs of lower/upper points
   Int_t    fNtracks;        // Number of tracks found in ConstructTracks
-  UInt_t   fEvNum;          // Event number from decoder (for diagnostics)
+  ULong64_t fEvNum;         // Event number from decoder (for diagnostics)
 
   // Geometry
   Double_t fVDCAngle;       // Angle from the VDC cs to TRANSPORT cs (rad)

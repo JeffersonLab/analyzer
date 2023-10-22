@@ -52,11 +52,11 @@ public:
   const   TDatime&     GetDate()        const { return fDate; }
           UInt_t       GetDataRequired() const { return fDataRequired; }
   virtual Int_t        GetDataVersion() const { return fDataVersion; }
-          UInt_t       GetNumAnalyzed() const { return fNumAnalyzed; }
+          ULong64_t    GetNumAnalyzed() const { return fNumAnalyzed; }
           UInt_t       GetNumber()      const { return fNumber; }
           UInt_t       GetType()        const { return fType; }
-          UInt_t       GetFirstEvent()  const { return fEvtRange[0]; }
-          UInt_t       GetLastEvent()   const { return fEvtRange[1]; }
+          ULong64_t    GetFirstEvent()  const { return fEvtRange[0]; }
+          ULong64_t    GetLastEvent()   const { return fEvtRange[1]; }
   THaRunParameters*    GetParameters()  const { return fParam.get(); }
   virtual Bool_t       HasInfo( UInt_t bits ) const;
   virtual Bool_t       HasInfoRead( UInt_t bits ) const;
@@ -67,9 +67,9 @@ public:
           void         SetDate( Long64_t tloc );
 	  void         SetDataRequired( UInt_t mask ); // mask is OR of EInfoType
   virtual Int_t        SetDataVersion( Int_t version );
-          void         SetFirstEvent( UInt_t n );
-          void         SetLastEvent(  UInt_t n );
-          void         SetEventRange( UInt_t first, UInt_t last );
+          void         SetFirstEvent( ULong64_t n );
+          void         SetLastEvent( ULong64_t n );
+          void         SetEventRange( ULong64_t first, ULong64_t last );
   virtual void         SetNumber( UInt_t number );
           void         SetRunParamClass( const char* classname );
   virtual void         SetType( UInt_t type );
@@ -92,9 +92,8 @@ protected:
   UInt_t        fType;          // Run type/mode/etc.
   //FIXME: support 64-bit time
   TDatime       fDate;          // Run date and time
-  //FIXME event counts may overflow, make ULong64_t
-  UInt_t        fEvtRange[2];   // Event range to analyze
-  UInt_t        fNumAnalyzed;   // Number of physics events actually analyzed
+  ULong64_t     fEvtRange[2];   // Event range to analyze
+  ULong64_t     fNumAnalyzed;   // Number of physics events actually analyzed
   Bool_t        fDBRead;        // True if database successfully read.
   Bool_t        fIsInit;        // True if run successfully initialized
   Bool_t        fOpened;        // True if opened successfully
@@ -110,7 +109,8 @@ protected:
   virtual Int_t ReadDatabase();
   virtual Int_t ReadInitInfo( Int_t level = 0 );
 
-  ClassDef(THaRunBase,6)       // Base class for run objects
+  //TODO: schema evolution 6 -> 7 (fDate, fEvtRange)
+  ClassDef(THaRunBase,7)       // Base class for run objects
 };
 
 

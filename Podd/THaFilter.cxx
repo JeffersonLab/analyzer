@@ -102,8 +102,8 @@ Int_t THaFilter::Process( const THaEvData* evdata, const THaRunBase* run,
 	   "write permission", fFileName.Data() );
     return THaAnalyzer::kFatal;
   } else if( ret != CODA_OK ) {
-    Error( here, "Error writing to CODA output file %s. Event %d not written",
-	   fFileName.Data(), (evdata != nullptr) ? evdata->GetEvNum() : -1 );
+    Error(here, "Error writing to CODA output file %s. Event %llu not written",
+          fFileName.Data(), (evdata != nullptr) ? evdata->GetEvNum() : 0);
   }
   return THaAnalyzer::kOK;
 }

@@ -131,7 +131,7 @@ Int_t THaHelicity::Decode( const THaEvData& evdata )
 
   if( (!fGoodHel && fDebug >= 2) || (!fGoodHel2 && fDebug >= 1) ) {
     Warning( Here("Decode"), "ADC and G0 helicities disagree: %d %d at "
-	     "evno = %d", fADC_Hel, fG0_Hel, evdata.GetEvNum() );
+	     "evno = %llu", fADC_Hel, fG0_Hel, evdata.GetEvNum() );
   }
 
   return kOK;

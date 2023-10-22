@@ -111,7 +111,7 @@ public:
   virtual const UInt_t* GetEvBuffer() const;
   // Get the last-seen physics event number. For CODA 3 in block mode, this
   // is the event number of the first event in the block.
-  virtual UInt_t GetEvNum() const;
+  virtual ULong64_t GetEvNum() const;
   virtual Bool_t IsOpen() const;
   virtual Int_t  Open();
   virtual void   Print( Option_t* opt="" ) const;
@@ -138,7 +138,7 @@ public:
   // Complete list of input files found
   std::vector<std::string> GetFiles() const;
   // Number of successful calls to ReadEvent()
-  UInt_t         GetNevRead() const { return fNevRead; }
+  ULong64_t      GetNevRead() const { return fNevRead; }
 
   // Configuration of segment/stream ranges. If called, must Init() again
   void           SetFirstSegment( Int_t n );
@@ -186,7 +186,7 @@ public:
     Int_t  fID;              // Stream ID (-1 = default/none)
     Int_t  fVersion;         // CODA version
     Int_t  fFileIndex;       //! Index of currently open file
-    UInt_t fEvNum;           //! Number of most recent physics event
+    ULong64_t fEvNum;        //! Number of most recent physics event
     Bool_t fActive;          //! Stream has not yet reached EOF
   private:
     Int_t OpenCurrent();
@@ -215,7 +215,7 @@ protected:
   // Working data
   Int_t  fLastUsedStream;              //! Index of last stream that was read
   Int_t  fNActive;                     //! Number of active streams
-  UInt_t fNevRead;                     //! Number of events read
+  ULong64_t fNevRead;                  //! Number of events read
 
   virtual Int_t    BuildInputList();
   virtual Bool_t   FindSegmentNumber();

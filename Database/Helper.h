@@ -35,7 +35,7 @@ namespace Podd {
                  std::numeric_limits<typename std::make_signed<T>::type>::max()))
       throw std::out_of_range("Unsigned integer out of signed integer range");
 #endif
-    return uint;  // implicitly cast to return type
+    return static_cast<typename std::make_signed<T>::type>(uint);
   }
   // Trivial case
   template<typename T, typename std::enable_if

@@ -32,6 +32,7 @@
 #include "THaEpicsEvtHandler.h"
 #include "THaString.h"
 #include "FileInclude.h"
+#include "Helper.h"
 
 #include <algorithm>
 #include <fstream>
@@ -505,7 +506,7 @@ Int_t THaOutput::ProcEpics(THaEvData *evdata, THaEpicsEvtHandler *epicshandle)
        || fEpicsKey.empty() || !fEpicsTree ) return 0;
   if( fDoBench ) fBench->Begin("EPICS");
   fEpicsTimestamp = -1;
-  fEpicsEvtNum = evdata->GetEvNum(); // most recent physics event number
+  fEpicsEvtNum = SINT(evdata->GetEvNum()); // most recent physics event number
   auto siz = fEpicsKey.size();
   for( size_t i = 0; i < siz; ++i ) {
     if (epicshandle->IsLoaded(fEpicsKey[i]->GetName().c_str())) {

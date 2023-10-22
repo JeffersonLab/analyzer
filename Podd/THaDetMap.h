@@ -177,8 +177,8 @@ public:
       HitInfo_t() :
         module{nullptr}, type{Decoder::ChannelType::kUndefined},
         modtype{Decoder::ChannelType::kUndefined},
-        ev{kMaxUInt}, crate{kMaxUInt}, slot{kMaxUInt}, chan{kMaxUInt}, nhit{0},
-        hit{kMaxUInt}, lchan{-1} {}
+        ev{kMaxULong64}, crate{kMaxUInt}, slot{kMaxUInt}, chan{kMaxUInt},
+        nhit{0}, hit{kMaxUInt}, lchan{-1} {}
       void set_crate_slot( const THaDetMap::Module* mod ) {
         if( mod->IsADC() )
           type = Decoder::ChannelType::kADC;
@@ -191,12 +191,13 @@ public:
       }
       void reset() {
         module = nullptr; type = modtype = Decoder::ChannelType::kUndefined;
+        ev = kMaxULong64;
         crate = slot = chan = hit = kMaxUInt; nhit = 0; lchan = -1;
       }
       Decoder::Module*     module; // Current frontend module being decoded
       Decoder::ChannelType type;   // Measurement type for current channel (ADC/TDC)
       Decoder::ChannelType modtype; // Module type (ADC/TDC/MultiFunctionADC etc.)
-      UInt_t  ev;      // Event number (for error messages)
+      ULong64_t  ev;   // Event number (for error messages)
       UInt_t  crate;   // Hardware crate
       UInt_t  slot;    // Hardware slot
       UInt_t  chan;    // Physical channel in current module

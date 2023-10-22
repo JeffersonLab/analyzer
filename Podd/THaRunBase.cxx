@@ -547,7 +547,7 @@ Int_t THaRunBase::SetDataVersion( Int_t version )
   return (fDataVersion = version);
 }
 //_____________________________________________________________________________
-void THaRunBase::SetEventRange( UInt_t first, UInt_t last )
+void THaRunBase::SetEventRange( ULong64_t first, ULong64_t last )
 {
   // Set range of event numbers to analyze. The interpretation of
   // the event range depends on the analyzer. Usually, it refers
@@ -558,7 +558,7 @@ void THaRunBase::SetEventRange( UInt_t first, UInt_t last )
 }
 
 //_____________________________________________________________________________
-void THaRunBase::SetFirstEvent( UInt_t n )
+void THaRunBase::SetFirstEvent( ULong64_t n )
 {
   // Set number of first event to analyze
 
@@ -566,7 +566,7 @@ void THaRunBase::SetFirstEvent( UInt_t n )
 }
 
 //_____________________________________________________________________________
-void THaRunBase::SetLastEvent( UInt_t n )
+void THaRunBase::SetLastEvent( ULong64_t n )
 {
   // Set number of last event to analyze
 

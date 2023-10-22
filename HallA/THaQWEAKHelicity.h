@@ -31,12 +31,12 @@ public:
   virtual void   SetDebug( Int_t level );
   virtual Bool_t HelicityValid() const { return fValidHel; }
 
-  void PrintEvent( UInt_t evtnum );
+  void PrintEvent( ULong64_t evtnum );
 
 protected:
   virtual void  FillHisto();
-  void  CheckTIRvsRing( UInt_t eventnumber );
-  void  LoadHelicity( UInt_t eventnumber );
+  void  CheckTIRvsRing( ULong64_t eventnumber );
+  void  LoadHelicity( ULong64_t eventnumber );
   UInt_t RanBit30( UInt_t& ranseed );
   THaHelicityDet::EHelicity SetHelicity( UInt_t polarity, UInt_t phase);
 

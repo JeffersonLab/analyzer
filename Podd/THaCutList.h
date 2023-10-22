@@ -90,6 +90,6 @@ protected:
 };
 
 // Global utility function
-UInt_t IntDigits( Int_t n );
+UInt_t IntDigits( Long64_t n );
 
 #endif

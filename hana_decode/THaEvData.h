@@ -54,7 +54,7 @@ public:
   UInt_t    GetEvType()      const { return event_type; }
   UInt_t    GetEvLength()    const { return event_length; }
   UInt_t    GetTrigBits()    const { return trigger_bits; }
-  UInt_t    GetEvNum()       const { return event_num; }
+  ULong64_t GetEvNum()       const { return event_num; }
   UInt_t    GetRunNum()      const { return run_num; }
   Int_t     GetDataVersion() const { return fDataVersion; }
   // Run time/date. Time of prestart event (UNIX time).
@@ -204,8 +204,9 @@ protected:
 
   std::ofstream *fDebugFile;  // debug output
 
-  UInt_t event_type, event_length, event_num, run_num;
-  UInt_t run_type, data_type, trigger_bits;
+  UInt_t event_type, event_length;
+  ULong64_t event_num;
+  UInt_t run_num, run_type, data_type, trigger_bits;
   Int_t  evscaler;
   Long64_t  fRunTime; // Run start time (Unix time)
   ULong64_t evt_time; // Event time (for CODA 3.* this is a 250 Mhz clock)

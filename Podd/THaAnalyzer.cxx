@@ -958,13 +958,13 @@ void THaAnalyzer::Print( Option_t* ) const
 void THaAnalyzer::PrintCounters() const
 {
   // Print statistics counters
-  UInt_t w = 0;
+  ULong64_t w = 0;
   auto ncounters = static_cast<Int_t>(fCounters.size());
   for( Int_t i = 0; i < ncounters; i++ ) {
     if( GetCount(i) > w )
       w = GetCount(i);
   }
-  w = IntDigits(SINT(w));
+  UShort_t ndig = IntDigits(SINT(w));
 
   bool first = true;
   for( Int_t i = 0; i < ncounters; i++ ) {
@@ -974,7 +974,7 @@ void THaAnalyzer::PrintCounters() const
 	cout << "Counter summary:" << endl;
 	first = false;
       }
-      cout << setw(w) << GetCount(i) << "  " << text << endl;
+      cout << setw(ndig) << GetCount(i) << "  " << text << endl;
     }
   }
   cout << endl;
@@ -1319,7 +1319,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
     if( fOutput ) fOutput->Process();
   }
   catch( const exception& e ) {
-    Error( here, "Caught exception %s during output of event %u. "
+    Error( here, "Caught exception %s during output of event %llu. "
 	   "Terminating analysis.", e.what(), fNev );
     code = kFatal;
   }
@@ -1450,7 +1450,7 @@ Int_t THaAnalyzer::MainAnalysis()
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalyzer::Process( THaRunBase* run )
+Long64_t THaAnalyzer::Process( THaRunBase* run )
 {
   // Process the given run. Loop over all events in the event range and
   // analyze all apparatuses defined in the global apparatus list.
@@ -1534,7 +1534,7 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
     if( status != THaRunBase::READ_OK )
       continue;
 
-    UInt_t evnum = fEvData->GetEvNum();
+    ULong64_t evnum = fEvData->GetEvNum();
 
     // Set the event counter according to the requested mode
     switch(fCountMode) {

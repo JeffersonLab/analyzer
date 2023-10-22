@@ -69,7 +69,7 @@ Int_t THaEpicsEvtHandler::Analyze( THaEvData* evdata ) {
   if ( !IsMyEvent(evdata->GetEvType()) ) return -1;
 
   UInt_t evbuffer[MAXDATA];
-  UInt_t recent_event = evdata->GetEvNum();
+  ULong64_t recent_event = evdata->GetEvNum();
 
   if (evdata->GetEvLength() >= MAXDATA) 
       cerr << "EpicsHandler:  need a bigger buffer ! "<<endl;

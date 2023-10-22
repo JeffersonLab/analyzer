@@ -84,7 +84,7 @@ protected:
                               const DigitizerHitInfo_t& hitinfo );
   virtual void      PrintDecodedData( const THaEvData& evdata ) const;
 
-  void DebugWarning( const char* here, const char* msg, UInt_t evnum );
+  void DebugWarning( const char* here, const char* msg, ULong64_t evnum );
   void MultipleHitWarning( const DigitizerHitInfo_t& hitinfo, const char* here );
   void DataLoadWarning( const DigitizerHitInfo_t& hitinfo, const char* here );
 

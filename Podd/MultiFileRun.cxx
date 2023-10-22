@@ -291,7 +291,7 @@ const UInt_t* MultiFileRun::GetEvBuffer() const
 }
 
 //_____________________________________________________________________________
-UInt_t MultiFileRun::GetEvNum() const
+ULong64_t MultiFileRun::GetEvNum() const
 {
   assert(!fStreams.empty());
   if( fStreams.empty() )
@@ -867,7 +867,7 @@ Int_t MultiFileRun::FindNextStream() const
   auto sz = SSIZE(fStreams);
   if( fNActive > 1 ) {
     Int_t minidx = -1;
-    UInt_t minev = kMaxUInt;
+    ULong64_t minev = kMaxULong64;
     for( Int_t i = 0; i < sz; ++i ) {
       const auto& stream = fStreams[i];
       if( stream.fActive && stream.fEvNum < minev ) {
@@ -1430,7 +1430,7 @@ const UInt_t* MultiFileRun::StreamInfo::GetEvBuffer() const
 //_____________________________________________________________________________
 // Extract even number from CODA 2 format data.
 // 'evbuf' must hold a physics event.
-static Int_t GetEvNumV2( const UInt_t* evbuf, UInt_t& num )
+static Int_t GetEvNumV2( const UInt_t* evbuf, ULong64_t& num )
 {
   auto evlen = evbuf[0] + 1;
   if( evlen < 5 ) {
@@ -1450,7 +1450,7 @@ static Int_t GetEvNumV2( const UInt_t* evbuf, UInt_t& num )
 //_____________________________________________________________________________
 // Extract even number from CODA 3 format data.
 // 'evbuf' must hold a physics event.
-static Int_t GetEvNumV3( const UInt_t* evbuf, UInt_t& num )
+static Int_t GetEvNumV3( const UInt_t* evbuf, ULong64_t& num )
 {
   auto block_size = evbuf[1] & 0xff;
   if( block_size == 0 ) {

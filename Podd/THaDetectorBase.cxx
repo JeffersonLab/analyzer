@@ -301,10 +301,10 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
 
 //_____________________________________________________________________________
 void THaDetectorBase::DebugWarning( const char* here, const char* msg,
-                                    UInt_t evnum )
+                                    ULong64_t evnum )
 {
   if( fDebug > 0 ) {
-    Warning( Here(here), "Event %d: %s", evnum, msg );
+    Warning( Here(here), "Event %llu: %s", evnum, msg );
   }
 }
 

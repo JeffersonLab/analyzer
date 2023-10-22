@@ -98,7 +98,7 @@ Int_t THaQWEAKHelicity::DefineVariables( EMode mode )
 }
 //_____________________________________________________________________________
 
-void THaQWEAKHelicity::PrintEvent( UInt_t evtnum )
+void THaQWEAKHelicity::PrintEvent( ULong64_t evtnum )
 {
 
   cout<<" ++++++ THaQWEAKHelicity::Print ++++++\n";
@@ -250,7 +250,7 @@ Int_t THaQWEAKHelicity::Decode( const THaEvData& evdata )
   return 0;
 }
 //_____________________________________________________________________________
-void THaQWEAKHelicity::CheckTIRvsRing( UInt_t eventnumber )
+void THaQWEAKHelicity::CheckTIRvsRing( ULong64_t eventnumber )
 {
   // here one checks that the offset between the TIR helicity reports 
   // and the Ring report is as expected (fQWEAKOffset)
@@ -317,7 +317,7 @@ void THaQWEAKHelicity::SetDebug( Int_t level )
 }
 
 //_____________________________________________________________________________
-void THaQWEAKHelicity::LoadHelicity( UInt_t eventnumber )
+void THaQWEAKHelicity::LoadHelicity( ULong64_t eventnumber )
 {
   static const char* const here = "THaQWEAKHelicity::LoadHelicity";
 

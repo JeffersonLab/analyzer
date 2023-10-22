@@ -20,7 +20,7 @@ public:
     fTrigBits(0), fRun(0) {}
   virtual ~THaEventHeader() = default;
 
-  void Set( UInt_t num, UInt_t type, UInt_t len, ULong64_t time,
+  void Set( ULong64_t num, UInt_t type, UInt_t len, ULong64_t time,
             Int_t hel, UInt_t tbits, UInt_t run ) {
     fEvtNum    = num; 
     fEvtType   = type;
@@ -30,7 +30,7 @@ public:
     fTrigBits  = tbits;
     fRun       = run;
   }
-  UInt_t    GetEvtNum()    const  { return fEvtNum; }
+  ULong64_t GetEvtNum()    const  { return fEvtNum; }
   UInt_t    GetEvtType()   const  { return fEvtType; }
   UInt_t    GetEvtLen()    const  { return fEvtLen; }
   ULong64_t GetEvtTime()   const  { return fEvtTime; }
@@ -41,14 +41,14 @@ public:
 private:
   // The units of these data are entirely up to the experiment
   ULong64_t fEvtTime;         // Event time stamp
-  UInt_t    fEvtNum;          // Event number
+  ULong64_t fEvtNum;          // Event number
   UInt_t    fEvtType;         // Event type
   UInt_t    fEvtLen;          // Event length
   Int_t     fHelicity;        // Beam helicity
   UInt_t    fTrigBits;        // Trigger bitpattern
   UInt_t    fRun;             // Run number
 
-  ClassDef(THaEventHeader,7)  // Header for analyzed event data in ROOT file
+  ClassDef(THaEventHeader,8)  // Header for analyzed event data in ROOT file
 };
 
 
