@@ -268,11 +268,11 @@ Int_t THaRun::PrescanFile()
     Int_t st = Update(evdata.get());
     if( st < 0 )
       return READ_ERROR;
-    if( st & (1<<0) )
+    if( TESTBIT(st, kPrestartEvt) )
       cout << "Prestart at " << nev << endl;
-    if( st & (1<<1) )
+    if( TESTBIT(st, kPrescalesEvt) )
       cout << "Prescales at " << nev << endl;
-    if( st & (1<<2) )
+    if( TESTBIT(st, kDAQinfoEvt) )
       cout << "DAQ info at " << setw(2) << nev
            << " len " << evdata->GetEvLength() << endl;
   }//end while

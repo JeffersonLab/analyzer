@@ -23,10 +23,10 @@
 
 using namespace std;
 
-static const int UNDEFDATE = 19950101;
-static const char* NOTINIT = "uninitialized run";
-static const char* DEFRUNPARAM = "THaRunParameters";
-static constexpr UInt_t DEFEVTRANGE[2]{1, kMaxUInt};
+constexpr Int_t     UNDEFDATE      = 19950101;
+const char* const   NOTINIT        = "uninitialized run";
+const char* const   DEFRUNPARAM    = "THaRunParameters";
+constexpr ULong64_t DEFEVTRANGE[2] = {1, kMaxULong64};
 
 //_____________________________________________________________________________
 THaRunBase::THaRunBase( const char* description )
@@ -148,7 +148,7 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
     SetNumber( evdata->GetRunNum() );
     SetType( evdata->GetRunType() );
     fDataSet  |= kRunNumber|kRunType;
-    ret |= (1<<0);
+    SETBIT(ret, kPrestartEvt);
   }
   // Prescale factors
   if( evdata->IsPrescaleEvent() ) {
@@ -165,7 +165,7 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
       ps[i] = psfact;
     }
     fDataSet  |= kPrescales;
-    ret |= (1<<1);
+    SETBIT(ret, kPrescalesEvt);
   }
 #define CFGEVT1 Decoder::DAQCONFIG_FILE1
 #define CFGEVT2 Decoder::DAQCONFIG_FILE2
@@ -179,7 +179,7 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
       fParam->AddDAQConfig(src.fCrate, src.fText);
     }
     fDataSet |= kDAQInfo;
-    ret |= (1<<2);
+    SETBIT(ret, kDAQinfoEvt);
   }
   return ret;
 }

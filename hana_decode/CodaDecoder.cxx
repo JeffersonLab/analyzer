@@ -84,7 +84,8 @@ Int_t CodaDecoder::GetPrescaleFactor( UInt_t trigger_type) const
 Int_t CodaDecoder::Init()
 {
   Int_t ret = THaEvData::Init();
-  if( ret != HED_OK ) return ret;
+  if( ret != HED_OK ) 
+    return ret;
   FindUsedSlots();
   fDAQconfig.clear();
   return HED_OK;
@@ -373,7 +374,7 @@ Int_t CodaDecoder::LoadTrigBankInfo( UInt_t i )
   if( tbank.evTS )
     evt_time = tbank.evTS[i];      // event time (4ns clock, I think)
   else if( tbank.TSROC ) {
-    UInt_t struct_size = tbank.withTriggerBits() ? 3 : 2;
+    size_t struct_size = tbank.withTriggerBits() ? 3 : 2;
     evt_time = *(const uint64_t*) (tbank.TSROC + struct_size * i);
     // Only the lower 48 bits seem to contain the time
     evt_time &= 0x0000FFFFFFFFFFFF;
@@ -640,7 +641,7 @@ Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
       return HED_ERR;
     }
     pos = bankinfo.pos_;
-    auto len = bankinfo.len_;
+    size_t len = bankinfo.len_;
     assert(pos + len <= event_length);
     if( bankinfo.GetDataSize() == BankInfo::k8bit ) {
       UInt_t crate = bankinfo.tag_;  // The bank tag is the crate number

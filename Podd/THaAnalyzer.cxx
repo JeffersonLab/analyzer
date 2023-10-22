@@ -47,7 +47,6 @@
 #include <iostream>
 #include <iomanip>
 #include <exception>
-#include <stdexcept>
 #include <algorithm>
 #include <vector>
 

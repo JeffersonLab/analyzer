@@ -222,7 +222,7 @@ Int_t THaEpics::LoadData( const UInt_t* evbuffer, ULong64_t event )
            << endl;
 
     // Add tag/value/units to the EPICS data.    
-    epicsData[wtag].push_back( EpicsChan(wtag, date, event, wval, wunits, dval) );
+    epicsData[wtag].emplace_back(wtag, date, event, wval, wunits, dval );
   }
   if( fDebug ) Print();
 

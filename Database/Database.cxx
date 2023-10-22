@@ -272,12 +272,13 @@ FILE* OpenDBFile( const char* name, const TDatime& date, const char* here,
 
 //---------- Database utility functions ---------------------------------------
 
-static thread_local string errtxt;
-static thread_local int loaddb_depth = 0; // Recursion depth in LoadDB
-static thread_local string loaddb_prefix; // Actual prefix of object in LoadDB (for err msg)
-
 // Local helper functions
 namespace {
+
+thread_local string errtxt;
+thread_local int loaddb_depth = 0; // Recursion depth in LoadDB
+thread_local string loaddb_prefix; // Actual prefix of object in LoadDB (for err msg)
+
 //_____________________________________________________________________________
 Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
 {

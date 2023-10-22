@@ -22,8 +22,9 @@ using namespace std;
 
 namespace Decoder {
 
-const UInt_t NTDCCHAN = 128;
-const UInt_t MAXHIT = 100;
+constexpr size_t NTDCCHAN = 128;
+constexpr size_t MAXHIT = 100;
+constexpr size_t MAXDATA = NTDCCHAN * MAXHIT;
 
 Module::TypeIter_t Caen1190Module::fgThisType =
   DoRegister(ModuleType("Decoder::Caen1190Module", 1190));
@@ -32,8 +33,8 @@ Module::TypeIter_t Caen1190Module::fgThisType =
 Caen1190Module::Caen1190Module( Int_t crate, Int_t slot )
   : PipeliningModule(crate, slot)
   , fNumHits(NTDCCHAN)
-  , fTdcData(NTDCCHAN * MAXHIT)
-  , fTdcOpt(NTDCCHAN * MAXHIT)
+  , fTdcData(MAXDATA)
+  , fTdcOpt(MAXDATA)
   , fSlotData(nullptr)
   , fEvBuf(nullptr)
   , fNfill(0)
@@ -46,8 +47,8 @@ void Caen1190Module::Init()
 {
   PipeliningModule::Init();
   fNumHits.resize(NTDCCHAN);
-  fTdcData.resize(NTDCCHAN * MAXHIT);
-  fTdcOpt.resize(NTDCCHAN * MAXHIT);
+  fTdcData.resize(MAXDATA);
+  fTdcOpt.resize(MAXDATA);
   Caen1190Module::Clear();
   IsInit = true;
   fName = "Caen TDC 1190 Module";
@@ -210,7 +211,7 @@ UInt_t Caen1190Module::GetData( UInt_t chan, UInt_t hit ) const
 {
   if( hit >= fNumHits[chan] ) return 0;
   UInt_t idx = chan * MAXHIT + hit;
-  if( idx > MAXHIT * NTDCCHAN ) return 0;
+  if( idx >= MAXDATA ) return 0;
   return fTdcData[idx];
 }
 
@@ -219,7 +220,7 @@ UInt_t Caen1190Module::GetOpt( UInt_t chan, UInt_t hit ) const
 {
   if( hit >= fNumHits[chan] ) return 0;
   UInt_t idx = chan * MAXHIT + hit;
-  if( idx > MAXHIT * NTDCCHAN ) return 0;
+  if( idx >= MAXDATA ) return 0;
   return fTdcOpt[idx];
 }
 
@@ -228,8 +229,8 @@ void Caen1190Module::Clear( Option_t* )
 {
   PipeliningModule::Clear();
   fNumHits.assign(NTDCCHAN, 0);
-  fTdcData.assign(NTDCCHAN * MAXHIT, 0);
-  fTdcOpt.assign(NTDCCHAN * MAXHIT, 0);
+  fTdcData.assign(MAXDATA, 0);
+  fTdcOpt.assign(MAXDATA, 0);
   fNfill = 0;
 }
 

@@ -614,10 +614,10 @@ UInt_t IntDigits( Long64_t n )
   //Global utility function.
 
   if( n == 0 ) return 1;
-  int j = 0;
+  UInt_t j = 0;
   if( n<0 ) {
     j++;
-    n *= -1;
+    n = -n;
   }
   while( n>0 ) {
     n /= 10;

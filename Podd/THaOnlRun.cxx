@@ -28,7 +28,7 @@ using namespace std;
 #endif
 
 //______________________________________________________________________________
-THaOnlRun::THaOnlRun() : THaCodaRun(), fMode(1)
+THaOnlRun::THaOnlRun() : fMode(1)
 {
   // Default constructor
 

@@ -15,15 +15,16 @@ using namespace std;
 
 namespace Decoder {
 
-  const Int_t NTDCCHAN = 32;
-  const Int_t MAXHIT   = 100;
+  constexpr size_t NTDCCHAN = 32;
+  constexpr size_t MAXHIT   = 100;
+  constexpr size_t MAXDATA = NTDCCHAN * MAXHIT;
 
   Module::TypeIter_t F1TDCModule::fgThisType =
     DoRegister( ModuleType( "Decoder::F1TDCModule" , 3201 ));
 
 F1TDCModule::F1TDCModule( UInt_t crate, UInt_t slot ) :
   VmeModule(crate, slot), fNumHits(0), fResol(ILO),
-  fTdcData(NTDCCHAN*MAXHIT),
+  fTdcData(MAXDATA),
   IsInit(false), slotmask(0), chanmask(0), datamask(0)
 {
   F1TDCModule::Init();
@@ -31,7 +32,7 @@ F1TDCModule::F1TDCModule( UInt_t crate, UInt_t slot ) :
 
 void F1TDCModule::Init() {
   VmeModule::Init();
-  fTdcData.resize(NTDCCHAN*MAXHIT);
+  fTdcData.resize(MAXDATA);
   Clear();
   IsInit = true;
   fName = "F1 TDC 3201";
@@ -53,14 +54,14 @@ Bool_t F1TDCModule::IsSlot(UInt_t rdata)
 UInt_t F1TDCModule::GetData( UInt_t chan, UInt_t hit ) const
 {
   UInt_t idx = chan*MAXHIT + hit;
-  if( idx > MAXHIT * NTDCCHAN ) return 0;
+  if( idx > MAXDATA ) return 0;
   return fTdcData[idx];
 }
 
 void F1TDCModule::Clear(Option_t* opt) {
   VmeModule::Clear(opt);
   fNumHits = 0;
-  fTdcData.assign(NTDCCHAN*MAXHIT,0);
+  fTdcData.assign(MAXDATA,0);
 }
 
 UInt_t F1TDCModule::LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer,
@@ -162,7 +163,7 @@ UInt_t F1TDCModule::LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer,
 #endif
        /*Int_t status = */sldat->loadData("tdc",chan,raw,raw);
        UInt_t idx = chan * MAXHIT + 0;  // 1 hit per chan ???
-       if( idx < MAXHIT * NTDCCHAN ) fTdcData[idx] = raw;
+       if( idx < MAXDATA ) fTdcData[idx] = raw;
        fWordsSeen++;
      }
      loc++;

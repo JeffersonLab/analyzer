@@ -79,7 +79,7 @@ public:
   Bool_t         OtherEventsEnabled()  const  { return fDoOtherEvents; }
   Bool_t         SlowControlEnabled()  const  { return fDoSlowControl; }
   virtual Int_t  SetCountMode( Int_t mode );
-  void           SetCrateMapFileName( const char* name );
+  static void    SetCrateMapFileName( const char* name );
   void           SetEvent( THaEvent* event )        { fEvent = event; }
   void           SetOutFile( const char* name )     { fOutFileName = name; }
   void           SetCutFile( const char* name )     { fCutFileName = name; }

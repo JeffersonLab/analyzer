@@ -42,7 +42,7 @@ void THaEvtTypeHandler::EvPrint() const
   cout << "Hello !  THaEvtTypeHandler name =  "<<GetName()<<endl;
   cout << "    description "<<GetTitle()<<endl;
   cout << "    event types handled are "<<endl;
-  for( int eventtype : eventtypes ) {
+  for( auto eventtype : eventtypes ) {
     cout << "    event type "<<eventtype<<endl;
   }
   cout << "----------------- good bye ----------------- "<<endl;
@@ -53,23 +53,24 @@ void THaEvtTypeHandler::EvDump(THaEvData *evdata) const
   // Dumps data to file, if fDebugFile was set.
   if (!fDebugFile) return;
   if (!evdata) return;  // get what you deserve
-  int evnum = evdata->GetRawData(4);
-  int len = evdata->GetRawData(0) + 1;
-  int evtype = evdata->GetRawData(1)>>16;
+  //FIXME: update for CODA 3
+  auto evnum = evdata->GetRawData(4);
+  auto len = evdata->GetRawData(0) + 1;
+  auto evtype = evdata->GetRawData(1)>>16;
   *fDebugFile << "\n ------ Raw Data Dump ------ "<<endl;
   *fDebugFile << "\n\n Event number " << dec << evnum << endl;
   *fDebugFile << " length " << len << " type " << evtype << endl;
-  int ipt = 0;
-  for (int j=0; j<(len/5); j++) {
+  UInt_t ipt = 0;
+  for (UInt_t j=0; j<(len/5); j++) {
     *fDebugFile << dec << "\n evbuffer[" << ipt << "] = ";
-    for (int k=j; k<j+5; k++) {
+    for (UInt_t k=j; k<j+5; k++) {
       *fDebugFile << hex << evdata->GetRawData(ipt++) << " ";
     }
     *fDebugFile << endl;
   }
   if (ipt < len) {
     *fDebugFile << dec << "\n evbuffer[" << ipt << "] = ";
-    for (int k=ipt; k<len; k++) {
+    for (UInt_t k=ipt; k<len; k++) {
       *fDebugFile << hex << evdata->GetRawData(ipt++) << " ";
     }
     *fDebugFile << endl;

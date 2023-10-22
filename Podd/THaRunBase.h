@@ -106,6 +106,10 @@ protected:
   Int_t         fDataVersion;   // Data format version (implementation-dependent)
   TObject*      fExtra;         // Additional member data (for binary compat.)
 
+  enum EInfoEvt { kPrestartEvt = 0,
+                  kPrescalesEvt = 1,
+                  kDAQinfoEvt = 2 };
+
   virtual Int_t ReadDatabase();
   virtual Int_t ReadInitInfo( Int_t level = 0 );
 
