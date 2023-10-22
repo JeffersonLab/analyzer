@@ -53,7 +53,6 @@
 #include "THaSlotData.h"
 #include "TMath.h"
 
-#include <unistd.h>
 #include <iostream>
 #include <iomanip>
 #include <numeric>

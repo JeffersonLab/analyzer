@@ -577,8 +577,9 @@ CodaDecoder::BankInfo::EIntFloat CodaDecoder::BankInfo::GetFloat() const
 {
   switch( dtyp_ ) {
     case 0x02: // float32_t (float)
-    case 0x08: // float64_t (double)
       return kFloat;
+    case 0x08: // float64_t (double)
+      return kDouble;
     default:
       return kInteger;
   }

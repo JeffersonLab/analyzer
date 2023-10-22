@@ -60,7 +60,7 @@ public:
                  blksz_{0}, status_{kOK} {}
     enum EBankErr  { kOK = 0, kBadArg, kBadLen, kBadPad, kUnsupType };
     enum EDataSize { kUndef = 0, k8bit = 1, k16bit = 2, k32bit = 4, k64bit = 8 };
-    enum EIntFloat { kInteger = 0, kFloat };
+    enum EIntFloat { kInteger = 0, kFloat, kDouble };
     enum ESigned   { kUnknown = 0, kUnsigned, kSigned };
     Int_t Fill( const UInt_t* evbuf, UInt_t pos, UInt_t len );
     EDataSize GetDataSize() const; // Size of data in bytes/element

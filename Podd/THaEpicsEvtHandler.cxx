@@ -71,8 +71,10 @@ Int_t THaEpicsEvtHandler::Analyze( THaEvData* evdata ) {
   UInt_t evbuffer[MAXDATA];
   ULong64_t recent_event = evdata->GetEvNum();
 
-  if (evdata->GetEvLength() >= MAXDATA) 
-      cerr << "EpicsHandler:  need a bigger buffer ! "<<endl;
+  if (evdata->GetEvLength() >= MAXDATA) {
+    cerr << "EpicsHandler:  need a bigger buffer ! " << endl;
+    return 0;
+  }
 
 // Copy the buffer.  EPICS events are infrequent, so no harm.
   for( UInt_t i = 0; i < evdata->GetEvLength(); i++ )

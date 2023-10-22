@@ -27,8 +27,8 @@
 // Return codes from codaNNN routines
 #define CODA_OK     0      // OK
 #define CODA_EOF    EOF    // End of file
-#define CODA_ERROR  -128   // Generic error return code
-#define CODA_FATAL  -255   // Fatal error
+#define CODA_ERROR  (-128) // Generic error return code
+#define CODA_FATAL  (-255) // Fatal error
 
 namespace Decoder {
 
