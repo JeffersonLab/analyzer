@@ -41,7 +41,7 @@ SimDecoder::SimDecoder() :
     VarDef vars[] = {
         { "runnum",    "Run number",     kInt,    0, &run_num },
         { "runtype",   "CODA run type",  kInt,    0, &run_type },
-        { "runtime",   "CODA run time",  kULong,  0, &fRunTime },
+        { "runtime",   "CODA run time",  kLong,   0, &fRunTime },
         { "evnum",     "Event number",   kInt,    0, &event_num },
         { "evtyp",     "Event type",     kInt,    0, &event_type },
         { "evlen",     "Event Length",   kInt,    0, &event_length },

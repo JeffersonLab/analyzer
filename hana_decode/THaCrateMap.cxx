@@ -282,7 +282,7 @@ int THaCrateMap::init( FILE* fi, const char* fname )
 }
 
 //_____________________________________________________________________________
-int THaCrateMap::init(ULong64_t tloc)
+int THaCrateMap::init( Long64_t tloc )
 {
   // Initialize the crate map from the database.
   // 'tloc' is the time-stamp/index into the database's periods of validity.

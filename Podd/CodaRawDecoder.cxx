@@ -28,7 +28,7 @@ CodaRawDecoder::CodaRawDecoder()
     VarDef vars[] = {
         { "runnum",    "Run number",     kUInt,   0, &run_num },
         { "runtype",   "CODA run type",  kUInt,   0, &run_type },
-        { "runtime",   "CODA run time",  kULong,  0, &fRunTime },
+        { "runtime",   "CODA run time",  kLong,   0, &fRunTime },
         { "evnum",     "Event number",   kUInt,   0, &event_num },
         { "evtyp",     "Event type",     kUInt,   0, &event_type },
         { "evlen",     "Event length",   kUInt,   0, &event_length },

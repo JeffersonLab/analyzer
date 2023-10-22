@@ -504,12 +504,12 @@ void THaRunBase::SetDate( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-void THaRunBase::SetDate( UInt_t tloc )
+void THaRunBase::SetDate( Long64_t tloc )
 {
   // Set timestamp of this run to 'tloc' which is in Unix time
   // format (number of seconds since 01 Jan 1970).
 
-  TDatime date( tloc );
+  TDatime date( tloc );  //FIXME: support 64-bit time
   SetDate( date );
 }
 

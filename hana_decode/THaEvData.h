@@ -58,7 +58,7 @@ public:
   UInt_t    GetRunNum()      const { return run_num; }
   Int_t     GetDataVersion() const { return fDataVersion; }
   // Run time/date. Time of prestart event (UNIX time).
-  ULong64_t GetRunTime()     const { return fRunTime; }
+  Long64_t  GetRunTime()     const { return fRunTime; }
   UInt_t    GetRunType()     const { return run_type; }
   UInt_t    GetRocLength( UInt_t crate ) const;   // Get the ROC length
 
@@ -126,7 +126,7 @@ public:
   UInt_t GetNslots() const { return fSlotUsed.size(); };
   virtual void PrintSlotData( UInt_t crate, UInt_t slot ) const;
   virtual void PrintOut() const;
-  virtual void SetRunTime( ULong64_t tloc );
+  virtual void SetRunTime( Long64_t tloc );
   virtual Int_t SetDataVersion( Int_t version );
 
   // Status control
@@ -158,7 +158,7 @@ public:
   void SetCrateMapName( const char* name );
   static void SetDefaultCrateMapName( const char* name );
 
-  virtual void SetRunInfo( UInt_t num, UInt_t type, ULong64_t tloc );
+  virtual void SetRunInfo( UInt_t num, UInt_t type, Long64_t tloc );
 
 protected:
   // Control bits in TObject::fBits used by decoders
@@ -207,7 +207,7 @@ protected:
   UInt_t event_type, event_length, event_num, run_num;
   UInt_t run_type, data_type, trigger_bits;
   Int_t  evscaler;
-  ULong64_t fRunTime; // Run start time (Unix time)
+  Long64_t  fRunTime; // Run start time (Unix time)
   ULong64_t evt_time; // Event time (for CODA 3.* this is a 250 Mhz clock)
 
   std::vector<UShort_t> fSlotUsed;    // Indices of crateslot[] used

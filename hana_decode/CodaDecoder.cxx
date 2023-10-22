@@ -1458,7 +1458,7 @@ void CodaDecoder::ChkFbSlots()
 }
 
 //_____________________________________________________________________________
-void CodaDecoder::SetRunTime( ULong64_t tloc )
+void CodaDecoder::SetRunTime( Long64_t tloc )
 {
   // Set run time and re-initialize crate map (and possibly other
   // database parameters) for the new time.

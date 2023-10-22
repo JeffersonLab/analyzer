@@ -128,7 +128,7 @@ Int_t THaEvData::Init()
 }
 
 //_____________________________________________________________________________
-void THaEvData::SetRunTime( ULong64_t tloc )
+void THaEvData::SetRunTime( Long64_t tloc )
 {
   // Set run time and re-initialize crate map (and possibly other
   // database parameters for the new time.
@@ -424,7 +424,7 @@ Int_t THaEvData::SetDataVersion( Int_t version )
 }
 
 //_____________________________________________________________________________
-void THaEvData::SetRunInfo( UInt_t num, UInt_t type, ULong64_t tloc )
+void THaEvData::SetRunInfo( UInt_t num, UInt_t type, Long64_t tloc )
 {
   run_num = num;
   run_type = type;

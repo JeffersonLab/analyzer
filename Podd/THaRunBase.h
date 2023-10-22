@@ -64,7 +64,7 @@ public:
   virtual Bool_t       IsOpen()         const;
   virtual void         Print( Option_t* opt="" ) const;
   virtual void         SetDate( const TDatime& date );
-          void         SetDate( UInt_t tloc );  //FIXME take 64-bit time
+          void         SetDate( Long64_t tloc );
 	  void         SetDataRequired( UInt_t mask ); // mask is OR of EInfoType
   virtual Int_t        SetDataVersion( Int_t version );
           void         SetFirstEvent( UInt_t n );
@@ -90,6 +90,7 @@ public:
 protected:
   UInt_t        fNumber;        // Run number
   UInt_t        fType;          // Run type/mode/etc.
+  //FIXME: support 64-bit time
   TDatime       fDate;          // Run date and time
   //FIXME event counts may overflow, make ULong64_t
   UInt_t        fEvtRange[2];   // Event range to analyze

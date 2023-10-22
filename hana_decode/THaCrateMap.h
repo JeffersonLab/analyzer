@@ -65,7 +65,7 @@ class THaCrateMap {
      void setUnused( UInt_t crate, UInt_t slot );   // Disables this slot in crate
      void setUnused( UInt_t crate );                // Disables this crate
      int  init(const std::string& the_map);         // Initialize from text-block
-     int  init(ULong64_t time = 0);                 // Initialize by Unix time.
+     int  init( Long64_t tloc = 0 );                // Initialize by Unix time.
      int  init( FILE* fi, const char* fname );      // Initialize from given file
      void print(std::ostream& os = std::cout) const;
 

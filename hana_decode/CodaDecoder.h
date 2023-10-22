@@ -28,7 +28,7 @@ public:
   virtual Int_t  LoadEvent(const UInt_t* evbuffer);
 
   virtual Int_t  GetPrescaleFactor( UInt_t trigger ) const;
-  virtual void   SetRunTime( ULong64_t tloc );
+  virtual void   SetRunTime( Long64_t tloc );
   virtual Int_t  SetDataVersion( Int_t version );
           Int_t  SetCodaVersion( Int_t version )  { return SetDataVersion(version); }
 
