@@ -26,10 +26,10 @@ public:
 		   const Float_t& var, const Int_t* count=nullptr )
     { return DefineByType( name, descript, &var, kFloat, count ); }
   THaVar*  Define( const char* name, const char* descript, 
-		   const Long_t& var, const Int_t* count=nullptr )
+		   const Long64_t& var, const Int_t* count=nullptr )
     { return DefineByType( name, descript, &var, kLong, count ); }
   THaVar*  Define( const char* name, const char* descript, 
-		   const ULong_t& var, const Int_t* count=nullptr )
+		   const ULong64_t& var, const Int_t* count=nullptr )
     { return DefineByType( name, descript, &var, kULong, count ); }
   THaVar*  Define( const char* name, const char* descript, 
 		   const Int_t& var, const Int_t* count=nullptr )
@@ -69,10 +69,10 @@ public:
   THaVar*  Define( const char* name, const Float_t& var,
 		   const Int_t* count=nullptr )
     { return Define( name, name, var, count ); }
-  THaVar*  Define( const char* name, const Long_t& var,
+  THaVar*  Define( const char* name, const Long64_t& var,
 		   const Int_t* count=nullptr )
     { return Define( name, name, var, count ); }
-  THaVar*  Define( const char* name, const ULong_t& var,
+  THaVar*  Define( const char* name, const ULong64_t& var,
 		   const Int_t* count=nullptr )
     { return Define( name, name, var, count ); }
   THaVar*  Define( const char* name, const Int_t& var,
@@ -111,10 +111,10 @@ public:
 		   const Float_t*& var, const Int_t* count=nullptr )
     { return DefineByType( name, descript, &var, kFloatP, count ); }
   THaVar*  Define( const char* name, const char* descript, 
-		   const Long_t*& var, const Int_t* count=nullptr )
+		   const Long64_t*& var, const Int_t* count=nullptr )
     { return DefineByType( name, descript, &var, kLongP, count ); }
   THaVar*  Define( const char* name, const char* descript, 
-		   const ULong_t*& var, const Int_t* count=nullptr )
+		   const ULong64_t*& var, const Int_t* count=nullptr )
     { return DefineByType( name, descript, &var, kULongP, count ); }
   THaVar*  Define( const char* name, const char* descript, 
 		   const Int_t*& var, const Int_t* count=nullptr )
@@ -141,10 +141,10 @@ public:
   THaVar*  Define( const char* name, const Float_t*& var,
 		   const Int_t* count=nullptr )
     { return Define( name, name, var, count ); }
-  THaVar*  Define( const char* name, const Long_t*& var,
+  THaVar*  Define( const char* name, const Long64_t*& var,
 		   const Int_t* count=nullptr )
     { return Define( name, name, var, count ); }
-  THaVar*  Define( const char* name, const ULong_t*& var,
+  THaVar*  Define( const char* name, const ULong64_t*& var,
 		   const Int_t* count=nullptr )
     { return Define( name, name, var, count ); }
   THaVar*  Define( const char* name, const Int_t*& var,
