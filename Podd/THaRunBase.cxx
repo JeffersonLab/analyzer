@@ -15,9 +15,11 @@
 #include "THaPrintOption.h"
 #include "TClass.h"
 #include "TError.h"
+#include "Helper.h"   // ALL()
 #include <iostream>
-#include <algorithm>  // std::copy, std::equal
+#include <algorithm>  // std::copy, std::equal, std::find
 #include <iterator>   // std::begin, std::end
+#include <cassert>
 
 using namespace std;
 
@@ -49,8 +51,6 @@ THaRunBase::THaRunBase( const char* description )
   // Normal & default constructor
 
   ClearEventRange();
-  //FIXME: BCI: should be in RunParameters
-  DAQInfoExtra::AddTo(fExtra);
 }
 
 //_____________________________________________________________________________
@@ -171,16 +171,13 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
 #define CFGEVT2 Decoder::DAQCONFIG_FILE2
   if( evdata->GetEvType() == CFGEVT1 || evdata->GetEvType() == CFGEVT2 ) {
     fDataRead |= kDAQInfo;
-    auto* srcifo = DAQInfoExtra::GetFrom(evdata->GetExtra());
-    if( !srcifo ) {
-      Warning( here, "Failed to decode DAQ config info from event type %u",
-               evdata->GetEvType() );
-      return -3;
+    const auto& src_cfg = evdata->GetDAQConfig();
+    auto& cfg = fParam->GetDAQConfig();
+    auto nsrc = src_cfg.size();
+    while( cfg.size() < nsrc ) {
+      const auto& src = src_cfg[cfg.size()];
+      fParam->AddDAQConfig(src.fCrate, src.fText);
     }
-    auto* ifo = DAQInfoExtra::GetFrom(fExtra);
-    assert(ifo);     // else bug in constructor
-    // Copy info to local run parameters. NB: This may be several MB of data.
-    *ifo = *srcifo;
     fDataSet |= kDAQInfo;
     ret |= (1<<2);
   }
@@ -603,32 +600,41 @@ void THaRunBase::SetRunParamClass( const char* classname )
 }
 
 //_____________________________________________________________________________
-size_t THaRunBase::GetNConfig() const
+size_t THaRunBase::GetNDAQConfig() const
 {
-  auto* ifo = DAQInfoExtra::GetFrom(fExtra);
-  if( !ifo )
+  return fParam->GetDAQConfig().size();
+}
+
+//_____________________________________________________________________________
+UInt_t THaRunBase::GetDAQConfigCrate( size_t i ) const
+{
+  const auto& cfgs = fParam->GetDAQConfig();
+  assert(i < cfgs.size());
+  if( i >= cfgs.size() )
     return 0;
-  return ifo->strings.size();
+  return cfgs[i].crate_;
 }
 
 //_____________________________________________________________________________
-const string& THaRunBase::GetDAQConfig( size_t i ) const
+const string& THaRunBase::GetDAQConfigText( size_t i ) const
 {
   static const string nullstr;
-  auto* ifo = DAQInfoExtra::GetFrom(fExtra);
-  if( !ifo || i >= ifo->strings.size() )
+  const auto& cfgs = fParam->GetDAQConfig();
+  assert(i < cfgs.size());
+  if( i >= cfgs.size() )
     return nullstr;
-  return ifo->strings[i];
+  return cfgs[i].text_;
 }
 
 //_____________________________________________________________________________
-const string& THaRunBase::GetDAQInfo( const std::string& key ) const
+const string& THaRunBase::GetDAQConfigValue( UInt_t crate, const std::string& key ) const
 {
   static const string nullstr;
-  auto* ifo = DAQInfoExtra::GetFrom(fExtra);
-  if( !ifo )
+  const auto& cfgs = fParam->GetDAQConfig();
+  auto found = find(ALL(cfgs), crate);
+  if( found == cfgs.end() )
     return nullstr;
-  const auto& keyval = ifo->keyval;
+  const auto& keyval = found->keyval_;
   auto it = keyval.find(key);
   if( it == keyval.end() )
     return nullstr;

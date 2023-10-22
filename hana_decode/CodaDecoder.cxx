@@ -11,7 +11,6 @@
 #include "THaCrateMap.h"
 #include "THaBenchmark.h"
 #include "THaUsrstrutils.h"
-#include "DAQconfig.h"
 #include "Helper.h"
 #include "TError.h"
 #include "TList.h"
@@ -54,7 +53,6 @@ CodaDecoder::CodaDecoder()
   fDebugFile->open("bobstuff.txt");
   *fDebugFile<< "Debug my stuff "<<endl<<endl;
 #endif
-  DAQInfoExtra::AddTo(fExtra);
 }
 
 //_____________________________________________________________________________
@@ -88,10 +86,8 @@ Int_t CodaDecoder::Init()
   Int_t ret = THaEvData::Init();
   if( ret != HED_OK ) return ret;
   FindUsedSlots();
-  auto* cfg = DAQInfoExtra::GetFrom(fExtra);
-  if( cfg )
-    cfg->clear();
-  return ret;
+  fDAQconfig.clear();
+  return HED_OK;
 }
 
 //_____________________________________________________________________________
@@ -625,10 +621,6 @@ Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
 
   if( !evbuf )
     return HED_FATAL;
-  auto* cfg = DAQInfoExtra::GetFrom(fExtra);
-  if( !cfg )
-    return HED_ERR;
-  size_t nbefore = cfg->strings.size();
 
 #define CFGEVT1 Decoder::DAQCONFIG_FILE1
 #define CFGEVT2 Decoder::DAQCONFIG_FILE2
@@ -638,6 +630,7 @@ Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
           *(evbuf + 1), event_type);
     return HED_ERR;
   }
+  auto prev_size = fDAQconfig.size();
   UInt_t pos = 0;
   while( pos < event_length ) {
     auto bankinfo = GetBank(evbuf, pos, event_length);
@@ -649,18 +642,21 @@ Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
     auto len = bankinfo.len_;
     assert(pos + len <= event_length);
     if( bankinfo.GetDataSize() == BankInfo::k8bit ) {
+      UInt_t crate = bankinfo.tag_;  // The bank tag is the crate number
       const auto* c = reinterpret_cast<const char*>(evbuf + pos);
-      cfg->strings.emplace_back(c, c + 4 * len - bankinfo.npad_);
+      string textdata(c, c + 4 * len - bankinfo.npad_);
+      fDAQconfig.emplace_back(crate, textdata);
     } else {
       Warning(here, "Unsupported data type %#x in event type %u",
               bankinfo.dtyp_, event_type);
     }
     pos += len;
   }
-  // Parse first string to key/value pairs
-  const size_t iparse = 0;
-  if( iparse >= nbefore )
-    cfg->parse(0);
+  if( prev_size == fDAQconfig.size() )  {
+    Warning( here, "Failed to decode DAQ config info from event type %u",
+            event_type );
+    return HED_WARN;
+  }
 
   return HED_OK;
 }

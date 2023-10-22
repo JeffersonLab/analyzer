@@ -13,6 +13,7 @@
 #include "TMath.h"
 #include "CodaDecoder.h"
 #include <iostream>
+#include <utility>
 
 using namespace std;
 
@@ -127,6 +128,13 @@ void THaRunParameters::SetPolarizations( Double_t pb, Double_t pt )
   fTgtPol  = pt;
   fIsPol   = (TMath::Abs(pb*pt) > 1e-8);
     
+}
+
+//_____________________________________________________________________________
+size_t THaRunParameters::AddDAQConfig( UInt_t crate, std::string text )
+{
+  fDAQconfig.emplace_back(crate, std::move(text) );
+  return fDAQconfig.size();
 }
 
 //_____________________________________________________________________________

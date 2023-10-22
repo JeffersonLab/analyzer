@@ -12,36 +12,36 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <utility>  // std::move
 
 //_____________________________________________________________________________
 struct DAQconfig {
-  std::vector<std::string> strings;
-  std::map<std::string,std::string> keyval;
+  DAQconfig() : crate_(0) {}
+  DAQconfig( unsigned crate, std::string text )
+    : crate_{crate}
+    , text_{std::move(text)}
+  { parse(); }
 
-  void clear() { strings.clear(); keyval.clear(); }
-  size_t parse( size_t i );
+  // for std::find
+  bool   operator==( unsigned crate ) const        { return crate == crate_; }
+  // for std::sort
+  bool   operator< ( const DAQconfig& rhs ) const  { return crate_ <  rhs.crate_; }
+
+  void   clear();
+  size_t parse();
+
+  unsigned     crate_;
+  std::string  text_;
+  std::map<std::string, std::string>  keyval_;
 } __attribute__((aligned(64)));
 
 //_____________________________________________________________________________
-//FIXME: BCI. Make member variable in client
-#include "TObject.h"
-
-class DAQInfoExtra : public TObject {
-public:
-  DAQInfoExtra();
-  virtual TObject* Clone( const char*  /*newname*/ = "" ) const {
-    return new DAQInfoExtra(*this);
-  }
-  static void AddTo( TObject*& p, TObject* obj = nullptr );
-  static DAQInfoExtra* GetExtraInfo( TObject* p );
-  static DAQconfig* GetFrom( TObject* p );
-
-  DAQconfig fDAQconfig;
-  UInt_t fMinScan;
-
-  ClassDef(DAQInfoExtra, 2)
-};
+inline void DAQconfig::clear()
+{
+  crate_ = 0;
+  text_.clear(); text_.shrink_to_fit();
+  keyval_.clear();
+}
 
 //_____________________________________________________________________________
-
 #endif //Podd_DAQconfig_h_

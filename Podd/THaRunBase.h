@@ -82,9 +82,10 @@ public:
                    kDAQInfo   = BIT(4) };
 
   // DAQ configuration strings (usually database file dumps) from user event
-  size_t               GetNConfig() const;
-  const std::string&   GetDAQConfig( size_t i ) const;
-  const std::string&   GetDAQInfo( const std::string& key ) const;
+  size_t               GetNDAQConfig() const;
+  UInt_t               GetDAQConfigCrate( size_t i ) const;
+  const std::string&   GetDAQConfigText( size_t i ) const;
+  const std::string&   GetDAQConfigValue( UInt_t crate, const std::string& key ) const;
 
 protected:
   UInt_t        fNumber;        // Run number

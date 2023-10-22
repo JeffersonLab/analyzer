@@ -9,13 +9,14 @@
 
 #include "TObject.h"
 #include "TString.h"
-#include "TArrayI.h"
+#include "DAQconfig.h"
 
 class TDatime;
 
 class THaRunParameters : public TObject {
 public:
   using VecInt = std::vector<Int_t>;
+  using VecCfg = std::vector<DAQconfig>;
 
   THaRunParameters();
 
@@ -49,6 +50,9 @@ public:
   const VecInt&  GetPrescales() const { return fPrescale; }
   VecInt&        Prescales()          { return fPrescale; }
 
+  size_t         AddDAQConfig( UInt_t crate, std::string text );
+  VecCfg&        GetDAQConfig() { return fDAQconfig; }
+
 protected:
   // Beam parameters
   TString       fBeamName;     // Description of beam particle
@@ -69,7 +73,11 @@ protected:
   TString       fRunName;      // Description of run type
   VecInt        fPrescale;     // Prescale factors
 
-  ClassDef(THaRunParameters,1) // Beam & fixed target run parameters
+  // DAQ configuration text data
+  VecCfg        fDAQconfig; // DAQ configuration text data
+
+  //TODO schema evolution 1 -> 2 (fPrescale, DAQconfig)
+  ClassDef(THaRunParameters,2) // Beam & fixed target run parameters
 };
 
 
