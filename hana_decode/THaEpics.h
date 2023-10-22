@@ -68,12 +68,15 @@ public:
    Int_t LoadData( const UInt_t* evbuffer, UInt_t event= 0 );  // load the data
    Bool_t IsLoaded(const char* tag) const;
    void Print();
+   void SetDebug( Int_t level ) { fDebug = level; }
 
 private:
 
    std::map< std::string, std::vector<EpicsChan> > epicsData;
    std::vector<EpicsChan> GetChan(const char *tag) const;
    static UInt_t FindEvent( const std::vector<EpicsChan>& ep, UInt_t event );
+
+   Int_t fDebug{0};
 
    ClassDef(THaEpics,0)  // EPICS data
 

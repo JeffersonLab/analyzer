@@ -102,8 +102,8 @@ public:
   // Beam Helicity for spec="left","right"
   virtual Int_t GetHelicity(const TString& /*spec*/) const
   { return GetHelicity(); }
-  virtual UInt_t GetPrescaleFactor( UInt_t /*trigger*/ ) const
-  { assert(fgAllowUnimpl); return kMaxUInt; }
+  virtual Int_t GetPrescaleFactor( UInt_t /*trigger*/ ) const
+  { assert(fgAllowUnimpl); return -1; }
   // User can GetScaler, alternatively to GetSlotData for scalers
   // spec = "left", "right", "rcs" for event type 140 scaler "events"
   // spec = "evleft" or "evright" for L,R scalers injected into data stream.
@@ -156,8 +156,7 @@ public:
   void SetCrateMapName( const char* name );
   static void SetDefaultCrateMapName( const char* name );
 
-  // For THaRun to set info found during prescan FIXME BCI make virtual?
-  void SetRunInfo( UInt_t num, UInt_t type, ULong64_t tloc );
+  virtual void SetRunInfo( UInt_t num, UInt_t type, ULong64_t tloc );
 
 protected:
   // Control bits in TObject::fBits used by decoders

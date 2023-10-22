@@ -41,10 +41,6 @@ FILE*    OpenDBFile( const char* name, const TDatime& date, const char* here,
 Int_t    ReadDBline( FILE* file, char* buf, Int_t bufsiz, std::string& line );
 Bool_t   DBDatesDiffer( const TDatime& a, const TDatime& b );
 
-//FIXME: BCI: To be removed in next version. Do not use.
-FILE*    OpenDBFile( const char* name, const TDatime& date, const char* here,
-                     const char* filemode, int debug_flag, const char*& openpath );
-
 // Access functions for reading key/value pairs from database files
 template<class T> // instantiations available for all supported types (see VarType.h)
 Int_t    LoadDBvalue( FILE* file, const TDatime& date, const char* key, T& value );

@@ -35,6 +35,7 @@ public:
 protected:
 
   TString  fFilename;  // File name
+  UInt_t   fMinScan;   // Min. events to prescan even if all req'd data found
   UInt_t   fMaxScan;   // Max. no. of events to prescan (0=don't scan)
   Int_t    fSegment;   // Segment number (for split runs). -1: unset
   Int_t    fStream;    // Event stream number (for parallel streams). -1: unset
@@ -49,7 +50,8 @@ protected:
   static Bool_t    StdFindSegmentNumber( const TString& filename, TString& stem,
                                          Int_t& segment, Int_t& stream );
 
-  ClassDef(THaRun,7)  // A run based on a CODA data file on disk
+  //FIXME: schema evolution from version 7 -> 8 (fMinScan)
+  ClassDef(THaRun,8)  // A run based on a CODA data file on disk
 };
 
 #endif

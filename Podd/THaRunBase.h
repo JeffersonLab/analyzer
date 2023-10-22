@@ -51,8 +51,7 @@ public:
           void         IncrNumAnalyzed( Int_t n=1 ) { fNumAnalyzed += n; }
   const   TDatime&     GetDate()        const { return fDate; }
           UInt_t       GetDataRequired() const { return fDataRequired; }
-  // GetDataVersion is intentionally not const; derived classes modify members
-  virtual Int_t        GetDataVersion()       { return fDataVersion; }
+  virtual Int_t        GetDataVersion() const { return fDataVersion; }
           UInt_t       GetNumAnalyzed() const { return fNumAnalyzed; }
           UInt_t       GetNumber()      const { return fNumber; }
           UInt_t       GetType()        const { return fType; }

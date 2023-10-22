@@ -16,16 +16,16 @@
 
 using namespace std;
 
+const Int_t kDefaultPS = -1;
+
 //_____________________________________________________________________________
 THaRunParameters::THaRunParameters() :
   fBeamE(0), fBeamP(0), fBeamM(0), fBeamQ(0), fBeamdE(0), fBeamPol(0),
   fTgtM(0), fTgtPol(0), fIsPol(false)
+  , fPrescale(Decoder::CodaDecoder::MAX_PSFACT, kDefaultPS)
 {
   // Default constructor
 
-  fPrescale.Set(Decoder::CodaDecoder::MAX_PSFACT);
-  for( int i=0; i<fPrescale.GetSize(); i++)
-    fPrescale[i] = -1;
 }
 
 //_____________________________________________________________________________
@@ -36,7 +36,7 @@ void THaRunParameters::Clear( Option_t* )
   fBeamE = fBeamP = fBeamM = fBeamdE = fBeamPol = fTgtM = fTgtPol = 0;
   fBeamQ = 0;
   fIsPol = false;
-  fPrescale.Reset();
+  fPrescale.assign(Decoder::CodaDecoder::MAX_PSFACT, kDefaultPS);
 }
 
 //_____________________________________________________________________________
@@ -58,10 +58,10 @@ void THaRunParameters::Print( Option_t* ) const
     cout << "  Polarization= " << 100.*fTgtPol << "%\n";
   }
   cout << " DAQ:\n";
-  Int_t np = fPrescale.GetSize();
-  if( np > 0 ){
+  if( !fPrescale.empty() ) {
+    size_t np = fPrescale.size();
     cout << "  Prescale factors: (1-"<<np<<")\n   ";
-    for( int i=0; i<np; i++ ) {
+    for( size_t i=0; i<np; i++ ) {
       cout << fPrescale[i];
       if( i != np-1 )
 	cout << "/";

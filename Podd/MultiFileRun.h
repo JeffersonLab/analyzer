@@ -108,7 +108,6 @@ public:
   virtual void   Clear( Option_t* opt="" );
   virtual Int_t  Close();
   virtual Int_t  Compare( const TObject* obj ) const;
-  virtual Int_t  GetDataVersion();
   virtual const UInt_t* GetEvBuffer() const;
   // Get the last-seen physics event number. For CODA 3 in block mode, this
   // is the event number of the first event in the block.

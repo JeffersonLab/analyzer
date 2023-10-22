@@ -21,10 +21,10 @@ public:
    virtual ~THaEvtTypeHandler();
 
    virtual Int_t Analyze(THaEvData *evdata) = 0;
-   virtual EStatus Init( const TDatime& run_time );
    virtual void EvPrint() const;
    virtual Bool_t IsMyEvent( UInt_t type ) const;
    virtual void EvDump(THaEvData *evdata) const;
+   virtual Int_t ReadRunDatabase( const TDatime& date );
    virtual void SetDebugFile(std::ofstream *file) { if (file) fDebugFile=file; };
    virtual void SetDebugFile(const char *filename);
    virtual void AddEvtType( UInt_t evtype );

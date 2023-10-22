@@ -47,12 +47,8 @@ using namespace std;
 using namespace THaString;
 using namespace Podd;
 
-Int_t THaOutput::fgVerbose = 1;
-//FIXME: these should be member variables
-static Bool_t fgDoBench = false;
-static THaBenchmark fgBench;
-
 static const char comment('#');
+const Int_t kNocut = -1;
 
 //_____________________________________________________________________________
 class THaEpicsKey {
@@ -170,7 +166,8 @@ Bool_t THaOdata::Resize(Int_t i)
 //_____________________________________________________________________________
 THaOutput::THaOutput()
   : fNvar(0), fVar(nullptr), fEpicsVar(nullptr), fTree(nullptr),
-    fEpicsTree(nullptr), fInit(false),
+    fEpicsTimestamp(-1), fEpicsEvtNum(0), fEpicsTree(nullptr),
+    fInit(false), fDoBench(false), fVerbose(1), fBench(new THaBenchmark),
     fExtra(nullptr), fEpicsHandler(nullptr),
     nx(0), ny(0), iscut(0), xlo(0), xhi(0), ylo(0), yhi(0),
     fOpenEpics(false), fFirstEpics(false), fIsScalar(false)
@@ -183,6 +180,7 @@ THaOutput::~THaOutput()
 {
   // Destructor
 
+  delete fBench; fBench = nullptr;
   delete fExtra; fExtra = nullptr;
 
   // Delete Trees and histograms only if ROOT system is initialized.
@@ -227,7 +225,7 @@ Int_t THaOutput::Init( const char* filename )
 
   if( !gHaVars ) return -2;
 
-  if( fgDoBench ) fgBench.Begin("Init");
+  if( fDoBench ) fBench->Begin("Init");
 
   fTree = new TTree("T","Hall A Analyzer Output DST");
   fTree->SetAutoSave(200000000);
@@ -235,7 +233,7 @@ Int_t THaOutput::Init( const char* filename )
   fFirstEpics = true;
 
   Int_t err = LoadFile( filename );
-  if( fgDoBench && err != 0 ) fgBench.Stop("Init");
+  if( fDoBench && err != 0 ) fBench->Stop("Init");
 
   if( err == -1 ) {
     return 0;       // No error if file not found, but please
@@ -244,9 +242,6 @@ Int_t THaOutput::Init( const char* filename )
     delete fTree; fTree = nullptr;
     return -3;
   }
-
-  delete fExtra;
-  fExtra = new OutputExtras;
 
   fNvar = fVarnames.size();  // this gets reassigned below
   fArrayNames.clear();
@@ -284,7 +279,7 @@ Int_t THaOutput::Init( const char* filename )
     }
     pform->SetOutput(fTree);
     fFormulas.push_back(pform);
-    if( fgVerbose > 2 )
+    if( fVerbose > 2 )
       pform->LongPrint();  // for debug
 // Add variables (i.e. those var's used by the formula) to tree.
 // Reason is that TTree::Draw() may otherwise fail with ERROR 26
@@ -332,7 +327,7 @@ Int_t THaOutput::Init( const char* filename )
     }
     pcut->SetOutput(fTree);
     fCuts.push_back(pcut);
-    if( fgVerbose>2 )
+    if( fVerbose > 2 )
       pcut->LongPrint();  // for debug
   }
   for( auto* pVhist : fHistos ) {
@@ -377,20 +372,19 @@ Int_t THaOutput::Init( const char* filename )
       fEpicsTree->Branch(epicsbr.c_str(), &fEpicsVar[i],
         tinfo.c_str(), kNbout);
     }
-    auto* extras = static_cast<OutputExtras*>(fExtra);
-    fEpicsTree->Branch("timestamp", &(extras->fEpicsTimestamp), "timestamp/L", kNbout);
-    fEpicsTree->Branch("evnum", &(extras->fEpicsEvtNum), "evnum/L", kNbout);
+    fEpicsTree->Branch("timestamp", &fEpicsTimestamp, "timestamp/L", kNbout);
+    fEpicsTree->Branch("evnum", &fEpicsEvtNum, "evnum/L", kNbout);
   }
 
   Print();
 
   fInit = true;
 
-  if( fgDoBench ) fgBench.Stop("Init");
+  if( fDoBench ) fBench->Stop("Init");
 
-  if( fgDoBench ) fgBench.Begin("Attach");
+  if( fDoBench ) fBench->Begin("Attach");
   Int_t st = Attach();
-  if( fgDoBench ) fgBench.Stop("Attach");
+  if( fDoBench ) fBench->Stop("Attach");
   if ( st )
     return -4;
 
@@ -509,10 +503,9 @@ Int_t THaOutput::ProcEpics(THaEvData *evdata, THaEpicsEvtHandler *epicshandle)
   if ( !epicshandle ) return 0;
   if ( !epicshandle->IsMyEvent(evdata->GetEvType())
        || fEpicsKey.empty() || !fEpicsTree ) return 0;
-  if( fgDoBench ) fgBench.Begin("EPICS");
-  auto* extras = static_cast<OutputExtras*>(fExtra);
-  extras->fEpicsTimestamp = -1;
-  extras->fEpicsEvtNum = evdata->GetEvNum(); // most recent physics event number
+  if( fDoBench ) fBench->Begin("EPICS");
+  fEpicsTimestamp = -1;
+  fEpicsEvtNum = evdata->GetEvNum(); // most recent physics event number
   auto siz = fEpicsKey.size();
   for( size_t i = 0; i < siz; ++i ) {
     if (epicshandle->IsLoaded(fEpicsKey[i]->GetName().c_str())) {
@@ -527,14 +520,13 @@ Int_t THaOutput::ProcEpics(THaEvData *evdata, THaEpicsEvtHandler *epicshandle)
       }
  // fill time stamp (once is ok since this is an EPICS event)
  //FIXME: check for inconsistent time stamps?
-      extras->fEpicsTimestamp =
-        epicshandle->GetTime(fEpicsKey[i]->GetName().c_str());
+      fEpicsTimestamp = epicshandle->GetTime(fEpicsKey[i]->GetName().c_str());
     } else {
       fEpicsVar[i] = -1e32;  // data not yet found
     }
   }
   if (fEpicsTree) fEpicsTree->Fill();
-  if( fgDoBench ) fgBench.Stop("EPICS");
+  if( fDoBench ) fBench->Stop("EPICS");
   return 1;
 }
 
@@ -544,17 +536,17 @@ Int_t THaOutput::Process()
   // Process the variables, formulas, and histograms.
   // This is called by THaAnalyzer.
 
-  if( fgDoBench ) fgBench.Begin("Formulas");
+  if( fDoBench ) fBench->Begin("Formulas");
   for (auto & form : fFormulas)
     if (form) form->Process();
-  if( fgDoBench ) fgBench.Stop("Formulas");
+  if( fDoBench ) fBench->Stop("Formulas");
 
-  if( fgDoBench ) fgBench.Begin("Cuts");
+  if( fDoBench ) fBench->Begin("Cuts");
   for (auto & cut : fCuts)
     if (cut) cut->Process();
-  if( fgDoBench ) fgBench.Stop("Cuts");
+  if( fDoBench ) fBench->Stop("Cuts");
 
-  if( fgDoBench ) fgBench.Begin("Variables");
+  if( fDoBench ) fBench->Begin("Variables");
   for (UInt_t ivar = 0; ivar < fNvar; ivar++) {
     const auto* pvar = fVariables[ivar];
     if( pvar ) {
@@ -578,7 +570,7 @@ Int_t THaOutput::Process()
       Double_t x = pvar->GetValue(i);
       if( x == kMinInt ) x = kBig;
       if (pdat->Fill(i,x) != 1) {
-	if( fgVerbose>0 && first ) {
+	if( fVerbose > 0 && first ) {
 	  cerr << "THaOutput::ERROR: storing too much variable sized data: "
 	       << pvar->GetName() <<"  "<<pvar->GetLen()<<endl;
 	  first = false;
@@ -586,16 +578,16 @@ Int_t THaOutput::Process()
       }
     }
   }
-  if( fgDoBench ) fgBench.Stop("Variables");
+  if( fDoBench ) fBench->Stop("Variables");
 
-  if( fgDoBench ) fgBench.Begin("Histos");
+  if( fDoBench ) fBench->Begin("Histos");
   for (auto & hist : fHistos)
     hist->Process();
-  if( fgDoBench ) fgBench.Stop("Histos");
+  if( fDoBench ) fBench->Stop("Histos");
 
-  if( fgDoBench ) fgBench.Begin("TreeFill");
+  if( fDoBench ) fBench->Begin("TreeFill");
   if (fTree) fTree->Fill();
-  if( fgDoBench ) fgBench.Stop("TreeFill");
+  if( fDoBench ) fBench->Stop("TreeFill");
 
   return 0;
 }
@@ -603,25 +595,25 @@ Int_t THaOutput::Process()
 //_____________________________________________________________________________
 Int_t THaOutput::End()
 {
-  if( fgDoBench ) fgBench.Begin("End");
+  if( fDoBench ) fBench->Begin("End");
 
   if (fTree) fTree->Write();
   if (fEpicsTree) fEpicsTree->Write();
   for (auto & hist : fHistos)
     hist->End();
-  if( fgDoBench ) fgBench.Stop("End");
+  if( fDoBench ) fBench->Stop("End");
 
-  if( fgDoBench ) {
+  if( fDoBench ) {
     cout << "Output timing summary:" << endl;
-    fgBench.Print("Init");
-    fgBench.Print("Attach");
-    fgBench.Print("Variables");
-    fgBench.Print("Formulas");
-    fgBench.Print("Cuts");
-    fgBench.Print("Histos");
-    fgBench.Print("TreeFill");
-    fgBench.Print("EPICS");
-    fgBench.Print("End");
+    fBench->Print("Init");
+    fBench->Print("Attach");
+    fBench->Print("Variables");
+    fBench->Print("Formulas");
+    fBench->Print("Cuts");
+    fBench->Print("Histos");
+    fBench->Print("TreeFill");
+    fBench->Print("EPICS");
+    fBench->Print("End");
   }
   return 0;
 }
@@ -740,7 +732,7 @@ Int_t THaOutput::LoadFile( const char* filename )
 	if (ikey == kH2f || ikey == kH2d) {
 	  fHistos.back()->SetY(ny, ylo, yhi, sfvary);
 	}
-	if (iscut != fgNocut) fHistos.back()->SetCut(scut);
+	if (iscut != kNocut) fHistos.back()->SetCut(scut);
 // If we know now that its a scalar, inform the histogram to remain that way
 // and over-ride its internal rules for self-determining if its a vector.
         if (fIsScalar) fHistos.back()->SetScalarTrue();
@@ -1003,7 +995,7 @@ void THaOutput::Print() const
   // Printout the definitions. Amount printed depends on verbosity
   // level, set with SetVerbosity().
 
-  if( fgVerbose > 0 ) {
+  if( fVerbose > 0 ) {
     if( fVarnames.empty() && fFormulas.empty() && fCuts.empty() &&
         fHistos.empty() ) {
       ::Warning("THaOutput", "no output defined");
@@ -1011,7 +1003,7 @@ void THaOutput::Print() const
       cout << endl << "THaOutput definitions: " << endl;
       if( !fVarnames.empty() ) {
 	cout << "=== Number of variables "<<fVarnames.size()<<endl;
-	if( fgVerbose > 1 ) {
+	if( fVerbose > 1 ) {
 	  cout << endl;
 
 	  UInt_t i = 0;
@@ -1023,13 +1015,13 @@ void THaOutput::Print() const
       }
       if( !fFormulas.empty() ) {
 	cout << "=== Number of formulas "<<fFormulas.size()<<endl;
-	if( fgVerbose > 1 ) {
+	if( fVerbose > 1 ) {
 	  cout << endl;
 	  UInt_t i = 0;
 	  for (auto iform = fFormulas.begin();
 	       iform != fFormulas.end(); i++, iform++ ) {
 	    cout << "Formula # "<<i<<endl;
-	    if( fgVerbose>2 )
+	    if( fVerbose > 2 )
 	      (*iform)->LongPrint();
 	    else
 	      (*iform)->ShortPrint();
@@ -1038,13 +1030,13 @@ void THaOutput::Print() const
       }
       if( !fCuts.empty() ) {
 	cout << "=== Number of cuts "<<fCuts.size()<<endl;
-	if( fgVerbose > 1 ) {
+	if( fVerbose > 1 ) {
 	  cout << endl;
 	  UInt_t i = 0;
 	  for (auto icut = fCuts.begin(); icut != fCuts.end();
 	       i++, icut++ ) {
 	    cout << "Cut # "<<i<<endl;
-	    if( fgVerbose>2 )
+	    if( fVerbose > 2 )
 	      (*icut)->LongPrint();
 	    else
 	      (*icut)->ShortPrint();
@@ -1053,7 +1045,7 @@ void THaOutput::Print() const
       }
       if( !fHistos.empty() ) {
 	cout << "=== Number of histograms "<<fHistos.size()<<endl;
-	if( fgVerbose > 1 ) {
+	if( fVerbose > 1 ) {
 	  cout << endl;
 	  UInt_t i = 0;
 	  for (auto ihist = fHistos.begin(); ihist != fHistos.end();
@@ -1076,7 +1068,7 @@ Int_t THaOutput::ChkHistTitle(Int_t iden, const string& sline)
 // Ret value 'result' means:  -1 == error,  1 == everything ok.
   Int_t result = -1;
   stitle = "";   sfvarx = "";  sfvary  = "";
-  iscut = fgNocut;  scut = "";
+  iscut = kNocut;  scut = "";
   nx = 0; ny = 0; xlo = 0; xhi = 0; ylo = 0; yhi = 0;
   string::size_type pos1 = sline.find_first_of('\'');
   string::size_type pos2 = sline.find_last_of('\'');
@@ -1153,7 +1145,7 @@ void THaOutput::SetVerbosity( Int_t level )
 {
   // Set verbosity level for debug messages
 
-  fgVerbose = level;
+  fVerbose = level;
 }
 
 //_____________________________________________________________________________

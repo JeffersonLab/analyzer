@@ -12,11 +12,12 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaOnlRun.h"
-
+#include "THaCodaData.h"
 #include "THaEtClient.h"
 #include "TClass.h"
 #include "TError.h"
 #include <stdexcept>
+#include <memory>
 
 using namespace std;
 
@@ -91,17 +92,31 @@ Int_t THaOnlRun::Open()
 {
   // Open ET connection. 
 
+  static const char* const here = "Open";
+
   if (fComputer.IsNull() || fSession.IsNull()) {
     Error( "Open", "Computer and Session must be set. "
 	   "Cannot open ET run." );
-    return -2;   // must set computer and session, at least;
+    return ReturnCode(CODA_FATAL);   // must set computer and session, at least
   } 
 
   Int_t st = fCodaData->codaOpen(fComputer, fSession, fMode);
-  st = ReturnCode(st);
-  if( st == READ_OK )
-    fOpened = true;
-  return st;
+  if( st == CODA_OK ) {
+    // Get CODA version from data; however, if a version was set
+    // explicitly by the user, use that instead
+    if( fDataVersion <= 0 )
+      fDataVersion = fCodaData->getCodaVersion();
+    if( fDataVersion <= 0 ) {
+      Error( here, "Cannot determine CODA version from ET. "
+                   "Try analyzer->SetCodaVersion(2)");
+      st = CODA_FATAL;
+      Close();
+    }
+    //cout << "in THaOnlRun::Open:  coda version "<<fDataVersion<<endl;
+    if( st == CODA_OK )
+      fOpened = true;
+  }
+  return ReturnCode(st);
 }
 
 //______________________________________________________________________________

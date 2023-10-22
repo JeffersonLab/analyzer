@@ -21,6 +21,7 @@ class THaVhist;
 class THaEvData;
 class TTree;
 class THaEvtTypeHandler;
+class THaBenchmark;
 
 class THaOdata {
 // Utility class used by THaOutput to store arrays 
@@ -81,7 +82,7 @@ public:
   virtual Bool_t TreeDefined() const { return fTree != nullptr; };
   virtual TTree* GetTree() const { return fTree; };
 
-  static void SetVerbosity( Int_t level );
+  void SetVerbosity( Int_t level );
   
 protected:
 
@@ -97,6 +98,7 @@ protected:
   static std::string CleanEpicsName(const std::string& var);
   void BuildList(const std::vector<std::string>& vdata);
   void Print() const;
+
   // Variables, Formulas, Cuts, Histograms
   UInt_t fNvar;
   Double_t *fVar, *fEpicsVar;
@@ -108,26 +110,26 @@ protected:
   std::vector<THaVform* > fFormulas, fCuts;
   std::vector<THaVhist* > fHistos;
   std::vector<THaOdata* > fOdata;
+  TTree* fTree;
+
+  // EPICS tree
   std::vector<THaEpicsKey*>  fEpicsKey;
-  TTree *fTree, *fEpicsTree; 
-  bool fInit;
-  
+  Long64_t fEpicsTimestamp;  // Timestamp of entry in EPICS tree
+  Long64_t fEpicsEvtNum;     // Most recent physics event before entry in EPICS tree
+  TTree* fEpicsTree;
+
+  // Status, parameters
+  Bool_t fInit;
+  Bool_t fDoBench;
+  Int_t  fVerbose;
+
+  THaBenchmark* fBench;
+
   enum EId {kVar = 1, kForm, kCut, kH1f, kH1d, kH2f, kH2d, kBlock,
             kBegin, kEnd, kRate, kCount };
   static const Int_t kNbout = 4000;
-  static const Int_t fgNocut = -1;
 
-  static Int_t fgVerbose;  // FIXME: -> member variable
   TObject*  fExtra;     // Additional member data (for binary compat.)
-
-  // Data put into fExtra
-  class OutputExtras : public TObject {
-  public:
-    OutputExtras() : fEpicsTimestamp(-1), fEpicsEvtNum(0) {}
-    virtual ~OutputExtras() = default;
-    time_t   fEpicsTimestamp;  // Timestamp of entry in EPICS tree
-    Long64_t fEpicsEvtNum;     // Most recent physics event before entry in EPICS tree
-  };
 
 private:
 

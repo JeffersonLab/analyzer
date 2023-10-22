@@ -263,18 +263,6 @@ FILE* OpenDBFile( const char* name, const TDatime& date, const char* here,
 }
 
 //_____________________________________________________________________________
-// FIXME: Poorly designed. To be removed. Do not use.
-FILE* OpenDBFile( const char* name, const TDatime& date, const char* here,
-		  const char* filemode, int debug_flag, const char*& openpath )
-{
-  string temp;
-  FILE* fi = OpenDBFile(name, date, here, filemode, debug_flag, temp);
-  // Caller must free() openpath.
-  openpath = fi ? strdup(temp.c_str()) : nullptr;
-  return fi;
-}
-
-//_____________________________________________________________________________
 FILE* OpenDBFile( const char* name, const TDatime& date, const char* here,
                   const char* filemode, int debug_flag )
 {

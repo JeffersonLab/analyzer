@@ -31,8 +31,6 @@
 
 using namespace std;
 
-static int DEBUGL = 0;  // FIXME: -> fDebug member variable
-
 namespace Decoder {
 
 //_____________________________________________________________________________
@@ -169,7 +167,7 @@ int THaEpics::LoadData( const UInt_t* evbuffer, UInt_t event)
 
   const char* cbuff = (const char*)evbuffer;
   size_t len = sizeof(UInt_t)*(evbuffer[0]+1);
-  if (DEBUGL>1) cout << "Enter loadData, len = "<<len<<endl;
+  if ( fDebug > 1 ) cout << "Enter loadData, len = " << len << endl;
   if( len<16 ) return 0;
   // The first 16 bytes of the buffer are the event header
   len -= 16;
@@ -185,13 +183,13 @@ int THaEpics::LoadData( const UInt_t* evbuffer, UInt_t event)
     cerr << "Invalid time stamp for EPICS event at evnum = " << event << endl;
     return 0;
   }
-  if(DEBUGL>1) cout << "Timestamp: " << date <<endl;
+  if( fDebug > 1 ) cout << "Timestamp: " << date << endl;
 
   string line;
   istringstream il, iv;
   while( getline(ib,line) ) {
     // Here we parse each line
-    if(DEBUGL>2) cout << "epics line : "<<line<<endl;
+    if( fDebug > 2 ) cout << "epics line : " << line << endl;
     il.clear(); il.str(line);
     string wtag, wval, wunits;
     il >> wtag;
@@ -214,13 +212,18 @@ int THaEpics::LoadData( const UInt_t* evbuffer, UInt_t event)
       wval = ( lpos != string::npos ) ? line.substr(lpos) : "";
       dval = 0;
     }
-    if(DEBUGL>2) cout << "wtag = "<<wtag<<"   wval = "<<wval
-		      << "   dval = "<<dval<<"   wunits = "<<wunits<<endl;
+    if( fDebug > 2 )
+      cout << "wtag = "      << wtag
+           << "   wval = "   << wval
+           << "   dval = "   << dval
+           << "   wunits = " << wunits
+           << endl;
 
     // Add tag/value/units to the EPICS data.    
     epicsData[wtag].push_back( EpicsChan(wtag, date, event, wval, wunits, dval) );
   }
-  if(DEBUGL) Print();
+  if( fDebug ) Print();
+
   return 1;
 }
 

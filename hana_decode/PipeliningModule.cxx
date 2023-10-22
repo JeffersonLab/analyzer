@@ -16,52 +16,6 @@
 
 using namespace std;
 
-//_____________________________________________________________________________
-// Helper function for debugging
-// FIXME: BCI: Make a virtual function. This encoding is specific to Fadc250Module
-static void PrintBlock( const uint32_t* codabuffer, uint32_t pos, uint32_t len )
-{
-  size_t idx = pos;
-  while( idx < pos+len ) {
-    while( idx < pos+len && !TESTBIT(codabuffer[idx], 31) )
-      ++idx;
-    if( idx == pos+len )
-      break;
-    uint32_t data = codabuffer[idx];
-    uint32_t type = (data >> 27) & 0xF;
-    switch( type ) {
-      case 0:
-        cout << "Block header"
-             << " idx = " << idx
-             << " slot = " << ((data >> 22) & 0x1F)
-             << " blksz = " << ((data >> 0) & 0xFF)
-             << " iblkn = " << ((data >> 8) & 0x3FF);
-        break;
-      case 1:
-        cout << "Block trailer"
-             << " idx = " << idx
-             << " slot = " << ((data >> 22) & 0x1F)
-             << " nwords = " << (data & 0x3FFFFF);
-        break;
-      case 2:
-        cout << " Event header"
-             << " idx = " << idx
-             << " slot = " << ((data >> 22) & 0x1F)
-//             << " nevt = " << (data & 0x3FFFFF);
-             << " time = " << ((data >>12) & 0x3FF)
-             << " trignum = " << (data & 0xFFF);
-        break;
-      default:
-        cout << "  Type = " << type
-             << " idx = " << idx;
-        break;
-    }
-    cout << endl;
-    ++idx;
-  }
-}
-
-//_____________________________________________________________________________
 namespace Decoder {
 
 //_____________________________________________________________________________
@@ -142,8 +96,10 @@ Long64_t PipeliningModule::VerifyBlockTrailer(
  notfound:
     cerr << "ERROR: Block trailer NOT found, slot " << fSlot
          << ", roc " << fCrate << ". Corrupt data. Giving up." << endl;
+#ifdef WITH_DEBUG
     cout << "Block data:" << endl;
     PrintBlock(evbuffer, pos, len);
+#endif
     return 0;
   }
 }
@@ -157,8 +113,10 @@ UInt_t PipeliningModule::LoadBank( THaSlotData* sldat,
   // physics events.
   // This routine is called for buffers with bank structure.
 
-  if( fDebug > 1 )  // Set fDebug via module config string in db_cratemap.dat
-    PrintBlock(evbuffer,pos,len);
+#ifdef WITH_DEBUG
+ if( fDebug > 1 )  // Set fDebug via module config string in db_cratemap.dat
+    PrintBlock(evbuffer, pos, len);
+#endif
 
   // Find block for this module's slot
   auto ibeg = FindIDWord(evbuffer, pos, len, kBlockHeader, fSlot);
@@ -271,6 +229,52 @@ UInt_t PipeliningModule::LoadNextEvBuffer( THaSlotData* sldat )
   return ii;
 }
 
+#ifdef WITH_DEBUG
+//_____________________________________________________________________________
+// Helper function for debugging
+void PipeliningModule::PrintBlock( const uint32_t* codabuffer,
+                                   uint32_t pos, uint32_t len ) const
+{
+  size_t idx = pos;
+  while( idx < pos+len ) {
+    while( idx < pos+len && !TESTBIT(codabuffer[idx], 31) )
+      ++idx;
+    if( idx == pos+len )
+      break;
+    uint32_t data = codabuffer[idx];
+    uint32_t type = (data >> 27) & 0xF;
+    switch( type ) {
+      case 0:
+        cout << "Block header"
+             << " idx = " << idx
+             << " slot = " << ((data >> 22) & 0x1F)
+             << " blksz = " << ((data >> 0) & 0xFF)
+             << " iblkn = " << ((data >> 8) & 0x3FF);
+        break;
+      case 1:
+        cout << "Block trailer"
+             << " idx = " << idx
+             << " slot = " << ((data >> 22) & 0x1F)
+             << " nwords = " << (data & 0x3FFFFF);
+        break;
+      case 2:
+        cout << " Event header"
+             << " idx = " << idx
+             << " slot = " << ((data >> 22) & 0x1F)
+             //             << " nevt = " << (data & 0x3FFFFF);
+             << " time = " << ((data >>12) & 0x3FF)
+             << " trignum = " << (data & 0xFFF);
+        break;
+      default:
+        cout << "  Type = " << type
+             << " idx = " << idx;
+        break;
+    }
+    cout << endl;
+    ++idx;
+  }
+}
+#endif
 //_____________________________________________________________________________
 } //namespace Decoder
 

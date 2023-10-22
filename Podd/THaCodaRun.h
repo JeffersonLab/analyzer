@@ -23,9 +23,7 @@ public:
   virtual const UInt_t*  GetEvBuffer() const;
   virtual Bool_t         IsOpen() const;
   virtual Int_t          ReadEvent();
-  virtual Int_t          GetDataVersion();
   virtual Int_t          SetDataVersion( Int_t version );
-  //FIXME: these two should call Get/SetDataVersion, not the other way round
   Int_t                  GetCodaVersion();
   Int_t                  SetCodaVersion( Int_t version );
 
@@ -38,14 +36,14 @@ protected:
 };
 
 //________________________ inlines ____________________________________________
-inline Int_t THaCodaRun::GetDataVersion()
+inline Int_t THaCodaRun::GetCodaVersion()
 {
-  return GetCodaVersion();
+  return GetDataVersion();
 }
 
-inline Int_t THaCodaRun::SetDataVersion( Int_t version )
+inline Int_t THaCodaRun::SetCodaVersion( Int_t version )
 {
-  return SetCodaVersion(version);
+  return SetDataVersion(version);
 }
 
 #endif

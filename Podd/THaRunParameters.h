@@ -15,6 +15,8 @@ class TDatime;
 
 class THaRunParameters : public TObject {
 public:
+  using VecInt = std::vector<Int_t>;
+
   THaRunParameters();
 
   virtual void   Clear( Option_t* opt="" );
@@ -44,8 +46,8 @@ public:
   void           SetTgtName(  const char* name ) { fTgtName  = name; }
   void           SetRunName(  const char* name ) { fRunName  = name; }
 
-  const TArrayI& GetPrescales() const { return fPrescale; }
-  TArrayI&       Prescales()          { return fPrescale; }
+  const VecInt&  GetPrescales() const { return fPrescale; }
+  VecInt&        Prescales()          { return fPrescale; }
 
 protected:
   // Beam parameters
@@ -65,7 +67,7 @@ protected:
 
   // DAQ parameters
   TString       fRunName;      // Description of run type
-  TArrayI       fPrescale;     // Prescale factors
+  VecInt        fPrescale;     // Prescale factors
 
   ClassDef(THaRunParameters,1) // Beam & fixed target run parameters
 };

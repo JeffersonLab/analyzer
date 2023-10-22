@@ -84,29 +84,9 @@ Int_t THaCodaRun::Close()
 }
 
 //_____________________________________________________________________________
-Int_t THaCodaRun::GetCodaVersion() // NOLINT(misc-no-recursion)
+Int_t THaCodaRun::SetDataVersion( Int_t vers )
 {
-  // Get CODA format version of current data source.
-  // Returns either 2 or 3, or -1 on error (file not open, etc.)
-
-  if( fDataVersion > 0 ) // Override with user-specified value
-    return fDataVersion;
-  //FIXME Workaround for this function not being virtual
-  if( !fCodaData && IsA() != THaCodaRun::Class() ) {
-    if( IsA()->GetMethodAllAny("GetDataVersion") ==
-        THaCodaRun::Class()->GetMethodAllAny("GetDataVersion") ) {
-      return -1;
-    }
-    return GetDataVersion();
-  }
-  assert(fCodaData);
-  return (fDataVersion = fCodaData->getCodaVersion());
-}
-
-//_____________________________________________________________________________
-Int_t THaCodaRun::SetCodaVersion( Int_t vers )
-{
-  const char* const here = "THaCodaRun::SetCodaVersion";
+  const char* const here = "THaCodaRun::SetDataVersion";
 
   if (vers != 2 && vers != 3) {
     Error( here, "Illegal CODA version = %d. Must be 2 or 3.", vers );

@@ -68,18 +68,18 @@ CodaDecoder::~CodaDecoder()
 #endif
 
 //_____________________________________________________________________________
-UInt_t CodaDecoder::GetPrescaleFactor( UInt_t trigger_type) const
+Int_t CodaDecoder::GetPrescaleFactor( UInt_t trigger_type) const
 {
   // To get the prescale factors for trigger number "trigger_type"
   // (valid types are 1,2,3...)
   if ( (trigger_type > 0) && (trigger_type <= MAX_PSFACT)) {
-    return psfact[trigger_type - 1];
+    return static_cast<Int_t>(psfact[trigger_type - 1]);
   }
   if (fDebug > 0) {
     Warning( "CodaDecoder::GetPrescaleFactor", "Requested prescale factor for "
              "undefined trigger type %d", trigger_type );
   }
-  return 0;
+  return -1;
 }
 
 //_____________________________________________________________________________
@@ -1625,10 +1625,10 @@ Int_t CodaDecoder::prescale_decode_coda3(const UInt_t* evbuffer)
 }
 
 //_____________________________________________________________________________
-Int_t CodaDecoder::SetCodaVersion( Int_t version )
+Int_t CodaDecoder::SetDataVersion( Int_t version )
 {
   if (version != 2 && version != 3) {
-    cout << "ERROR::CodaDecoder::SetCodaVersion version " << version;
+    cout << "ERROR::CodaDecoder::SetDataVersion version " << version;
     cout << "  must be 2 or 3 only." << endl;
     cout << "Not setting CODA version ! " << endl;
     return -1;

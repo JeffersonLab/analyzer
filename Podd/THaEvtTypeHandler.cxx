@@ -76,12 +76,10 @@ void THaEvtTypeHandler::EvDump(THaEvData *evdata) const
   }
 }
 
-THaAnalysisObject::EStatus THaEvtTypeHandler::Init(const TDatime& date)
+// By default, event type handlers ignore the run database
+Int_t THaEvtTypeHandler::ReadRunDatabase( const TDatime& )
 {
-//  fStatus = kOK;
-//  return kOK;
-  SetConfig("default"); // BCI: override ReadRunDatabase instead
-  return THaAnalysisObject::Init(date);
+  return kOK;
 }
 
 void THaEvtTypeHandler::SetDebugFile(const char *filename) {

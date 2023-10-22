@@ -32,15 +32,17 @@ using namespace std;
 # define MKCODAFILE unique_ptr<Decoder::THaCodaFile>(new Decoder::THaCodaFile)
 #endif
 
-static const int         fgMaxScan   = 5000;
-static const char* const fgRe1       ="\\.[0-9]+$";
-static const char* const fgRe2       ="\\.[0-9]+\\.[0-9]+$";
+constexpr int     kMinScan   = 50;
+constexpr int     kMaxScan   = 500;
+const char* const kRe1       = "\\.[0-9]+$";
+const char* const kRe2       = "\\.[0-9]+\\.[0-9]+$";
 
 //_____________________________________________________________________________
 THaRun::THaRun( const char* fname, const char* description )
   : THaCodaRun(description)
   , fFilename(fname)
-  , fMaxScan(fgMaxScan)
+  , fMinScan(kMinScan)
+  , fMaxScan(kMaxScan)
   , fSegment(-1)
   , fStream(-1)
 {
@@ -56,7 +58,8 @@ THaRun::THaRun( const char* fname, const char* description )
 THaRun::THaRun( const vector<TString>& pathList, const char* filename,
                 const char* description )
   : THaCodaRun(description)
-  , fMaxScan(fgMaxScan)
+  , fMinScan(kMinScan)
+  , fMaxScan(kMaxScan)
   , fSegment(-1)
   , fStream(-1)
 {
@@ -80,6 +83,7 @@ THaRun::THaRun( const vector<TString>& pathList, const char* filename,
 THaRun::THaRun( const THaRun& rhs )
   : THaCodaRun(rhs)
   , fFilename(rhs.fFilename)
+  , fMinScan(rhs.fMinScan)
   , fMaxScan(rhs.fMaxScan)
   , fSegment(rhs.fSegment)
   , fStream(rhs.fStream)
@@ -103,13 +107,15 @@ THaRun& THaRun::operator=(const THaRunBase& rhs)
     try {
       const auto& run = dynamic_cast<const THaRun&>(rhs);
       fFilename = run.fFilename;
+      fMinScan  = run.fMinScan;
       fMaxScan  = run.fMaxScan;
       fSegment  = run.fSegment;
       fStream   = run.fStream;
     }
     catch( const std::bad_cast& ) {
       fFilename.Clear();  // will need to call SetFilename()
-      fMaxScan = fgMaxScan;
+      fMinScan = kMinScan;
+      fMaxScan = kMaxScan;
       fSegment = -1;
       fStream = -1;
     }
@@ -131,9 +137,11 @@ void THaRun::Clear( Option_t* opt )
 
   THaCodaRun::Clear(opt);
 
-  // If initializing, keep explicitly set fMaxScan
-  if( !doing_init )
-    fMaxScan = fgMaxScan;
+  // If initializing, keep explicitly set fMinScan and fMaxScan
+  if( !doing_init ) {
+    fMinScan = kMinScan;
+    fMaxScan = kMaxScan;
+  }
 }
 
 //_____________________________________________________________________________
@@ -178,13 +186,16 @@ Int_t THaRun::Open()
   if( st == CODA_OK ) {
     // Get CODA version from data; however, if a version was set
     // explicitly by the user, use that instead
-    if( GetCodaVersion() < 0 ) {
-      Error( here, "Cannot determine CODA version from file. "
-          "Try analyzer->SetCodaVersion(2)");
-      st = CODA_ERROR;
-      Close();
+    if( fDataVersion <= 0 ) {
+      fDataVersion = fCodaData->getCodaVersion();
+      if( fDataVersion <= 0 ) {
+        Error(here, "Cannot determine CODA version from file. "
+                    "Try analyzer->SetCodaVersion(2)");
+        st = CODA_FATAL;
+        Close();
+      }
     }
-    cout << "in THaRun::Open:  coda version "<<fDataVersion<<endl;
+    //cout << "in THaRun::Open:  coda version "<<fDataVersion<<endl;
     if( st == CODA_OK )
       fOpened = true;
   }
@@ -223,7 +234,6 @@ Int_t THaRun::PrescanFile()
 {
   static const char* const here = "THaRun::PrescanFile";
   // Scan at least 'minscan' number of events regardless of info required
-  //FIXME: BCI: configurable member variable
   auto* ifo = DAQInfoExtra::GetExtraInfo(fExtra);
   const UInt_t minscan = ifo ? ifo->fMinScan : 50;
 
@@ -443,8 +453,8 @@ Bool_t THaRun::StdFindSegmentNumber( const TString& filename, TString& stem,
                                      Int_t& segment, Int_t& stream )
 {
   try {
-    TRegexp re1(fgRe1);
-    TRegexp re2(fgRe2);
+    TRegexp re1(kRe1);
+    TRegexp re2(kRe2);
     if( re1.Status() != TRegexp::kOK || re2.Status() != TRegexp::kOK ) {
       ostringstream ostr;
       ostr << "Error compiling regular expressions: "

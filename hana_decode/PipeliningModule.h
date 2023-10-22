@@ -33,9 +33,9 @@
 #include <cstdint>
 #include <cassert>
 
-class THaSlotData;
-
 namespace Decoder {
+
+class THaSlotData;
 
 class PipeliningModule : public VmeModule  {
 
@@ -56,6 +56,12 @@ public:
                             const UInt_t* pstop );
   virtual UInt_t LoadBank( THaSlotData* sldat, const UInt_t* evbuffer,
                            UInt_t pos, UInt_t len );
+
+#ifdef WITH_DEBUG
+  // Print buffer structure, for debugging
+  virtual void PrintBlock( const uint32_t* codabuffer,
+                           uint32_t pos, uint32_t len ) const;
+#endif
 
 protected:
 

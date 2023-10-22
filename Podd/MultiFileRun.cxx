@@ -260,13 +260,6 @@ Int_t MultiFileRun::Compare( const TObject* obj ) const
 }
 
 //_____________________________________________________________________________
-Int_t MultiFileRun::GetDataVersion()
-{
-  // fDataVersion is either 0 if we're uninitialized or set in BuildInputList.
-  return fDataVersion;
-}
-
-//_____________________________________________________________________________
 const UInt_t* MultiFileRun::GetEvBuffer() const
 {
   if( fCodaData ) {
