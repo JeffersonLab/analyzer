@@ -8,7 +8,7 @@
 # Make an effort to set up the same ROOT that was used to build this analyzer ...
 if ( ! ${?ROOTSYS} ) then
   source "@ROOTSYS@/bin/thisroot.csh"
-else if ( "${ROOTSYS}" != "@ROOTSYS" ) then
+else if ( "${ROOTSYS}" != "@ROOTSYS@" ) then
   source "@ROOTSYS@/bin/thisroot.csh"
 endif
 
