@@ -176,7 +176,7 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
     auto nsrc = src_cfg.size();
     while( cfg.size() < nsrc ) {
       const auto& src = src_cfg[cfg.size()];
-      fParam->AddDAQConfig(src.fCrate, src.fText);
+      fParam->AddDAQConfig(src);
     }
     fDataSet |= kDAQInfo;
     SETBIT(ret, kDAQinfoEvt);

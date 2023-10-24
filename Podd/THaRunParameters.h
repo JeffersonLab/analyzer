@@ -50,7 +50,7 @@ public:
   const VecInt&  GetPrescales() const { return fPrescale; }
   VecInt&        Prescales()          { return fPrescale; }
 
-  size_t         AddDAQConfig( UInt_t crate, std::string text );
+  size_t         AddDAQConfig( DAQconfig cfg );
   VecCfg&        GetDAQConfig() { return fDAQconfig; }
 
 protected:

@@ -131,9 +131,9 @@ void THaRunParameters::SetPolarizations( Double_t pb, Double_t pt )
 }
 
 //_____________________________________________________________________________
-size_t THaRunParameters::AddDAQConfig( UInt_t crate, std::string text )
+size_t THaRunParameters::AddDAQConfig( DAQconfig cfg )
 {
-  fDAQconfig.emplace_back(crate, std::move(text) );
+  fDAQconfig.emplace_back(std::move(cfg));
   return fDAQconfig.size();
 }
 
