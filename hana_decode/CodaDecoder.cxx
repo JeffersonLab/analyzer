@@ -190,12 +190,21 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
     }
   }
 
-  else if( event_type <= MAX_PHYS_EVTYPE && !PrescanModeEnabled() ) {
-    if( fDataVersion == 3 &&
-        (ret = trigBankDecode(evbuffer)) != HED_OK ) {
-      return ret;
+  else if( event_type <= MAX_PHYS_EVTYPE ) {
+    // Once physics events start, there will be no more DAQconfig events, so
+    // we can release these potentially large data structures. The analyzer
+    // or THaRun::PrescanFile have copied them to the run parameters.
+    fDAQconfig.clear();
+    fDAQconfig.shrink_to_fit();
+
+    // Don't bother with physics decoding when prescanning
+    if( !PrescanModeEnabled() ) {
+      if( fDataVersion == 3 ) {
+        if( (ret = trigBankDecode(evbuffer)) != HED_OK )
+          return ret;
+      }
+      ret = physics_decode(evbuffer);
     }
-    ret = physics_decode(evbuffer);
   }
 
   return ret;
