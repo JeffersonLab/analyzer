@@ -168,4 +168,17 @@
   include="vector,string"                \
   code="{ fFileList.assign(1, onfile.fFilenamePattern); }"
 
+#pragma read                                  \
+  sourceClass="THaRunParameters"              \
+  source="TArrayI fPrescale"                  \
+  version="[1]"                               \
+  targetClass="THaRunParameters"              \
+  target="fPrescale"                          \
+  embed="true"                                \
+  include="TArrayI.h,TMath.h,Decoder.h,vector"             \
+  code="{ int n = TMath::Min((Int_t)Decoder::MAX_PSFACT,   \
+                             onfile.fPrescale.GetSize());  \
+          for( int i=0; i<n; ++i)                          \
+            fPrescale.at(i) = onfile.fPrescale[i]; }"
+
 #endif
