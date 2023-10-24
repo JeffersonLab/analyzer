@@ -69,6 +69,16 @@ void THaRunParameters::Print( Option_t* ) const
     }
     cout << endl;
   }
+  size_t sz = 0, nkey = 0;
+  for( const auto& cfg : fDAQconfig) {
+    sz += cfg.text_.size();
+    for( const auto& kv : cfg.keyval_ ) {
+      ++nkey;
+      sz += kv.first.size() + kv.second.size();
+    }
+  }
+  cout << "  DAQconfig strings: " << fDAQconfig.size()
+       << ", " << nkey << " keys" << ", " << sz << " bytes" << endl;
 }
 
 //_____________________________________________________________________________
