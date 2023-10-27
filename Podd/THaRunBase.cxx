@@ -602,12 +602,14 @@ void THaRunBase::SetRunParamClass( const char* classname )
 //_____________________________________________________________________________
 size_t THaRunBase::GetNDAQConfig() const
 {
-  return fParam->GetDAQConfig().size();
+  return fParam ? fParam->GetDAQConfig().size() : 0;
 }
 
 //_____________________________________________________________________________
 UInt_t THaRunBase::GetDAQConfigCrate( size_t i ) const
 {
+  if( !fParam )
+    return 0;
   const auto& cfgs = fParam->GetDAQConfig();
   assert(i < cfgs.size());
   if( i >= cfgs.size() )
@@ -619,6 +621,8 @@ UInt_t THaRunBase::GetDAQConfigCrate( size_t i ) const
 const string& THaRunBase::GetDAQConfigString( size_t i ) const
 {
   static const string nullstr;
+  if( !fParam )
+    return nullstr;
   const auto& cfgs = fParam->GetDAQConfig();
   assert(i < cfgs.size());
   if( i >= cfgs.size() )
@@ -627,14 +631,16 @@ const string& THaRunBase::GetDAQConfigString( size_t i ) const
 }
 
 //_____________________________________________________________________________
-const string& THaRunBase::GetDAQConfigValue( UInt_t crate, const std::string& key ) const
+const string& THaRunBase::GetDAQConfigValue( size_t i, const std::string& key ) const
 {
   static const string nullstr;
-  const auto& cfgs = fParam->GetDAQConfig();
-  auto found = find(ALL(cfgs), crate);
-  if( found == cfgs.end() )
+  if( !fParam )
     return nullstr;
-  const auto& keyval = found->keyval_;
+  const auto& cfgs = fParam->GetDAQConfig();
+  assert(i < cfgs.size());
+  if( i >= cfgs.size() )
+    return nullstr;
+  const auto& keyval = cfgs[i].keyval_;
   auto it = keyval.find(key);
   if( it == keyval.end() )
     return nullstr;

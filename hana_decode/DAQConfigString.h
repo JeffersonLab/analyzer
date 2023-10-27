@@ -23,11 +23,6 @@ struct DAQConfigString {
     , text_{std::move(text)}
   { parse(); }
 
-  // for std::find
-  bool   operator==( unsigned crate ) const        { return crate == crate_; }
-  // for std::sort
-  bool   operator< ( const DAQconfig& rhs ) const  { return crate_ <  rhs.crate_; }
-
   void   clear();
   size_t parse();
 
