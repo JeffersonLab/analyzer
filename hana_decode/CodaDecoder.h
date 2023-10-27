@@ -42,7 +42,6 @@ public:
 
   UInt_t         GetTSEvType() const { return tsEvType; }
   UInt_t         GetBlockIndex() const { return blkidx; }
-  enum { MAX_PSFACT = 12 };
 
   // CODA file format exception, thrown by LoadEvent/LoadFromMultiBlock
   class coda_format_error : public std::runtime_error {
@@ -110,7 +109,7 @@ protected:
   UInt_t nroc;
   std::vector<UInt_t> irn;
   std::vector<bool>   fbfound;
-  std::vector<UInt_t> psfact;
+  std::array<Int_t, MAX_PSFACT> psfact;
   Bool_t buffmode,synchmiss,synchextra,fdfirst;
   Int_t  chkfbstat;
 

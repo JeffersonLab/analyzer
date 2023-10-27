@@ -10,12 +10,14 @@
 #include "TObject.h"
 #include "TString.h"
 #include "DAQConfigString.h"
+#include "Decoder.h"
+#include <array>
 
 class TDatime;
 
 class THaRunParameters : public TObject {
 public:
-  using VecInt = std::vector<Int_t>;
+  using ArrInt = std::array<Int_t, Decoder::MAX_PSFACT>;
   using VecCfg = std::vector<DAQConfigString>;
 
   THaRunParameters();
@@ -47,8 +49,8 @@ public:
   void           SetTgtName(  const char* name ) { fTgtName  = name; }
   void           SetRunName(  const char* name ) { fRunName  = name; }
 
-  const VecInt&  GetPrescales() const { return fPrescale; }
-  VecInt&        Prescales()          { return fPrescale; }
+  const ArrInt&  GetPrescales() const { return fPrescale; }
+  ArrInt&        Prescales()          { return fPrescale; }
 
   size_t         AddDAQConfig( DAQConfigString cfg );
   VecCfg&        GetDAQConfig() { return fDAQconfig; }
@@ -71,7 +73,7 @@ protected:
 
   // DAQ parameters
   TString       fRunName;      // Description of run type
-  VecInt        fPrescale;     // Prescale factors
+  ArrInt        fPrescale;     // Prescale factors
 
   // DAQ configuration text data
   VecCfg        fDAQconfig; // DAQ configuration text data

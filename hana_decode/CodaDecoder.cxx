@@ -18,7 +18,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <utility>
-#include <cstring>
+#include <cstring>   // memcpy
 #include <sstream>
 #include <iomanip>
 
@@ -33,7 +33,7 @@ CodaDecoder::CodaDecoder()
   : nroc(0)
   , irn(MAXROC, 0)
   , fbfound(MAXROCSLOT_FB, false)
-  , psfact(MAX_PSFACT, kMaxUInt)
+  , psfact{}
   , buffmode{false}
   , synchmiss{false}
   , synchextra{false}
@@ -47,6 +47,7 @@ CodaDecoder::CodaDecoder()
   , block_size{0}
 {
   bankdat.reserve(32);
+  psfact.fill(kDefaultPS);
   // Please leave these 3 lines for me to debug if I need to.  thanks, Bob
 #ifdef WANTDEBUG
   fDebugFile = new ofstream();
@@ -66,12 +67,12 @@ CodaDecoder::~CodaDecoder()
 #endif
 
 //_____________________________________________________________________________
-Int_t CodaDecoder::GetPrescaleFactor( UInt_t trigger_type) const
+Int_t CodaDecoder::GetPrescaleFactor( UInt_t trigger_type ) const
 {
   // To get the prescale factors for trigger number "trigger_type"
   // (valid types are 1,2,3...)
   if ( (trigger_type > 0) && (trigger_type <= MAX_PSFACT)) {
-    return static_cast<Int_t>(psfact[trigger_type - 1]);
+    return psfact[trigger_type - 1];
   }
   if (fDebug > 0) {
     Warning( "CodaDecoder::GetPrescaleFactor", "Requested prescale factor for "
@@ -1490,29 +1491,29 @@ Int_t CodaDecoder::prescale_decode_coda2(const UInt_t* evbuffer)
   // PRESCALE_EVTYPE = PS factors from traditional
   //     "prescale.dat" file.
 
-  assert( evbuffer );
-  assert( event_type == TS_PRESCALE_EVTYPE ||
-          event_type == PRESCALE_EVTYPE );
-  const UInt_t HEAD_OFF1 = 2;
-  const UInt_t HEAD_OFF2 = 4;
-  static const char* const pstr[] = { "ps1", "ps2", "ps3", "ps4",
-                                      "ps5", "ps6", "ps7", "ps8",
-                                      "ps9", "ps10", "ps11", "ps12" };
+  assert(evbuffer);
+  assert(event_type == TS_PRESCALE_EVTYPE || event_type == PRESCALE_EVTYPE);
+  constexpr UInt_t HEAD_OFF1 = 2;
+  constexpr UInt_t HEAD_OFF2 = 4;
   // TS registers -->
-  if( event_type == TS_PRESCALE_EVTYPE) {
+  if( event_type == TS_PRESCALE_EVTYPE ) {
     // this is more authoritative
-    for( UInt_t j = 0; j < 8; j++ ) {
-      UInt_t k = j + HEAD_OFF1;
-      UInt_t ps = 0;
+    for( UInt_t j = 0, trig = 1, k = HEAD_OFF1; j < 8; j++, trig++, k++ ) {
+      Int_t ps = kDefaultPS;
       if( k < event_length ) {
-        ps = evbuffer[k];
-        if( psfact[j] != 0 && ps != psfact[j] ) {
-          Warning("prescale_decode","Mismatch in prescale factor: "
-                  "Trig %u  oldps %u   TS_PRESCALE %d. Setting to TS_PRESCALE",
-                  j+1,psfact[j],ps);
+        ps = static_cast<Int_t>(evbuffer[k]);
+        if( ps < 0 ) {
+          Error("prescale_decode", "Invalid negative CODA 2 TS psfact %d for trigger %u. "
+                       "Ignoring.", ps, trig );
+          ps = kDefaultPS;
+        }
+        if( psfact[j] != kDefaultPS && ps != psfact[j] ) {
+          Warning("prescale_decode", "Mismatch in prescale factor: Trig %u  oldps %d   "
+                       "TS_PRESCALE %d. Setting to TS_PRESCALE",
+                 trig, psfact[j], ps);
         }
       }
-      psfact[j]=ps;
+      psfact[j] = ps;
       if (fDebug > 1)
         cout << "%% TS psfact "<<dec<<j<<"  "<<psfact[j]<<endl;
     }
@@ -1522,22 +1523,28 @@ Int_t CodaDecoder::prescale_decode_coda2(const UInt_t* evbuffer)
     if( event_length <= HEAD_OFF2 )
       return HED_ERR;  //oops, event too short?
     THaUsrstrutils sut;
-    sut.string_from_evbuffer(evbuffer+HEAD_OFF2, event_length-HEAD_OFF2);
-    for(Int_t trig=0; trig<MAX_PSFACT; trig++) {
-      UInt_t ps =  sut.getint(pstr[trig]);
-      UInt_t psmax = 65536; // 2^16 for trig > 3
-      if (trig < 4) psmax = 16777216;  // 2^24 for 1st 4 trigs
-      if (trig > 7) ps = 1;  // cannot prescale trig 9-12
-      ps = ps % psmax;
-      if (psfact[trig]==kMaxUInt) // not read before
-        psfact[trig] = ps;
-      else if (ps != psfact[trig]) {
-        Warning("prescale_decode","Mismatch in prescale factor: "
-                "Trig %d  oldps %d   prescale.dat %d, Keeping old value",
-                trig+1,psfact[trig],ps);
+    sut.string_from_evbuffer(evbuffer + HEAD_OFF2, event_length - HEAD_OFF2);
+    for( UInt_t j = 0, trig = 1; j < MAX_PSFACT; j++, trig++ ) {
+      string pstr = Form("ps%u", trig);
+      auto ps = static_cast<Int_t>(sut.getint(pstr.c_str()));
+      if( ps < 0 ) {
+        Error("prescale_decode", "Invalid negative CODA 2 prescale %d for trigger %u. "
+                     "Ignoring.", ps, trig );
+        ps = kDefaultPS;
+      }
+      // psmax = 2^24 for trig 1-4, 2^16 for trig >= 5
+      Int_t psmax = 1 << ((trig < 5) ? 24 : 16);
+      if( trig >= 9 ) ps = 1;; // cannot prescale trig 9-12
+      ps %= psmax;
+      if( psfact[j] == kDefaultPS ) // not read before
+        psfact[j] = ps;
+      else if( ps != psfact[j] ) {
+        Warning("prescale_decode", "Mismatch in prescale factor: Trig %u  oldps %d   "
+                     "prescale.dat %d, Keeping old value",
+               trig, psfact[j], ps);
       }
       if (fDebug > 1)
-        cout << "** psfact[ "<<trig+1<< " ] = "<<psfact[trig]<<endl;
+        cout << "** psfact[ "<<trig<< " ] = "<<psfact[j]<<endl;
     }
   }
 
@@ -1563,31 +1570,26 @@ Int_t CodaDecoder::prescale_decode_coda3(const UInt_t* evbuffer)
 
   static const char* const here = "prescale_decode_coda3";
 
-  assert( evbuffer );
-  assert( event_type == TS_PRESCALE_EVTYPE ||
-          event_type == PRESCALE_EVTYPE );
-  const UInt_t HEAD_OFF1 = 2;
-  const UInt_t HEAD_OFF2 = 4;
-  UInt_t super_big = 999999;
-  static const char* const pstr[] = { "ps1", "ps2", "ps3", "ps4",
-                                      "ps5", "ps6", "ps7", "ps8",
-                                      "ps9", "ps10", "ps11", "ps12" };
+  assert(evbuffer);
+  assert(event_type == TS_PRESCALE_EVTYPE || event_type == PRESCALE_EVTYPE);
+  constexpr UInt_t HEAD_OFF1 = 2;
+  constexpr UInt_t HEAD_OFF2 = 4;
+  constexpr Int_t  super_big = 999999;
   // TS registers -->
-  // don't have these yet for CODA3.  hmmm... that reminds me to do it.
-  if( event_type == TS_PRESCALE_EVTYPE) {
+  // FIXME don't have these yet for CODA3.  hmmm... that reminds me to do it.
+  if( event_type == TS_PRESCALE_EVTYPE ) {
     // this is more authoritative
-    for( UInt_t j = 0; j < 8; j++ ) {
-      UInt_t k = j + HEAD_OFF1;
-      UInt_t ps = 0;
+    for( UInt_t j = 0, trig = 1, k = HEAD_OFF1; j < 8; j++, trig++, k++ ) {
+      Int_t ps = kDefaultPS;
       if( k < event_length ) {
-        ps = evbuffer[k];
-        if( psfact[j] != 0 && ps != psfact[j] ) {
-          Warning(here,"Mismatch in prescale factor: "
-                  "Trig %u  oldps %u   TS_PRESCALE %d. Setting to TS_PRESCALE",
-                  j+1,psfact[j],ps);
+        ps = static_cast<Int_t>(evbuffer[k]);
+        if( psfact[j] != kDefaultPS && ps != psfact[j] ) {
+          Warning(here, "Mismatch in prescale factor: Trig %u  oldps %d   "
+                       "TS_PRESCALE %d. Setting to TS_PRESCALE",
+                 trig, psfact[j], ps);
         }
       }
-      psfact[j]=ps;
+      psfact[j] = ps;
       if (fDebug > 1)
         cout << "%% TS psfact "<<dec<<j<<"  "<<psfact[j]<<endl;
     }
@@ -1599,8 +1601,9 @@ Int_t CodaDecoder::prescale_decode_coda3(const UInt_t* evbuffer)
     THaUsrstrutils sut;
     sut.string_from_evbuffer(evbuffer+HEAD_OFF2, event_length-HEAD_OFF2);
 
-    for( Int_t trig = 0; trig < MAX_PSFACT; trig++ ) {
-      long ps = sut.getSignedInt(pstr[trig]);
+    for( UInt_t j = 0, trig = 1; j < MAX_PSFACT; j++, trig++ ) {
+      string pstr = Form("ps%u", trig);
+      long ps = sut.getSignedInt(pstr.c_str());
       if( ps == -1 ) {
         // The trigger is actually off, not just "super big" but infinite.
         ps = super_big;
@@ -1608,22 +1611,22 @@ Int_t CodaDecoder::prescale_decode_coda3(const UInt_t* evbuffer)
         ps = 1;
       } else if( ps >= 1 && ps <= 16 ) {
         // ps = 2^(val-1)+1 (sic)
-        ps = 1 + (1U << (ps - 1));
+        ps = 1 + (1 << (ps - 1));
       } else { // ps > 16 or ps < -1
         // ps has 4 bits in hardware, so this indicates a misconfiguration
-        Error(here, "Invalid prescale = %ld in prescale.dat. "
-                    "Must be between -1 and 16", ps);
-        ps = -1;
+	Error(here, "Invalid prescale = %ld for trig %u in prescale.dat. "
+                    "Must be between -1 and 16", ps, trig);
+        ps = kDefaultPS;
       }
-      if( psfact[trig] == kMaxUInt ) // not read before
-        psfact[trig] = (UInt_t)ps;
-      else if( ps != psfact[trig] ) {
+      if( psfact[j] == kDefaultPS ) // not read before
+        psfact[j] = static_cast<Int_t>(ps);
+      else if( ps != psfact[j] ) {
         Warning(here, "Mismatch in prescale factor: "
-                      "Trig %d  oldps %d   prescale.dat %ld, Keeping old value",
-                trig + 1, (Int_t)psfact[trig], ps);
+                      "Trig %u  oldps %d   prescale.dat %ld, Keeping old value",
+               trig, psfact[j], ps);
       }
       if( fDebug > 1 )
-        cout << "** psfact[ " << trig + 1 << " ] = " << psfact[trig] << endl;
+        cout << "** psfact[ " << trig << " ] = " << psfact[j] << endl;
     }
   }
 

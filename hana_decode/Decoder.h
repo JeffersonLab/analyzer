@@ -53,6 +53,9 @@ namespace Decoder {
   static const UInt_t SBSSCALER_EVTYPE = 141;
   static const UInt_t HV_DATA_EVTYPE   = 150;
 
+  constexpr UInt_t MAX_PSFACT = 12;
+  constexpr Int_t  kDefaultPS = 0;
+
   // Access processed data for multi-function modules
   enum EModuleType { kSampleADC, kPulseIntegral, kPulseTime,
                      kPulsePeak, kPulsePedestal, kCoarseTime, kFineTime };

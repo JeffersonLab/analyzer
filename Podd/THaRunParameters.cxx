@@ -17,16 +17,22 @@
 
 using namespace std;
 
-const Int_t kDefaultPS = -1;
-
 //_____________________________________________________________________________
-THaRunParameters::THaRunParameters() :
-  fBeamE(0), fBeamP(0), fBeamM(0), fBeamQ(0), fBeamdE(0), fBeamPol(0),
-  fTgtM(0), fTgtPol(0), fIsPol(false)
-  , fPrescale(Decoder::CodaDecoder::MAX_PSFACT, kDefaultPS)
+THaRunParameters::THaRunParameters()
+  : fBeamE(0)
+  , fBeamP(0)
+  , fBeamM(0)
+  , fBeamQ(0)
+  , fBeamdE(0)
+  , fBeamPol(0)
+  , fTgtM(0)
+  , fTgtPol(0)
+  , fIsPol(false)
+  , fPrescale{}
 {
   // Default constructor
 
+  fPrescale.fill(Decoder::kDefaultPS);
 }
 
 //_____________________________________________________________________________
@@ -37,7 +43,7 @@ void THaRunParameters::Clear( Option_t* )
   fBeamE = fBeamP = fBeamM = fBeamdE = fBeamPol = fTgtM = fTgtPol = 0;
   fBeamQ = 0;
   fIsPol = false;
-  fPrescale.assign(Decoder::CodaDecoder::MAX_PSFACT, kDefaultPS);
+  fPrescale.fill(Decoder::kDefaultPS);
 }
 
 //_____________________________________________________________________________

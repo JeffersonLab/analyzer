@@ -177,7 +177,7 @@
   targetClass="THaRunParameters"              \
   target="fPrescale"                          \
   embed="true"                                \
-  include="TArrayI.h,TMath.h,Decoder.h,vector"             \
+  include="TArrayI.h,TMath.h,Decoder.h,array"              \
   code="{ int n = TMath::Min((Int_t)Decoder::MAX_PSFACT,   \
                              onfile.fPrescale.GetSize());  \
           for( int i=0; i<n; ++i)                          \
