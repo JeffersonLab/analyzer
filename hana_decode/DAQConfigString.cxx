@@ -2,7 +2,7 @@
 
 //////////////////////////////////////////////////////////////////////////
 //
-// DAQconfig
+// DAQConfigString
 //
 // Helper class to support DAQ configuration info.
 //
@@ -11,14 +11,14 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "DAQconfig.h"
+#include "DAQConfigString.h"
 #include "Textvars.h"   // for Podd::vsplit
 #include <sstream>
 
 using namespace std;
 
 //_____________________________________________________________________________
-size_t DAQconfig::parse()
+size_t DAQConfigString::parse()
 {
   // Parse DAQ configuration text into key/value pairs stored in fKeyVal map.
   // The key is the first field of a non-comment line. The value is the rest of
@@ -50,4 +50,4 @@ size_t DAQconfig::parse()
 }
 
 //_____________________________________________________________________________
-ClassImp(DAQconfig)
+ClassImp(DAQConfigString)

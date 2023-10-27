@@ -9,14 +9,14 @@
 
 #include "TObject.h"
 #include "TString.h"
-#include "DAQconfig.h"
+#include "DAQConfigString.h"
 
 class TDatime;
 
 class THaRunParameters : public TObject {
 public:
   using VecInt = std::vector<Int_t>;
-  using VecCfg = std::vector<DAQconfig>;
+  using VecCfg = std::vector<DAQConfigString>;
 
   THaRunParameters();
 
@@ -50,7 +50,7 @@ public:
   const VecInt&  GetPrescales() const { return fPrescale; }
   VecInt&        Prescales()          { return fPrescale; }
 
-  size_t         AddDAQConfig( DAQconfig cfg );
+  size_t         AddDAQConfig( DAQConfigString cfg );
   VecCfg&        GetDAQConfig() { return fDAQconfig; }
 
 protected:

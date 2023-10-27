@@ -36,7 +36,7 @@
 #pragma link C++ class THaBenchmark+;
 #pragma link C++ class THaEvData+;
 
-#pragma link C++ class DAQconfig+;
+#pragma link C++ class DAQConfigString+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class Decoder::THaEtClient+;

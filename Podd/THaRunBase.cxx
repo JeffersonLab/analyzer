@@ -11,7 +11,7 @@
 #include "THaRunBase.h"
 #include "THaRunParameters.h"
 #include "THaEvData.h"
-#include "DAQconfig.h"
+#include "DAQConfigString.h"
 #include "THaPrintOption.h"
 #include "TClass.h"
 #include "TError.h"
@@ -616,7 +616,7 @@ UInt_t THaRunBase::GetDAQConfigCrate( size_t i ) const
 }
 
 //_____________________________________________________________________________
-const string& THaRunBase::GetDAQConfigText( size_t i ) const
+const string& THaRunBase::GetDAQConfigString( size_t i ) const
 {
   static const string nullstr;
   const auto& cfgs = fParam->GetDAQConfig();

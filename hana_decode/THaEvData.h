@@ -14,7 +14,7 @@
 #include "TString.h"
 #include "THaSlotData.h"
 #include "TBits.h"
-#include "DAQconfig.h"
+#include "DAQConfigString.h"
 #include <cassert>
 #include <iostream>
 #include <cstdio>
@@ -144,7 +144,7 @@ public:
   static UInt_t GetInstances() { return fgInstances.CountBits(); }
 
   Decoder::THaCrateMap* GetCrateMap() const { return fMap.get(); }
-  const std::vector<DAQconfig>& GetDAQConfig() const { return fDAQconfig; }
+  const std::vector<DAQConfigString>& GetDAQConfig() const { return fDAQconfig; }
 
   TObject* GetExtra() const { return fExtra; }
 
@@ -231,7 +231,7 @@ protected:
 
   TBits fMsgPrinted; // Flags indicating one-time warnings printed
 
-  std::vector<DAQconfig> fDAQconfig; // DAQ configuration text data
+  std::vector<DAQConfigString> fDAQconfig; // DAQ configuration text data
 
   TObject* fExtra;   // additional member data, for binary compatibility
 

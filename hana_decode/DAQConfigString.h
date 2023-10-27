@@ -1,11 +1,11 @@
-#ifndef Podd_DAQconfig_h_
-#define Podd_DAQconfig_h_
+#ifndef Podd_DAQConfigString_h_
+#define Podd_DAQConfigString_h_
 
 //////////////////////////////////////////////////////////////////////////
 //
-// DAQconfig, DAQInfoExtra
+// DAQConfigString
 //
-// Helper classes to support DAQ configuration info.
+// Helper class to support DAQ configuration info.
 //
 //////////////////////////////////////////////////////////////////////////
 
@@ -15,10 +15,11 @@
 #include <utility>  // std::move
 
 //_____________________________________________________________________________
-struct DAQconfig {
-  DAQconfig() : crate_(0) {}
-  DAQconfig( unsigned crate, std::string text )
+struct DAQConfigString {
+  DAQConfigString() : crate_{0}, evtyp_{0} {}
+  DAQConfigString( unsigned crate, std::string text )
     : crate_{crate}
+    , evtyp_{0}
     , text_{std::move(text)}
   { parse(); }
 
@@ -31,17 +32,18 @@ struct DAQconfig {
   size_t parse();
 
   unsigned     crate_;
+  unsigned     evtyp_;
   std::string  text_;
   std::map<std::string, std::string>  keyval_;
 } __attribute__((aligned(64)));
 
 //_____________________________________________________________________________
-inline void DAQconfig::clear()
+inline void DAQConfigString::clear()
 {
-  crate_ = 0;
+  crate_ = evtyp_ = 0;
   text_.clear(); text_.shrink_to_fit();
   keyval_.clear();
 }
 
 //_____________________________________________________________________________
-#endif //Podd_DAQconfig_h_
+#endif //Podd_DAQConfigString_h_

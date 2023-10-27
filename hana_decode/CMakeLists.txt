@@ -32,7 +32,7 @@ set(src
   Caen775Module.cxx
   Caen792Module.cxx
   CodaDecoder.cxx
-  DAQconfig.cxx
+  DAQConfigString.cxx
   F1TDCModule.cxx
   Fadc250Module.cxx
   FastbusModule.cxx

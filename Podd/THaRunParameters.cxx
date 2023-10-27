@@ -141,7 +141,7 @@ void THaRunParameters::SetPolarizations( Double_t pb, Double_t pt )
 }
 
 //_____________________________________________________________________________
-size_t THaRunParameters::AddDAQConfig( DAQconfig cfg )
+size_t THaRunParameters::AddDAQConfig( DAQConfigString cfg )
 {
   fDAQconfig.emplace_back(std::move(cfg));
   return fDAQconfig.size();

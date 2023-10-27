@@ -84,8 +84,10 @@ public:
   // DAQ configuration strings (usually database file dumps) from user event
   size_t               GetNDAQConfig() const;
   UInt_t               GetDAQConfigCrate( size_t i ) const;
-  const std::string&   GetDAQConfigText( size_t i ) const;
-  const std::string&   GetDAQConfigValue( UInt_t crate, const std::string& key ) const;
+  const std::string&   GetDAQConfigString( size_t i ) const;
+  const std::string&   GetDAQConfigValue( size_t i, const std::string& key ) const;
+
+  friend class DAQInfoExtra;    // For schema evolution from v6
 
 protected:
   UInt_t        fNumber;        // Run number
