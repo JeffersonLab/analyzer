@@ -76,7 +76,6 @@ protected:
   // DAQ configuration text data
   VecCfg        fDAQconfig; // DAQ configuration text data
 
-  //TODO schema evolution 1 -> 2 (fPrescale, DAQconfig)
   ClassDef(THaRunParameters,2) // Beam & fixed target run parameters
 };
 

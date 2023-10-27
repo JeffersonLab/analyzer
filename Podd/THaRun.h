@@ -51,7 +51,6 @@ protected:
   static Bool_t    StdFindSegmentNumber( const TString& filename, TString& stem,
                                          Int_t& segment, Int_t& stream );
 
-  //FIXME: schema evolution from version 7 -> 8 (fMinScan)
   ClassDef(THaRun,8)  // A run based on a CODA data file on disk
 };
 

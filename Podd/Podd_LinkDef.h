@@ -118,6 +118,8 @@
 #pragma link C++ class Podd::MultiFileRun+;
 #pragma link C++ class Podd::MultiFileRun::StreamInfo+;
 #pragma link C++ class Podd::MultiFileRun::FileInfo+;
+#pragma link C++ class DAQInfoExtra+;
+#pragma link C++ class DAQconfig+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;
@@ -180,5 +182,17 @@
                              onfile.fPrescale.GetSize());  \
           for( int i=0; i<n; ++i)                          \
             fPrescale.at(i) = onfile.fPrescale[i]; }"
+
+#pragma read                                  \
+  sourceClass="THaRun"                        \
+  source="UInt_t fMaxScan"                    \
+  version="[7]"                               \
+  targetClass="THaRun"                        \
+  target="fMinScan"                           \
+  embed="true"                                \
+  include="DAQInfoExtra.h"                    \
+  code="{ fMinScan = DAQInfoExtra::GetMinScan(newObj); \
+          DAQInfoExtra::UpdateRunParam(newObj);        \
+          DAQInfoExtra::DeleteExtra(newObj); }"
 
 #endif

@@ -8,38 +8,39 @@ set(LIBNAME Podd)
 # Sources and headers (ls -w 96 -x *.cxx; macOS: COLUMNS=96 ls -x *.cxx)
 set(src
   BankData.cxx                 BdataLoc.cxx                 CodaRawDecoder.cxx
-  DecData.cxx                  DetectorData.cxx             FileInclude.cxx
-  FixedArrayVar.cxx            InterStageModule.cxx         MethodVar.cxx
-  MultiFileRun.cxx             SeqCollectionMethodVar.cxx   SeqCollectionVar.cxx
-  SimDecoder.cxx               THaAnalysisObject.cxx        THaAnalyzer.cxx
-  THaApparatus.cxx             THaArrayString.cxx           THaAvgVertex.cxx
-  THaBPM.cxx                   THaBeam.cxx                  THaBeamDet.cxx
-  THaBeamEloss.cxx             THaBeamInfo.cxx              THaBeamModule.cxx
-  THaCherenkov.cxx             THaCluster.cxx               THaCodaRun.cxx
-  THaCoincTime.cxx             THaCut.cxx                   THaCutList.cxx
-  THaDebugModule.cxx           THaDetMap.cxx                THaDetector.cxx
-  THaDetectorBase.cxx          THaElectronKine.cxx          THaElossCorrection.cxx
-  THaEpicsEbeam.cxx            THaEpicsEvtHandler.cxx       THaEvent.cxx
-  THaEvt125Handler.cxx         THaEvtTypeHandler.cxx        THaExtTarCor.cxx
-  THaFilter.cxx                THaFormula.cxx               THaGoldenTrack.cxx
-  THaHelicityDet.cxx           THaIdealBeam.cxx             THaInterface.cxx
-  THaNamedList.cxx             THaNonTrackingDetector.cxx   THaOutput.cxx
-  THaPIDinfo.cxx               THaParticleInfo.cxx          THaPhotoReaction.cxx
-  THaPhysicsModule.cxx         THaPidDetector.cxx           THaPostProcess.cxx
-  THaPrimaryKine.cxx           THaPrintOption.cxx           THaRTTI.cxx
-  THaRaster.cxx                THaRasteredBeam.cxx          THaReacPointFoil.cxx
-  THaReactionPoint.cxx         THaRun.cxx                   THaRunBase.cxx
-  THaRunParameters.cxx         THaSAProtonEP.cxx            THaScalerEvtHandler.cxx
-  THaScintillator.cxx          THaSecondaryKine.cxx         THaShower.cxx
-  THaSpectrometer.cxx          THaSpectrometerDetector.cxx  THaString.cxx
-  THaSubDetector.cxx           THaTotalShower.cxx           THaTrack.cxx
-  THaTrackEloss.cxx            THaTrackID.cxx               THaTrackInfo.cxx
-  THaTrackOut.cxx              THaTrackProj.cxx             THaTrackingDetector.cxx
-  THaTrackingModule.cxx        THaTriggerTime.cxx           THaTwoarmVertex.cxx
-  THaUnRasteredBeam.cxx        THaVar.cxx                   THaVarList.cxx
-  THaVertexModule.cxx          THaVform.cxx                 THaVhist.cxx
-  TimeCorrectionModule.cxx     Variable.cxx                 VariableArrayVar.cxx
-  VectorObjMethodVar.cxx       VectorObjVar.cxx             VectorVar.cxx
+  DAQInfoExtra.cxx             DecData.cxx                  DetectorData.cxx
+  FileInclude.cxx              FixedArrayVar.cxx            InterStageModule.cxx
+  MethodVar.cxx                MultiFileRun.cxx             SeqCollectionMethodVar.cxx
+  SeqCollectionVar.cxx         SimDecoder.cxx               THaAnalysisObject.cxx
+  THaAnalyzer.cxx              THaApparatus.cxx             THaArrayString.cxx
+  THaAvgVertex.cxx             THaBPM.cxx                   THaBeam.cxx
+  THaBeamDet.cxx               THaBeamEloss.cxx             THaBeamInfo.cxx
+  THaBeamModule.cxx            THaCherenkov.cxx             THaCluster.cxx
+  THaCodaRun.cxx               THaCoincTime.cxx             THaCut.cxx
+  THaCutList.cxx               THaDebugModule.cxx           THaDetMap.cxx
+  THaDetector.cxx              THaDetectorBase.cxx          THaElectronKine.cxx
+  THaElossCorrection.cxx       THaEpicsEbeam.cxx            THaEpicsEvtHandler.cxx
+  THaEvent.cxx                 THaEvt125Handler.cxx         THaEvtTypeHandler.cxx
+  THaExtTarCor.cxx             THaFilter.cxx                THaFormula.cxx
+  THaGoldenTrack.cxx           THaHelicityDet.cxx           THaIdealBeam.cxx
+  THaInterface.cxx             THaNamedList.cxx             THaNonTrackingDetector.cxx
+  THaOutput.cxx                THaPIDinfo.cxx               THaParticleInfo.cxx
+  THaPhotoReaction.cxx         THaPhysicsModule.cxx         THaPidDetector.cxx
+  THaPostProcess.cxx           THaPrimaryKine.cxx           THaPrintOption.cxx
+  THaRTTI.cxx                  THaRaster.cxx                THaRasteredBeam.cxx
+  THaReacPointFoil.cxx         THaReactionPoint.cxx         THaRun.cxx
+  THaRunBase.cxx               THaRunParameters.cxx         THaSAProtonEP.cxx
+  THaScalerEvtHandler.cxx      THaScintillator.cxx          THaSecondaryKine.cxx
+  THaShower.cxx                THaSpectrometer.cxx          THaSpectrometerDetector.cxx
+  THaString.cxx                THaSubDetector.cxx           THaTotalShower.cxx
+  THaTrack.cxx                 THaTrackEloss.cxx            THaTrackID.cxx
+  THaTrackInfo.cxx             THaTrackOut.cxx              THaTrackProj.cxx
+  THaTrackingDetector.cxx      THaTrackingModule.cxx        THaTriggerTime.cxx
+  THaTwoarmVertex.cxx          THaUnRasteredBeam.cxx        THaVar.cxx
+  THaVarList.cxx               THaVertexModule.cxx          THaVform.cxx
+  THaVhist.cxx                 TimeCorrectionModule.cxx     Variable.cxx
+  VariableArrayVar.cxx         VectorObjMethodVar.cxx       VectorObjVar.cxx
+  VectorVar.cxx
   )
 if(ONLINE_ET)
   list(APPEND src THaOnlRun.cxx)
