@@ -94,13 +94,7 @@ void THaDetMap::CopyMap( const ModuleVec_t& map )
   // Deep-copy the vector of module pointers
   fMap.reserve(map.capacity());
   for( const auto& m : map ) {
-    fMap.emplace_back(
-#if __cplusplus >= 201402L
-      std::make_unique<Module>(*m)
-#else
-      new Module(*m)
-#endif
-    );
+    fMap.emplace_back(std::make_unique<Module>(*m));
   }
 }
 
@@ -147,11 +141,7 @@ Int_t THaDetMap::AddModule( UInt_t crate, UInt_t slot,
   //
   bool reverse = (chan_lo > chan_hi);
 
-#if __cplusplus >= 201402L
   auto pm = make_unique<Module>();
-#else
-  auto pm = unique_ptr<Module>(new THaDetMap::Module);
-#endif
   Module& m = *pm;
   m.crate = crate;
   m.slot  = slot;

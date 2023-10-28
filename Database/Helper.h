@@ -26,29 +26,24 @@ namespace Podd {
 
   //___________________________________________________________________________
   // Cast unsigned to signed where unsigned is expected to be within signed range
-  template<typename T, typename std::enable_if
-    <std::is_integral<T>::value && std::is_unsigned<T>::value, bool>::type = true>
-  static inline typename std::make_signed<T>::type SINT( T uint )
+  template<typename T, std::enable_if_t
+    <std::is_integral_v<T> && std::is_unsigned_v<T>, bool> = true>
+  static inline std::make_signed_t<T> SINT( T uint )
   {
 #ifndef NDEBUG
     if( uint > static_cast<decltype(uint)>(
-                 std::numeric_limits<typename std::make_signed<T>::type>::max()))
+                 std::numeric_limits<std::make_signed_t<T>>::max()))
       throw std::out_of_range("Unsigned integer out of signed integer range");
 #endif
-    return static_cast<typename std::make_signed<T>::type>(uint);
+    return static_cast<std::make_signed_t<T>>(uint);
   }
   // Trivial case
-  template<typename T, typename std::enable_if
-    <std::is_integral<T>::value && std::is_signed<T>::value, bool>::type = true>
+  template<typename T, std::enable_if_t
+    <std::is_integral_v<T> && std::is_signed_v<T>, bool> = true>
   static inline T SINT( T ival ) { return ival; }
 
-#if __cplusplus >= 201402L
   template<typename Container>
   static inline auto SSIZE( const Container& c ) { return SINT(c.size()); }
-#else
-  // No auto return type in C++11, so we do it on the cheap
-# define SSIZE(c) SINT((c).size())
-#endif
 
   //___________________________________________________________________________
   template< typename VectorElem > inline void

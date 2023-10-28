@@ -810,11 +810,11 @@ void THaAnalysisObject::WriteValue( T val, int p, int w )
   // Helper function for printing debug information
   ios_base::fmtflags fmt = cout.flags();
   streamsize prec = cout.precision();
-  if( std::is_floating_point<T>::value && val < kBig )
+  if( std::is_floating_point_v<T> && val < kBig )
     cout << fixed << setprecision(p) << setw(w) << val;
-  else if( std::is_integral<T>::value && val != THaVar::kInvalidInt &&
+  else if( std::is_integral_v<T> && val != THaVar::kInvalidInt &&
            val != numeric_limits<T>::max() && val < 10 * static_cast<T>(w) &&
-           (std::is_unsigned<T>::value || -val < 10 * static_cast<T>(w)) )
+           (std::is_unsigned_v<T> || -val < 10 * static_cast<T>(w)) )
     cout << setw(w) << val;
   else
     cout << " --- ";

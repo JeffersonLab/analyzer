@@ -24,13 +24,6 @@
 using namespace std;
 using namespace Podd;
 
-// Macro for better readability
-#if __cplusplus >= 201402L
-# define MKPMTDATA(name,title,nelem) make_unique<PMTData>((name),(title),(nelem))
-#else
-# define MKPMTDATA(name,title,nelem) unique_ptr<PMTData>(new PMTData((name),(title),(nelem)))
-#endif
-
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov( const char* name, const char* description,
                             THaApparatus* apparatus )
@@ -55,8 +48,8 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 
   const char* const here = "ReadDatabase";
 
-  VarType kDataType  = std::is_same<Data_t, Float_t>::value ? kFloat  : kDouble;
-  VarType kDataTypeV = std::is_same<Data_t, Float_t>::value ? kFloatV : kDoubleV;
+  VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;
+  VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
 
   // Read database
   Int_t err = THaPidDetector::ReadDatabase(date);
@@ -160,7 +153,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   }
 
   fDetectorData.clear();
-  auto detdata = MKPMTDATA(GetPrefixName(), fTitle, nval);
+  auto detdata = make_unique<PMTData>(GetPrefixName(), fTitle, nval);
   fPMTData = detdata.get();
   fDetectorData.emplace_back(std::move(detdata));
   assert(fPMTData->GetSize() == nval);

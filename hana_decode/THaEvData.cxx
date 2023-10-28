@@ -146,11 +146,7 @@ void THaEvData::EnableBenchmarks( Bool_t enable )
   fDoBench = enable;
   if( fDoBench ) {
     if( !fBench ) {
-#if __cplusplus >= 201402L
       fBench = make_unique<THaBenchmark>();
-#else
-      fBench.reset(new THaBenchmark);
-#endif
     }
   } else {
     fBench = nullptr;
@@ -286,11 +282,7 @@ int THaEvData::init_cmap()  {
     fCrateMapName = fgDefaultCrateMapName;
   // Make a new crate map object unless we already have one
   if( !fMap || fCrateMapName != fMap->GetName() ) {
-#if __cplusplus >= 201402L
     fMap = make_unique<THaCrateMap>(fCrateMapName);
-#else
-    fMap.reset(new THaCrateMap(fCrateMapName));
-#endif
   }
   // Initialize the newly created crate map
   if( fDebug>0 )
@@ -307,11 +299,7 @@ void THaEvData::makeidx( UInt_t crate, UInt_t slot )
   // Activate crate/slot
   UShort_t idx = slot + MAXSLOT*crate;
   if( !crateslot[idx] ) {
-#if __cplusplus >= 201402L
     crateslot[idx] = make_unique<THaSlotData>(crate, slot);
-#else
-    crateslot[idx].reset(new THaSlotData(crate, slot));
-#endif
   }
 #ifndef NDEBUG
   else {

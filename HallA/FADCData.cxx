@@ -16,14 +16,6 @@ using namespace Decoder;
 namespace HallA {
 
 //_____________________________________________________________________________
-// Convenience macro for readability
-#if __cplusplus >= 201402L
-# define MKFADCDATA(name,title,nelem) make_unique<FADCData>((name),(title),(nelem))
-#else
-# define MKFADCDATA(name,title,nelem) unique_ptr<FADCData>(new FADCData((name),(title),(nelem)))
-#endif
-
-//_____________________________________________________________________________
 pair<unique_ptr<FADCData>,Int_t> MakeFADCData( const TDatime& date,
                                                THaDetectorBase* det )
 {
@@ -37,8 +29,8 @@ pair<unique_ptr<FADCData>,Int_t> MakeFADCData( const TDatime& date,
     return ret;
 
   // Create new FADC data object
-  auto detdata = MKFADCDATA(det->GetPrefixName(), det->GetTitle(),
-                            det->GetNelem());
+  auto detdata =
+    make_unique<FADCData>(det->GetPrefixName(), det->GetTitle(), det->GetNelem());
 
   // Initialize FADC configuration parameters, using the detector's database
   FILE* file = det->OpenFile(date);
@@ -89,7 +81,7 @@ Int_t FADCData::ReadConfig( FILE* file, const TDatime& date, const char* prefix 
 {
   // Load FADC configuration parameters (required) from database
 
-  VarType kDataType = std::is_same<Data_t, Float_t>::value ? kFloat : kDouble;
+  VarType kDataType = std::is_same_v<Data_t, Float_t> ? kFloat : kDouble;
 
   fConfig.reset();  // Sets default TDC scale
   DBRequest calib_request[] = {

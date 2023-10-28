@@ -49,9 +49,6 @@ endif()
 string(REPLACE .cxx .h headers "${src}")
 list(APPEND headers THaGlobals.h)
 set(allheaders ${headers} DataType.h OptionalType.h)
-if(CMAKE_CXX_STANDARD LESS 17)
-  list(APPEND allheaders optional.hpp)
-endif()
 
 #----------------------------------------------------------------------------
 # Generate ha_compiledata.h

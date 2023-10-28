@@ -23,7 +23,7 @@ public:
 
   template<typename U>
   void construct( U* ptr )
-  noexcept(std::is_nothrow_default_constructible<U>::value) {
+  noexcept(std::is_nothrow_default_constructible_v<U>) {
     ::new(static_cast<void*>(ptr)) U;
   }
   template<typename U, typename...Args>

@@ -29,13 +29,6 @@
 using namespace std;
 using namespace Podd;
 
-// Macro for better readability
-#if __cplusplus >= 201402L
-# define MKADCDATA(name,title,nelem,chanmap) make_unique<ShowerADCData>((name),(title),(nelem),(chanmap))
-#else
-# define MKADCDATA(name,title,nelem,chanmap) unique_ptr<ShowerADCData>(new ShowerADCData((name),(title),(nelem),(chanmap)))
-#endif
-
 //_____________________________________________________________________________
 THaShower::THaShower( const char* name, const char* description,
 		      THaApparatus* apparatus ) :
@@ -63,8 +56,8 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
 
   const char* const here = "ReadDatabase";
 
-  VarType kDataType  = std::is_same<Data_t, Float_t>::value ? kFloat  : kDouble;
-  VarType kDataTypeV = std::is_same<Data_t, Float_t>::value ? kFloatV : kDoubleV;
+  VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;
+  VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
 
   // Read database
   Int_t err = THaPidDetector::ReadDatabase(date);
@@ -163,7 +156,8 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   fBlockPos.clear(); fBlockPos.reserve(nval);
   fClBlk.clear();    fClBlk.reserve(nclbl);
   fDetectorData.clear();
-  auto detdata = MKADCDATA(GetPrefixName(), fTitle, nval, fChanMap);
+  auto detdata =
+    make_unique<ShowerADCData>(GetPrefixName(), fTitle, nval, fChanMap);
   fADCData = detdata.get();
   fDetectorData.emplace_back(std::move(detdata));
   fIsInit = true;

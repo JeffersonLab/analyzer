@@ -338,8 +338,7 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
     if( fDebug>2 )
       Info( Here(here), "Defining VDC variable %s", name.Data() );
 
-    fVDCvar.emplace_back(name, histname, nwire );
-    VDCvar_t& thePlane = fVDCvar.back();
+    auto& thePlane = fVDCvar.emplace_back(name, histname, nwire );
     thePlane.ncnt.reserve( thePlane.nwire );
     thePlane.nhit.reserve( thePlane.nwire );
     max_nwire = TMath::Max(max_nwire,thePlane.nwire);

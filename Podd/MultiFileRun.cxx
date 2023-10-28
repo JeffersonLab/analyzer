@@ -22,11 +22,7 @@
 using namespace std;
 using namespace Decoder;
 
-#if __cplusplus >= 201402L
-# define MKCODAFILE make_unique<Decoder::THaCodaFile>()
-#else
-# define MKCODAFILE unique_ptr<Decoder::THaCodaFile>(new Decoder::THaCodaFile)
-#endif
+#define MKCODAFILE make_unique<Decoder::THaCodaFile>()
 
 namespace Podd {
 

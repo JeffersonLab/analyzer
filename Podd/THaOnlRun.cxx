@@ -21,11 +21,7 @@
 
 using namespace std;
 
-#if __cplusplus >= 201402L
-# define MKETCLIENT make_unique<Decoder::THaEtClient>()
-#else
-# define MKETCLIENT unique_ptr<Decoder::THaEtClient>(new Decoder::THaEtClient)
-#endif
+#define MKETCLIENT make_unique<Decoder::THaEtClient>()
 
 //______________________________________________________________________________
 THaOnlRun::THaOnlRun() : fMode(1)

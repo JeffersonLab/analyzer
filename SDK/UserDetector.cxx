@@ -110,8 +110,8 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
     // Automatically determine which data type constants correspond to Data_t.
     // This can be ignored/removed if the member variables are hardcoded as
     // Float_t or Double_t.
-//  VarType kDataType  = std::is_same<Data_t, Float_t>::value ? kFloat  : kDouble;
-    VarType kDataTypeV = std::is_same<Data_t, Float_t>::value ? kFloatV : kDoubleV;
+//  VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;
+    VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
 
     // Set up an array of database requests. See VarDef.h for details.
     // If an optional parameter is not found in the database, the value of its

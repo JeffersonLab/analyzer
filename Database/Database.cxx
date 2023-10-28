@@ -469,12 +469,9 @@ inline Bool_t IsAssignment( const string& str )
            (pos + 1 >= str.length() || str[pos + 1] != '=');
 }
 
-} // end anonymous namespace
-
 //_____________________________________________________________________________
-inline static
-void prepare_line( string& linbuf, bool& comment, bool& continued,
-                   bool& leading_space, bool& trailing_space )
+inline void prepare_line( string& linbuf, bool& comment, bool& continued,
+                          bool& leading_space, bool& trailing_space )
 {
   // Search for comment or continuation character.
   // If found, remove it and everything that follows.
@@ -506,6 +503,8 @@ void prepare_line( string& linbuf, bool& comment, bool& continued,
       Trim(linbuf);
   }
 }
+
+} // end anonymous namespace
 
 //_____________________________________________________________________________
 Int_t ReadDBline( FILE* file, char* buf, Int_t bufsiz, string& line )
@@ -675,8 +674,10 @@ err:
   return found ? 0 : 1;
 }
 
+namespace {
+
 //_____________________________________________________________________________
-static Int_t conversion_error( const char* key, const string& value )
+Int_t conversion_error( const char* key, const string& value )
 {
   errtxt = key;
   errtxt += " = \"" + value + "\"";
@@ -687,47 +688,37 @@ static Int_t conversion_error( const char* key, const string& value )
 // efficient conversion function for a given type
 //_____________________________________________________________________________
 template<typename T,
-  typename enable_if
-    <is_integral<T>::value && is_signed<T>::value, bool>::type = true>
-static inline
-long long int convert_string( const char* p, char*& end )
+  enable_if_t<is_integral_v<T> && is_signed_v<T>, bool> = true>
+inline long long int convert_string( const char* p, char*& end )
 {
   return strtoll(p, &end, 10);
 }
 
 //_____________________________________________________________________________
 template<typename T,
-  typename enable_if
-    <is_integral<T>::value && is_unsigned<T>::value, bool>::type = true>
-static inline
-unsigned long long int convert_string( const char* p, char*& end )
+  enable_if_t<is_integral_v<T> && is_unsigned_v<T>, bool> = true>
+inline unsigned long long int convert_string( const char* p, char*& end )
 {
   return strtoull(p, &end, 10);
 }
 
 //_____________________________________________________________________________
-template<typename T,
-  typename enable_if<is_same<T, float>::value, bool>::type = true>
-static inline
-T convert_string( const char* p, char*& end )
+template<typename T, enable_if_t<is_same_v<T, float>, bool> = true>
+inline T convert_string( const char* p, char*& end )
 {
   return strtof(p, &end);
 }
 
 //_____________________________________________________________________________
-template<typename T,
-  typename enable_if<is_same<T, double>::value, bool>::type = true>
-static inline
-T convert_string( const char* p, char*& end )
+template<typename T, enable_if_t<is_same_v<T, double>, bool> = true>
+inline T convert_string( const char* p, char*& end )
 {
   return strtod(p, &end);
 }
 
 //_____________________________________________________________________________
-template<typename T,
-  typename enable_if<is_same<T, long double>::value, bool>::type = true>
-static inline
-T convert_string( const char* p, char*& end )
+template<typename T, enable_if_t<is_same_v<T, long double>, bool> = true>
+inline T convert_string( const char* p, char*& end )
 {
   return strtold(p, &end);
 }
@@ -736,9 +727,8 @@ T convert_string( const char* p, char*& end )
 // Function to check if source value of type S will fit into target value
 // of type T. T and S must either both be integer or floating point types.
 // Trivial case of identical types.
-template<typename T, typename S,
-  typename enable_if<is_same<T,S>::value, bool>::type = true>
-static inline bool is_in_range( S )
+template<typename T, typename S, enable_if_t<is_same_v<T, S>, bool> = true>
+inline bool is_in_range( S )
 {
   return true;
 }
@@ -746,27 +736,28 @@ static inline bool is_in_range( S )
 //_____________________________________________________________________________
 // Non-trivial case of different types.
 // Currently only used for like-signed integers.
-template<typename T, typename S,
-  typename enable_if<not is_same<T,S>::value, bool>::type = true>
-static inline bool is_in_range( S val )
+template<typename T, typename S, enable_if_t<not is_same_v<T, S>, bool> = true>
+inline bool is_in_range( S val )
 {
-  static_assert( (is_integral<T>::value && is_integral<S>::value) ||
-                 (is_floating_point<T>::value && is_floating_point<S>::value),
-                 "Inconsistent types");
+  static_assert((is_integral_v<T> && is_integral_v<S>) ||
+                (is_floating_point_v<T> && is_floating_point_v<S>),
+                "Inconsistent types");
   bool ret = (val <= numeric_limits<T>::max());
   if( ret ) {
-    if( is_integral<T>::value ) {
-      if( is_signed<S>::value ) {
-        if( is_unsigned<T>::value )
+    if( is_integral_v<T> ) {
+      if( is_signed_v<S> ) {
+        if( is_unsigned_v<T> )
           ret = (val >= 0);
         else
           ret = (val >= numeric_limits<T>::min());
       }
-    } else if( is_floating_point<T>::value )
+    } else if( is_floating_point_v<T> )
       ret = (val >= -numeric_limits<T>::max());
   }
   return ret;
 }
+
+} // namespace
 
 //_____________________________________________________________________________
 Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key,
@@ -790,7 +781,7 @@ Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key, T& value )
   // and return result in 'value'.
   // Returns 0 if OK, 1 if key not found, and a negative number for error.
 
-  static_assert(std::is_arithmetic<T>::value, "Value argument must be arithmetic");
+  static_assert(is_arithmetic_v<T>, "Value argument must be arithmetic");
 
   string text;
   if( Int_t err = LoadDBvalue(file, date, key, text) )
@@ -818,7 +809,7 @@ Int_t LoadDBarray( FILE* file, const TDatime& date, const char* key,
   // the vector 'values'.
   // Returns 0 if OK, 1 if key not found, and a negative number for error.
 
-  static_assert(std::is_arithmetic<T>::value, "Value argument must be arithmetic");
+  static_assert(is_arithmetic_v<T>, "Value argument must be arithmetic");
 
   string text;
   Int_t err = LoadDBvalue(file, date, key, text);
@@ -884,8 +875,11 @@ Int_t LoadDBmatrix( FILE* file, const TDatime& date, const char* key,
   return 0;
 }
 
+namespace {
+
 //_____________________________________________________________________________
-template<typename T> static inline
+template<typename T>
+inline
 Int_t load_and_assign( FILE* f, const TDatime& date, const char* key,
                        void* dest, UInt_t& nelem )
 {
@@ -911,7 +905,8 @@ Int_t load_and_assign( FILE* f, const TDatime& date, const char* key,
 }
 
 //_____________________________________________________________________________
-template<typename T> static inline
+template<typename T>
+inline
 Int_t load_and_assign_vector( FILE* f, const TDatime& date, const char* key,
                               void* dest, UInt_t& nelem )
 {
@@ -925,7 +920,8 @@ Int_t load_and_assign_vector( FILE* f, const TDatime& date, const char* key,
 }
 
 //_____________________________________________________________________________
-template<typename T> static inline
+template<typename T>
+inline
 Int_t load_and_assign_matrix( FILE* f, const TDatime& date, const char* key,
                               void* dest, UInt_t nelem )
 {
@@ -933,6 +929,8 @@ Int_t load_and_assign_matrix( FILE* f, const TDatime& date, const char* key,
   Int_t st = LoadDBmatrix(f, date, key, mat, nelem);
   return st;
 }
+
+} // namespace
 
 //_____________________________________________________________________________
 Int_t LoadDatabase( FILE* f, const TDatime& date, const DBRequest* req,

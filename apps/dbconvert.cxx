@@ -1211,11 +1211,7 @@ public:
       fDetMapHasModel = rhs.fDetMapHasModel; fNelem = rhs.fNelem;
       fAngle = rhs.fAngle; fOrigin = rhs.fOrigin; fDefaults = rhs.fDefaults;
       memcpy( fSize, rhs.fSize, 3*sizeof(fSize[0]) );
-#if __cplusplus >= 201402L
       fDetMap = make_unique<THaDetMap>(*rhs.fDetMap);
-#else
-      fDetMap.reset(new THaDetMap(*rhs.fDetMap));
-#endif
       fErrmsg.Clear();
     }
     return *this;

@@ -28,12 +28,6 @@
 using namespace std;
 using namespace Podd;
 
-#if __cplusplus >= 201402L
-# define MKPMTDATA(name,title,nelem) make_unique<PMTData>((name),(title),(nelem))
-#else
-# define MKPMTDATA(name,title,nelem) unique_ptr<PMTData>(new PMTData((name),(title),(nelem)))
-#endif
-
 //_____________________________________________________________________________
 THaScintillator::THaScintillator( const char* name, const char* description,
 				  THaApparatus* apparatus )
@@ -62,8 +56,8 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
 
   const char* const here = "ReadDatabase";
 
-  VarType kDataType  = std::is_same<Data_t, Float_t>::value ? kFloat  : kDouble;
-  VarType kDataTypeV = std::is_same<Data_t, Float_t>::value ? kFloatV : kDoubleV;
+  VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;
+  VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
 
   FILE* file = OpenFile( date );
   if( !file ) return kFileError;
@@ -169,7 +163,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // Per-event data
   fDetectorData.clear();
   for( int i = kRight; i <= kLeft; ++i ) {
-    auto detdata = MKPMTDATA(GetPrefixName(), fTitle, nval);
+    auto detdata = make_unique<PMTData>(GetPrefixName(), fTitle, nval);
     // Keep pointers to the elements around for convenient access
     PMTData*& pmtData = (i == kRight) ? fRightPMTs : fLeftPMTs;
     pmtData = detdata.get();

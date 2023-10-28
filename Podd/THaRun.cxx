@@ -26,11 +26,7 @@
 
 using namespace std;
 
-#if __cplusplus >= 201402L
-# define MKCODAFILE make_unique<Decoder::THaCodaFile>()
-#else
-# define MKCODAFILE unique_ptr<Decoder::THaCodaFile>(new Decoder::THaCodaFile)
-#endif
+#define MKCODAFILE make_unique<Decoder::THaCodaFile>()
 
 constexpr int     kMinScan   = 50;
 constexpr int     kMaxScan   = 500;
