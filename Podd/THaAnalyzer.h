@@ -225,7 +225,6 @@ protected:
 
   // In-class constants
   static const char* const kMasterCutName;
-  static const char* const kDefaultOdefFile;
 
 private:
   THaAnalyzer( const THaAnalyzer& );

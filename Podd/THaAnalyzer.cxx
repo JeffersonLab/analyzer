@@ -55,7 +55,7 @@ using namespace Decoder;
 using namespace Podd;
 
 const char* const THaAnalyzer::kMasterCutName = "master";
-const char* const THaAnalyzer::kDefaultOdefFile = "output.def";
+const char* const kDefaultOdefFile = "output.def";
 
 // Pointer to single instance of this object
 THaAnalyzer* THaAnalyzer::fgAnalyzer = nullptr;

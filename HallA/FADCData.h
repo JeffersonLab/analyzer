@@ -44,7 +44,7 @@ public:
 };
 
 // Calibration
-static const Data_t kDefaultTDCscale = 0.0625;
+inline constexpr Data_t kDefaultTDCscale = 0.0625;
 class FADCConfig_t {
 public:
   FADCConfig_t() : nped(1), nsa(1), nsb(1), win(1), tflag(true),

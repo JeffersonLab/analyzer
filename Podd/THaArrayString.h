@@ -42,11 +42,8 @@ public:
   EStatus         Status()  const { return fStatus; }
 
 protected:
-#ifdef R__B64
-  static const Int_t kMaxA = 2;
-#else
-  static const Int_t kMaxA = 1;
-#endif
+  static inline constexpr Int_t kMaxA = sizeof(void*)/sizeof(Int_t);
+
   TString  fName;            //Variable name
   Int_t    fNdim;            //Number of array dimensions (0=scalar)
   union {

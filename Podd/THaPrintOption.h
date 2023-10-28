@@ -12,8 +12,8 @@
 #include <vector>
 #include <ostream>
 
-Option_t* const kPRINTLINE  = "LINE";
-Option_t* const kPRINTSTATS = "STATS";
+inline Option_t* const kPRINTLINE  = "LINE";
+inline Option_t* const kPRINTSTATS = "STATS";
 
 class THaPrintOption {
 
