@@ -49,7 +49,6 @@ protected:
   std::string                fString;    //Local copy of option string
   std::vector<std::string>   fTokens;    //Parsed tokens
   std::vector<Int_t>         fParam;     //Parsed token values
-  std::string                fEmpty;     //Empty string  FIXME make static
 
   virtual void  Parse();
 
@@ -69,7 +68,9 @@ const char* THaPrintOption::GetOption( Int_t i ) const
 {
   // Get i-th token from string. Tokens are delimited by blanks or commas.
 
-  return ( i>=0 && i<GetNOptions() ) ? fTokens[i].c_str() : fEmpty.c_str();
+  if( i < 0 || i >= GetNOptions() )
+    return "";
+  return fTokens[i].c_str();
 }
 
 //_____________________________________________________________________________
@@ -78,7 +79,10 @@ const std::string& THaPrintOption::GetOptionStr( Int_t i ) const
 {
   // Get i-th token from string as a std::string
 
-  return ( i>=0 && i<GetNOptions() ) ? fTokens[i] : fEmpty;
+  static const std::string nullstr;
+  if( i < 0 || i >= GetNOptions() )
+    return nullstr;
+  return fTokens[i];
 }
 
 //_____________________________________________________________________________
@@ -91,7 +95,9 @@ Int_t THaPrintOption::GetValue( Int_t i ) const
   // With "OPT,10,20,30" or "OPT 10 20 30", GetValue(2) returns 20.
   //
 
-  return ( i>=0 && i<GetNOptions() ) ? fParam[i] : 0;
+  if( i < 0 || i >= GetNOptions() )
+    return 0;
+  return fParam[i];
 }
 
 //_____________________________________________________________________________
