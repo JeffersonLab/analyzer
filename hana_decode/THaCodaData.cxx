@@ -116,13 +116,13 @@ Int_t THaCodaData::ReturnCode( Int_t evio_retcode )
   case static_cast<UInt_t>(EOF):
     return CODA_EOF;
 
-  case S_EVFILE_UNXPTDEOF:
   case S_EVFILE_TRUNC:
 #if defined(S_EVFILE_BADHEADER)
   case S_EVFILE_BADHEADER:
 #endif
     return CODA_ERROR;
 
+  case S_EVFILE_UNXPTDEOF:
   case S_EVFILE_BADBLOCK:
   case S_EVFILE_BADHANDLE:
   case S_EVFILE_ALLOCFAIL:

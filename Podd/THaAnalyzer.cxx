@@ -1055,11 +1055,9 @@ void THaAnalyzer::PrintSummary( EExitStatus exit_status ) const
   if( fVerbose > 0 ) {
     PrintExitStatus(exit_status);
     PrintRunSummary();
-    if( exit_status != EExitStatus::kFatal ) {
-      PrintCounters();
-      if( fVerbose > 1 )
-        PrintCutSummary();
-    }
+    PrintCounters();
+    if( fVerbose > 1 )
+      PrintCutSummary();
   }
   PrintTimingSummary();
 
@@ -1528,7 +1526,7 @@ Long64_t THaAnalyzer::Process( THaRunBase* run )
     //--- Skip events with errors, unless fatal
     if( status == THaRunBase::READ_FATAL ) {
       terminate = fatal = true;
-      continue;
+      break;
     }
     if( status != THaRunBase::READ_OK )
       continue;
