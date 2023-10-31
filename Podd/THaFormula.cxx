@@ -5,7 +5,7 @@
 // THaFormula
 //
 // A formula that is aware of the analyzer's global variables, similar
-// to TFormula;s parameters. Unlike TFormula, an arbitrary number of
+// to the parameters in TFormula. Unlike TFormula, an arbitrary number of
 // global variables may be referenced in a THaFormula.
 //
 // THaFormulas containing arrays are arrays themselves. Each element
@@ -40,29 +40,21 @@ enum EFuncCode { kLength, kSum, kMean, kStdDev, kMax, kMin,
 		 kGeoMean, kMedian, kIteration, kNumSetBits };
 
 //_____________________________________________________________________________
-static inline Int_t NumberOfSetBits( UInt_t v )
-{
-  // Count number of bits set in 32-bit integer. From
-  // http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
-
-  v = v - ((v >> 1) & 0x55555555);
-  v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-  return (((v + (v >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
-}
-
-//_____________________________________________________________________________
-static inline Int_t NumberOfSetBits( ULong64_t v )
+namespace {
+inline Int_t NumberOfSetBits( ULong64_t v )
 {
   // Count number of bits in 64-bit integer
 
-  const ULong64_t mask32 = (1LL<<32)-1;
-  return NumberOfSetBits( static_cast<UInt_t>(mask32 & v) ) +
-    NumberOfSetBits( static_cast<UInt_t>(mask32 & (v>>32)) );
-}
+  constexpr ULong64_t mask32 = (1LL<<32)-1;
+  return Podd::NumberOfSetBits( static_cast<UInt_t>(mask32 & v) ) +
+    Podd::NumberOfSetBits( static_cast<UInt_t>(v>>32) );
+}}
 
 //_____________________________________________________________________________
-THaFormula::THaFormula() :
-  TFormula(), fVarList(nullptr), fCutList(nullptr), fInstance(0)
+THaFormula::THaFormula()
+  : fVarList(nullptr)
+  , fCutList(nullptr)
+  , fInstance(0)
 {
   // Default constructor
 
@@ -73,7 +65,9 @@ THaFormula::THaFormula() :
 THaFormula::THaFormula( const char* name, const char* expression,
 			Bool_t do_register,
 			const THaVarList* vlst, const THaCutList* clst )
-  : TFormula(), fVarList(vlst), fCutList(clst), fInstance(0)
+  : fVarList(vlst)
+  , fCutList(clst)
+  , fInstance(0)
 {
   // Create a formula 'expression' with name 'name' and symbolic variables
   // from the list 'lst'.
@@ -375,10 +369,10 @@ Double_t THaFormula::DefinedValue( Int_t i ) // NOLINT(misc-no-recursion)
 	y = accumulate( ALL(values), static_cast<Double_t>(0.0) );
 	break;
       case kMean:
-	y = TMath::Mean( ndata, &values[0] );
+	y = TMath::Mean( ndata, values.data() );
 	break;
       case kStdDev:
-	y = TMath::RMS( ndata, &values[0] );
+	y = TMath::RMS( ndata, values.data() );
 	break;
       case kMax:
 	y = *max_element( ALL(values) );
@@ -387,10 +381,10 @@ Double_t THaFormula::DefinedValue( Int_t i ) // NOLINT(misc-no-recursion)
 	y = *min_element( ALL(values) );
 	break;
       case kGeoMean:
-	y = TMath::GeomMean( ndata, &values[0] );
+	y = TMath::GeomMean( ndata, values.data() );
 	break;
       case kMedian:
-	y = TMath::Median( ndata, &values[0] );
+	y = TMath::Median( ndata, values.data() );
 	break;
       default:
 	assert(false); // not reached
@@ -419,7 +413,8 @@ Double_t THaFormula::DefinedValue( Int_t i ) // NOLINT(misc-no-recursion)
 }
 
 //_____________________________________________________________________________
-static Int_t CheckBlacklistedNames( const TString& name )
+namespace {
+Int_t CheckBlacklistedNames( const TString& name )
 {
   // Check for function name not supported by THaFormula
 
@@ -451,7 +446,7 @@ static Int_t CheckBlacklistedNames( const TString& name )
     return 1;
   }
   return 0;
-}
+}}
 
 //_____________________________________________________________________________
 Int_t THaFormula::DefinedVariable( TString& name, Int_t& action )
