@@ -6,7 +6,7 @@
 // THaADCHelicity
 //
 // Helicity of the beam - from ADC
-// 
+//
 ////////////////////////////////////////////////////////////////////////
 
 
@@ -18,8 +18,8 @@ class THaADCHelicity : public THaHelicityDet {
 
 public:
 
-  THaADCHelicity( const char* name, const char* description, 
-		  THaApparatus* a = nullptr );
+  THaADCHelicity( const char* name, const char* description,
+                  THaApparatus* a = nullptr );
   virtual ~THaADCHelicity();
 
   virtual void   Clear( Option_t* opt = "" );
@@ -29,7 +29,7 @@ public:
     : fADC_hdata(0), fADC_Gate(0), fADC_Hel(kUnknown),
       fThreshold(0), fIgnoreGate(false), fInvertGate(false),
       fNchan(0) {}  // For ROOT I/O only
-  
+
 protected:
   // ADC data for helicity and gate
   Double_t   fADC_hdata;  // Helicity ADC raw data
@@ -46,21 +46,19 @@ protected:
     ChanDef_t() : roc(-1), slot(-1), chan(-1) {}
     ChanDef_t& operator=(const std::vector<int>& rhs) {
       if( rhs.size() < 3 ) {
-        static const std::string
-          msg("Attempt to assign ChanDef_t with a vector of size < 3");
-        throw std::invalid_argument(msg);
+        throw std::invalid_argument(
+          "Attempt to assign ChanDef_t with a vector of size < 3" );
       }
       if( rhs[0] < 0 || rhs[1] < 0 || rhs[3] < 0 ) {
-        static const std::string
-          msg("Illegal negative value for chan, slot or channel");
-        throw std::out_of_range(msg);
+        throw std::out_of_range(
+          "Illegal negative value for chan, slot or channel");
       }
       roc = rhs[0]; slot = rhs[1]; chan = rhs[3];
       return *this;
     }
-    UInt_t roc;            // ROC to read out
-    UInt_t slot;           // Slot of module
-    UInt_t chan;           // Channel within module
+    UInt_t roc;           // ROC to read out
+    UInt_t slot;          // Slot of module
+    UInt_t chan;          // Channel within module
   };
 
   ChanDef_t  fAddr[2];    // Definitions of helicity and gate channels
@@ -72,5 +70,4 @@ protected:
   ClassDef(THaADCHelicity,1)     // Beam helicity from ADC (in time)
 };
 
-#endif 
-
+#endif
