@@ -176,6 +176,7 @@ THaAnalysisObject::EStatus UserEvtHandler::Init(const TDatime& /* date */ )
 
   UInt_t Nvars = dataKeys.size();
   if (Nvars > 0) {
+    delete [] dvars; dvars = nullptr;
     dvars = new Double_t[Nvars];  // dvars is a member of this class
 		 // the index of the dvars array tracks the index of dataKeys
     memset(dvars, 0, Nvars*sizeof(Double_t));

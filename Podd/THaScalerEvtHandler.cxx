@@ -378,7 +378,9 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
 #endif
 
 
-  DefVars();
+  EStatus status = DefVars();
+  if( status != kOK )
+    return fStatus = status;
 
 #ifdef HARDCODED
   // This code is superseded by the parsing of a map file above.  It's another way ...
@@ -439,13 +441,13 @@ void THaScalerEvtHandler::AddVars( const TString& name, const TString& desc,
   scalerloc.push_back(new ScalerLoc(fName + name, fName + desc, 0, iscal, ichan, ikind));
 }
 
-void THaScalerEvtHandler::DefVars()
+THaAnalysisObject::EStatus THaScalerEvtHandler::DefVars()
 {
   // called after AddVars has finished being called.
   size_t Nvars = scalerloc.size();
   if( Nvars == 0 )
-    return;
-  delete [] dvars;
+    return kOK;
+  delete [] dvars; dvars = nullptr;
   dvars = new Double_t[Nvars];  // dvars is a member of this class
   memset(dvars, 0, Nvars * sizeof(Double_t));
   if( gHaVars ) {
@@ -453,7 +455,8 @@ void THaScalerEvtHandler::DefVars()
       *fDebugFile << "THaScalerEVtHandler:: Have gHaVars " << gHaVars << endl;
   } else {
     cout << "No gHaVars ?!  Well, that's a problem !!" << endl;
-    return;
+    delete [] dvars; dvars = nullptr;
+    return kInitError;
   }
   if( fDebugFile )
     *fDebugFile << "THaScalerEvtHandler:: scalerloc size " << scalerloc.size() << endl;
@@ -463,6 +466,7 @@ void THaScalerEvtHandler::DefVars()
                           scalerloc[i]->description.Data(),
                           &dvars[i], kDouble, count);
   }
+  return kOK;
 }
 
 ClassImp(THaScalerEvtHandler)

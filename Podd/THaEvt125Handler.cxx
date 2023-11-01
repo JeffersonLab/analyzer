@@ -96,6 +96,7 @@ THaAnalysisObject::EStatus THaEvt125Handler::Init(const TDatime&)
 // Please change these comments when you modify this class.
 
   NVars = 4;
+  delete [] dvars; dvars = nullptr;
   dvars = new Double_t[NVars];
   memset(dvars, 0, NVars*sizeof(Double_t));
   if (gHaVars) {

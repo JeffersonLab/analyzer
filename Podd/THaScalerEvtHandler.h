@@ -56,7 +56,7 @@ protected:
 
    void AddVars( const TString& name, const TString& desc, UInt_t iscal,
                  UInt_t ichan, UInt_t ikind );
-   void DefVars();
+   EStatus DefVars();
    void ParseVariable( const std::vector<std::string>& dbline );
    void ParseMap( const char* cbuf, const std::vector<std::string>& dbline );
    void VerifySlots();
