@@ -103,12 +103,12 @@ struct TDCData_t {
 
 // ADC and TDC combined
 struct PMTCalib_t : public ADCCalib_t, public TDCCalib_t {
-  PMTCalib_t() : ADCCalib_t(), TDCCalib_t() {}
+  PMTCalib_t() = default;
   void reset() { adc_calib_reset(); tdc_calib_reset(); }
 };
 
 struct PMTData_t : public ADCData_t, public TDCData_t {
-  PMTData_t() : ADCData_t(), TDCData_t() {}
+  PMTData_t() = default;
   void clear() { adc_clear(); tdc_clear(); }
 };
 

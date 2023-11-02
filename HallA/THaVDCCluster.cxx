@@ -281,7 +281,7 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
       else
 	w = -1.;
     }
-    fCoord.push_back( FitCoord_t(x,y,w) );
+    fCoord.emplace_back(x, y, w);
   }
 
   const Int_t nSignCombos = 2; //Number of different sign combinations
@@ -423,7 +423,7 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
     else
       wt = -1.;
 
-    fCoord.push_back( FitCoord_t(x,y,wt) );
+    fCoord.emplace_back(x, y, wt);
 
     assert( i == 0 || fCoord[i-1].x < fCoord[i].x );
   }

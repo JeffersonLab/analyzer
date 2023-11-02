@@ -24,10 +24,14 @@ ClassImp(THaTotalShower)
 
 //_____________________________________________________________________________
 THaTotalShower::THaTotalShower( const char* name, const char* description,
-				THaApparatus* apparatus ) :
-  THaPidDetector(name,description,apparatus), 
-  fShower(nullptr), fPreShower(nullptr), fMaxDx(0.0), fMaxDy(0.0),
-  fE(kBig), fID(-1)
+				THaApparatus* apparatus )
+  : THaPidDetector(name,description,apparatus)
+  , fShower(nullptr)
+  , fPreShower(nullptr)
+  , fMaxDx(0.0)
+  , fMaxDy(0.0)
+  , fE(kBig)
+  , fID(-1)
 {
   // Constructor. With this method, the subdetectors are created using
   // this detector's prefix followed by "sh" and "ps", respectively,
@@ -41,10 +45,14 @@ THaTotalShower::THaTotalShower( const char* name,
 				const char* shower_name,
 				const char* preshower_name,
 				const char* description,
-				THaApparatus* apparatus ) :
-  THaPidDetector(name,description,apparatus),
-  fShower(nullptr), fPreShower(nullptr), fMaxDx(0.0), fMaxDy(0.0),
-  fE(kBig), fID(-1)
+				THaApparatus* apparatus )
+  : THaPidDetector(name,description,apparatus)
+  , fShower(nullptr)
+  , fPreShower(nullptr)
+  , fMaxDx(0.0)
+  , fMaxDy(0.0)
+  , fE(kBig)
+  , fID(-1)
 {
   // Constructor. With this method, the subdetectors are created using
   // the given names 'shower_name' and 'preshower_name', and variable 

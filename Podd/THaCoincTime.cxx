@@ -24,7 +24,7 @@
 using namespace std;
 
 // Reserve initial space for 10 tracks per spectrometer (can grow dynamically)
-#define NTR 10
+const size_t NTR = 10;
 
 //_____________________________________________________________________________
 THaCoincTime::THaCoincTime( const char* name,

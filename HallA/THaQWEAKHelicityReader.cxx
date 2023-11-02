@@ -314,8 +314,8 @@ Int_t THaQWEAKHelicityReader::SetROCinfo( EROC which, UInt_t roc,
   // You must define at least the kHel and kTime ROCs.
   // Returns <0 if parameter error, 0 if success
 
-  if( which<kHel || which>kROC3 )
-    return -1;
+//  if( which<kHel || which>kROC3 )
+//    return -1;
   if( roc <= 0 || roc > 255 )
     return -2;
 

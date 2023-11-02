@@ -43,11 +43,18 @@ TList* THaAnalysisObject::fgModules = nullptr;
 
 //_____________________________________________________________________________
 THaAnalysisObject::THaAnalysisObject( const char* name,
-				      const char* description ) :
-  TNamed(name,description), fPrefix(nullptr), fStatus(kNotinit),
-  fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0),
-  fOKOut(false), fInitDate(19950101,0), fNEventsWithWarnings(0),
-  fExtra(nullptr)
+				      const char* description )
+  : TNamed(name,description)
+  , fPrefix(nullptr)
+  , fStatus(kNotinit)
+  , fDebug(0)
+  , fIsInit(false)
+  , fIsSetup(false)
+  , fProperties(0)
+  , fOKOut(false)
+  , fInitDate(19950101,0)
+  , fNEventsWithWarnings(0)
+  , fExtra(nullptr)
 {
   // Constructor
 
@@ -57,9 +64,15 @@ THaAnalysisObject::THaAnalysisObject( const char* name,
 
 //_____________________________________________________________________________
 THaAnalysisObject::THaAnalysisObject()
-  : fPrefix(nullptr), fStatus(kNotinit), fDebug(0), fIsInit(false),
-    fIsSetup(false), fProperties(), fOKOut(false), fNEventsWithWarnings(0),
-    fExtra(nullptr)
+  : fPrefix(nullptr)
+  , fStatus(kNotinit)
+  , fDebug(0)
+  , fIsInit(false)
+  , fIsSetup(false)
+  , fProperties(0)
+  , fOKOut(false)
+  , fNEventsWithWarnings(0)
+  , fExtra(nullptr)
 {
   // only for ROOT I/O
 }

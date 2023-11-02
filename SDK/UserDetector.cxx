@@ -23,7 +23,6 @@
 #include "THaTrack.h"
 #include "TClonesArray.h"
 #include <iostream>
-#include <sstream>
 #include <stdexcept>
 
 using namespace std;

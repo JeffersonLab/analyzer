@@ -177,7 +177,7 @@ Int_t UserScintillator::FineProcess( TClonesArray& tracks )
   // Number of reconstructed tracks
   Int_t n_track = tracks.GetLast()+1;
   // No tracks, bad init or bad parameters? If so, can't do anything here
-  if( !(n_track > 0 && IsOK() && fGoodToGo))
+  if( n_track <= 0 || !IsOK() || !fGoodToGo )
     // Return codes are currently ignored, but for consistency use 0 if OK
     // and non-zero for errors
     return 1;

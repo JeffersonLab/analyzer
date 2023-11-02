@@ -21,8 +21,8 @@ namespace VDC {
     virtual ~TimeToDistConv() = default;
 
     virtual Double_t ConvertTimeToDist( Double_t time, Double_t tanTheta,
-					Double_t* ddist = 0 ) const = 0;
-    Double_t         GetDriftVel() { return fDriftVel; }
+					Double_t* ddist = nullptr ) const = 0;
+    Double_t         GetDriftVel() const { return fDriftVel; }
     virtual Double_t GetParameter( UInt_t ) const { return kBig; }
     void             SetDriftVel( Double_t v );
     virtual Int_t    SetParameters( const std::vector<double>& );

@@ -32,40 +32,57 @@ public:
   };
 
   // Default constructor
-  THaTrack()
-    : TObject(),
-      fX(kBig), fY(kBig), fTheta(kBig), fPhi(kBig), fP(kBig),
-      fDX(kBig), fDY(kBig), fDTheta(kBig), fDPhi(kBig),
-      fRX(kBig), fRY(kBig), fRTheta(kBig), fRPhi(kBig),
-      fTX(kBig), fTY(kBig), fTTheta(kBig), fTPhi(kBig), fDp(kBig),
-      fPvect(kBig,kBig,kBig), fVertex(kBig,kBig,kBig),
-      fVertexError(kBig,kBig,kBig),
-      fPathl(kBig), fTime(kBig), fdTime(kBig), fBeta(kBig), fdBeta(kBig),
-      fNclusters(0), fClusters{}, fPIDinfo(nullptr), fCreator(nullptr), fIndex(-1),
-      fTrkNum(0), fID(nullptr), fFlag(0), fType(0), fChi2(kBig), fNDoF(0),
-      fDedx(kBig), fEnergy(kBig),
-      fNPMT(0), fBetaChi2(kBig), fFPTime(kBig),
-      fGoodPlane3(0), fGoodPlane4(0)
-  {}
+  THaTrack() : THaTrack(kBig, kBig, kBig, kBig) {}
 
   // Constructor with fp coordinates
   // FIXME: this really should be setting detector coordinates
   THaTrack( Double_t x, Double_t y, Double_t theta, Double_t phi,
-	    THaTrackingDetector* creator=nullptr, THaTrackID* id=nullptr,
-	    THaPIDinfo* pid=nullptr )
-    : TObject(),
-      fX(x), fY(y), fTheta(theta), fPhi(phi), fP(kBig),
-      fDX(kBig), fDY(kBig), fDTheta(kBig), fDPhi(kBig),
-      fRX(kBig), fRY(kBig), fRTheta(kBig), fRPhi(kBig),
-      fTX(kBig), fTY(kBig), fTTheta(kBig), fTPhi(kBig), fDp(kBig),
-      fPvect(kBig,kBig,kBig), fVertex(kBig,kBig,kBig),
-      fVertexError(kBig,kBig,kBig),
-      fPathl(kBig), fTime(kBig), fdTime(kBig), fBeta(kBig), fdBeta(kBig),
-      fNclusters(0), fClusters{}, fPIDinfo(pid), fCreator(creator), fIndex(-1),
-      fTrkNum(0), fID(id), fFlag(0), fType(kHasFP), fChi2(kBig), fNDoF(0),
-      fDedx(kBig), fEnergy(kBig),
-      fNPMT(0), fBetaChi2(kBig), fFPTime(kBig),
-      fGoodPlane3(0), fGoodPlane4(0)
+            THaTrackingDetector* creator=nullptr, THaTrackID* id=nullptr,
+            THaPIDinfo* pid=nullptr )
+    : fX(x)
+    , fY(y)
+    , fTheta(theta)
+    , fPhi(phi)
+    , fP(kBig)
+    , fDX(kBig)
+    , fDY(kBig)
+    , fDTheta(kBig)
+    , fDPhi(kBig)
+    , fRX(kBig)
+    , fRY(kBig)
+    , fRTheta(kBig)
+    , fRPhi(kBig)
+    , fTX(kBig)
+    , fTY(kBig)
+    , fTTheta(kBig)
+    , fTPhi(kBig)
+    , fDp(kBig)
+    , fPvect(kBig,kBig,kBig)
+    , fVertex(kBig,kBig,kBig)
+    , fVertexError(kBig,kBig,kBig)
+    , fPathl(kBig)
+    , fTime(kBig)
+    , fdTime(kBig)
+    , fBeta(kBig)
+    , fdBeta(kBig)
+    , fNclusters(0)
+    , fClusters{}
+    , fPIDinfo(pid)
+    , fCreator(creator)
+    , fIndex(-1)
+    , fTrkNum(0)
+    , fID(id)
+    , fFlag(0)
+    , fType(TMath::Abs(fX) < kBig/1.01 ? kHasFP : 0)
+    , fChi2(kBig)
+    , fNDoF(0)
+    , fDedx(kBig)
+    , fEnergy(kBig)
+    , fNPMT(0)
+    , fBetaChi2(kBig)
+    , fFPTime(kBig)
+    , fGoodPlane3(0)
+    , fGoodPlane4(0)
   {
     if(pid) pid->Clear();
   }
@@ -149,14 +166,14 @@ public:
   void              SetTarget( Double_t x, Double_t y,
 			       Double_t theta, Double_t phi );
 
-  void              SetPathLen( Double_t pathl ) { fPathl = pathl; /* meters */ }
-  void              SetTime( Double_t time )     { fTime = time; /* seconds */ }
-  void              SetdTime( Double_t dt )      { fdTime = dt; /* seconds */ }
-  void              SetBeta( Double_t beta )     { fBeta = beta; }
-  void              SetdBeta( Double_t db )      { fdBeta = db; }
-  void              SetDedx(Double_t dedx)       { fDedx = dedx; }
-  void              SetEnergy(Double_t energy)   { fEnergy = energy; }
-  void              SetNPMT(Int_t npmt)          { fNPMT = npmt; }
+  void              SetPathLen( Double_t pathl )   { fPathl = pathl; /* meters */ }
+  void              SetTime( Double_t time )       { fTime = time; /* seconds */ }
+  void              SetdTime( Double_t dt )        { fdTime = dt; /* seconds */ }
+  void              SetBeta( Double_t beta )       { fBeta = beta; }
+  void              SetdBeta( Double_t db )        { fdBeta = db; }
+  void              SetDedx(Double_t dedx)         { fDedx = dedx; }
+  void              SetEnergy(Double_t energy)     { fEnergy = energy; }
+  void              SetNPMT(Int_t npmt)            { fNPMT = npmt; }
   void              SetBetaChi2(Double_t betachi2) { fBetaChi2 = betachi2; }
   void              SetFPTime(Double_t fptime)     { fFPTime = fptime; }
   void              SetGoodPlane3(Int_t gdplane3)  { fGoodPlane3 = gdplane3; }
@@ -164,12 +181,12 @@ public:
 
   void              SetChi2( Double_t chi2, Int_t ndof ) { fChi2=chi2; fNDoF=ndof; }
 
-  void              SetID( THaTrackID* id )   { fID   = id; }
-  void              SetFlag( UInt_t flag )    { fFlag = flag; }
-  void              SetType( UInt_t flag )    { fType = flag; }
-  void              SetMomentum( Double_t p ) { fP    = p; }
-  void              SetDp( Double_t dp )      { fDp   = dp; }
-  void              SetTrkNum( Int_t n )      { fTrkNum = n; }
+  void              SetID( THaTrackID* id )              { fID   = id; }
+  void              SetFlag( UInt_t flag )               { fFlag = flag; }
+  void              SetType( UInt_t flag )               { fType = flag; }
+  void              SetMomentum( Double_t p )            { fP    = p; }
+  void              SetDp( Double_t dp )                 { fDp   = dp; }
+  void              SetTrkNum( Int_t n )                 { fTrkNum = n; }
   void              SetCreator( THaTrackingDetector* d ) { fCreator = d; }
   void              SetIndex( Int_t idx )                { fIndex   = idx; }
   void              SetPIDinfo( THaPIDinfo* pid )        { fPIDinfo = pid; }
@@ -183,75 +200,75 @@ public:
   void              SetVertexError( Double_t x, Double_t y, Double_t z )
   { fVertexError.SetXYZ( x, y, z ); }
 
-  virtual Bool_t    IsSortable() const { return true; }
-  virtual Int_t	    Compare(const TObject* obj) const;
+  Bool_t            IsSortable() const override { return true; }
+  Int_t	            Compare(const TObject* obj) const override;
 
 protected:
 
-  enum { kMAXCL = 4 };
+  static constexpr Int_t kMAXCL = 4;
 
   // Focal plane coordinates (TRANSPORT system projected to z=0)
-  Double_t          fX;              // x position in TRANSPORT plane (m)
-  Double_t          fY;              // y position in TRANSPORT plane (m)
-  Double_t          fTheta;          // Tangent of TRANSPORT Theta (x')
-  Double_t          fPhi;            // Tangent of TRANSPORT Phi (y')
-  Double_t          fP;              // Track momentum (GeV)
+  Double_t    fX;          // x position in TRANSPORT plane (m)
+  Double_t    fY;          // y position in TRANSPORT plane (m)
+  Double_t    fTheta;      // Tangent of TRANSPORT Theta (x')
+  Double_t    fPhi;        // Tangent of TRANSPORT Phi (y')
+  Double_t    fP;          // Track momentum (GeV)
 
   // coordinates in the detector system
-  Double_t fDX;     // x position in DCS
-  Double_t fDY;     // y position in DCS
-  Double_t fDTheta; // Tangent of DCS Theta
-  Double_t fDPhi;   // Tangent of DCS Phi
+  Double_t    fDX;         // x position in DCS
+  Double_t    fDY;         // y position in DCS
+  Double_t    fDTheta;     // Tangent of DCS Theta
+  Double_t    fDPhi;       // Tangent of DCS Phi
 
   // coordinates in the rotated TRANSPORT system
-  Double_t fRX;     // x position in focal plane (m)
-  Double_t fRY;     // y position in focal plane (m)
-  Double_t fRTheta; // Tangent of TRANSPORT Theta (x')
-  Double_t fRPhi;   // Tangent of TRANSPORT Phi (y')
+  Double_t    fRX;         // x position in focal plane (m)
+  Double_t    fRY;         // y position in focal plane (m)
+  Double_t    fRTheta;     // Tangent of TRANSPORT Theta (x')
+  Double_t    fRPhi;       // Tangent of TRANSPORT Phi (y')
 
   // reconstructed coordinates at the target in the target TRANSPORT system (z=0)
-  Double_t fTX;     // x position at target (m)
-  Double_t fTY;     // y position at target (m)
-  Double_t fTTheta; // Tangent of TRANSPORT Theta (out-of-plane angle) at target
-  Double_t fTPhi;   // Tangent of TRANSPORT Phi (in-plane angle) at target
-  Double_t fDp;     // dp/p_center -- fractional change in momentum
+  Double_t    fTX;         // x position at target (m)
+  Double_t    fTY;         // y position at target (m)
+  Double_t    fTTheta;     // Tangent of TRP Theta (out-of-plane angle) at target
+  Double_t    fTPhi;       // Tangent of TRP Phi (in-plane angle) at target
+  Double_t    fDp;         // dp/p_center -- fractional change in momentum
 
-  TVector3          fPvect;  // Momentum vector at target in lab system (GeV)
-  TVector3          fVertex; // Vertex location in lab (m) valid if fHasVertex
-  TVector3          fVertexError; // Uncertainties in fVertex coordinates.
+  TVector3    fPvect;      // Momentum vector at target in lab system (GeV)
+  TVector3    fVertex;     // Vertex location in lab (m) valid if fHasVertex
+  TVector3    fVertexError; // Uncertainties in fVertex coordinates.
 
-  Double_t          fPathl;  // pathlength from target (z=0) (meters)
+  Double_t    fPathl;      // pathlength from target (z=0) (meters)
 
-  Double_t          fTime;   // time of track at focal plane (s)
-  Double_t          fdTime;  // uncertainty in fTime
-  Double_t          fBeta;   // beta of track
-  Double_t          fdBeta;  // uncertainty in fBeta
+  Double_t    fTime;       // time of track at focal plane (s)
+  Double_t    fdTime;      // uncertainty in fTime
+  Double_t    fBeta;       // beta of track
+  Double_t    fdBeta;      // uncertainty in fBeta
 
   // Status variables and objects related to this track
-  Int_t             fNclusters;      //! Number of clusters
-  THaCluster*       fClusters[kMAXCL]; //! Clusters of this track
-  THaPIDinfo*       fPIDinfo;        //! Particle ID information for this track
-  THaTrackingDetector* fCreator;     //! Detector creating this track
-  Int_t             fIndex;          // Track index (-1 = none, 0 = first, etc.)
-  Int_t             fTrkNum;         // Track number (0 = unassigned)
+  Int_t       fNclusters;        //! Number of clusters
+  THaCluster* fClusters[kMAXCL]; //! Clusters of this track
+  THaPIDinfo* fPIDinfo;          //! Particle ID information for this track
+  THaTrackingDetector* fCreator; //! Detector creating this track
+  Int_t       fIndex;            // Track index (-1 = none, 0 = first, etc.)
+  Int_t       fTrkNum;           // Track number (0 = unassigned)
 
-  THaTrackID*       fID;     //! Track identifier
-  UInt_t            fFlag;   // General status flag (for use by tracking det.)
-  UInt_t            fType;   // Flag indicating which vectors reconstructed
+  THaTrackID* fID;         //! Track identifier
+  UInt_t      fFlag;       // General status flag (for use by tracking det.)
+  UInt_t      fType;       // Flag indicating which vectors reconstructed
 
-  Double_t          fChi2;   // goodness of track fit
-  Int_t             fNDoF;   // number of hits on the track contributing to chi2
+  Double_t    fChi2;       // goodness of track fit
+  Int_t       fNDoF;       // number of hits on the track contributing to chi2
 
-  Double_t          fDedx;   // dEdX from hodoscopes
-  Double_t          fEnergy; // Energy from calorimeter
+  Double_t    fDedx;       // dEdX from hodoscopes
+  Double_t    fEnergy;     // Energy from calorimeter
   // Needed for "prune" select best track method
-  Int_t             fNPMT;       // Number of PMTs hit in track
-  Double_t          fBetaChi2;   // (reduced) Chisq of fit on Beta
-  Double_t          fFPTime;     // Focal Plane time (same as fTime?)
-  Int_t             fGoodPlane3; // Track hit a plane 3 paddle
-  Int_t             fGoodPlane4; // Track hit a plane 4 paddle
-  
-  ClassDef(THaTrack,5)       // A generic particle track
+  Int_t       fNPMT;       // Number of PMTs hit in track
+  Double_t    fBetaChi2;   // (reduced) Chisq of fit on Beta
+  Double_t    fFPTime;     // Focal Plane time (same as fTime?)
+  Int_t       fGoodPlane3; // Track hit a plane 3 paddle
+  Int_t       fGoodPlane4; // Track hit a plane 4 paddle
+
+  ClassDefOverride(THaTrack,5)   // A generic particle track
 };
 
 //__________________ inlines __________________________________________________

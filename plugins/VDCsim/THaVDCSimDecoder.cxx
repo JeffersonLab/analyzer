@@ -15,8 +15,7 @@
 
 using namespace std;
 
-#define DEBUG 0
-#define MC_PREFIX "MC."
+const char* const MC_PREFIX = "MC.";
 
 //-----------------------------------------------------------------------------
 THaVDCSimDecoder::THaVDCSimDecoder() : fIsSetup{false}
@@ -72,7 +71,7 @@ Int_t THaVDCSimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
 }
 
 //-----------------------------------------------------------------------------
-void THaVDCSimDecoder::Clear( Option_t* opt )
+void THaVDCSimDecoder::Clear( Option_t* )
 {
   // Clear track and plane data
 
@@ -104,7 +103,7 @@ int THaVDCSimDecoder::LoadEvent(const UInt_t* evbuffer )
   // over const TList.
   const auto* simEvent = (const THaVDCSimEvent*)(evbuffer);
 
-  if(DEBUG) PrintOut();
+  if(fDebug) PrintOut();
   if (first_decode) {
     init_cmap();
     if (init_slotdata() == HED_ERR) return HED_ERR;

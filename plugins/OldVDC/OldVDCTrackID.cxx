@@ -19,8 +19,7 @@ using namespace std;
 
 //_____________________________________________________________________________
 OldVDCTrackID::OldVDCTrackID( const OldVDCUVTrack* lower,
-			      const OldVDCUVTrack* upper) :
-  THaTrackID()
+			      const OldVDCUVTrack* upper)
 {
   // Constructor that automatically determines pivot numbers
   // from the given OldVDCUVTracks.

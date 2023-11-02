@@ -19,10 +19,10 @@ namespace VDC {
     AnalyticTTDConv();
     virtual ~AnalyticTTDConv() = default;
 
-    virtual Double_t ConvertTimeToDist( Double_t time, Double_t tanTheta,
-				        Double_t* ddist=0 ) const;
-    virtual Double_t GetParameter( UInt_t i ) const;
-    virtual Int_t    SetParameters( const std::vector<double>& param );
+    Double_t ConvertTimeToDist( Double_t time, Double_t tanTheta,
+                                Double_t* ddist = nullptr ) const override;
+    Double_t GetParameter( UInt_t i ) const override;
+    Int_t    SetParameters( const std::vector<double>& param ) override;
 
 protected:
 
@@ -32,7 +32,7 @@ protected:
 
     Double_t fdtime;      // uncertainty in the measured time
 
-    ClassDef(AnalyticTTDConv,0)   // VDC Analytic TTD Conv class
+    ClassDefOverride(AnalyticTTDConv,0)   // VDC Analytic TTD Conv class
   };
 }
 

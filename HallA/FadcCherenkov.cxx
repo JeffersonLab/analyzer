@@ -17,13 +17,15 @@ namespace HallA {
 //_____________________________________________________________________________
 FadcCherenkov::FadcCherenkov( const char* name, const char* description,
                               THaApparatus* a )
-  : THaCherenkov(name, description, a),fFADCData(nullptr)
+  : THaCherenkov(name, description, a)
+  , fFADCData(nullptr)
 {
   // Constructor
 }
 
 //_____________________________________________________________________________
-FadcCherenkov::FadcCherenkov() : THaCherenkov(), fFADCData(nullptr)
+FadcCherenkov::FadcCherenkov()
+  : fFADCData(nullptr)
 {
   // Default constructor (for ROOT RTTI)
 }

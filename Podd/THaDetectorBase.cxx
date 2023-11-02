@@ -41,11 +41,13 @@ THaDetectorBase::THaDetectorBase( const char* name,
 }
 
 //_____________________________________________________________________________
-THaDetectorBase::THaDetectorBase() :
-  fDetMap(nullptr), fNelem(0), fNviews(1), fSize{kBig,kBig,kBig}
-{
-  // for ROOT I/O only
-}
+// Default constructor. For ROOT RTTI
+THaDetectorBase::THaDetectorBase()
+  : fDetMap(nullptr)
+  , fNelem(0)
+  , fNviews(1)
+  , fSize{kBig,kBig,kBig}
+{}
 
 //_____________________________________________________________________________
 THaDetectorBase::~THaDetectorBase()
@@ -170,7 +172,7 @@ TVector3 THaDetectorBase::TrackToDetCoord( const TVector3& point ) const
 
   TVector3 v = point - fOrigin;
   // This works out to exactly the same as a multiplication with TRotation
-  return TVector3( v.Dot(fXax), v.Dot(fYax), v.Dot(fZax) );
+  return { v.Dot(fXax), v.Dot(fYax), v.Dot(fZax) };
 }
 
 //_____________________________________________________________________________

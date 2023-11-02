@@ -15,16 +15,20 @@
 
 using namespace std;
 
-static constexpr Int_t NPOS = 3;
-static constexpr Int_t NBPM = 2;
-static constexpr Int_t NCHAN = 2*NBPM;
+constexpr Int_t NPOS = 3;
+constexpr Int_t NBPM = 2;
+constexpr Int_t NCHAN = 2 * NBPM;
 
 //_____________________________________________________________________________
 THaRaster::THaRaster( const char* name, const char* description,
                       THaApparatus* apparatus )
-  : THaBeamDet(name,description,apparatus), fRawPos(NBPM), fRawSlope(NBPM),
-    fRasterFreq(NBPM), fSlopePedestal(NBPM), fRasterPedestal(NBPM),
-    fNfired(0)
+  : THaBeamDet(name,description,apparatus)
+  , fRawPos(NBPM)
+  , fRawSlope(NBPM)
+  , fRasterFreq(NBPM)
+  , fSlopePedestal(NBPM)
+  , fRasterPedestal(NBPM)
+  , fNfired(0)
 {
   // Constructor
   fRaw2Pos[0].ResizeTo(NPOS, NBPM);

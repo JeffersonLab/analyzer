@@ -79,7 +79,7 @@ void TrigBitLoc::Load( const THaEvData& evdata )
     if( Get(ihit) > cutlo && Get(ihit) < cuthi ) {
       data = 1;
       if( bitloc )
-	*bitloc |= BIT(bitnum);
+	SETBIT(*bitloc, bitnum);
       break;
     }
   }

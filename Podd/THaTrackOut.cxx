@@ -1,7 +1,7 @@
 #include "THaTrackOut.h"
 
-#include <TLorentzVector.h>
-#include <TTree.h>
+#include "TLorentzVector.h"
+#include "TTree.h"
 #include "THaOutput.h"
 #include "THaTrackingModule.h"
 
@@ -9,9 +9,12 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaTrackOut::THaTrackOut(const char* name, const char* description,
-			 const char* src, Double_t pmass /* GeV */ ) :
-  THaPhysicsModule(name,description), fM(pmass), fSrcName(src),
-  fP4{new TLorentzVector}, fSrc(nullptr)
+			 const char* src, Double_t pmass /* GeV */ )
+  : THaPhysicsModule(name,description)
+  , fM(pmass)
+  , fSrcName(src)
+  , fP4{new TLorentzVector}
+  , fSrc(nullptr)
 {
   // Prepare four-vectors for storing the output tracks from "src",
   //  assuming is has mass "pmass".
@@ -87,7 +90,7 @@ Int_t THaTrackOut::InitOutput( THaOutput* output )
   }
 
   // create the branches
-  if ( tree->Branch(Form("%s.p4.",GetName()),"TLorentzVector",&fP4,4000) ) {
+  if( tree->Branch(Form("%s.p4.", GetName()), "TLorentzVector", &fP4, 4000) ) {
     fOKOut = true;
   }
 

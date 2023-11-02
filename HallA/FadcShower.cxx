@@ -17,13 +17,15 @@ namespace HallA {
 //_____________________________________________________________________________
 FadcShower::FadcShower( const char* name, const char* description,
                         THaApparatus* a )
-  : THaShower(name, description, a), fFADCData(nullptr)
+  : THaShower(name, description, a)
+  , fFADCData(nullptr)
 {
   // Constructor
 }
 
 //_____________________________________________________________________________
-FadcShower::FadcShower() : THaShower(), fFADCData(nullptr)
+FadcShower::FadcShower()
+  : fFADCData(nullptr)
 {
   // Default constructor (for ROOT RTTI)
 }

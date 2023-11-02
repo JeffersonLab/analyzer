@@ -25,13 +25,29 @@ using namespace std;
 using namespace THaString;
 
 //_____________________________________________________________________________
-THaVform::THaVform( const char *type, const char* name, const char* formula,
-		    const THaVarList* vlst, const THaCutList* clst )
-  : THaFormula(), fNvar(0), fObjSize(0), fEyeOffset(0), fData(0.0),
-    fType(kUnknown), fDebug(0), fVarPtr(nullptr), fOdata(nullptr),
-    fPrefix(kNoPrefix)
+THaVform::THaVform()
+  : fNvar{0}
+  , fObjSize{0}
+  , fEyeOffset{0}
+  , fData{0}
+  , fType{kUnknown}
+  , fVarPtr{nullptr}
+  , fOdata{nullptr}
+  , fPrefix{0}
+{}
+
+//_____________________________________________________________________________
+THaVform::THaVform( const char* type, const char* name, const char* formula,
+                    const THaVarList* vlst, const THaCutList* clst )
+  : fNvar{0}
+  , fObjSize{0}
+  , fEyeOffset{0}
+  , fData{0.0}
+  , fType{kUnknown}
+  , fVarPtr{nullptr}
+  , fOdata{nullptr}
+  , fPrefix{kNoPrefix}
 {
-  SetName(name);
   SetList(vlst);
   SetCutList(clst);
   string stemp1 = StripPrefix(formula);

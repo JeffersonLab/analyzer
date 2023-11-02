@@ -13,11 +13,10 @@ class OldVDCUVTrack;
 class OldVDCTrackID : public THaTrackID {
 
 public:
-  OldVDCTrackID() : THaTrackID(),
-    fLowerU(0), fLowerV(0), fUpperU(0), fUpperV(0) {}
-  OldVDCTrackID( Int_t lowerU, Int_t lowerV,
-		 Int_t upperU, Int_t upperV ) : THaTrackID(),
-    fLowerU(lowerU), fLowerV(lowerV), fUpperU(upperU), fUpperV(upperV) {}
+  OldVDCTrackID()
+    : fLowerU(0), fLowerV(0), fUpperU(0), fUpperV(0) {}
+  OldVDCTrackID( Int_t lowerU, Int_t lowerV, Int_t upperU, Int_t upperV )
+    : fLowerU(lowerU), fLowerV(lowerV), fUpperU(upperU), fUpperV(upperV) {}
   OldVDCTrackID( const OldVDCUVTrack* lower, const OldVDCUVTrack* upper );
   OldVDCTrackID( const OldVDCTrackID& );
   OldVDCTrackID& operator=( const OldVDCTrackID& );

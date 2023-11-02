@@ -70,16 +70,15 @@ public:
   Bool_t       IsVector()                       const { return fImpl->IsVector(); }
 
   // Overrides of TNamed methods
-  virtual void         Print( Option_t* opt="FULL" )
-						const { return fImpl->Print(opt); }
-  virtual void         SetName( const char* name )    { fImpl->SetName(name); }
-  virtual void         SetNameTitle( const char* name, const char* descript )
-						      { fImpl->SetNameTitle(name,descript); }
+  void         Print( Option_t* opt="FULL" ) const override { return fImpl->Print(opt); }
+  void         SetName( const char* name )   override { fImpl->SetName(name); }
+  void         SetNameTitle( const char* name, const char* descript ) override
+                                                      { fImpl->SetNameTitle(name,descript); }
 
 protected:
   Podd::Variable* fImpl;   //Pointer to implementation
 
-  ClassDef(THaVar,0)   //Global symbolic variable
+  ClassDefOverride(THaVar,0)   //Global symbolic variable
 };
 
 //_____________________________________________________________________________

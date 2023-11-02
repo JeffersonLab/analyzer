@@ -14,9 +14,6 @@
 #include "OldVDCHit.h"
 #include "TMath.h"
 
-#include <cstring>
-#include <cstdio>
-
 ClassImp(OldVDCUVPlane)
 
 
@@ -108,15 +105,13 @@ Int_t OldVDCUVPlane::MatchUVClusters()
     return 0;
   }
   
-  OldVDCUVTrack* uvTrack = nullptr;
-  
   // There are two cases:
   // 1) One cluster per plane
   // 2) Multiple clusters per plane
 
   // One cluster per plane case
   if ( nu == 1 && nv == 1) {
-    uvTrack = new ( (*fUVTracks)[0] ) OldVDCUVTrack();
+    auto* uvTrack = new ( (*fUVTracks)[0] ) OldVDCUVTrack();
     uvTrack->SetUVPlane(this);
 
     // Set the U & V clusters
@@ -168,7 +163,7 @@ Int_t OldVDCUVPlane::MatchUVClusters()
 	}
 	  
       }
-      uvTrack = new ( (*fUVTracks)[i] ) OldVDCUVTrack();
+      auto* uvTrack = new ( (*fUVTracks)[i] ) OldVDCUVTrack();
       uvTrack->SetUVPlane(this);
 
       // Set the UV tracks U & V clusters

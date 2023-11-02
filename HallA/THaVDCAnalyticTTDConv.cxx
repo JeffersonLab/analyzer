@@ -14,14 +14,13 @@ using namespace std;
 namespace VDC {
 
 //_____________________________________________________________________________
-AnalyticTTDConv::AnalyticTTDConv() : TimeToDistConv(9), fdtime(0)
-
+AnalyticTTDConv::AnalyticTTDConv()
+  : TimeToDistConv(9)
+  , fA1tdcCor{kBig, kBig, kBig, kBig}
+  , fA2tdcCor{kBig, kBig, kBig, kBig}
+  , fdtime(0)
 {
   // Constructor
-
-  for( Int_t i=0; i<4; ++i ) {
-    fA1tdcCor[i] = fA2tdcCor[i] = kBig;
-  }
 }
 
 //_____________________________________________________________________________

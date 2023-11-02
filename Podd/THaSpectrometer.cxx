@@ -23,7 +23,6 @@
 #include "TClass.h"
 #include "TList.h"
 #include "TMath.h"
-#include "TList.h"
 #include "VarDef.h"
 
 #ifdef WITH_DEBUG
@@ -33,22 +32,31 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) :
-  THaApparatus(name, desc),
-  fTracks{new TClonesArray("THaTrack", kInitTrackMultiplicity)},
-  fTrackPID{new TClonesArray("THaPIDinfo", kInitTrackMultiplicity)},
-  fTrackingDetectors{new TList},
-  fNonTrackingDetectors{new TList},
-  fPidDetectors{new TObjArray},
-  fPidParticles{new TObjArray},
-  fGoldenTrack{nullptr},
-  fThetaGeo{0.0}, fPhiGeo{0.0},   fThetaSph{0.0}, fPhiSph{0.0},
-  fSinThGeo{0.0}, fCosThGeo{1.0}, fSinPhGeo{0.0}, fCosPhGeo{1.0},
-  fSinThSph{0.0}, fCosThSph{1.0}, fSinPhSph{0.0}, fCosPhSph{1.0},
-  fPcentral{1.0},
-  fCollDist{0.0},
-  fStagesDone{0},
-  fPID{false}
+THaSpectrometer::THaSpectrometer( const char* name, const char* desc )
+  : THaApparatus(name, desc)
+  , fTracks{new TClonesArray("THaTrack", kInitTrackMultiplicity)}
+  , fTrackPID{new TClonesArray("THaPIDinfo", kInitTrackMultiplicity)}
+  , fTrackingDetectors{new TList}
+  , fNonTrackingDetectors{new TList}
+  , fPidDetectors{new TObjArray}
+  , fPidParticles{new TObjArray}
+  , fGoldenTrack{nullptr}
+  , fThetaGeo{0.0}
+  , fPhiGeo{0.0}
+  , fThetaSph{0.0}
+  , fPhiSph{0.0}
+  , fSinThGeo{0.0}
+  , fCosThGeo{1.0}
+  , fSinPhGeo{0.0}
+  , fCosPhGeo{1.0}
+  , fSinThSph{0.0}
+  , fCosThSph{1.0}
+  , fSinPhSph{0.0}
+  , fCosPhSph{1.0}
+  , fPcentral{1.0}
+  , fCollDist{0.0}
+  , fStagesDone{0}
+  , fPID{false}
 {
   // Constructor.
   // Protected. Can only be called by derived classes.

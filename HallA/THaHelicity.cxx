@@ -15,16 +15,18 @@ using namespace std;
 //____________________________________________________________________
 THaHelicity::THaHelicity( const char* name, const char* description,
 			  THaApparatus* app ) : 
-  THaADCHelicity(name, description, app), fG0_Hel(kUnknown),
-  fGoodHel(false), fGoodHel2(false)
+  THaADCHelicity(name, description, app)
+  , fG0_Hel(kUnknown)
+  , fGoodHel(false)
+  , fGoodHel2(false)
 {
-
 }
 
 //____________________________________________________________________
 THaHelicity::THaHelicity()
-  : THaADCHelicity(), fG0_Hel(kUnknown),
-    fGoodHel(false), fGoodHel2(false)
+  : fG0_Hel(kUnknown)
+  , fGoodHel(false)
+  , fGoodHel2(false)
 {
   // Default constructor - for ROOT I/O only
 }

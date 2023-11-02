@@ -22,7 +22,7 @@ void THaVDCSimWireHit::Print( Option_t* ) const
        << endl;
 }
 
-void THaVDCSimTrack::Clear( Option_t* opt ) {
+void THaVDCSimTrack::Clear( Option_t* ) {
   origin.Clear();
   momentum.Clear();
   for( auto& r : ray )

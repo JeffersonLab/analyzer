@@ -16,14 +16,14 @@ class TH1F;
 class VDCeff : public THaPhysicsModule {
 public:
   VDCeff( const char* name, const char* description );
-  virtual ~VDCeff();
+  ~VDCeff() override;
 
-  virtual Int_t   Begin( THaRunBase* r=nullptr );
-  virtual Int_t   End( THaRunBase* r=nullptr );
-  virtual EStatus Init( const TDatime& run_time );
-  virtual Int_t   Process( const THaEvData& );
+  Int_t   Begin( THaRunBase* r=nullptr ) override;
+  Int_t   End( THaRunBase* r=nullptr ) override;
+  EStatus Init( const TDatime& run_time ) override;
+  Int_t   Process( const THaEvData& ) override;
 
-  void            Reset( Option_t* opt="" );
+  void    Reset( Option_t* opt="" );
 
 protected:
 
@@ -59,11 +59,11 @@ protected:
   Int_t     fCycle;
   Double_t  fMaxOcc;
 
-  virtual Int_t ReadDatabase( const TDatime& date );
+  Int_t ReadDatabase( const TDatime& date ) override;
 
   void WriteHist();
 
-  ClassDef(VDCeff,0)   // VDC hit efficiency physics module
+  ClassDefOverride(VDCeff,0)   // VDC hit efficiency physics module
 };
 
 #endif

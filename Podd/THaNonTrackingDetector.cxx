@@ -29,7 +29,7 @@ THaNonTrackingDetector::THaNonTrackingDetector( const char* name,
 
 //______________________________________________________________________________
 THaNonTrackingDetector::THaNonTrackingDetector()
-  : THaSpectrometerDetector(), fTrackProj(nullptr)
+  : fTrackProj(nullptr)
 {
   // for ROOT I/O only
 }

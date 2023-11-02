@@ -22,16 +22,17 @@ namespace HallA {
 //_____________________________________________________________________________
 FadcScintillator::FadcScintillator( const char* name, const char* description,
                                     THaApparatus* apparatus )
-  : THaScintillator(name, description, apparatus),
-    fFADCDataL(nullptr), fFADCDataR(nullptr)
+  : THaScintillator(name, description, apparatus)
+  , fFADCDataL(nullptr)
+  , fFADCDataR(nullptr)
 {
   // Constructor
 }
 
 //_____________________________________________________________________________
 FadcScintillator::FadcScintillator()
-  : THaScintillator(), fFADCDataL(nullptr), fFADCDataR(nullptr)
-
+  : fFADCDataL(nullptr)
+  , fFADCDataR(nullptr)
 {
   // Default constructor (for ROOT RTTI)
 }

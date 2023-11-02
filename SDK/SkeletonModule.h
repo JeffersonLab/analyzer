@@ -28,7 +28,7 @@
 
 namespace Decoder {
 
-class SkeletonModule : public Decoder::VmeModule {
+class SkeletonModule : public VmeModule {
 
 public:
 
@@ -36,8 +36,8 @@ public:
   SkeletonModule( UInt_t crate, UInt_t slot );
   virtual ~SkeletonModule();
 
-  using Decoder::Module::GetData;
-  using Decoder::Module::LoadSlot;
+  using Module::GetData;
+  using Module::LoadSlot;
 
   virtual UInt_t GetData( UInt_t chan ) const;
   virtual void   Init();

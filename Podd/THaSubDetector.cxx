@@ -57,7 +57,7 @@ THaDetector* THaSubDetector::GetMainDetector() const
   // containing this subdetector
 
   THaDetectorBase* parent = GetParent();
-  while( parent && dynamic_cast<THaSubDetector*>(parent) )
+  while( parent && dynamic_cast<THaSubDetector*>(parent) != nullptr )
     parent = static_cast<THaSubDetector*>(parent)->GetParent();
   return dynamic_cast<THaDetector*>(parent);
 }

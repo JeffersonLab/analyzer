@@ -32,7 +32,6 @@ THaTrackingDetector::THaTrackingDetector( const char* name,
   : THaSpectrometerDetector(name,description,apparatus)
 {
   // Constructor
-
 }
 
 //_____________________________________________________________________________

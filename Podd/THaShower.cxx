@@ -23,7 +23,6 @@
 #include <iostream>
 #include <iomanip>
 #include <cassert>
-#include <cstdlib>
 #include <iterator>
 
 using namespace std;
@@ -31,19 +30,32 @@ using namespace Podd;
 
 //_____________________________________________________________________________
 THaShower::THaShower( const char* name, const char* description,
-		      THaApparatus* apparatus ) :
-  THaPidDetector(name,description,apparatus),
-  fNrows(0), fEmin(0), fAsum_p(kBig), fAsum_c(kBig),
-  fNclust(0), fE(kBig), fX(kBig), fY(kBig), fADCData(nullptr)
+		      THaApparatus* apparatus )
+  : THaPidDetector(name,description,apparatus)
+  , fNrows(0)
+  , fEmin(0)
+  , fAsum_p(kBig)
+  , fAsum_c(kBig)
+  , fNclust(0)
+  , fE(kBig)
+  , fX(kBig)
+  , fY(kBig)
+  , fADCData(nullptr)
 {
   // Constructor
 }
 
 //_____________________________________________________________________________
-THaShower::THaShower() :
-  THaPidDetector(),
-  fNrows(0), fEmin(0), fAsum_p(kBig), fAsum_c(kBig),
-  fNclust(0), fE(kBig), fX(kBig), fY(kBig), fADCData(nullptr)
+THaShower::THaShower()
+  : fNrows(0)
+  , fEmin(0)
+  , fAsum_p(kBig)
+  , fAsum_c(kBig)
+  , fNclust(0)
+  , fE(kBig)
+  , fX(kBig)
+  , fY(kBig)
+  , fADCData(nullptr)
 {
   // Default constructor (for ROOT I/O)
 }

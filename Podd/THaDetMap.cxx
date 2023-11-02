@@ -406,14 +406,14 @@ void THaDetMap::Sort()
 THaDetMap::Iterator
 THaDetMap::MakeIterator( const THaEvData& evdata )
 {
-  return THaDetMap::Iterator(*this, evdata);
+  return {*this, evdata};
 }
 
 //_____________________________________________________________________________
 THaDetMap::MultiHitIterator
 THaDetMap::MakeMultiHitIterator( const THaEvData& evdata )
 {
-  return THaDetMap::MultiHitIterator(*this, evdata);
+  return {*this, evdata};
 }
 
 //_____________________________________________________________________________
@@ -442,8 +442,14 @@ string THaDetMap::Iterator::msg( const char* txt ) const
 }
 
 #define CRATE_SLOT( x ) (x).crate, (x).slot
-static inline bool LOOPDONE( Int_t i, UInt_t n ) { return i < 0 or static_cast<UInt_t>(i) >= n; }
-static inline bool NO_NEXT( Int_t& i, UInt_t n ) { return i >= static_cast<Int_t>(n) or ++i >= static_cast<Int_t>(n); }
+namespace {
+inline bool LOOPDONE( Int_t i, UInt_t n ) {
+  return i < 0 or static_cast<UInt_t>(i) >= n;
+}
+inline bool NO_NEXT( Int_t& i, UInt_t n ) {
+  return i >= static_cast<Int_t>(n) or ++i >= static_cast<Int_t>(n);
+}
+}
 
 //_____________________________________________________________________________
 THaDetMap::Iterator& THaDetMap::Iterator::operator++()

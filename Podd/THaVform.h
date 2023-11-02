@@ -25,9 +25,7 @@ class THaVform : public THaFormula {
 
 public:
 
-  THaVform() : THaFormula(), fNvar(0), fObjSize(0), fEyeOffset(0),
-    fData(0), fType(kUnknown), fDebug(0), fVarPtr(nullptr), fOdata(nullptr),
-    fPrefix(0) {}
+  THaVform();
   THaVform( const char* type, const char* name, const char* formula,
       const THaVarList* vlst=gHaVars, const THaCutList* clst=gHaCuts );
   virtual  ~THaVform();

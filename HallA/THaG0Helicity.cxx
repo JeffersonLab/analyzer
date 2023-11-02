@@ -21,47 +21,64 @@
 using namespace std;
 
 // Default parameters
-static const Double_t kDefaultTdavg = 14050.;
-static const Double_t kDefaultTtol  = 40.;
-static const Int_t    kDefaultDelay = 8;
-static const Int_t    kDefaultMissQ = 30;
+constexpr Double_t kDefaultTdavg = 14050.;
+constexpr Double_t kDefaultTtol  = 40.;
+constexpr Int_t    kDefaultDelay = 8;
+constexpr Int_t    kDefaultMissQ = 30;
+
+#define DEFAULT_INIT                   \
+    fG0delay(kDefaultDelay)            \
+  , fEvtype(0)                         \
+  , fTdavg(kDefaultTdavg)              \
+  , fTdiff(0.)                         \
+  , fT0(0.)                            \
+  , fT9(0.)                            \
+  , fT0T9(false)                       \
+  , fQuad_calibrated(false)            \
+  , fValidHel(false)                   \
+  , fRecovery_flag(true)               \
+  , fTlastquad(0)                      \
+  , fTtol(kDefaultTtol)                \
+  , fQuad(0)                           \
+  , fFirstquad(0)                      \
+  , fLastTimestamp(0.0)                \
+  , fTimeLastQ1(0.0)                   \
+  , fT9count(0)                        \
+  , fPredicted_reading(0)              \
+  , fQ1_reading(0)                     \
+  , fPresent_helicity(kUnknown)        \
+  , fSaved_helicity(kUnknown)          \
+  , fQ1_present_helicity(kUnknown)     \
+  , fMaxMissed(kDefaultMissQ)          \
+  , fHbits{}                           \
+  , fNqrt(0)                           \
+  , fHisto(nullptr)                    \
+  , fNB(0)                             \
+  , fIseed(0)                          \
+  , fIseed_earlier(0)                  \
+  , fInquad(0)                         \
+  , fTET9Index(0)                      \
+  , fTELastEvtQrt(-1)                  \
+  , fTELastEvtTime(-1.)                \
+  , fTELastTime(-1.)                   \
+  , fTEPresentReadingQ1(-1)            \
+  , fTEStartup(3)                      \
+  , fTETime(-1.)                       \
+  , fTEType9(false)                    \
+  , fManuallySet(0)                    \
+  , fDelayedQrt(true)
 
 //_____________________________________________________________________________
 THaG0Helicity::THaG0Helicity( const char* name, const char* description,
-			      THaApparatus* app ) : 
-  THaHelicityDet( name, description, app ),
-  fG0delay(kDefaultDelay), fEvtype(0), fTdavg(kDefaultTdavg), fTdiff(0.),
-  fT0(0.), fT9(0.), fT0T9(false), fQuad_calibrated(false),
-  fValidHel(false), fRecovery_flag(true),
-  fTlastquad(0), fTtol(kDefaultTtol), fQuad(0), 
-  fFirstquad(0), fLastTimestamp(0.0), fTimeLastQ1(0.0),
-  fT9count(0), fPredicted_reading(0), fQ1_reading(0),
-  fPresent_helicity(kUnknown), fSaved_helicity(kUnknown),
-  fQ1_present_helicity(kUnknown), fMaxMissed(kDefaultMissQ),
-  fHbits{}, // zero-initialize array
-  fNqrt(0), fHisto(nullptr), fNB(0), fIseed(0), fIseed_earlier(0),
-  fInquad(0), fTET9Index(0), fTELastEvtQrt(-1), fTELastEvtTime(-1.),
-  fTELastTime(-1.), fTEPresentReadingQ1(-1), fTEStartup(3), fTETime(-1.),
-  fTEType9(false), fManuallySet(0), fDelayedQrt(true)
+			      THaApparatus* app )
+  : THaHelicityDet( name, description, app )
+  , DEFAULT_INIT
 {
 }
 
 //_____________________________________________________________________________
 THaG0Helicity::THaG0Helicity()
-  : THaHelicityDet(),
-    fG0delay(kDefaultDelay), fEvtype(0), fTdavg(kDefaultTdavg), fTdiff(0.),
-    fT0(0.), fT9(0.), fT0T9(false), fQuad_calibrated(false),
-    fValidHel(false), fRecovery_flag(true),
-    fTlastquad(0), fTtol(kDefaultTtol), fQuad(0),
-    fFirstquad(0), fLastTimestamp(0.0), fTimeLastQ1(0.0),
-    fT9count(0), fPredicted_reading(0), fQ1_reading(0),
-    fPresent_helicity(kUnknown), fSaved_helicity(kUnknown),
-    fQ1_present_helicity(kUnknown), fMaxMissed(kDefaultMissQ),
-    fHbits{}, // zero-initialize array
-    fNqrt(0), fHisto(nullptr), fNB(0), fIseed(0), fIseed_earlier(0),
-    fInquad(0), fTET9Index(0), fTELastEvtQrt(-1), fTELastEvtTime(-1.),
-    fTELastTime(-1.), fTEPresentReadingQ1(-1), fTEStartup(3), fTETime(-1.),
-    fTEType9(false), fManuallySet(0), fDelayedQrt(true)
+  : DEFAULT_INIT
 {
   // Default constructor for ROOT I/O
 }

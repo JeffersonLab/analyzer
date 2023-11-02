@@ -31,7 +31,7 @@
 
 using namespace std;
 
-static const Int_t MAXDATA=20000;
+constexpr Int_t MAXDATA = 20000;
 
 UserEvtHandler::UserEvtHandler(const char *name, const char* description)
   : THaEvtTypeHandler(name,description), dvars(nullptr)

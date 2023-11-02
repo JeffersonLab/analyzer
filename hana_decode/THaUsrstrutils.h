@@ -1,5 +1,5 @@
-#ifndef _USRSTRUTILS_INCLUDED
-#define _USRSTRUTILS_INCLUDED
+#ifndef Podd_ThaUsrstrutils_h_
+#define Podd_ThaUsrstrutils_h_
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -125,4 +125,4 @@ void THaUsrstrutils::getflagpos(const char *s, const char **pos_ret,
 
 }
 
-#endif  /* _USRSTRUTILS_INCLUDED */
+#endif  /* Podd_ThaUsrstrutils_h_ */

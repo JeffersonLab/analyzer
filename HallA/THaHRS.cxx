@@ -47,17 +47,15 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaHRS::THaHRS( const char* name, const char* description ) :
-  THaSpectrometer( name, description ), fRefDet(nullptr)
+THaHRS::THaHRS( const char* name, const char* description )
+  : THaSpectrometer(name, description)
+  , fRefDet(nullptr)
 {
   // Constructor
 
   SetTrSorting(false);
   AutoStandardDetectors(true); // for backward compatibility
 }
-
-//_____________________________________________________________________________
-THaHRS::~THaHRS() = default;
 
 //_____________________________________________________________________________
 Bool_t THaHRS::SetTrSorting( Bool_t set )

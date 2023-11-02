@@ -1317,7 +1317,7 @@ MultiFileRun::StreamInfo::StreamInfo( Int_t id )
 {}
 
 //_____________________________________________________________________________
-MultiFileRun::StreamInfo::StreamInfo( const MultiFileRun::StreamInfo& rhs )
+MultiFileRun::StreamInfo::StreamInfo( const StreamInfo& rhs )
   : fCodaData{MKCODAFILE}
   , fFiles{rhs.fFiles}
   , fID{rhs.fID}
@@ -1329,7 +1329,7 @@ MultiFileRun::StreamInfo::StreamInfo( const MultiFileRun::StreamInfo& rhs )
 
 //_____________________________________________________________________________
 MultiFileRun::StreamInfo&
-MultiFileRun::StreamInfo::operator=( const MultiFileRun::StreamInfo& rhs )
+MultiFileRun::StreamInfo::operator=( const StreamInfo& rhs )
 {
   if( this != &rhs ) {
     fCodaData = MKCODAFILE;

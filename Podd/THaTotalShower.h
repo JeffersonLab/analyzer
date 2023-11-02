@@ -50,9 +50,9 @@ protected:
   virtual Int_t  DefineVariables( EMode mode = kDefine );
 
 private:
-  void           Setup( const char* name,  const char* desc, 
-			const char* shnam, const char* psnam,
-			THaApparatus* app, bool mode );
+  void           Setup( const char* name, const char* shower_name,
+                        const char* preshower_name, const char* description,
+                        THaApparatus* app, bool mode );
 
   ClassDef(THaTotalShower,0)    //A total shower detector (shower plus preshower)
 };

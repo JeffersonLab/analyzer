@@ -27,15 +27,19 @@ using namespace Podd;
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov( const char* name, const char* description,
                             THaApparatus* apparatus )
-  : THaPidDetector(name,description,apparatus), fPMTData(nullptr),
-    fASUM_p(kBig), fASUM_c(kBig)
+  : THaPidDetector(name,description,apparatus)
+  , fPMTData(nullptr)
+  , fASUM_p(kBig)
+  , fASUM_c(kBig)
 {
   // Constructor
 }
 
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov()
-  : THaPidDetector(), fPMTData(nullptr), fASUM_p(kBig), fASUM_c(kBig)
+  : fPMTData(nullptr)
+  , fASUM_p(kBig)
+  , fASUM_c(kBig)
 {
   // Default constructor (for ROOT I/O)
 }

@@ -103,7 +103,7 @@ MCHitInfo SimDecoder::GetMCHitInfo( Int_t /*crate*/, Int_t /*slot*/,
   // This is a dummy function that derived classes should override if they
   // need this functionality.
 
-  return MCHitInfo();
+  return {};
 }
 
 //_____________________________________________________________________________

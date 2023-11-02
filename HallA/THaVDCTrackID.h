@@ -20,9 +20,9 @@ public:
   THaVDCTrackID( const THaVDCPoint* lower, const THaVDCPoint* upper );
   virtual ~THaVDCTrackID() = default;
 
-  virtual Bool_t  operator==( const THaTrackID& );
-  virtual Bool_t  operator!=( const THaTrackID& );
-  virtual void    Print( Option_t* opt="" ) const;
+  Bool_t  operator==( const THaTrackID& ) override;
+  Bool_t  operator!=( const THaTrackID& ) override;
+  void    Print( Option_t* opt="" ) const override;
 
 protected:
 
@@ -31,7 +31,7 @@ protected:
   Int_t         fUpperU;         // Upper U plane pivot wire number
   Int_t         fUpperV;         // Upper V plane pivot wire number
 
-  ClassDef(THaVDCTrackID,0)      // Track ID class
+  ClassDefOverride(THaVDCTrackID,0)  // VDC Track ID class
 };
 
 //__________________ inlines __________________________________________________

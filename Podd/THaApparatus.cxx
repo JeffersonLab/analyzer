@@ -25,9 +25,9 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaApparatus::THaApparatus( const char* name, const char* description ) : 
-  THaAnalysisObject(name,description),
-  fDetectors{new TList}
+THaApparatus::THaApparatus( const char* name, const char* description )
+  : THaAnalysisObject(name,description)
+  , fDetectors{new TList}
 {
   // Constructor
   

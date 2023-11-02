@@ -39,18 +39,20 @@ const TString nhit_suffix( "nhit" );
 const TString eff_suffix(  "eff" );
 
 //_____________________________________________________________________________
-static void SafeDeleteHist( const TString& name, TH1F*& the_hist )
+namespace {
+void SafeDeleteHist( const TString& name, TH1F*& the_hist )
 {
   // Verify that each histogram is still in memory. It usually isn't because
   // ROOT deletes it when the output file is closed.
   if( !the_hist ) return;
   TObject* obj = gDirectory->FindObject(name);
   if( obj && obj->IsA() && obj->IsA()->InheritsFrom(TH1::Class()) ) {
-    assert( name == obj->GetName() );
+    assert(name == obj->GetName());
     delete the_hist;
   }
   // Zero out now-invalid pointer, regardless of who deleted it
   the_hist = nullptr;
+}
 }
 
 //_____________________________________________________________________________

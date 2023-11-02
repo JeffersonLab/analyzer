@@ -31,8 +31,12 @@ using namespace Podd;
 //_____________________________________________________________________________
 THaScintillator::THaScintillator( const char* name, const char* description,
 				  THaApparatus* apparatus )
-  : THaNonTrackingDetector(name,description,apparatus), fCn(0),
-    fAttenuation(0), fResolution(0), fRightPMTs(nullptr), fLeftPMTs(nullptr)
+  : THaNonTrackingDetector(name,description,apparatus)
+  , fCn(0)
+  , fAttenuation(0)
+  , fResolution(0)
+  , fRightPMTs(nullptr)
+  , fLeftPMTs(nullptr)
 {
   // Constructor
 
@@ -41,8 +45,11 @@ THaScintillator::THaScintillator( const char* name, const char* description,
 
 //_____________________________________________________________________________
 THaScintillator::THaScintillator()
-  : THaNonTrackingDetector(), fCn(0), fAttenuation(0), fResolution(0),
-    fRightPMTs(nullptr), fLeftPMTs(nullptr)
+  : fCn(0)
+  , fAttenuation(0)
+  , fResolution(0)
+  , fRightPMTs(nullptr)
+  , fLeftPMTs(nullptr)
 {
   // Default constructor (for ROOT RTTI)
 

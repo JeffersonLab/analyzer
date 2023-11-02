@@ -371,7 +371,7 @@ Int_t THaCrateMap::ParseCrateInfo( const std::string& line, UInt_t& crate )
 
   char ctype[21];
   if( sscanf(line.c_str(), "Crate %u type %20s", &crate, ctype) == 2 ) {
-    if( !(resetCrate(crate) == CM_OK && setCrateType(crate, ctype) == CM_OK) ) {
+    if( resetCrate(crate) != CM_OK || setCrateType(crate, ctype) != CM_OK ) {
       cerr << "THaCrateMap:: fatal ERROR 2  setCrateType " << endl;
       return CM_ERR;
     }
