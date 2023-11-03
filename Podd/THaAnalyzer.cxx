@@ -1634,6 +1634,8 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
 
   //keep the last run available
   //  gHaRun = nullptr;
+  if( exit_status == EExitStatus::kFatal )
+    return -SINT(fNev);
   return SINT(fNev);
 }
 
