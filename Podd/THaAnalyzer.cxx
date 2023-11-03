@@ -47,7 +47,6 @@
 #include <iostream>
 #include <iomanip>
 #include <exception>
-#include <stdexcept>
 #include <algorithm>
 #include <vector>
 
@@ -519,19 +518,19 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   //--- Open the output file if necessary so that Trees and Histograms
   //    are created on disk.
 
-  // File previously created and name changed?
-  if( fFile && fOutFileName != fFile->GetName()) {
-    // But -- we are analyzing split runs (so multiple initializations)
-    // and the tree's file has split too (so fFile has changed automatically)
-#if 0
-    if( fAnalysisStarted ) {
-      Error( here, "Cannot change output file name after analysis has been "
-	     "started. Close() first, then Init() or Process() again." );
-      return -11;
-    }
-    Close();
-#endif
-  }
+//  // File previously created and name changed?
+//  if( fFile && fOutFileName != fFile->GetName()) {
+//    // But -- we are analyzing split runs (so multiple initializations)
+//    // and the tree's file has split too (so fFile has changed automatically)
+//
+//    if( fAnalysisStarted ) {
+//      Error( here, "Cannot change output file name after analysis has been "
+//	     "started. Close() first, then Init() or Process() again." );
+//      return -11;
+//    }
+//    Close();
+//
+//  }
   if( !fFile ) {
     if( fOutFileName.IsNull() ) {
       Error( here, "Must specify an output file. Set it with SetOutFile()." );
@@ -648,30 +647,30 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   bool need_init = ( !fIsInit || new_event || new_output || new_run ||
 		     new_decoder || run_init );
 
-#if 0
-  // Warn user if trying to analyze the same run twice with overlapping
-  // event ranges.  Broken for split files now, so disable warning.
-  // FIXME: generalize event range business?
-  if( fAnalysisStarted && !new_run && fCountMode!=kCountRaw &&
-      ((fRun->GetLastEvent()  >= run->GetFirstEvent() &&
-	fRun->GetFirstEvent() <  run->GetLastEvent()) ||
-       (fRun->GetFirstEvent() <= run->GetLastEvent() &&
-	fRun->GetLastEvent()  >  run->GetFirstEvent()) )) {
-    Warning( here, "You are analyzing the same run twice with "
-	     "overlapping event ranges! prev: %d-%d, now: %d-%d",
-	     fRun->GetFirstEvent(), fRun->GetLastEvent(),
-	     run->GetFirstEvent(), run->GetLastEvent() );
-    if( !gROOT->IsBatch() ) {
-      cout << "Are you sure (y/n)?" << endl;
-      char c = 0;
-      while( c != 'y' && c != 'n' && c != EOF ) {
-	cin >> c;
-      }
-      if( c != 'y' && c != 'Y' )
-	return -240;
-    }
-  }
-#endif
+//
+//  // Warn user if trying to analyze the same run twice with overlapping
+//  // event ranges.  Broken for split files now, so disable warning.
+//  // FIXME: generalize event range business?
+//  if( fAnalysisStarted && !new_run && fCountMode!=kCountRaw &&
+//      ((fRun->GetLastEvent()  >= run->GetFirstEvent() &&
+//	fRun->GetFirstEvent() <  run->GetLastEvent()) ||
+//       (fRun->GetFirstEvent() <= run->GetLastEvent() &&
+//	fRun->GetLastEvent()  >  run->GetFirstEvent()) )) {
+//    Warning( here, "You are analyzing the same run twice with "
+//	     "overlapping event ranges! prev: %d-%d, now: %d-%d",
+//	     fRun->GetFirstEvent(), fRun->GetLastEvent(),
+//	     run->GetFirstEvent(), run->GetLastEvent() );
+//    if( !gROOT->IsBatch() ) {
+//      cout << "Are you sure (y/n)?" << endl;
+//      char c = 0;
+//      while( c != 'y' && c != 'n' && c != EOF ) {
+//	cin >> c;
+//      }
+//      if( c != 'y' && c != 'Y' )
+//	return -240;
+//    }
+//  }
+//
 
   // Make sure we save a copy of the run in fRun.
   // Note that the run may be derived from THaRunBase, so this is a bit tricky.
