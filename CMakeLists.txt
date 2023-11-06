@@ -44,6 +44,13 @@ endif()
 add_subdirectory(cmake)
 
 #----------------------------------------------------------------------------
+# Unit and integration tests
+if(PODD_ENABLE_TESTS)
+  include(CTest)
+  add_subdirectory(tests)
+endif()
+
+#----------------------------------------------------------------------------
 # Install support files
 # install(DIRECTORY scripts/ DESTINATION scripts
 #   USE_SOURCE_PERMISSIONS

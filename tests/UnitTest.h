@@ -3,35 +3,28 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
-// Unit test abstract base class                                             //
+// Podd::Tests::UnitTest                                                     //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaAnalysisObject.h"
 
-namespace Podd {
-namespace Tests {
+namespace Podd::Tests {
 
 class UnitTest : public THaAnalysisObject {
 
 public:
+  UnitTest() = default;  // Needed for RTTI of derived classes
   UnitTest( const char* name, const char* description );
 
-  virtual Int_t Test() = 0;
-
 protected:
+  // By default, let unit tests not bother with the run database
+  virtual Int_t  ReadRunDatabase( const TDatime& ) { return kOK; }
 
-  // By default, do not bother with the run database
-  virtual Int_t  ReadRunDatabase( const TDatime& date ) { return kOK; }
-
-  // Utility function for rounding numbers. T = Float_t or Double_t
-  template< typename T > T Round( T val, Int_t n ) const;
-  
-  ClassDef(UnitTest,0)
+  ClassDef(UnitTest,1)
 };
 
-} // namespace Tests
-} // namespace Podd
+} // namespace Podd::Tests
 
 ////////////////////////////////////////////////////////////////////////////////
 

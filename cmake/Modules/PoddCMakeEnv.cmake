@@ -14,6 +14,8 @@ endif()
 # Build options
 option(WITH_DEBUG "Enable additional/verbose debug messages" ON)
 option(PODD_SET_RPATH "Set RPATH on installed executables & libraries" ON)
+option(PODD_ENABLE_TESTS "Build unit and integration tests" OFF)
+option(PODD_BUILD_UTILS "Build utility programs" OFF)
 
 #----------------------------------------------------------------------------
 # Project-specific build flags
