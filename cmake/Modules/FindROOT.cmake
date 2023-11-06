@@ -1,14 +1,12 @@
-# Find ROOT installation. We supply or own search module because
+# Find ROOT installation.
 #
-# (a) ROOT 5 does not provide a CMake configuration module, and we still
-#     want to support ROOT 5 for the moment; and
-# (b) ROOT 6's ROOTConfig.cmake is a bit too heavy for our purposes.
+# We supply or own search module because the ROOTConfig.cmake module in ROOT
+# is a bit too heavy for our purposes.
 #
-# Among other things, ROOT 6's ROOTConfig-targets.cmake, which
-# is invoked by ROOTConfig.cmake, requires all components to be present,
-# which clashes with partial RPM installs from EPEL on RHEL. Using ROOT's
-# CMake configuration always requires users to install all components built
-# by the packager, even those that are never needed. We don't want that.
+# Among other things, the ROOT CMake configuration requires all ROOT components
+# to be present, which clashes with partial RPM installs from EPEL on RHEL.
+# Using ROOT's CMake configuration always requires users to install all
+# components built by the packager, even those that are never needed.
 
 if(NOT TARGET ROOT::Libraries)
 
@@ -172,18 +170,7 @@ find_package_handle_standard_args(ROOT
 
 endif(NOT TARGET ROOT::Libraries)
 
-find_program(MK_ROOTDICT mk_rootdict.sh
-  HINTS
-    ${CMAKE_CURRENT_LIST_DIR}/..
-  PATH_SUFFIXES scripts
-  DOC "Wrapper script for ROOT dictionary generator"
-  )
-if(NOT MK_ROOTDICT)
-  message(FATAL_ERROR
-    "FindROOT: Cannot find mk_rootdict.sh. Check your Podd installation.")
-endif()
-
-# BUILD_ROOT_DICTIONARY(dictionary
+# build_root_dictionary(dictionary
 #                       LINKDEF <theLinkDef.h>
 #                       [ TARGETS <target> [ <target> ... ]
 #                       [ INCLUDEDIRS <dir> [ <dir ... ]
@@ -191,7 +178,7 @@ endif()
 #                       [ PCMNAME <pcmname> ]
 #                       <header> [ <header> ... ] )
 #
-# Build ROOT dictionary for ROOT 5 and 6
+# Build ROOT dictionary for ROOT 6
 #
 # Arguments:
 #   dictionary:    dictionary base name (required). Output file will be
@@ -202,34 +189,32 @@ endif()
 #   OPTIONS:       additional options for rootcling/rootcint
 #   PCMNAME:       base name of PCM file (ROOT 6 only). Defaults to ${dictionary}.
 #                  Output will be lib${pcmname}_rdict.pcm.
+#   FOR_EXE:       If this flag is set, a dictionary suitable for inclusion in
+#                  and executable is generated. No rootmap file will be written,
+#                  and the "library name" will be the dictionary name without
+#                  the usual "lib" prefix.
 #
 # Creates a custom target ${dictionary}_ROOTDICT.
-# With ROOT 6, also installs the PCM file in ${CMAKE_INSTALL_LIBDIR}
+# Installs the *_rdict.pcm and *.rootmap files in ${CMAKE_INSTALL_LIBDIR}.
 #
+
 function(build_root_dictionary dictionary)
 
   if(DEFINED ROOT_VERSION AND DEFINED ROOTSYS)
-    if(NOT ${ROOT_VERSION} VERSION_LESS 6)
-      find_program(ROOTCLING rootcling HINTS "${ROOTSYS}/bin")
-      if(NOT ROOTCLING)
-        message(FATAL_ERROR
-          "root_generate_dictionary: Cannot find rootcling. Check ROOT installation.")
-      endif()
-    else()
-      find_program(ROOTCINT rootcint HINTS "${ROOTSYS}/bin")
-      if(NOT ROOTCINT)
-        message(FATAL_ERROR
-          "root_generate_dictionary: Cannot find rootcint. Check ROOT installation.")
-      endif()
+    find_program(ROOTCLING rootcling HINTS "${ROOTSYS}/bin")
+    if(NOT ROOTCLING)
+      message(FATAL_ERROR
+        "build_root_dictionary: Cannot find rootcling. Check ROOT installation.")
     endif()
   else()
-    message(FATAL_ERROR "root_generate_dictionary: ROOT is not set up")
+    message(FATAL_ERROR "build_root_dictionary: ROOT is not set up")
   endif()
 
-  cmake_parse_arguments(RGD "" "PCMNAME" "INCLUDEDIRS;LINKDEF;OPTIONS;TARGETS" ${ARGN})
+  cmake_parse_arguments(RGD "FOR_EXE" "PCMNAME"
+    "INCLUDEDIRS;LINKDEF;OPTIONS;TARGETS" ${ARGN})
 
   if(NOT RGD_LINKDEF)
-    message(FATAL_ERROR "root_generate_dictionary: Required argument LINKDEF missing")
+    message(FATAL_ERROR "build_root_dictionary: Required argument LINKDEF missing")
   endif()
 
   # Compile definitions and include directories from the given target(s)
@@ -243,54 +228,49 @@ function(build_root_dictionary dictionary)
   # Add any explicitly specified include directories
   list(APPEND incdirs ${RGD_INCLUDEDIRS})
 
-  if(ROOTCLING)
-    # ROOT6
-    if(RGD_PCMNAME)
-      set(pcmname ${RGD_PCMNAME})
-    else()
-      set(pcmname ${dictionary})
-    endif()
+  if(RGD_PCMNAME)
+    set(pcmname ${RGD_PCMNAME})
+  else()
+    set(pcmname ${dictionary})
+  endif()
+
+  if(RGD_FOR_EXE)
+    set(libroot ${pcmname})
+  else()
     set(libroot lib${pcmname})
-    add_custom_command(
-      OUTPUT ${dictionary}Dict.cxx ${libroot}_rdict.pcm ${libroot}.rootmap
-      COMMAND ${MK_ROOTDICT}
-      ARGS
-        ${ROOTCLING}
-        -f ${dictionary}Dict.cxx
-        -s ${libroot}
-        -rmf ${libroot}.rootmap
-        -rml ${libroot}${CMAKE_SHARED_LIBRARY_SUFFIX}
-        ${RGD_OPTIONS}
-        INCDIRS "${incdirs}"
-        DEFINES "${defines}"
-        ${RGD_UNPARSED_ARGUMENTS}
-        ${RGD_LINKDEF}
-      VERBATIM
-      DEPENDS ${RGD_UNPARSED_ARGUMENTS} ${RGD_LINKDEF}
-    )
+    set(rmf_args
+      -rmf ${libroot}.rootmap -rml ${libroot}${CMAKE_SHARED_LIBRARY_SUFFIX})
+    set(rootmapfile ${libroot}.rootmap)
+  endif()
+
+  set(dictcxx ${dictionary}Dict.cxx)
+  set(pcmfile ${libroot}_rdict.pcm)
+
+  add_custom_command(
+    OUTPUT ${dictcxx} ${pcmfile} ${rootmapfile}
+    COMMAND ${ROOTCLING}
+    ARGS
+      -f ${dictcxx}
+      -s ${libroot}
+      ${rmf_args}
+      ${RGD_OPTIONS}
+      "$<$<BOOL:${incdirs}>:-I$<JOIN:$<REMOVE_DUPLICATES:${incdirs}>,;-I>>"
+      "$<$<BOOL:${defines}>:-D$<JOIN:$<REMOVE_DUPLICATES:${defines}>,;-D>>"
+      ${RGD_UNPARSED_ARGUMENTS}
+      ${RGD_LINKDEF}
+    VERBATIM
+    MAIN_DEPENDENCY ${RGD_LINKDEF}
+    DEPENDS ${RGD_UNPARSED_ARGUMENTS}
+    COMMAND_EXPAND_LISTS
+  )
+  if(NOT RGD_FOR_EXE)
     install(FILES
       ${CMAKE_CURRENT_BINARY_DIR}/${libroot}_rdict.pcm
-      ${CMAKE_CURRENT_BINARY_DIR}/${libroot}.rootmap
+      ${CMAKE_CURRENT_BINARY_DIR}/${rootmapfile}
       DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    )
-  else()
-    # ROOT5
-    add_custom_command(
-      OUTPUT ${dictionary}Dict.cxx
-      COMMAND ${MK_ROOTDICT}
-      ARGS
-        ${ROOTCINT}
-        -v2 -f ${dictionary}Dict.cxx
-        -c ${RGD_OPTIONS}
-        INCDIRS "${incdirs}"
-        DEFINES "${defines}"
-        ${RGD_UNPARSED_ARGUMENTS}
-        ${RGD_LINKDEF}
-      VERBATIM
-      DEPENDS ${RGD_UNPARSED_ARGUMENTS} ${RGD_LINKDEF}
     )
   endif()
   add_custom_target(${dictionary}_ROOTDICT
-    DEPENDS ${dictionary}Dict.cxx
+    DEPENDS ${dictcxx}
   )
 endfunction()

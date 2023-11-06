@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------
 # Set up project properties
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.15)
 
 project(EVIO VERSION @EVIO_VERSION@ LANGUAGES C)
 string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LC)

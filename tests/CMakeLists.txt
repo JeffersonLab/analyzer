@@ -13,7 +13,7 @@ set(SRC ArrayRTTI_t.cxx TestsSetup_t.cxx ArrayRTTI.cxx UnitTest.cxx)
 set(HDR ArrayRTTI.h UnitTest.h)
 
 # All tests live in one large executable for now
-add_executable(Catch2Tests_t ${SRC} ${HDR} TestsDict.cxx)
+add_executable(Catch2Tests_t ${SRC} ${HDR} Catch2TestsDict.cxx)
 target_link_libraries(Catch2Tests_t PRIVATE Podd::Podd)
 target_include_directories(Catch2Tests_t PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -26,7 +26,10 @@ else()
 endif()
 
 # ROOT dictionary
-build_root_dictionary(Tests ${HDR} TARGETS Catch2Tests_t LINKDEF Tests_LinkDef.h)
+build_root_dictionary(Catch2Tests FOR_EXE ${HDR}
+  TARGETS Catch2Tests_t
+  LINKDEF Tests_LinkDef.h
+)
 
 # Add tests to CTest
 include(Catch)
