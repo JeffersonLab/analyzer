@@ -4,6 +4,7 @@
 #include "TTree.h"
 #include "THaOutput.h"
 #include "THaTrackingModule.h"
+#include "THaGlobals.h"
 
 using namespace std;
 

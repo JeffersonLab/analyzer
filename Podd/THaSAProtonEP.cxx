@@ -11,6 +11,7 @@
 #include "THaSAProtonEP.h"
 #include "THaRunBase.h"
 #include "THaTrackingModule.h"
+#include "THaGlobals.h"
 #include "THaBeam.h"
 #include "TMath.h"
 

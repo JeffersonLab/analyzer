@@ -16,6 +16,7 @@
 #include "THaRunBase.h"
 #include "THaRunParameters.h"
 #include "THaBeam.h"
+#include "THaGlobals.h"
 #include "VarDef.h"
 #include "TMath.h"
 

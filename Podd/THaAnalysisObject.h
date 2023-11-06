@@ -8,7 +8,6 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TNamed.h"
-#include "THaGlobals.h"
 #include "TDatime.h"
 #include "Database.h"
 #include "DataType.h"

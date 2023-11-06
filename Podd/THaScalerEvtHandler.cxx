@@ -43,6 +43,7 @@
 #include <string>
 #include <cctype>      // isspace
 #include "THaVarList.h"
+#include "THaGlobals.h"
 #include "VarDef.h"
 #include "THaString.h"
 #include "Textvars.h"  // Podd::vsplit

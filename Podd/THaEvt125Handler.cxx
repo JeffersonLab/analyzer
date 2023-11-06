@@ -33,6 +33,7 @@
 #include "THaEvt125Handler.h"
 #include "THaEvData.h"
 #include "THaVarList.h"
+#include "THaGlobals.h"
 #include <cstring>
 #include <cstdio>
 #include <iostream>

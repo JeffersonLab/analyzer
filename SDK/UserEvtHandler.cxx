@@ -24,6 +24,7 @@
 #include "UserEvtHandler.h"
 #include "THaEvData.h"
 #include "THaVarList.h"
+#include "THaGlobals.h"
 #include <cstdlib>   // for atof
 #include <iostream>
 #include <sstream>

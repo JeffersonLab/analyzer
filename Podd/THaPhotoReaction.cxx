@@ -11,6 +11,7 @@
 #include "THaPhotoReaction.h"
 #include "THaTrackingModule.h"
 #include "THaBeam.h"
+#include "THaGlobals.h"
 #include "VarDef.h"
 #include "TMath.h"
 
