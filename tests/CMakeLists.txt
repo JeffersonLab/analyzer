@@ -8,13 +8,14 @@ if(Catch2_VERSION VERSION_LESS 2)
 endif()
 
 # Sources and headers
-set(SRC ArrayRTTI_t.cxx TestsSetup_t.cxx ArrayRTTI.cxx UnitTest.cxx)
+set(SRC ArrayRTTI_t.cxx Formula_t.cxx TestsSetup_t.cxx
+  ArrayRTTI.cxx UnitTest.cxx)
 # string(REPLACE .cxx .h HDR "${SRC}")
 set(HDR ArrayRTTI.h UnitTest.h)
 
 # All tests live in one large executable for now
 add_executable(Catch2Tests_t ${SRC} ${HDR} Catch2TestsDict.cxx)
-target_link_libraries(Catch2Tests_t PRIVATE Podd::Podd)
+target_link_libraries(Catch2Tests_t PRIVATE Podd::HallA)
 target_include_directories(Catch2Tests_t PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Build/link executable as necessary for the Catch version we have
