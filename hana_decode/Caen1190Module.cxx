@@ -292,9 +292,12 @@ UInt_t Caen1190Module::LoadBank( THaSlotData* sldat, const UInt_t* evbuffer,
     cur = itrl + 1;
   }
   if( evtblk.empty() ) {
-    // No global header found at all. Should not happen.
-    cerr << Here(here)
-         << "FATAL ERROR: No global header found in bank. Call expert." << endl;
+    // No global header found at all. This is probably OK. Event may not
+    // contain data for this module
+    if( fDebug > 0 )
+      cerr << Here(here) << "Info: No global header found in bank for "
+           << "crate/slot " << fCrate << "/" << fSlot << ", event "
+           << evtnum << "." << " Spurious line in crate map?" << endl;
     return 0;
   }
   block_size = evtblk.size();
