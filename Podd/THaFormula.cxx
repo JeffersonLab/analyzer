@@ -18,6 +18,7 @@
 #include "THaVarList.h"
 #include "THaCutList.h"
 #include "THaCut.h"
+#include "THaGlobals.h"
 #include "TROOT.h"
 #include "TError.h"
 #include "TVirtualMutex.h"
@@ -82,6 +83,11 @@ THaFormula::THaFormula( const char* name, const char* expression,
   // the call to Compile(). Not only do we have our own Compile(), but
   // also out own DefinedVariable() etc. virtual functions. A disturbing
   // design error of the ROOT base class indeed.
+
+  if( !fVarList )
+    fVarList = gHaVars;
+  if( !fCutList )
+    fCutList = gHaCuts;
 
   if( Init( name, expression ) != 0 ) {
     RegisterFormula(false);

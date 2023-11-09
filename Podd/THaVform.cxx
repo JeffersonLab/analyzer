@@ -16,6 +16,7 @@
 #include "THaString.h"
 #include "THaVarList.h"
 #include "THaCut.h"
+#include "THaGlobals.h"
 #include "TTree.h"
 
 #include <iostream>
@@ -32,6 +33,10 @@ THaVform::THaVform( const char *type, const char* name, const char* formula,
     fPrefix(kNoPrefix)
 {
   SetName(name);
+  if( vlst )
+    vlst = gHaVars;
+  if( !clst )
+    clst = gHaCuts;
   SetList(vlst);
   SetCutList(clst);
   string stemp1 = StripPrefix(formula);

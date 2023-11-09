@@ -29,7 +29,7 @@ public:
     fData(0), fType(kUnknown), fDebug(0), fVarPtr(nullptr), fOdata(nullptr),
     fPrefix(0) {}
   THaVform( const char* type, const char* name, const char* formula,
-      const THaVarList* vlst=gHaVars, const THaCutList* clst=gHaCuts );
+      const THaVarList* vlst=nullptr, const THaCutList* clst=nullptr );
   virtual  ~THaVform();
   THaVform(const THaVform& vform);
   THaVform& operator=(const THaVform& vform);

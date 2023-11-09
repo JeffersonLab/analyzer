@@ -9,7 +9,6 @@
 
 #include "RVersion.h"
 #include "v5/TFormula.h"
-#include "THaGlobals.h"
 #include <vector>
 #include <iostream>
 
@@ -26,7 +25,7 @@ public:
 
   THaFormula();
   THaFormula( const char* name, const char* formula, Bool_t do_register=true,
-	      const THaVarList* vlst=gHaVars, const THaCutList* clst=gHaCuts );
+	      const THaVarList* vlst=nullptr, const THaCutList* clst=nullptr );
   THaFormula( const THaFormula& rhs );
   THaFormula& operator=( const THaFormula& rhs );
   virtual ~THaFormula();
