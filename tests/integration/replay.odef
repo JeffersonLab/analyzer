@@ -1,0 +1,59 @@
+# Example output definition file
+
+# All variables from the GoldenTrack module
+block ${arm}.gold.*
+
+# Inclusive electons scattering kinematical quantities for the HRS
+# form the PrimaryKine physics module
+block ${arm}.ekine.*
+
+# All HRS track data (focal plane as well as reconstructed to target
+block ${arm}.tr.*
+
+# z-vertex from ReactionPoint module
+variable ${arm}.vx.z
+
+# HRS S1 scintillator data
+variable ${arm}.s1.lnhits
+variable ${arm}.s1.la_c
+variable ${arm}.s1.lt_c
+variable ${arm}.s1.rnhits
+variable ${arm}.s1.ra_c
+variable ${arm}.s1.rt_c
+variable ${arm}.s1.nthit
+variable ${arm}.s1.y_t
+variable ${arm}.s1.dedx
+variable ${arm}.s1.trdx
+variable ${arm}.s1.trpad
+
+# HRS S2 scintillator data
+variable ${arm}.s2.lnhits
+variable ${arm}.s2.la_c
+variable ${arm}.s2.lt_c
+variable ${arm}.s2.rnhits
+variable ${arm}.s2.ra_c
+variable ${arm}.s2.rt_c
+variable ${arm}.s2.nthit
+variable ${arm}.s2.y_t
+variable ${arm}.s2.dedx
+variable ${arm}.s2.trdx
+variable ${arm}.s2.trpad
+
+# HRS Cherenkov for electron ID
+variable ${arm}.cer.asum_c
+
+# HRS wire numbers and drift times - for calibration check
+block ${arm}.vdc.[uv][12].nhit
+block ${arm}.vdc.[uv][12].wire
+block ${arm}.vdc.[uv][12].rawtime
+block ${arm}.vdc.[uv][12].nthit
+block ${arm}.vdc.[uv][12].time
+block ${arm}.vdc.[uv][12].dist
+block ${arm}.vdc.[uv][12].nclust
+block ${arm}.vdc.[uv][12].clsiz
+block ${arm}.vdc.[uv][12].clpos
+block ${arm}.vdc.[uv][12].clchi2
+
+# All HRS VDC raw data (lots of information, only uncomment for debugging)
+#block ${arm}.vdc.*
+#block ${arm}.vdc.u1.*
