@@ -2,8 +2,9 @@
 *.o
 *.d
 *.os
-lib*.so*
-lib*.dylib*
+*.so
+*.so.*
+*.dylib
 analyzer
 hana_decode/apps/epicsd
 hana_decode/apps/prfact
@@ -50,9 +51,9 @@ evio/
 *.cdef
 *.png
 *.patch
+*.log
 
 #scons stuff
-config.log
 *.pyc
 .sconsign.dblite
 .sconf_temp/
