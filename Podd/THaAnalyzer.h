@@ -10,6 +10,7 @@
 #include "TObject.h"
 #include "TString.h"
 #include <vector>
+#include <memory>
 
 class THaEvent;
 class THaRunBase;
@@ -44,8 +45,10 @@ public:
   virtual void   Close();
   virtual Int_t  Init( THaRunBase* run );
           Int_t  Init( THaRunBase& run )    { return Init( &run ); }
+          Int_t  Init( std::shared_ptr<THaRunBase> run );
   virtual Int_t  Process( THaRunBase* run=nullptr );
           Int_t  Process( THaRunBase& run ) { return Process(&run); }
+          Int_t  Process( std::shared_ptr<THaRunBase> run );
   virtual void   Print( Option_t* opt="" ) const;
 
   void           EnableBenchmarks( Bool_t b = true );

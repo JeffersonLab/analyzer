@@ -485,6 +485,12 @@ Int_t THaAnalyzer::Init( THaRunBase* run )
 }
 
 //_____________________________________________________________________________
+Int_t THaAnalyzer::Init( std::shared_ptr<THaRunBase> run )
+{
+  return Process(run.get());
+}
+
+//_____________________________________________________________________________
 Int_t THaAnalyzer::DoInit( THaRunBase* run )
 {
   // Internal function called by Init(). This is where the actual work is done.
@@ -1636,6 +1642,12 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
   if( exit_status == EExitStatus::kFatal )
     return -SINT(fNev);
   return SINT(fNev);
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalyzer::Process( std::shared_ptr<THaRunBase> run )
+{
+  return Process(run.get());
 }
 
 //_____________________________________________________________________________
