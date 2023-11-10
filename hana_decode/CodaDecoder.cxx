@@ -411,8 +411,15 @@ Int_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer )
     Error(here, "CODA 3 format error: Physics event with block size 0");
     return HED_ERR;
   }
+  auto tsroc = fMap->getTSROC();
+  if( tsroc > MAXROC ) {
+    tsroc = THaCrateMap::DEFAULT_TSROC;
+    Warning( "THaCrateMap", "Did not find TSROC.  Using default %u\n"
+     " If this is incorrect, TS info (trigger bits etc.) will be unavailable.",
+     tsroc);
+  }
   try {
-    tbank.Fill(evbuffer + 2, block_size, fMap->getTSROC());
+    tbank.Fill(evbuffer + 2, block_size, tsroc);
   }
   catch( const coda_format_error& e ) {
     Error(here, "CODA 3 format error: %s", e.what() );
