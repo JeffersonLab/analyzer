@@ -9,7 +9,8 @@
 #include "THaEvData.h"
 #include "TMath.h"
 #include <iostream>
-#include <string>
+#include <cassert>
+#include "TError.h"
 
 using namespace std;
 
@@ -122,7 +123,8 @@ namespace Decoder {
       doload=1;
       fPrevData = fDataArray;
     }
-    if ( !IsSlot(*evbuffer) ) return nfound;
+    //if ( !IsSlot(*evbuffer) ) return nfound; // redundant, checked in LoadSlot
+    assert(IsSlot(*evbuffer));
     if (fDebugFile) *fDebugFile << "is slot 0x"<<hex<<*evbuffer<<dec<<" num chan "<<fNumChan<<endl;
     evbuffer++;
     fIsDecoded = true;
@@ -238,7 +240,7 @@ namespace Decoder {
     // This is a header word. Try extracting the number of channels.
     fNumChan = (rdata & fNumChanMask) >> fNumChanShift;
     if( fNumChan == 0 ) {
-      fNumChan = fgNumChanDefault;
+      fNumChan = fWordsExpect;
       if( firsttime ) {
         firsttime = false;
         cout << "Warning::GenScaler:: (" << fCrate << "," << fSlot
@@ -248,15 +250,17 @@ namespace Decoder {
     }
     if( fNumChan != fWordsExpect ) {
       if( fNumChan > fWordsExpect )
-        fNumChan = fWordsExpect;
+        // Data are almost certainly garbage
+        return false;
+        //fNumChan = fWordsExpect;
 
-      // Print warning once to alert user to potential problems,
-      // or for every suspect event if debugging enabled
-      if( firstwarn && fNumChan != 16 && fNumChan != fWordsExpect ) {
+      // Print warning to alert user to potential problems
+      if( fNumChan != fWordsExpect ) {
         cout << "GenScaler:: ERROR:  (" << fCrate << "," << fSlot << ") "
-             << "inconsistent number of chan." << endl;
+             << "inconsistent number of chan, got " << fNumChan
+             << ", expected " << fWordsExpect << endl;
         //        DoPrint();
-        firstwarn = false;
+        //firstwarn = false;
       }
     }
     return true;
@@ -265,12 +269,23 @@ namespace Decoder {
 UInt_t GenScaler::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer, const UInt_t* pstop )
   {
     // This is a simple, default method for loading a slot
-    const UInt_t* p = evbuffer;
+    // pstop points to last word of data
+    static const char* const here = "LoadSlot";
+
+    fWordsSeen = 0;
     Clear();
+    if( !fHeader )
+      return 0;
+    const UInt_t* p = evbuffer;
     while( p < pstop ) {
-      if( IsSlot(*p) ) {
+      if( IsSlot(*p) ) {   // Sets fNumChan
 	if (fDebugFile) *fDebugFile << "GenScaler:: Loadslot "<<endl;
-	if (!fHeader) cerr << "GenScaler::LoadSlot::ERROR : no header ?"<<endl;
+        if( p + fNumChan > pstop ) {
+          Error(here, "(%u,%u) Num channels %u points past end of buffer. "
+                      "Possibly unsupported data format. Ignoring data.",
+                fCrate, fSlot, fNumChan);
+          return 0;
+        }
 	Decode(p);
         for( UInt_t ichan = 0; ichan < fNumChan; ichan++ ) {
           sldat->loadData(ichan, fDataArray[ichan], fDataArray[ichan]);
@@ -287,17 +302,27 @@ UInt_t GenScaler::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer, const UI
     /// Fill data structures of this class, utilizing bank structure
     /// Read until out of data or until decode says that the slot is finished
     /// len = ndata in event, pos = word number for block header in event
+    static const char* const here = "LoadSlot";
+
     fWordsSeen = 0;
     Clear();
 
     // How can set set this just once?
     //    fHeader = fSlot << 8;
     //    fHeaderMask = 0x3f00;
+    if( !fHeader )
+      return 0;
 
     while(fWordsSeen < len) {
       UInt_t index = pos + fWordsSeen;
-      if( IsSlot(evbuffer[index]) ) {
-        Decode(&evbuffer[index]);
+      if( IsSlot(evbuffer[index]) ) {  // Sets fNumChan
+        if( index + fNumChan >= pos+len ) {
+          Error(here, "(%u,%u) Num channels %u points past end of buffer. "
+                      "Possibly unsupported data format. Disabling module.",
+                fCrate, fSlot, fNumChan);
+          return 0;
+        }
+        Decode(evbuffer+index);
         for( UInt_t ichan = 0; ichan < fNumChan; ichan++ ) {
           sldat->loadData(ichan, fDataArray[ichan], fDataArray[ichan]);
         }
