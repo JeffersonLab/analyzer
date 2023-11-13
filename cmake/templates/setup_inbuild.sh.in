@@ -1,0 +1,12 @@
+# Set up analyzer environment, including ROOT, for running from build location
+#
+# This script is suitable for sh/dash/bash.
+
+# Make an effort to set up the same ROOT that was used to build this analyzer ...
+if [ "$ROOTSYS" != "@ROOTSYS@" ]; then
+    . "@ROOTSYS@/bin/thisroot.sh"
+fi
+
+export PATH="@CMAKE_BINARY_DIR@/apps${PATH:+:$PATH}"
+export @DY@LD_LIBRARY_PATH="@CMAKE_BINARY_DIR@/HallA:@CMAKE_BINARY_DIR@/Podd:@CMAKE_BINARY_DIR@/hana_decode:@CMAKE_BINARY_DIR@/Database${@DY@LD_LIBRARY_PATH:+:$@DY@LD_LIBRARY_PATH}"
+export ROOT_INCLUDE_PATH="@CMAKE_SOURCE_DIR@/HallA:@CMAKE_SOURCE_DIR@/Podd:@CMAKE_SOURCE_DIR@/hana_decode:@CMAKE_SOURCE_DIR@/Database${ROOT_INCLUDE_PATH:+:$ROOT_INCLUDE_PATH}"
