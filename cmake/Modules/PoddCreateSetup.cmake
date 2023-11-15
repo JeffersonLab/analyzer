@@ -4,17 +4,13 @@ if(APPLE)
   set(DY "DY")
 endif()
 
-configure_file(
-  ${CMAKE_CURRENT_LIST_DIR}/../templates/setup.sh.in
-  ${CMAKE_CURRENT_BINARY_DIR}/setup.sh
-  @ONLY
+foreach(scrpt setup.sh setup.csh setup_inbuild.sh setup_inbuild.csh)
+  configure_file(
+    ${CMAKE_CURRENT_LIST_DIR}/../templates/${scrpt}.in
+    ${CMAKE_CURRENT_BINARY_DIR}/${scrpt}
+    @ONLY
   )
-
-configure_file(
-  ${CMAKE_CURRENT_LIST_DIR}/../templates/setup.csh.in
-  ${CMAKE_CURRENT_BINARY_DIR}/setup.csh
-  @ONLY
-)
+endforeach()
 
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/setup.sh ${CMAKE_CURRENT_BINARY_DIR}/setup.csh
