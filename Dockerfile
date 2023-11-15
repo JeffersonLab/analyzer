@@ -11,6 +11,9 @@ RUN yum -y install epel-release &&\
     yum -y install gcc-c++ && \
     yum -y install make && \
     yum install -y root && \
+    yum install -y which && \
+    yum install -y root-montecarlo-eg && \
+    yum install -y root-montecarlo-pythia8 && \
     localedef -i en_US -f UTF-8 en_US.UTF-8
 
 ADD https://github.com/Kitware/CMake/releases/download/v3.22.2/cmake-3.22.2-linux-x86_64.tar.gz .
@@ -20,10 +23,16 @@ ENV PATH="/usr/local/cmake/bin:$PATH"
 ADD https://github.com/JeffersonLab/${REPO_NAME}/archive/refs/tags/${APP_VERSION}.tar.gz .
 RUN tar -xvf ${APP_VERSION}.tar.gz && rm ${APP_VERSION}.tar.gz
 WORKDIR "/${REPO_NAME}-${APP_VERSION}"
-RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local/analyzer -B builddir -S /${REPO_NAME}-${APP_VERSION}/
-RUN cmake --build builddir -j8
-RUN cmake --install builddir
-ENV CMAKE_INSTALL_PREFIX="/usr/local/analyzers"
-ENV PATH="/usr/local/analyzer/bin:$PATH"
+RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local/analyzer -B BUILD -S /${REPO_NAME}-${APP_VERSION}/
+RUN cmake --build BUILD -j8
+RUN cmake --install BUILD
+ENV CMAKE_INSTALL_PREFIX="/usr/local/analyzer"
 ENV LD_LIBRARY_PATH="/usr/local/analyzer/lib64:$LD_LIBRARY_PATH"
+ENV ANALYZER="/usr/local/analyzer"
+ENV PATH="/usr/local/analyzer/bin:/usr/bin/root:$PATH"
+ENV LD_LIBRARY_PATH="/usr/local/analyzer/lib64:$LD_LIBRARY_PATH"
+ENV PATH="/${REPO_NAME}-${APP_VERSION}/BUILD/apps:${PATH}"
+ENV LD_LIBRARY_PATH="/${REPO_NAME}-${APP_VERSION}/BUILD/HallA:/${REPO_NAME}-${APP_VERSION}/BUILD/Podd:/${REPO_NAME}-${APP_VERSION}/BUILD/hana_decode:/${REPO_NAME}-${APP_VERSION}/BUILD/Database:${LD_LIBRARY_PATH}"
+ENV ROOT_INCLUDE_PATH="/${REPO_NAME}-${APP_VERSION}/HallA:/${REPO_NAME}-${APP_VERSION}/Podd:/${REPO_NAME}-${APP_VERSION}/hana_decode:/${REPO_NAME}-${APP_VERSION}/Database:${ROOT_INCLUDE_PATH}"
+ENV ROOTSYS="/usr/"
 
