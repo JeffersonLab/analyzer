@@ -184,7 +184,7 @@ Int_t THaRun::Open()
       st = CODA_ERROR;
       Close();
     }
-    cout << "in THaRun::Open:  coda version "<<fDataVersion<<endl;
+//    cout << "in THaRun::Open:  coda version "<<fDataVersion<<endl;
     if( st == CODA_OK )
       fOpened = true;
   }
