@@ -644,9 +644,8 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   // Set run-level info that was retrieved when initializing the run.
   // In case we analyze a continuation segment, fEvtData may not see
   // the event(s) where these data come from (usually Prestart).
-  fEvData->SetRunInfo(run->GetNumber(),
-                      run->GetType(),
-                      run->GetDate().Convert());
+  WithDefaultTZ(ULong64_t run_tloc = run->GetDate().Convert());
+  fEvData->SetRunInfo(run->GetNumber(),run->GetType(), run_tloc);
 
   // Deal with the run.
   bool new_run   = ( !fRun || *fRun != *run );
@@ -736,7 +735,10 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
 
   // Tell the decoder the run time. This will trigger decoder
   // initialization (reading of crate map data etc.)
-  fEvData->SetRunTime( run_time.Convert());
+//already done via SetRunInfo above
+//  gSystem->Setenv("TZ", Podd::GetDefaultTZ());
+//  fEvData->SetRunTime( run_time.Convert());
+//  gSystem->Setenv("TZ", cur_tz.Data());
 
   // Tell the decoder about the run's CODA version
   fEvData->SetDataVersion( run->GetDataVersion() );

@@ -13,6 +13,8 @@
 #include "THaEvData.h"
 #include "DAQconfig.h"
 #include "THaPrintOption.h"
+#include "Database.h"
+#include "TSystem.h"
 #include "TClass.h"
 #include "TError.h"
 #include <iostream>
@@ -142,7 +144,7 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
   if( evdata->IsPrestartEvent() ) {
     fDataRead |= kDate|kRunNumber|kRunType;
     if( !fAssumeDate ) {
-      fDate.Set( evdata->GetRunTime() );
+      WithDefaultTZ(fDate.Set( evdata->GetRunTime() ));
       fDataSet |= kDate;
     }
     SetNumber( evdata->GetRunNum() );
@@ -510,7 +512,7 @@ void THaRunBase::SetDate( UInt_t tloc )
   // Set timestamp of this run to 'tloc' which is in Unix time
   // format (number of seconds since 01 Jan 1970).
 
-  TDatime date( tloc );
+  WithDefaultTZ(TDatime date( tloc ));
   SetDate( date );
 }
 

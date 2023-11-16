@@ -64,6 +64,26 @@ Int_t    SeekDBconfig( FILE* file, const char* tag, const char* label = "config"
 Int_t    SeekDBdate( std::istream& istr, const TDatime& date, Bool_t end_on_tag = false );
 Bool_t   IsDBtimestamp( const std::string& line, TDatime& keydate );
 
+// Time zone to assume for legacy database time stamps without time zone offsets.
+// The default is "US/Eastern".
+void     SetDefaultTZ(const char* tz = nullptr);
+extern TString  gDefaultTZ;
+extern Bool_t   gNeedTZCorrection;
+
 }  // namespace Podd
+
+#define WithDefaultTZ(cmd)                   \
+ const char* cur_tz = nullptr;               \
+ if( Podd::gNeedTZCorrection ) {             \
+   cur_tz = gSystem->Getenv("TZ");           \
+   gSystem->Setenv("TZ", Podd::gDefaultTZ);  \
+ }                                           \
+ cmd;                                        \
+ if( Podd::gNeedTZCorrection ) {             \
+   if( cur_tz )                              \
+     gSystem->Setenv("TZ", cur_tz );         \
+   else                                      \
+     gSystem->Unsetenv("TZ");                \
+ }
 
 #endif //Podd_Database_h_
