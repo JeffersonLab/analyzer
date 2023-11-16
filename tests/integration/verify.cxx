@@ -39,10 +39,10 @@ bool check(TFile& f, const char* hname, const char* desc, const TH1* tocheck)
 }
 
 //_____________________________________________________________________________
-int verify( const char* root_file, const char* ref_file )
+UInt_t verify( const char* root_file, const char* ref_file=nullptr )
 {
   //------ Open ROOT file
-  if( !root_file || !*root_file || !ref_file || !*ref_file ) {
+  if( !root_file || !*root_file || (ref_file && !*ref_file) ) {
     Error(here, R"(Usage: verify("root_file","ref_file"))");
     return 1;
   }
@@ -52,104 +52,114 @@ int verify( const char* root_file, const char* ref_file )
     // Error printed by TFile
     return 2;
   // Reference data
+  if( !ref_file )
+    ref_file = "ref.root";
   TFile tstf(ref_file, "READ");
   if( tstf.IsZombie() )
-    return 3;
+    return 4;
 
+  UInt_t err = 0;
   //------ Retrieve tree, run data, reference histograms
   auto* T = anaf.Get<TTree>("T");
   if( !T ) {
     Error(here, "Cannot load tree T");
-    return 4;
-  }
-  Info(here, "Tree loaded OK");
+    SETBIT(err, 3);
+  } else
+    Info(here, "Tree loaded OK");
 
   auto* run = anaf.Get<THaRunBase>("Run_Data");
   if( !run ) {
     Error(here, "Cannot load Run_Data");
-    return 5;
-  }
-  Info(here, "Run_Data loaded OK");
+    SETBIT(err, 4);
+  } else
+    Info(here, "Run_Data loaded OK");
 
   auto* par = run->GetParameters();
   if( !par ) {
     Error(here, "Cannot load run parameters");
-    return 6;
-  }
-  Info(here, "Run parameters loaded OK");
+    SETBIT(err, 5);
+  } else
+    Info(here, "Run parameters loaded OK");
 
   const auto* pRunInfo = tstf.Get<RunInfo>("Run_Info");
-  if( !pRunInfo ) {
-    Error(here, "Cannot retrieve reference run info");
-    return 7;
-  }
-  const RunInfo& ifo = *pRunInfo;
-  Info(here, "Reference run info loaded OK");
+  if( pRunInfo ) {
+    Info(here, "Reference run info loaded OK");
+    const RunInfo& ifo = *pRunInfo;
 
-  //------ Compare metadata
-  if( run->GetNumber() != ifo.num ) {
-    Error(here, "Run number mismatch, got %u, expected %u",
-          run->GetNumber(), ifo.num);
-    return 10;
-  }
-  Info(here, "Run number matches = %u", ifo.num);
+    //------ Compare metadata
+    if( run->GetNumber() != ifo.num ) {
+      Error(here, "Run number mismatch, got %u, expected %u",
+            run->GetNumber(), ifo.num);
+      SETBIT(err, 6);
+    } else
+      Info(here, "Run number matches = %u", ifo.num);
 
-  TDatime rd = run->GetDate();
-  if( rd != ifo.date ) {
-    Error(here, "Run date mismatch, got %s, expected %s",
-          rd.AsString(), ifo.date.AsString());
-    return 11;
-  }
-  Info(here, "Run date matches = %s", ifo.date.AsString());
+    TDatime rd = run->GetDate();
+    char ref_date[26]; ifo.date.AsString(ref_date);
+    if( rd != ifo.date ) {
+      char read_date[26]; rd.AsString(read_date);
+      Error(here, "Run date mismatch, got %s, expected %s", read_date, ref_date);
+      SETBIT(err, 7);
+    } else
+      Info(here, "Run date matches = %s", ref_date);
 
-  if( run->GetDataVersion() != ifo.vers ) {
-    Error(here, "Data version mismatch, got %d, expected %d",
-          run->GetDataVersion(), ifo.vers);
-    return 12;
-  }
-  Info(here, "Run data version matches = %d", ifo.vers);
+    if( run->GetDataVersion() != ifo.vers ) {
+      Error(here, "Data version mismatch, got %d, expected %d",
+            run->GetDataVersion(), ifo.vers);
+      SETBIT(err, 8);
+    } else
+      Info(here, "Run data version matches = %d", ifo.vers);
 
-  if( run->GetNumAnalyzed() != ifo.nevt ) {
-    Error(here, "Number of events mismatch, got %u, expected %u",
-          run->GetNumAnalyzed(), ifo.nevt);
-    return 13;
-  }
-  Info(here, "Number of analyzed events matches = %u", ifo.nevt);
+    if( run->GetNumAnalyzed() != ifo.nevt ) {
+      Error(here, "Number of events mismatch, got %u, expected %u",
+            run->GetNumAnalyzed(), ifo.nevt);
+      SETBIT(err, 9);
+    } else
+      Info(here, "Number of analyzed events matches = %u", ifo.nevt);
 
-  if( TMath::Abs(par->GetBeamE() - ifo.beamE) > ref_eps ) {
-    Error(here, "Run parameters: beam energy mismatch, "
-                "got %lf, expected %lf", par->GetBeamE(), ifo.beamE);
-    return 14;
-  }
-  Info(here, "Beam energy run parameter matches = %lf", ifo.beamE);
+    if( TMath::Abs(par->GetBeamE() - ifo.beamE) > ref_eps ) {
+      Error(here, "Run parameters: beam energy mismatch, "
+                  "got %lf, expected %lf", par->GetBeamE(), ifo.beamE);
+      SETBIT(err, 10);
+    } else
+      Info(here, "Beam energy run parameter matches = %lf", ifo.beamE);
 
-  if( TMath::Abs(par->GetBeamM() - ifo.beamM) > ref_eps ) {
-    Error(here, "Run parameters: beam particle mass mismatch, "
-                "got %lf, expected %lf", par->GetBeamM(), ifo.beamM);
-    return 15;
-  }
-  Info(here, "Beam particle mass run parameter matches = %lf", ifo.beamM);
+    if( TMath::Abs(par->GetBeamM() - ifo.beamM) > ref_eps ) {
+      Error(here, "Run parameters: beam particle mass mismatch, "
+                  "got %lf, expected %lf", par->GetBeamM(), ifo.beamM);
+      SETBIT(err, 11);
+    } else
+      Info(here, "Beam particle mass run parameter matches = %lf", ifo.beamM);
 
-  const auto& ps = par->GetPrescales();
-  int n_ps = int(sizeof(ifo.ps) / sizeof(*ifo.ps));
-  int n_ps2 = ps.GetSize();
-  if( n_ps != n_ps2 ) {
-    Error(here, "Run parameters: number of prescale factors differs, "
-                "got %d, expected %d", n_ps2, n_ps);
-    return 16;
-  }
-  for( int i = 0; i < n_ps; ++i ) {
-    if( ps[i] != ifo.ps[i] ) {
-      Error(here, "Run parameters: prescale factor[%d] "
-                  "mismatch, got %d, expected %d", i, ps[i], ifo.ps[i]);
-      return 17;
+    const auto& ps = par->GetPrescales();
+    int n_ps = int(sizeof(ifo.ps) / sizeof(*ifo.ps));
+    int n_ps2 = ps.GetSize();
+    if( n_ps != n_ps2 ) {
+      Error(here, "Run parameters: number of prescale factors differs, "
+                  "got %d, expected %d", n_ps2, n_ps);
+      SETBIT(err, 12);
+      n_ps = TMath::Min(n_ps, n_ps2);
     }
+    for( int i = 0; i < n_ps; ++i ) {
+      if( ps[i] != ifo.ps[i] ) {
+        Error(here, "Run parameters: prescale factor[%d] "
+                    "mismatch, got %d, expected %d", i, ps[i], ifo.ps[i]);
+        SETBIT(err, 13);
+      }
+    }
+    if( !TESTBIT(err, 13) ) {
+      TString pstr;
+      for( int i = 0; i < n_ps; ++i ) {
+        pstr += ifo.ps[i];
+        if( i + 1 != n_ps ) pstr += '/';
+      }
+      Info(here, "Prescale factors match: %s", pstr.Data());
+    }
+  } else {
+    Error(here, "Cannot retrieve reference run info. Skipping "
+                "metadata tests.");
+    SETBIT(err, 14);
   }
-  TString pstr;
-  for( int i = 0; i < n_ps; ++i ) {
-    pstr += ifo.ps[i]; if( i+1 != n_ps ) pstr += '/';
-  }
-  Info(here, "Prescale factors match: %s", pstr.Data());
 
   //------ Compare reconstructed data
   auto* evlen    = new TH1F("evlen",    "fEvtHdr.fEvtLen", 1000, 0, 5000);
@@ -189,56 +199,56 @@ int verify( const char* root_file, const char* ref_file )
   T->Draw("L.vx.z>>vxz",               "", "goff");
 
   if( !check(tstf, "h_evlen", "Event length (fEvtHdr.fEvtLen)", evlen) )
-    return 20;
+    SETBIT(err, 15);
   if( !check(tstf, "h_s1lac3",
              "S1 calibrated ADC left PMT paddle 3 (L.s1.la_c[3])", s1lac3) )
-    return 21;
+    SETBIT(err, 16);
   if( !check(tstf, "h_s1rac3",
              "S1 calibrated ADC right PMT paddle 3 (L.s1.ra_c[3])", s1rac3) )
-    return 22;
+    SETBIT(err, 17);
   if( !check(tstf, "h_s2yt3",
              "S2 y-pos from PMT TDC time diff paddle 3 (L.s2.y_t[3])", s2yt3) )
-    return 23;
+    SETBIT(err, 18);
   if( !check(tstf, "h_cer_asumc",
              "Cherenkov calibrated ADC amplitude sum (L.cer.asum_c)", cersum) )
-    return 24;
+    SETBIT(err, 19);
   if( !check(tstf, "h_v1time",
              "VDC V1 plane calibrated drift time (L.vdc.v1.time)", v1time) )
-    return 25;
+    SETBIT(err, 20);
   if( !check(tstf, "h_v1dist",
              "VDC V1 plane drift distance (L.vdc.v1.dist)", v1dist) )
-    return 26;
+    SETBIT(err, 21);
   if( !check(tstf, "h_u1nclust",
              "VDC U2 plane number of clusters (L.vdc.u2.nclust)", u1nclust) )
-    return 27;
+    SETBIT(err, 22);
   if( !check(tstf, "h_u2clpos",
              "VDC U1 plane cluster position (L.vdc.u1.clpos)", u2clpos) )
-    return 28;
+    SETBIT(err, 23);
   if( !check(tstf, "h_trn", "Number of reconstructed tracks (L.tr.n)", trn) )
-    return 29;
+    SETBIT(err, 24);
   if( !check(tstf, "h_dp",
              "Momentum delta at target per track (L.tr.tg_dp)", dp) )
-    return 30;
+    SETBIT(err, 25);
   if( !check(tstf, "h_s1trdx",
              "Track crossing x in scintillator S1 (L.s1.trdx)", s1trdx) )
-    return 31;
+    SETBIT(err, 26);
   if( !check(tstf, "h_goldph",
              "Golden track in-plane angle (L.gold.ph)", goldph) )
-    return 32;
+    SETBIT(err, 27);
   if( !check(tstf, "h_goldth",
              "Golden track out-of-plane angle (L.gold.th)", goldth) )
-    return 33;
+    SETBIT(err, 28);
   if( !check(tstf, "h_ek_angle",
              "Electron scattering angle wrt beam (L.ekine.angle)", ek_angle) )
-    return 34;
+    SETBIT(err, 29);
   if( !check(tstf, "h_ek_W2",
              "Invariant mass square (L.ekine.W2)", ek_W2) )
-    return 35;
+    SETBIT(err, 30);
   if( !check(tstf, "h_vxz", "Vertex z (L.vx.z)", vxz) )
-    return 36;
+    SETBIT(err, 31);
 
   anaf.Close();
   tstf.Close();
 
-  return 0;
+  return err;
 }

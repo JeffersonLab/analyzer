@@ -35,6 +35,8 @@ LOGF="${DSTF//.root/.log}"
 REF_ROOTFILE="ref.root"
 
 THIS="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null && pwd )"
+DB_DIR="$THIS"/DB
+export DB_DIR
 
 if ! which root >/dev/null 2>&1; then
   echo "Cannot find ROOT"
@@ -49,8 +51,10 @@ if ! analyzer --version >/dev/null; then
   exit 3
 fi
 
+SHASUM=sha1sum   # Linux default (coreutils)
+
 if [ "$(uname -s)" = Darwin ] && [ -z "$DYLD_LIBRARY_PATH" ]; then
-  # macOS clears DYLD_LIBRARY_PATH when we run an executable script, but
+  # macOS clears DYLD_LIBRARY_PATH when we execute this script, but
   # we need it to be set for ROOT to find our dictionaries
   ANALYZER_EXE="$(which analyzer)"
   ANALYZER_BIN="$(dirname "$ANALYZER_EXE")"
@@ -74,9 +78,12 @@ if [ "$(uname -s)" = Darwin ] && [ -z "$DYLD_LIBRARY_PATH" ]; then
     DYLD_LIBRARY_PATH="$ANALYZER/lib:$ROOTSYS/lib"
   fi
   export DYLD_LIBRARY_PATH
-fi
 
-pushd "$THIS" >/dev/null
+  # Ships with macOS 11+ (part of Perl). Otherwise install Homebrew coreutils
+  if which shasum >/dev/null 2>&1; then
+    SHASUM="shasum -a1"
+  fi
+fi
 
 # Get raw data if necessary
 pushd "$WORK" >/dev/null
@@ -88,35 +95,37 @@ if [ ! -r "$EVIOF" ]; then
   fi
 fi
 echo "Verifying raw data file"
-if ! shasum -c "$THIS/$RAWFILENAME".sha1 >/dev/null 2>&1 ; then
+if ! $SHASUM -c "$THIS/$RAWFILENAME".sha1 >/dev/null 2>&1 ; then
   echo "Raw data checksum failure. Check URL and network."
   exit 5
 fi
 echo "File checksum OK"
 popd >/dev/null
 
+pushd "$THIS" >/dev/null
 # Replay the raw data
 # echo "Replaying $EVIOF. This will take a few minutes"
-if ! analyzer -l -b -q replay.cxx\(\"$EVIOF\",\"$DSTF\"\) >/dev/null; then
+if ! analyzer -l -b -q replay.cxx\(\""$EVIOF"\",\""$DSTF"\"\) >/dev/null; then
   echo "Error running replay.cxx"
   exit 10
 fi
 
+err=0
 # Compare run summary with reference
 grep -Ev '^(====|Reading)' "$LOGF" > "$WORK/tmp.log"
 if ! diff -q "$WORK/tmp.log" "${REF_ROOTFILE//.root/.log}" ; then
   echo "Run summary differs"
-  exit 11
+  err=11
 fi
 rm "$WORK/tmp.log"
 echo "Run summary compares OK"
 
 # Verify ROOT file data, comparing with reference
-if ! analyzer -l -b -q verify.cxx\(\"$DSTF\",\"$REF_ROOTFILE\"\) >/dev/null; then
+if ! analyzer -l -b -q verify.cxx\(\""$DSTF"\",\""$REF_ROOTFILE"\"\) >/dev/null; then
   echo "Error testing ROOT file"
-  exit 12
+  err=12
 fi
 echo "ROOT file tests OK"
 
 popd >/dev/null
-exit 0
+exit $err
