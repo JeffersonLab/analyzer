@@ -49,6 +49,7 @@
 #include <exception>
 #include <algorithm>
 #include <vector>
+#include <ctime>
 
 using namespace std;
 using namespace Decoder;
@@ -86,6 +87,22 @@ inline size_t ListToVector( TList* lst, vector<T*>& vec )
   }
   return vec.size();
 }
+
+//_____________________________________________________________________________
+namespace {
+inline string CurrentTime()
+{
+  string timestr{"(unknown time}"};
+  time_t tloc = time(nullptr);
+  struct tm tmc{};
+  localtime_r(&tloc, &tmc);
+  char buff[32];
+  auto c = strftime(buff, 32, "%Y-%m-%d %H:%M:%S %z", &tmc);
+  if( c > 0 )
+    timestr = buff;
+  return timestr;
+}
+} // namespace
 
 //_____________________________________________________________________________
 THaAnalyzer::THaAnalyzer()
@@ -574,7 +591,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
                   "permissions", fSummaryFileName.Data());
       return -15;
     }
-    ofs << "==== " << TDatime().AsString();
+    ofs << "==== " << CurrentTime() << endl;
     ofs.close();
   }
 
@@ -709,7 +726,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
                   "Check file/directory permissions", fSummaryFileName.Data());
       return -15;
     }
-    ofs << " " << (fAnalysisStarted ? "Continuing" : "Started") << " analysis"
+    ofs << (fAnalysisStarted ? "Continuing" : "Started") << " analysis"
         << ", run " << run->GetNumber() << endl;
     ofs << "Reading from ";
     // Redirect cout to ofs
@@ -1018,8 +1035,8 @@ void THaAnalyzer::PrintRunSummary() const
 {
   // Print general summary of run
 
-  cout << "==== " << TDatime().AsString()
-       << " Summary for run " << fRun->GetNumber()
+  cout << "==== " << CurrentTime() << endl
+       << "Summary for run " << fRun->GetNumber()
        << endl;
 }
 
