@@ -28,6 +28,5 @@ RUN cmake --install BUILD
 ENV LD_LIBRARY_PATH="/usr/local/analyzer/lib64:$LD_LIBRARY_PATH"
 ENV ANALYZER="/usr/local/analyzer"
 ENV PATH="/usr/local/analyzer/bin:/usr/bin/root:$PATH"
-ENV LD_LIBRARY_PATH="/usr/local/analyzer/lib64:$LD_LIBRARY_PATH"
 ENV ROOTSYS="/usr/"
 
