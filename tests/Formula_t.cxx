@@ -19,11 +19,10 @@
 #include "THaFormula.h"
 #include "THaVarList.h"
 #include "TError.h"
-#include "TMath.h"
 #include "DataType.h"   // kBig
 #include <memory>
 #include <cmath>
-#include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -120,7 +119,7 @@ TEST_CASE("Formulas of Global Scalar Variables", "[Formula]") // NOLINT(*-functi
     CHECK_THAT(f3->Eval(), Catch::Matchers::WithinAbs(3 * f - u + 16 + 11 * d2, 1e-6));
     CHECK_THAT(f4->Eval(), Catch::Matchers::WithinRel(pow(2, i)));
     CHECK_THAT(f5->Eval(), Catch::Matchers::WithinRel(sqrt(i)));
-    CHECK_THAT(f6->Eval(), Catch::Matchers::WithinRel(TMath::Cos(d1) - TMath::Sin(d2)));
+    CHECK_THAT(f6->Eval(), Catch::Matchers::WithinRel(cos(d1) - sin(d2)));
   }
 
   SECTION("Instance range check") {
@@ -136,7 +135,7 @@ TEST_CASE("Formulas of Global Scalar Variables", "[Formula]") // NOLINT(*-functi
     d1 = GENERATE(5.6, 9.3, 11.7, -110.4222, 98327.22);
     CHECK_THAT(fd1->Eval(), Catch::Matchers::WithinRel(-22 + d1));
     CHECK_THAT(fcs->Eval(), Catch::Matchers::WithinRel(1.0));
-    CHECK_THAT(f6->Eval(),  Catch::Matchers::WithinRel(TMath::Cos(d1) - TMath::Sin(d2)));
+    CHECK_THAT(f6->Eval(),  Catch::Matchers::WithinRel(cos(d1) - sin(d2)));
   }
 
   //TODO formulas of formulas
@@ -148,6 +147,60 @@ TEST_CASE("Formulas of Global Vector Variables", "[Formula]") // NOLINT(*-functi
   // Use private variable list
   auto vars = make_shared<THaVarList>();
 
+  // Some arbitrary data to work with
+  Int_t aval[] = {2, 5, -3, 24, 42 };
+  // Can't currently define variables of stack arrays ...
+  auto* ai = new Int_t[5];
+  memcpy(ai, aval, 5*sizeof(*ai));
+  vector<Int_t> vi = {7, 8, -11, -22, 43, 19 };
 
+  // THaVarList::Define currently does not work with heap arrays ...
+  THaVar* var = vars->DefineByType("ai[5]", "Array of int", &ai, kIntP, nullptr);
+  // TODO: put these checks in test case for non-RTTI array variables
+  REQUIRE(var != nullptr);
+  REQUIRE_FALSE(var->IsZombie());
+  REQUIRE(var->GetLen() == 5);
+  REQUIRE(vars->Find("ai") == var);
+  CHECK(var->IsArray());
+  CHECK_FALSE(var->IsVarArray());
+  for( size_t i = 0; i < var->GetLen(); ++i )
+    CHECK(var->GetValueInt(i) == ai[i]);
 
+  var = vars->Define("vi", "vector<int>", vi);
+  REQUIRE(var != nullptr);
+  REQUIRE_FALSE(var->IsZombie());
+  REQUIRE(var->GetLen() == vi.size());
+  REQUIRE(vars->Find("vi") == var);
+  CHECK(var->IsArray());
+  CHECK(var->IsVarArray());
+  for( size_t i = 0; i < var->GetLen(); ++i )
+    CHECK(var->GetValueInt(i) == vi[i]);
+
+  auto form  = make_shared<THaFormula>("form",  "7*ai-3", false, vars.get());
+  REQUIRE(form != nullptr);
+  REQUIRE_FALSE(form->IsZombie());
+  REQUIRE_FALSE(form->IsError());
+  CHECK(form->GetNdata() == 5);
+  CHECK(form->IsArray());
+  CHECK_FALSE(form->IsVarArray());
+  for( size_t i = 0; i < form->GetNdata(); ++i )
+    CHECK(form->EvalInstance(i) == 7 * ai[i] - 3);
+
+  // Changing values
+  Int_t ival[] = { 44, 55, -66, -77, 8088};
+  memcpy(ai, ival, 5*sizeof(*ai));
+  for( size_t i = 0; i < form->GetNdata(); ++i )
+    CHECK(form->EvalInstance(i) == 7 * ival[i] - 3);
+
+  auto form2 = make_shared<THaFormula>("form2", "vi**2+5", false, vars.get());
+  REQUIRE(form2 != nullptr);
+  REQUIRE_FALSE(form2->IsZombie());
+  REQUIRE_FALSE(form2->IsError());
+  CHECK(form2->GetNdata() == vi.size());
+  CHECK(form2->IsArray());
+  CHECK(form2->IsVarArray());
+  for( size_t i = 0; i < form2->GetNdata(); ++i )
+    CHECK(form2->EvalInstance(i) == vi[i] * vi[i] + 5);
+
+  delete [] ai;
 }
