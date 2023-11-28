@@ -78,52 +78,6 @@ const char* Here( const char* method, const char* prefix )
 //=============================================================================
 namespace Podd {
 
-namespace {
-
-const char* gDefaultTZString = "US/Eastern";
-
-//_____________________________________________________________________________
-Long64_t GetOffsetToLocal(const char* tz)
-{
-  // Returns the offset in seconds between the given time zone 'tz' and
-  // the time zone of the local machine
-  time_t tloc = time(nullptr);
-  struct tm tml{}, tmd{};
-  localtime_r(&tloc, &tml);
-
-  const char* cur_tz = gSystem->Getenv("TZ");
-  gSystem->Setenv("TZ", tz);
-  localtime_r(&tloc, &tmd);
-  if( cur_tz )
-    gSystem->Setenv("TZ", cur_tz);
-  else
-    gSystem->Unsetenv("TZ");
-
-  return tmd.tm_gmtoff - tml.tm_gmtoff;
-}
-
-//_____________________________________________________________________________
-TString MkDefaultTZ()
-{
-  gNeedTZCorrection = (GetOffsetToLocal(gDefaultTZString) != 0);
-  return gDefaultTZString;
-}
-
-} // namespace
-
-TString gDefaultTZ = MkDefaultTZ();
-Bool_t  gNeedTZCorrection = true;
-
-//_____________________________________________________________________________
-void SetDefaultTZ( const char* tz )
-{
-  if( !tz || !*tz ) {
-    tz = gDefaultTZString;
-  }
-  gNeedTZCorrection = (GetOffsetToLocal(tz) != 0);
-  gDefaultTZ = tz;
-}
-
 //_____________________________________________________________________________
 TString& GetObjArrayString( const TObjArray* array, Int_t i )
 {
@@ -1383,6 +1337,52 @@ Bool_t IsDBtimestamp( const string& line, TDatime& date )
 {
   WithDefaultTZ(Long64_t ldate = date.Convert());
   return IsDBdate(line, ldate, true);
+}
+
+//_____________________________________________________________________________
+// Timezone handling
+const char* const gDefaultTZString = "US/Eastern";
+
+TString gDefaultTZ = gDefaultTZString;
+Bool_t  gNeedTZCorrection = true;
+
+//_____________________________________________________________________________
+// Set time zone to assume for legacy database time stamps without time zone
+// offsets. The default is "US/Eastern".
+void SetDefaultTZ( const char* tz )
+{
+  if( !tz || !*tz ) {
+    tz = gDefaultTZString;
+  }
+  gDefaultTZ = tz;
+}
+
+//_____________________________________________________________________________
+// Helper function for time zone calculations. Determine offset between
+// the default time zone and the local time zone at Unix time 'tloc'.
+Long64_t GetTZOffsetToLocal( UInt_t tloc )
+{
+  // Returns the offset in seconds between the given time zone 'tz' and
+  // the time zone of the local machine
+  auto timet = static_cast<time_t>(tloc);
+  struct tm tml{}, tmd{};
+  localtime_r(&timet, &tml);
+
+  TString cur_tz = gSystem->Getenv("TZ");
+  gSystem->Setenv("TZ", gDefaultTZ);
+#ifdef __GLIBC__
+  tzset();
+#endif
+  localtime_r(&timet, &tmd);
+  if( !cur_tz.IsNull() )
+    gSystem->Setenv("TZ", cur_tz);
+  else
+    gSystem->Unsetenv("TZ");
+
+#ifdef __GLIBC__
+  tzset();
+#endif
+  return tmd.tm_gmtoff - tml.tm_gmtoff;
 }
 
 //_____________________________________________________________________________

@@ -17,10 +17,9 @@
 // For backward compatibility with existing client code
 #include "Textvars.h"
 #include "TDatime.h"
+#include "TString.h"
 
 class TObjArray;
-//class TDatime;
-class TString;
 
 // Helper function for error messages
 const char* Here( const char* here, const char* prefix = nullptr );
@@ -66,24 +65,46 @@ Bool_t   IsDBtimestamp( const std::string& line, TDatime& keydate );
 
 // Time zone to assume for legacy database time stamps without time zone offsets.
 // The default is "US/Eastern".
-void     SetDefaultTZ(const char* tz = nullptr);
+void     SetDefaultTZ( const char* tz = nullptr );
+Long64_t GetTZOffsetToLocal( UInt_t tloc );
 extern TString  gDefaultTZ;
 extern Bool_t   gNeedTZCorrection;
 
 }  // namespace Podd
 
+// Macro for running arbitrary code ("cmd") with TZ set to gDefaultTZ.
+#ifdef __GLIBC__
+// glibc seems to require an explicit call to tzset() to pick up a change of TZ
+#include <ctime>
 #define WithDefaultTZ(cmd)                   \
- const char* cur_tz = nullptr;               \
+ TString cur_tz;                             \
+ if( Podd::gNeedTZCorrection ) {             \
+   cur_tz = gSystem->Getenv("TZ");           \
+   gSystem->Setenv("TZ", Podd::gDefaultTZ);  \
+   tzset();                                  \
+ }                                           \
+ cmd;                                        \
+ if( Podd::gNeedTZCorrection ) {             \
+   if( !cur_tz.IsNull() )                    \
+     gSystem->Setenv("TZ", cur_tz );         \
+   else                                      \
+     gSystem->Unsetenv("TZ");                \
+   tzset();                                  \
+ }
+#else
+#define WithDefaultTZ(cmd)                   \
+ TString cur_tz;                             \
  if( Podd::gNeedTZCorrection ) {             \
    cur_tz = gSystem->Getenv("TZ");           \
    gSystem->Setenv("TZ", Podd::gDefaultTZ);  \
  }                                           \
  cmd;                                        \
  if( Podd::gNeedTZCorrection ) {             \
-   if( cur_tz )                              \
+   if( !cur_tz.IsNull() )                    \
      gSystem->Setenv("TZ", cur_tz );         \
    else                                      \
      gSystem->Unsetenv("TZ");                \
  }
+#endif
 
 #endif //Podd_Database_h_

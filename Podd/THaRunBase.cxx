@@ -22,6 +22,7 @@
 #include <iterator>   // std::begin, std::end
 
 using namespace std;
+using namespace Podd;
 
 static const int UNDEFDATE = 19950101;
 static const char* NOTINIT = "uninitialized run";
@@ -144,7 +145,9 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
   if( evdata->IsPrestartEvent() ) {
     fDataRead |= kDate|kRunNumber|kRunType;
     if( !fAssumeDate ) {
-      WithDefaultTZ(fDate.Set( evdata->GetRunTime() ));
+      UInt_t tloc = evdata->GetRunTime();
+      gNeedTZCorrection = (GetTZOffsetToLocal(tloc) != 0);
+      WithDefaultTZ(fDate.Set(tloc));
       fDataSet |= kDate;
     }
     SetNumber( evdata->GetRunNum() );
@@ -512,6 +515,7 @@ void THaRunBase::SetDate( UInt_t tloc )
   // Set timestamp of this run to 'tloc' which is in Unix time
   // format (number of seconds since 01 Jan 1970).
 
+  gNeedTZCorrection = (GetTZOffsetToLocal(tloc) != 0);
   WithDefaultTZ(TDatime date( tloc ));
   SetDate( date );
 }
