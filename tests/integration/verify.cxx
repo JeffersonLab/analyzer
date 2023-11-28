@@ -31,10 +31,10 @@ bool check(TFile& f, const char* hname, const char* desc, const TH1* tocheck)
   }
   auto pval = tocheck->Chi2Test(href);
   if( pval < ref_pval ) {
-    Error(here, "%s data differ = %lf", desc, pval);
+    Error(here, "%s histogram differs, p = %lf", desc, pval);
     return false;
   }
-  Info(here, "%s data match = %lf", desc, pval);
+  Info(here, "%s histogram matches, p = %lf", desc, pval);
   return true;
 }
 

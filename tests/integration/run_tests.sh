@@ -16,12 +16,12 @@ WORK="$1"
 if [ -e "$WORK" ]; then
   WORK="$(realpath "$WORK")"
   if [ ! -d "$WORK" ]; then
-    echo "$1 is not a directory"
+    echo ">>>> $1 is not a directory"
     exit 20
   fi
 else
   if ! mkdir -p "$WORK"; then
-    echo "Cannot create $WORK"
+    echo ">>>> Cannot create $WORK"
     exit 21
   fi
   WORK="$(realpath "$WORK")"
@@ -39,15 +39,15 @@ DB_DIR="$THIS"/DB
 export DB_DIR
 
 if ! which root >/dev/null 2>&1; then
-  echo "Cannot find ROOT"
+  echo ">>>> Cannot find ROOT"
   exit 1
 fi
 if ! which analyzer >/dev/null 2>&1; then
-  echo "Cannot find analyzer"
+  echo ">>>> Cannot find analyzer"
   exit 2
 fi
 if ! analyzer --version >/dev/null; then
-  echo "Error running analyzer"
+  echo ">>>> Error running analyzer"
   exit 3
 fi
 
@@ -90,13 +90,13 @@ pushd "$WORK" >/dev/null
 if [ ! -r "$EVIOF" ]; then
   echo "Downloading raw data. This may take a few minutes."
   if ! curl -Os https://hallaweb.jlab.org/podd/download/g2p_3132.dat.0 ; then
-    echo "Download error. Check your network connection."
+    echo ">>>> Download error. Check your network connection."
     exit 4
   fi
 fi
 echo "Verifying raw data file"
 if ! $SHASUM -c "$THIS/$RAWFILENAME".sha1 >/dev/null 2>&1 ; then
-  echo "Raw data checksum failure. Check URL and network."
+  echo ">>>> Raw data checksum failure. Check URL and network."
   exit 5
 fi
 echo "File checksum OK"
@@ -106,7 +106,7 @@ pushd "$THIS" >/dev/null
 # Replay the raw data
 # echo "Replaying $EVIOF. This will take a few minutes"
 if ! analyzer -l -b -q replay.cxx\(\""$EVIOF"\",\""$DSTF"\"\) >/dev/null; then
-  echo "Error running replay.cxx"
+  echo ">>>> Error running replay.cxx"
   exit 10
 fi
 
@@ -114,18 +114,20 @@ err=0
 # Compare run summary with reference
 grep -Ev '^(====|Reading)' "$LOGF" > "$WORK/tmp.log"
 if ! diff -q "$WORK/tmp.log" "${REF_ROOTFILE//.root/.log}" ; then
-  echo "Run summary differs"
+  echo ">>>> Run summary differs"
   err=11
+else
+  echo "Run summary compares OK"
 fi
 rm "$WORK/tmp.log"
-echo "Run summary compares OK"
 
 # Verify ROOT file data, comparing with reference
 if ! analyzer -l -b -q verify.cxx\(\""$DSTF"\",\""$REF_ROOTFILE"\"\) >/dev/null; then
-  echo "Error testing ROOT file"
+  echo ">>>> Error testing ROOT file"
   err=12
+else
+  echo "ROOT file tests OK"
 fi
-echo "ROOT file tests OK"
 
 popd >/dev/null
 exit $err
