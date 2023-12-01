@@ -20,12 +20,12 @@
 #include <cerrno>
 #include <cmath>
 #include <stdexcept>
-#include <cstddef>    // for offsetof
 #include <map>
 #include <set>
 #include <limits>
-#include <iterator>
-#include <algorithm>
+#include <iterator>   // back_inserter
+#include <algorithm>  // remove_copy_if
+#include <functional> // std::less
 #include <sys/stat.h> // for stat/lstat
 #include <sys/ioctl.h> // for ioctl to get terminal windows size
 #include <dirent.h>   // for opendir/readdir
@@ -42,7 +42,6 @@
 #include "THaAnalysisObject.h"
 #include "THaVDC.h"
 #include "THaDetMap.h"
-#include "THaString.h"  // for Split()
 #include "Decoder.h"    // for MAXROC, MAXSLOT
 #include "Helper.h"
 
@@ -52,30 +51,27 @@
 using namespace std;
 using namespace Podd;
 
-static bool IsDBdate( const string& line, time_t& date );
-static bool IsDBcomment( const string& line );
-static Int_t IsDBkey( const string& line, string& key, string& text );
-static bool IsTag( const char* buf );
-static bool IsDBSubDir( const string& fname, time_t& date );
+namespace DBConvert {
+
+bool IsDBdate( const string& line, time_t& date );
+bool IsDBcomment( const string& line );
+Int_t IsDBkey( const string& line, string& key, string& text );
+bool IsTag( const char* buf );
+bool IsDBSubDir( const string& fname, time_t& date );
 
 // Command line parameter defaults
-static int do_debug = 0, verbose = 0, do_file_copy = 1, do_subdirs = 0;
-static int do_clean = 1, do_verify = 1, do_dump = 0, purge_all_default_keys = 1;
-static int format_fp = 1, format_fixed = 0;
-static string srcdir;
-static string destdir;
-static string prgname;
-static const char* mapfile = nullptr;
-static const char* inp_tz_arg = nullptr, *outp_tz_arg = nullptr;
-static string inp_tz, outp_tz, cur_tz;
-static string current_filename;
-static const char* c_out_subdirs = nullptr;
-static vector<string> out_subdirs;
+int do_debug = 0, verbose = 0, do_file_copy = 1, do_subdirs = 0;
+int do_clean = 1, do_verify = 1, do_dump = 0, purge_all_default_keys = 1;
+int format_fp = 1, format_fixed = 0;
+string srcdir, destdir, prgname, current_filename, inp_tz, outp_tz, cur_tz;
+const char* mapfile = nullptr, * inp_tz_arg = nullptr, * outp_tz_arg = nullptr;
+const char* c_out_subdirs = nullptr;
+vector <string> out_subdirs;
 
-static const string prgargs("SRC_DIR DEST_DIR");
-static const string whtspc = " \t";
+const string prgargs("SRC_DIR DEST_DIR");
+const string whtspc = " \t";
 
-static struct option longopts[] = {
+struct option longopts[] = {
   // Flags
   { "help",                 no_argument, nullptr,     'h' },
   { "verbose",              no_argument, nullptr,     'v' },
@@ -93,7 +89,7 @@ static struct option longopts[] = {
   { nullptr, 0, nullptr, 0 }
 };
 
-static const char* const opthelp[] = {
+const char* const opthelp[] = {
   "show this help message",
   "increase verbosity",
   "print extensive debug info",
@@ -143,7 +139,7 @@ typedef string::size_type ssiz_t;
 typedef set<time_t>::iterator siter_t;
 
 //-----------------------------------------------------------------------------
-static size_t get_term_width()
+size_t get_term_width()
 {
   struct winsize w{};
   ioctl(STDOUT_FILENO, TIOCGWINSZ, &w); //FIXME: should be the file no of the stream
@@ -257,9 +253,8 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-static void print_usage( ostream& os, const string& program_name,
-			 const string& nonoptions,
-			 const struct option optarray[] )
+void print_usage( ostream& os, const string& program_name,
+                  const string& nonoptions, const struct option optarray[] )
 {
   // Print usage info, including all defined short/long options
 
@@ -291,11 +286,11 @@ static void print_usage( ostream& os, const string& program_name,
 }
 
 //-----------------------------------------------------------------------------
-static void print_help( ostream& os, const string& program_name,
-			const string& nonoptions,
-			const string& description,
-			const struct option optarray[],
-			const char* const helptxts[] )
+void print_help( ostream& os, const string& program_name,
+                 const string& nonoptions,
+                 const string& description,
+                 const struct option optarray[],
+                 const char* const helptxts[] )
 {
   // Print help message with program and option descriptions
 
@@ -338,7 +333,7 @@ static void print_help( ostream& os, const string& program_name,
 }
 
 //-----------------------------------------------------------------------------
-static void usage()
+void usage()
 {
   // Print usage message and exit with error code
 
@@ -347,7 +342,7 @@ static void usage()
 }
 
 //-----------------------------------------------------------------------------
-static void help()
+void help()
 {
   // Print help and exit
 
@@ -360,7 +355,7 @@ static void help()
 }
 
 //-----------------------------------------------------------------------------
-static inline string TZfromOffset( long off )
+inline string TZfromOffset( long off )
 {
   // Convert integer timezone offset to string for TZ environment variable
 
@@ -377,7 +372,7 @@ static inline string TZfromOffset( long off )
 }
 
 //-----------------------------------------------------------------------------
-static int MkTimezone( string& zone )
+int MkTimezone( string& zone )
 {
   // Check command-line timezone spec 'zone' and convert it to something that
   // will work with tzset
@@ -406,7 +401,7 @@ static int MkTimezone( string& zone )
 }
 
 //-----------------------------------------------------------------------------
-static inline void set_tz( const string& tz )
+inline void set_tz( const string& tz )
 {
   if( !tz.empty() ) {
     const char* z = getenv("TZ");
@@ -421,7 +416,7 @@ static inline void set_tz( const string& tz )
 }
 
 //-----------------------------------------------------------------------------
-static int set_tz_errcheck( const string& tz, const string& which )
+int set_tz_errcheck( const string& tz, const string& which )
 {
   errno = 0;
   set_tz( tz );
@@ -435,7 +430,7 @@ static int set_tz_errcheck( const string& tz, const string& which )
 }
 
 //-----------------------------------------------------------------------------
-static inline void reset_tz()
+inline void reset_tz()
 {
   if( !cur_tz.empty() )
     setenv("TZ", cur_tz.c_str(), 1);
@@ -445,7 +440,7 @@ static inline void reset_tz()
 }
 
 //-----------------------------------------------------------------------------
-static void getargs( int argc, char* const argv[] )
+void getargs( int argc, char* const argv[] )
 {
   // Get command line parameters
 
@@ -553,7 +548,7 @@ static void getargs( int argc, char* const argv[] )
 }
 
 //-----------------------------------------------------------------------------
-static inline time_t MkTime( struct tm& td, bool have_tz = false )
+inline time_t MkTime( struct tm& td, bool have_tz = false )
 {
   string save_tz;
   if( have_tz ) {
@@ -572,7 +567,7 @@ static inline time_t MkTime( struct tm& td, bool have_tz = false )
 }
 
 //-----------------------------------------------------------------------------
-static inline time_t MkTime( int yy, int mm, int dd, int hh, int mi, int ss )
+inline time_t MkTime( int yy, int mm, int dd, int hh, int mi, int ss )
 {
   // Return Unix time representation (seconds since epoc in UTC) of given
   // broken-down time
@@ -590,7 +585,7 @@ static inline time_t MkTime( int yy, int mm, int dd, int hh, int mi, int ss )
 }
 
 //-----------------------------------------------------------------------------
-static inline string format_time( time_t t )
+inline string format_time( time_t t )
 {
   if( t < 0 || t == numeric_limits<time_t>::max() )
     return "(inf)";
@@ -607,7 +602,7 @@ static inline string format_time( time_t t )
 }
 
 //-----------------------------------------------------------------------------
-static inline string format_tstamp( time_t t )
+inline string format_tstamp( time_t t )
 {
   // Generate timestamp string for database files. Timestamps are in UTC
   // unless the user requests otherwise. The applicable timezone offset is
@@ -635,7 +630,7 @@ static inline string format_tstamp( time_t t )
 }
 
 //-----------------------------------------------------------------------------
-static inline string MakePath( const string& dir, const string& fname )
+inline string MakePath( const string& dir, const string& fname )
 {
   bool need_slash = (*dir.rbegin() != '/');
   string fpath(dir);
@@ -645,14 +640,14 @@ static inline string MakePath( const string& dir, const string& fname )
 }
 
 //-----------------------------------------------------------------------------
-static inline bool IsDBFileName( const string& fname )
+inline bool IsDBFileName( const string& fname )
 {
   return (fname.size() > 7 && fname.substr(0,3) == "db_" &&
 	  fname.substr(fname.size()-4,4) == ".dat" );
 }
 
 //-----------------------------------------------------------------------------
-static bool IsDBSubDir( const string& fname, time_t& date )
+bool IsDBSubDir( const string& fname, time_t& date )
 {
   // Check if the given file name corresponds to a database subdirectory.
   // Subdirectories have filenames of the form "YYYYMMDD" and "DEFAULT".
@@ -683,7 +678,7 @@ static bool IsDBSubDir( const string& fname, time_t& date )
 }
 
 //-----------------------------------------------------------------------------
-static inline size_t Order( Int_t n )
+inline size_t Order( Int_t n )
 {
   // Return number of digits of 32-bit integer argument
 
@@ -700,7 +695,8 @@ static inline size_t Order( Int_t n )
 }
 
 //-----------------------------------------------------------------------------
-template <class T> static inline
+template<class T>
+inline
 size_t GetSignificantDigits( T x, T round_level )
 {
   // Get number of significant *decimal* digits of x, rounded at given level
@@ -729,8 +725,9 @@ size_t GetSignificantDigits( T x, T round_level )
 }
 
 //-----------------------------------------------------------------------------
-template <class T> static inline
-void PrepareStreamImpl( ostringstream& str, const vector<T>& arr, T round_level )
+template<class T>
+inline
+void PrepareStreamImpl( ostringstream& str, const vector <T>& arr, T round_level )
 {
   // Determine formatting for floating point data
 
@@ -775,7 +772,8 @@ void PrepareStreamImpl( ostringstream& str, const vector<T>& arr, T round_level 
 }
 
 //-----------------------------------------------------------------------------
-template <class T> static inline
+template<class T>
+inline
 void PrepareStream( ostringstream&, const T*, int )
 {
   // Set formatting of stream 'str' based on data in array.
@@ -811,7 +809,8 @@ struct Value_t {
 } __attribute__((aligned(64)));
 
 //-----------------------------------------------------------------------------
-template <class T> static inline
+template<class T>
+inline
 Value_t MakeValue( const T* array, size_t size = 1 )
 {
   ostringstream ostr;
@@ -829,15 +828,16 @@ Value_t MakeValue( const T* array, size_t size = 1 )
 }
 
 //-----------------------------------------------------------------------------
-template<class T> static inline
-Value_t MakeValueP( const unique_ptr<T>& array, size_t size = 1 )
+template<class T>
+inline
+Value_t MakeValueP( const unique_ptr <T>& array, size_t size = 1 )
 {
   return MakeValue(array.get(), size);
 }
 
 //-----------------------------------------------------------------------------
-static inline Value_t
-MakeDetmapElemValue( const unique_ptr<THaDetMap>& pmap, UInt_t n, size_t extras )
+inline Value_t
+MakeDetmapElemValue( const unique_ptr <THaDetMap>& pmap, UInt_t n, size_t extras )
 {
   ostringstream ostr;
   auto* detmap = pmap.get();
@@ -945,12 +945,12 @@ typedef map<string, string> StrMap_t;
 typedef multimap<string, string> MStrMap_t;
 typedef MStrMap_t::iterator iter_t;
 
-static DB gDB;
-static StrMap_t gKeyToDet;
-static MStrMap_t gDetToKey;
+DB gDB;
+StrMap_t gKeyToDet;
+MStrMap_t gDetToKey;
 
 //-----------------------------------------------------------------------------
-static void DumpMap( ostream& os = std::cout )
+void DumpMap( ostream& os = std::cout )
 {
   // Dump contents of the in-memory database to given output
 
@@ -971,7 +971,7 @@ static void DumpMap( ostream& os = std::cout )
 }
 
 //-----------------------------------------------------------------------------
-static int PruneMap()
+int PruneMap()
 {
   // Remove duplicate entries for the same key and consecutive timestamps
 
@@ -990,9 +990,9 @@ static int PruneMap()
 }
 
 //-----------------------------------------------------------------------------
-static int WriteAllKeysForTime( ofstream& ofs,
-				const iter_t& first, const iter_t& last,
-				time_t tstamp, bool find_first = false )
+int WriteAllKeysForTime( ofstream& ofs,
+                         const iter_t& first, const iter_t& last,
+                         time_t tstamp, bool find_first = false )
 {
   // Write all keys in the range [first,last) to 'ofs' whose timestamp is exactly
   // 'tstamp'. If 'find_first' is true, modify the logic: If the key has a
@@ -1079,7 +1079,7 @@ static int WriteAllKeysForTime( ofstream& ofs,
 }
 
 //-----------------------------------------------------------------------------
-static int WriteFileDB( const string& target_dir, const vector<string>& subdirs )
+int WriteFileDB( const string& target_dir, const vector <string>& subdirs )
 {
   // Write all accumulated database keys in gDB to files in 'target_dir'.
   // If --preserve-subdirs was specified, split the information over
@@ -1593,12 +1593,14 @@ inline ECommonFlag& operator++( ECommonFlag& e )
 
 //-----------------------------------------------------------------------------
 // Global maps for detector types and names
-enum EDetectorType { kNone = 0, kKeep, kCopyFile, kCherenkov, kScintillator,
-		     kShower, kTotalShower, kBPM, kRaster, kCoincTime,
-		     kTriggerTime, kVDC, kDecData };
-typedef map<string,EDetectorType> NameTypeMap_t;
-static NameTypeMap_t detname_map;
-static NameTypeMap_t dettype_map;
+enum EDetectorType {
+  kNone = 0, kKeep, kCopyFile, kCherenkov, kScintillator,
+  kShower, kTotalShower, kBPM, kRaster, kCoincTime,
+  kTriggerTime, kVDC, kDecData
+};
+typedef map <string, EDetectorType> NameTypeMap_t;
+NameTypeMap_t detname_map;
+NameTypeMap_t dettype_map;
 
 struct StringToType_t {
   const char*   name;
@@ -1606,7 +1608,7 @@ struct StringToType_t {
 } __attribute__((aligned(16)));
 
 //-----------------------------------------------------------------------------
-static Detector* MakeDetector( EDetectorType type, const string& name )
+Detector* MakeDetector( EDetectorType type, const string& name )
 {
   Detector* det = nullptr;
   switch( type ) {
@@ -1640,7 +1642,7 @@ static Detector* MakeDetector( EDetectorType type, const string& name )
 }
 
 //-----------------------------------------------------------------------------
-static void DefineTypes()
+void DefineTypes()
 {
   // Set up mapping of detector type names to EDetectorType constants
 
@@ -1661,7 +1663,7 @@ static void DefineTypes()
 }
 
 //-----------------------------------------------------------------------------
-static int ReadMapfile( const char* filename )
+int ReadMapfile( const char* filename )
 {
   ifstream ifs(filename);
   if( !ifs ) {
@@ -1709,7 +1711,7 @@ static int ReadMapfile( const char* filename )
 }
 
 //-----------------------------------------------------------------------------
-static void DefaultMap()
+void DefaultMap()
 {
   // Set up common detector names as defaults
 
@@ -1806,7 +1808,7 @@ static void DefaultMap()
 }
 
 //-----------------------------------------------------------------------------
-static inline string GetDetName( const string& fname )
+inline string GetDetName( const string& fname )
 {
   assert( fname.size() > 7 );
   ssiz_t pos = fname.rfind('/');
@@ -1820,7 +1822,7 @@ static inline string GetDetName( const string& fname )
 
 //-----------------------------------------------------------------------------
 template<typename Action>
-static int ForAllFilesInDir( const string& sdir, Action action, int depth = 0 ) // NOLINT(misc-no-recursion)
+int ForAllFilesInDir( const string& sdir, Action action, int depth = 0 ) // NOLINT(misc-no-recursion)
 {
   int n_add = 0;
   errno = 0;
@@ -1980,8 +1982,8 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-static int GetFilenames( const string& sdir, const time_t start_time,
-                         FilenameMap_t& filenames, vector<string>& subdirs )
+int GetFilenames( const string& sdir, const time_t start_time,
+                  FilenameMap_t& filenames, vector <string>& subdirs )
 {
   // Get a list of all database files, based on Podd's search order rules.
   // Keep timestamps info with each file. Reading files from the current
@@ -1993,7 +1995,7 @@ static int GetFilenames( const string& sdir, const time_t start_time,
 }
 
 //-----------------------------------------------------------------------------
-static int CheckDir( string path, bool writable )
+int CheckDir( string path, bool writable )
 {
   // Check if 'dir' exists and is readable. If 'writable' is true, also
   // check if it is writable. Print error if any test fails.
@@ -2028,7 +2030,7 @@ static int CheckDir( string path, bool writable )
 }
 
 //-----------------------------------------------------------------------------
-static int PrepareOutputDir( const string& topdir, const vector<string>& subdirs )
+int PrepareOutputDir( const string& topdir, const vector <string>& subdirs )
 {
   // Create subdirectories 'subdirs' in 'topdir'.
   // Unless --no-clean is given, remove all database files and subdirectories
@@ -2092,7 +2094,7 @@ static int PrepareOutputDir( const string& topdir, const vector<string>& subdirs
 }
 
 //_____________________________________________________________________________
-static Int_t GetLine( FILE* file, char* buf, Int_t bufsiz, string& line )
+Int_t GetLine( FILE* file, char* buf, Int_t bufsiz, string& line )
 {
   // Get a line (possibly longer than 'bufsiz') from 'file' using
   // the provided buffer 'buf'. Put result into string 'line'.
@@ -2123,7 +2125,7 @@ static Int_t GetLine( FILE* file, char* buf, Int_t bufsiz, string& line )
 }
 
 //-----------------------------------------------------------------------------
-static bool ParseTimestamps( FILE* fi, set<time_t>& timestamps )
+bool ParseTimestamps( FILE* fi, set <time_t>& timestamps )
 {
   // Put all timestamps from file 'fi' in given vector 'timestamps'.
   // If any data lines are present before the first timestamp,
@@ -2149,7 +2151,7 @@ static bool ParseTimestamps( FILE* fi, set<time_t>& timestamps )
 }
 
 //-----------------------------------------------------------------------------
-static int ParseVariations( FILE* fi, vector<string>& variations )
+int ParseVariations( FILE* fi, vector <string>& variations )
 {
   rewind(fi);
   variations.clear();
@@ -2175,8 +2177,8 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-static int InsertDefaultFiles( const vector<string>& subdirs,
-			       multiset<Filenames_t>& filenames )
+int InsertDefaultFiles( const vector <string>& subdirs,
+                        multiset <Filenames_t>& filenames )
 {
   // If there are default files, select the one that the analyzer would pick,
   // i.e. give preference to topdir/DEFAULT/ over topdir/
@@ -2255,7 +2257,7 @@ static int InsertDefaultFiles( const vector<string>& subdirs,
 }
 
 //-----------------------------------------------------------------------------
-static int ExtractKeys( Detector* det, const multiset<Filenames_t>& filenames )
+int ExtractKeys( Detector* det, const multiset <Filenames_t>& filenames )
 {
   // Extract keys for given detector from the database files in 'filenames'
 
@@ -2327,8 +2329,8 @@ typedef map<time_t,pair<size_t,string> > SectionMap_t;
 typedef SectionMap_t::iterator SMiter_t;
 
 //-----------------------------------------------------------------------------
-static void AddSection( SectionMap_t& sections, time_t cur_date, size_t ndata,
-			string& chunk )
+void AddSection( SectionMap_t& sections, time_t cur_date, size_t ndata,
+                 string& chunk )
 {
   pair<size_t,string>& secdata = sections[cur_date];
   secdata.first = ndata;
@@ -2343,8 +2345,8 @@ static void AddSection( SectionMap_t& sections, time_t cur_date, size_t ndata,
 }
 
 //-----------------------------------------------------------------------------
-static int CopyFiles( const string& target_dir, const vector<string>& subdirs,
-		      FilenameMap_t::const_iterator ft )
+int CopyFiles( const string& target_dir, const vector <string>& subdirs,
+               FilenameMap_t::const_iterator ft )
 {
   // Copy source files given in the map 'ft' to 'target_dir' and given set
   // of subdirs. If 'subdirs' is empty or no output subdirs are requested,
@@ -2613,124 +2615,7 @@ static int CopyFiles( const string& target_dir, const vector<string>& subdirs,
 }
 
 //-----------------------------------------------------------------------------
-int main( int argc, char* const argv[] )
-{
-  // Parse command line
-  getargs(argc,argv);
-
-  if( set_tz_errcheck( inp_tz, "input" ) )
-    exit(EXIT_FAILURE);
-  reset_tz();
-  if( set_tz_errcheck( outp_tz, "output" ) )
-    exit(EXIT_FAILURE);
-  reset_tz();
-
-  // Read the detector name mapping file. If unavailable, set up defaults.
-  if( mapfile ) {
-    if( ReadMapfile(mapfile) )
-      exit(5);  // Error message already printed
-  } else {
-    DefaultMap();
-  }
-
-  // Interpret timestamps according to the user-specified timezone for
-  // input files. If no timezone was given, local time will be used.
-  set_tz( inp_tz );
-
-  // Get list of all database files to convert
-  FilenameMap_t filemap;
-  vector<string> subdirs;
-  set<string> copy_dets;
-  if( GetFilenames(srcdir, 0, filemap, subdirs) < 0 )
-    exit(4);  // Error message already printed
-
-  // Assign a parser to each database file, based on the name mapping info.
-  // Let the parsers translate each file to database keys.
-  // If the original parser supported in-file timestamps, pre-parse the
-  // corresponding files to find any timestamps in them.
-  // Keep all found keys/values along with timestamps in a central map.
-  for(auto & ft : filemap) {
-    const string& detname = ft.first;
-    multiset<Filenames_t>& filenames = ft.second;
-    assert( !filenames.empty() ); // else bug in GetFilenames
-
-    // Check if we know what to do with this detector name
-    auto it = detname_map.find(detname);
-    if( it == detname_map.end() ) {
-      //TODO: make behavior configurable
-      cerr << "===WARNING: unknown detector name \"" << detname
-	   << "\", corresponding files will not be converted" << endl;
-      continue;
-    }
-    EDetectorType type = it->second;
-    unique_ptr<Detector> det{MakeDetector( type, detname )};
-    if( !det )
-      continue;
-
-    if( InsertDefaultFiles(subdirs, filenames) )
-      exit(8);
-
-    filenames.insert( Filenames_t(numeric_limits<time_t>::max()) );
-
-    ExtractKeys( det.get(), filenames );
-
-    // If requested, remove keys for this detector that only have default values
-    if( purge_all_default_keys )
-      det->PurgeAllDefaultKeys();
-
-    // Save detector names whose database files are to be copied
-    if( do_file_copy && type == kCopyFile )
-      copy_dets.insert( detname );
-
-    // Done with this detector
-  } // end for ft = filemap
-
-  reset_tz();
-
-  // Prune the key/value map to remove entries that have the exact
-  // same keys/values and only differ by /consecutive/ timestamps.
-  // Keep only the earliest timestamp.
-
-  PruneMap();
-
-  // Write out keys/values to database files in target directory.
-  // All file names will be preserved; a file that existed anywhere
-  // in the source will also appear at least once in the target.
-  // User may request that original directory structure be preserved,
-  // otherwise just write one file per detector name.
-
-  set_tz( outp_tz );
-
-  if( do_dump )
-    DumpMap();
-
-  if( do_subdirs && out_subdirs.empty() )
-    out_subdirs = subdirs;
-
-  int err = 0;
-  if( PrepareOutputDir(destdir,out_subdirs) )
-    err = 6;
-
-  if( !err && WriteFileDB(destdir,out_subdirs) )
-    err = 7;
-
-  reset_tz();
-
-  if( do_file_copy ) {
-    for( auto it = copy_dets.begin(); !err && it != copy_dets.end(); ++it ) {
-      const string& detname = *it;
-      auto ft = filemap.find( detname );
-      assert( ft != filemap.end() );
-      if( CopyFiles(destdir,out_subdirs,ft) )
-	err = 8;
-    }
-  }
-
-  return err;
-}
-
-//-----------------------------------------------------------------------------
-static char* ReadComment( FILE* fp, char *buf, const int len )
+char* ReadComment( FILE* fp, char* buf, const int len )
 {
   // Read fixed-format database comment lines. Data (non-comment) lines
   // start with a space (' ') or a number (the latter is a modification of
@@ -2770,7 +2655,7 @@ static char* ReadComment( FILE* fp, char *buf, const int len )
 }
 
 //_____________________________________________________________________________
-static bool IsDBdate( const string& line, time_t& date )
+bool IsDBdate( const string& line, time_t& date )
 {
   // Check if 'line' contains a valid database time stamp. If so,
   // parse the line, set 'date' to the extracted time stamp, and return 1.
@@ -2798,7 +2683,7 @@ static bool IsDBdate( const string& line, time_t& date )
 }
 
 //_____________________________________________________________________________
-static Int_t IsDBkey( const string& line, string& key, string& text )
+Int_t IsDBkey( const string& line, string& key, string& text )
 {
   // Check if 'line' is of the form "key = value"
   // - If there is no '=', then return 0.
@@ -2829,7 +2714,7 @@ static Int_t IsDBkey( const string& line, string& key, string& text )
 }
 
 //_____________________________________________________________________________
-static bool IsDBcomment( const string& line )
+bool IsDBcomment( const string& line )
 {
   // Return true if 'line' is entirely a comment line in a new-format database
   // file. Comments start with '#', possibly preceded by whitespace, or are
@@ -2840,7 +2725,7 @@ static bool IsDBcomment( const string& line )
 }
 
 //_____________________________________________________________________________
-static bool IsTag( const char* buf )
+bool IsTag( const char* buf )
 {
   // Return true if the string in 'buf' matches regexp ".*\[.+\].*",
   // i.e. it is a database section marker.  Generic utility function.
@@ -4075,7 +3960,7 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
       line2.erase(line2.size() - 1, 1);
     }
     // Split the line into whitespace-separated fields
-    vector<string> line_spl = THaString::Split(line2);
+    vector<string> line_spl = vsplit(line2);
 
     // Stop if the line does not start with a string referring to
     // a known type of matrix element. In particular, this will
@@ -4661,8 +4546,8 @@ int TriggerTime::Save( time_t start, const string& version ) const
 }
 
 //-----------------------------------------------------------------------------
-static void WriteME( ostream& s, const THaVDC::THaMatrixElement& ME,
-		     const string& MEname, ssiz_t w )
+void WriteME( ostream& s, const THaVDC::THaMatrixElement& ME,
+              const string& MEname, ssiz_t w )
 {
   if( ME.iszero )
     return;
@@ -4962,6 +4847,127 @@ int CopyFile::AddToMap( const string& key, const Value_t& value, time_t start,
     attr.isCopy = true;
   }
   return 0;
+}
+
+} // namespace DBConvert
+
+using namespace DBConvert;
+
+//-----------------------------------------------------------------------------
+int main( int argc, char* const argv[] )
+{
+  // Parse command line
+  getargs(argc,argv);
+
+  if( set_tz_errcheck( inp_tz, "input" ) )
+    exit(EXIT_FAILURE);
+  reset_tz();
+  if( set_tz_errcheck( outp_tz, "output" ) )
+    exit(EXIT_FAILURE);
+  reset_tz();
+
+  // Read the detector name mapping file. If unavailable, set up defaults.
+  if( mapfile ) {
+    if( ReadMapfile(mapfile) )
+      exit(5);  // Error message already printed
+  } else {
+    DefaultMap();
+  }
+
+  // Interpret timestamps according to the user-specified timezone for
+  // input files. If no timezone was given, local time will be used.
+  set_tz( inp_tz );
+
+  // Get list of all database files to convert
+  FilenameMap_t filemap;
+  vector<string> subdirs;
+  set<string> copy_dets;
+  if( GetFilenames(srcdir, 0, filemap, subdirs) < 0 )
+    exit(4);  // Error message already printed
+
+  // Assign a parser to each database file, based on the name mapping info.
+  // Let the parsers translate each file to database keys.
+  // If the original parser supported in-file timestamps, pre-parse the
+  // corresponding files to find any timestamps in them.
+  // Keep all found keys/values along with timestamps in a central map.
+  for(auto & ft : filemap) {
+    const string& detname = ft.first;
+    multiset<Filenames_t>& filenames = ft.second;
+    assert( !filenames.empty() ); // else bug in GetFilenames
+
+    // Check if we know what to do with this detector name
+    auto it = detname_map.find(detname);
+    if( it == detname_map.end() ) {
+      //TODO: make behavior configurable
+      cerr << "===WARNING: unknown detector name \"" << detname
+	   << "\", corresponding files will not be converted" << endl;
+      continue;
+    }
+    EDetectorType type = it->second;
+    unique_ptr<Detector> det{MakeDetector( type, detname )};
+    if( !det )
+      continue;
+
+    if( InsertDefaultFiles(subdirs, filenames) )
+      exit(8);
+
+    filenames.insert( Filenames_t(numeric_limits<time_t>::max()) );
+
+    ExtractKeys( det.get(), filenames );
+
+    // If requested, remove keys for this detector that only have default values
+    if( purge_all_default_keys )
+      det->PurgeAllDefaultKeys();
+
+    // Save detector names whose database files are to be copied
+    if( do_file_copy && type == kCopyFile )
+      copy_dets.insert( detname );
+
+    // Done with this detector
+  } // end for ft = filemap
+
+  reset_tz();
+
+  // Prune the key/value map to remove entries that have the exact
+  // same keys/values and only differ by /consecutive/ timestamps.
+  // Keep only the earliest timestamp.
+
+  PruneMap();
+
+  // Write out keys/values to database files in target directory.
+  // All file names will be preserved; a file that existed anywhere
+  // in the source will also appear at least once in the target.
+  // User may request that original directory structure be preserved,
+  // otherwise just write one file per detector name.
+
+  set_tz( outp_tz );
+
+  if( do_dump )
+    DumpMap();
+
+  if( do_subdirs && out_subdirs.empty() )
+    out_subdirs = subdirs;
+
+  int err = 0;
+  if( PrepareOutputDir(destdir,out_subdirs) )
+    err = 6;
+
+  if( !err && WriteFileDB(destdir,out_subdirs) )
+    err = 7;
+
+  reset_tz();
+
+  if( do_file_copy ) {
+    for( auto it = copy_dets.begin(); !err && it != copy_dets.end(); ++it ) {
+      const string& detname = *it;
+      auto ft = filemap.find( detname );
+      assert( ft != filemap.end() );
+      if( CopyFiles(destdir,out_subdirs,ft) )
+	err = 8;
+    }
+  }
+
+  return err;
 }
 
 //-----------------------------------------------------------------------------
