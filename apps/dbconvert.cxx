@@ -2686,14 +2686,21 @@ bool IsDBdate( const string& line, time_t& date )
 Int_t IsDBkey( const string& line, string& key, string& text )
 {
   // Check if 'line' is of the form "key = value"
-  // - If there is no '=', then return 0.
-  // - If key found, parse the line, set 'text' to the whitespace-trimmed
-  //   text after the "=" and return +1.
+  // - If there is no '=', or if '=' is part of an operator like '==',
+  //   '<=', etc., then return 0. Operators cannot be part of a key,
+  //   i.e. a line like "my==value = 10" would return 0 as well.
+  // - If there is a '=', but the left-hand side doesn't match 'key',
+  //   then return -1.
+  // - Otherwise, set 'key' and 'text' to the whitespace-trimmed
+  //   text before and after the "=", respectively, and return +1.
 
   // Search for "="
   const char* ln = line.c_str();
   const char* eq = strchr(ln, '=');
   if( !eq ) return 0;
+  // Disregard "==", "!=", "<=", ">="
+  if( (eq > ln && (*(eq - 1) == '!' || *(eq - 1) == '<' || *(eq - 1) == '>')) || *(eq + 1) == '=' )
+    return 0;
   // Extract the key
   while( *ln == ' ' || *ln == '\t' ) ++ln; // find_first_not_of(" \t")
   assert( ln <= eq );
