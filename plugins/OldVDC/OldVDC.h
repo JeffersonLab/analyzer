@@ -8,7 +8,7 @@
 // This is the Podd 1.5.37 VDC code, ported to Podd 1.6. This code is known  //
 // to be buggy. Do not use except for comparisons of new with old results.   //
 //                                                                           //
-// The only difference, aside from the name chage OldVDC -> OldVDC, is       //
+// The only difference, aside from the name change VDC -> OldVDC, is         //
 // that all database functions have been re-written to use the new database  //
 // format.                                                                   //
 //                                                                           //
@@ -65,7 +65,7 @@ public:
 
   // Bits and bit masks for this object
   enum {
-    kOnlyFastest    = BIT(14), // Only use fastest hit for each wire (highest TDC)
+    kOnlyFastest    = BIT(14), // Only use the fastest hit for each wire (highest TDC)
     kTDCbits        = BIT(15) | BIT(16),  // Mask for TDC mode bits
     kHardTDCcut     = BIT(15), // Use hard TDC cuts (fMinTime, fMaxTime)
     kSoftTDCcut     = BIT(16), // Use soft TDC cut (reasonable estimated drifts)

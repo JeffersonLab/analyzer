@@ -10,8 +10,8 @@ This version is compatible with version 1.7 of the analyzer.
 Overview
 --------
 
-This package contains a examples of user code for the Hall A analyzer.
-It it intended as a starting point for building your own library of custom,
+This package contains examples of user code for the Hall A analyzer.
+It is intended as a starting point for building your own library of custom,
 experiment-specific analysis modules.
 
 The following examples are included for illustration
@@ -175,7 +175,7 @@ Incorporating your own code
   ClassDef macros MUST be listed here.
 
 Of course, you can delete the original ``User*`` files once you don't need
-them for guidance any more. They are not required for building a user library.
+them for guidance anymore. They are not required for building a user library.
 
 Compatibility
 -------------

@@ -39,7 +39,7 @@ THaCut::THaCut( const char* name, const char* expression, const char* block,
   // previously defined cuts from 'clst'.
   //
   // Unlike the behavior of THaFormula, THaCuts do NOT store themselves in
-  // ROOT's list of functions. Otherwise existing cuts used in new cut
+  // ROOT's list of functions. Otherwise, existing cuts used in new cut
   // expressions would get reparsed instead of queried. This wouldn't
   // work properly with a non-default array evaluation mode (OR/XOR).
 

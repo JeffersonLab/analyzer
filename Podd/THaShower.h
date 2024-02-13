@@ -70,7 +70,7 @@ protected:
 
   class ClusterBlock {
   public:
-    Int_t  n;  // Block number (0..fNelem-1)
+    Int_t  n;  // Block number (0...fNelem-1)
     Data_t E;  // Energy deposit (MeV) for current event
   };
   std::vector<ClusterBlock> fClBlk; // Blocks of main cluster

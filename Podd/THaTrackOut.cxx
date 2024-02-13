@@ -18,8 +18,7 @@ THaTrackOut::THaTrackOut(const char* name, const char* description,
   , fSrc(nullptr)
 {
   // Prepare four-vectors for storing the output tracks from "src",
-  //  assuming is has mass "pmass".
-  // it is stored in the TTree as name.p4
+  // assuming it has mass "pmass". It is stored in the TTree as name.p4
 }
 
 //_____________________________________________________________________________

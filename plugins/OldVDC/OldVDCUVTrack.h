@@ -57,7 +57,7 @@ public:
 protected:
   OldVDCCluster* fUClust;       // Cluster in the U plane
   OldVDCCluster* fVClust;       // Cluster in the V plane
-  OldVDCUVPlane* fUVPlane;      // UV plane that own's this track
+  OldVDCUVPlane* fUVPlane;      // UV plane that owns this track
   THaTrack*      fTrack;        // Track this UV Track is associated with
   OldVDCUVTrack* fPartner;      // UV track associated with this one in 
                                 //  the other UV plane

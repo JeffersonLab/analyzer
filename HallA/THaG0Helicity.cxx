@@ -322,7 +322,7 @@ void THaG0Helicity::TimingEvent()
 	   && fTimestamp - fTELastTime > 8 * fTdavg) {
     // After a while we give up on finding T9s and instead take
     // either the average timestamp of the first QRT==1 we find
-    // and the previous event (if that's not to far in the past)
+    // and the previous event (if that's not too far in the past)
     // or just the timestamp of the QRT==1 event (if it is).
     // This is lousy accuracy but better than nothing.
     fTEType9 = false;

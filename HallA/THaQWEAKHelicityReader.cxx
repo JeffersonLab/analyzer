@@ -134,7 +134,7 @@ Int_t THaQWEAKHelicityReader::ReadDatabase( const char* /*dbfilename*/,
   // TODO: for now I will bypass this call and just hardcode the data I need
   //  static const char* const here = "THaQWEAKHelicityReader::ReadDatabase";
 
-  // for now bypass the reading from the data base
+  // for now bypass the reading from the database
 
   SetROCinfo(kHel,11,0,3);
   SetROCinfo(kTime,11,0,4);

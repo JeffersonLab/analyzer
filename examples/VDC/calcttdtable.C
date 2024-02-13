@@ -195,14 +195,13 @@ void GetTTDData(const char *planename, THaRawEvent *event, Int_t &hits,
 }
 
 /*
-  Creates a dynamically sized TTD lookup table based on
+  Creates a dynamically-sized TTD lookup table based on
   a low and high time supplied
 
   hist_center is a rawtime and used to pick out the relevant events
   planename should be a string like "L.u1.vdc"
   nentries is the number of entries in the supplied treefile to
-    use in making the table. a value of 0 means to use all of the
-    available entries
+    use in making the table. a value of 0 means to use all available entries
  */
 void CalcTTDTable(const char *treefile, const char *planename, 
 		  Double_t low, Double_t high, Int_t hist_center,
@@ -231,7 +230,7 @@ void CalcTTDTable(const char *treefile, const char *planename,
   // set up to read tree
   tt->SetBranchAddress("Event Branch", &event);
   
-  // make an array big enough to hold all of the time entries
+  // make an array big enough to hold all time entries
   if(nentries==0)
     nentries = (Int_t)T->GetEntries();
 
@@ -276,7 +275,7 @@ void CalcTTDTable(const char *treefile, const char *planename,
     table[i] = table[i-1] + K*hist->GetBinContent(i+1);
   }
 
-  // autocalculate the scale factor, if the user'd like
+  // auto-calculate the scale factor
   K = kLongestDist/table[num_bins-1];
   cout<<"K estimate: "<<K<<endl;
 

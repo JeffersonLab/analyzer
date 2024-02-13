@@ -25,7 +25,7 @@
 //      gHaVars->Define("a[10]",a);
 //
 //  (Note: Array definitions register only the name before the bracket
-//  as the variable name; "a" in the example above.  Hence
+//  as the variable name; "a" in the example above.  Hence,
 //
 //      gHaVars->Define("a",x)
 //  and

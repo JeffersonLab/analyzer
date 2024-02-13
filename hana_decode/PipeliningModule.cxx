@@ -86,7 +86,7 @@ Long64_t PipeliningModule::VerifyBlockTrailer(
     // Block header without matching block trailer, should not happen
     goto notfound;
   }
-  // Apparent misidentification: keep searching until hitting the buffer end
+  // Apparent mis-identification: keep searching until hitting the buffer end
   if( ++iend < pos+len ) {
     cerr << "WARNING: Block trailer misidentification, slot " << fSlot
          << ", roc " << fCrate << ", data 0x" << hex << evbuffer[iend-1] << dec

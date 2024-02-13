@@ -486,7 +486,7 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
 //_____________________________________________________________________________
 void THaVDCPlane::Clear( Option_t* opt )
 {
-  // Clears the contents of the and hits and clusters
+  // Clears the contents of the hit and cluster arrays
   THaSubDetector::Clear(opt);
   fNHits = fNWiresHit = 0;
   fHits->Clear();

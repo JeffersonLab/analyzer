@@ -100,7 +100,7 @@ Int_t FADCData::ReadConfig( FILE* file, const TDatime& date, const char* prefix 
 static inline
 OptUInt_t GetFADCValue( EModuleType type, const DigitizerHitInfo_t& hitinfo,
                         Fadc250Module* fadc ) {
-  // Get item 'm.type' from FADC module pointed to by fFADC
+  // Get item "type" from FADC module pointed to by fFADC
 
   assert(fadc);
   OptUInt_t val;

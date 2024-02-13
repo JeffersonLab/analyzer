@@ -5,8 +5,8 @@
 //                                                                           //
 // THaVDCTimeToDistConv                                                      //
 //                                                                           //
-// Base class for algorithms for converting TDC time into perpendicular      //
-// drift distance                                                            //
+// Abstract base class for algorithms for converting TDC time into           //
+// perpendicular  drift distance                                             //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 

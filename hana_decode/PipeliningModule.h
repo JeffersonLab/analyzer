@@ -12,7 +12,7 @@
 //   A "CODA event buffer" can contain many "events"; the events are stored in
 //   each module of this type (piplelining).
 //
-//   All of the Jlab pipeline modules have the same data format with respect to
+//   All Jlab pipeline modules have the same data format with respect to
 //   specific bits indicating data types.
 //   All produce block headers, block trailers, and event headers.
 //   All encode the slot number the same way in these headers and trailers.

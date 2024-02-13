@@ -62,7 +62,7 @@ public:
 // Add optional assignments.  The input must
 // be of the form "epicsvar=number"
 // epicsvar can be a string with spaces if
-// and only if its enclosed in single spaces.
+// and only if it is enclosed in single spaces.
 // E.g. "Yes=1" "No=2", "'RF On'", etc
    typedef map<string, double>::value_type valType;
    string sdata = findQuotes(input);
@@ -734,8 +734,8 @@ Int_t THaOutput::LoadFile( const char* filename )
 	  fHistos.back()->SetY(ny, ylo, yhi, sfvary);
 	}
 	if (iscut != kNocut) fHistos.back()->SetCut(scut);
-// If we know now that its a scalar, inform the histogram to remain that way
-// and over-ride its internal rules for self-determining if its a vector.
+// If we know now that it is a scalar, inform the histogram to remain that way
+// and over-ride its internal rules for self-determining if it is a vector.
         if (fIsScalar) fHistos.back()->SetScalarTrue();
 	break;
       case kBlock:
@@ -755,7 +755,7 @@ Int_t THaOutput::LoadFile( const char* filename )
     }
   }
 
-  // sort thru fVarnames, removing identical entries
+  // sort through fVarnames, removing identical entries
   if( fVarnames.size() > 1 ) {
     sort(fVarnames.begin(),fVarnames.end());
     auto Vi = fVarnames.begin();
@@ -780,7 +780,7 @@ string THaOutput::svPrefix(string& histtype)
   fIsScalar = false;
   string sresult = histtype;
   if (ldebug) cout << "svPrefix  histogram  type = "<<histtype<<"   histtype length  "<<histtype.length()<<endl;
-// For histograms `histtype' is of the form "XthNY"
+// For histograms, "histtype" is of the form "XthNY"
 // with X="s" or "v" and N=1 or 2,  Y = "f" or "d"
 // For example, "sth1f".  Note it always has length 5
   if (histtype.length() != 5) return sresult;

@@ -57,7 +57,7 @@ void THaSlotData::define(UInt_t cra, UInt_t slo, UInt_t nchan,
                                            // since data arrays grow as needed
 			 UInt_t nhitperchan ) {
   // Must call define once if you are really going to use this slot.
-  // Otherwise its an empty slot which does not use much memory.
+  // Otherwise, it is an empty slot which does not use much memory.
   crate = cra;
   slot = slo;
   didini = true;
@@ -165,7 +165,7 @@ UInt_t THaSlotData::LoadIfSlot( const UInt_t* evbuffer, const UInt_t *pstop) {
   // returns how many words seen.
   if ( !fModule ) {
 // This is bad and should not happen; it means you didn't define a module
-// for this slot.  Check db_cratemap.dat, e.g. erase things that dont exist.
+// for this slot.  Check db_cratemap.dat, e.g. erase things that don't exist.
     cerr << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl;
     return 0;
   }
@@ -194,7 +194,7 @@ UInt_t THaSlotData::LoadBank( const UInt_t* p, UInt_t pos, UInt_t len) {
   // returns how many words seen.
   if ( !fModule ) {
 // This is bad and should not happen; it means you didn't define a module
-// for this slot.  Check db_cratemap.dat, e.g. erase things that dont exist.
+// for this slot.  Check db_cratemap.dat, e.g. erase things that don't exist.
     cerr << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl;
     return 0;
   }

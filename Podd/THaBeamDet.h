@@ -28,7 +28,7 @@ public:
     : THaDetector(name, description, a) {}
 
  public:
-  ClassDef(THaBeamDet,0)    // ABC for an detector providing beam information
+  ClassDef(THaBeamDet,0)    // ABC for a detector providing beam information
 };
 
 #endif

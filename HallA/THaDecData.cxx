@@ -134,7 +134,7 @@ static Int_t ReadOldFormatDB( FILE* file, map<TString,TString>& configstr_map )
 Int_t THaDecData::SetupDBVersion( FILE* file, Int_t db_version )
 {
   // If configured, check database format and, if detected, read legacy
-  // format database. Otherwise do what the base class does.
+  // format database. Otherwise, do what the base class does.
 #ifdef DECDATA_LEGACY_DB
   fConfigstrMap.clear();
   if( db_version == 1 )

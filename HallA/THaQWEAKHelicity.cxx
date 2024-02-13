@@ -354,7 +354,7 @@ void THaQWEAKHelicity::LoadHelicity( ULong64_t eventnumber )
 
       // if seed has been gathered: 
       // check event by event that the seed make sense:
-      // fRing_polarity!=fHelcityRing[i]
+      // fRing_polarity!=fHelicityRing[i]
       // this should come before the section for the seed gathering::
       // do not change this order
       if(fRing_NSeed==fMAXBIT && fPatternRing[i]==1)

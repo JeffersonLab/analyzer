@@ -1,10 +1,9 @@
 /////////////////////////////////////////////////////////////////////
 //
 //  THaCodaFile
-//  File of CODA data
 //
-//  CODA data file, and facilities to open, close, read,
-//  write, filter CODA data to disk files, etc.
+//  Class for accessing a CODA data file. Provides facilities to open,
+//  close, read, write, filter CODA data to disk files, etc.
 //
 //  This is largely a wrapper around the JLAB EVIO library.
 //

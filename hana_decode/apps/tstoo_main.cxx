@@ -1,4 +1,4 @@
-// Test of a OO decoder
+// Test of an OO decoder
 //
 // R. Michaels, Sept 2014
 

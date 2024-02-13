@@ -5,7 +5,7 @@
 // UserScintillator                                                          //
 //                                                                           //
 // Example of how to extend an existing detector class with additional       //
-// and/or different functionality. The UserScintillator can be replace any   //
+// and/or different functionality. The UserScintillator can replace any      //
 // THaScintillator. In addition to all the work that THaScintillator does,   //
 // a UserScintillator computes three additional quantities and exports       //
 // three corresponding global variables:                                     //

@@ -174,7 +174,7 @@ Int_t THaAnalysisObject::DefineVariablesWrapper( EMode mode )
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::DefineVariables( EMode /* mode */ )
 {
-  // Default method for defining global variables. Currently does nothing.
+  // Default method for defining global variables. Currently, does nothing.
   // If there should be any common variables for all analysis objects,
   // define them here.
 
@@ -387,8 +387,8 @@ const char* THaAnalysisObject::Here( const char* here ) const
 {
   // Return a string consisting of ("fPrefix")::here
   // Used for generating diagnostic messages.
-  // The return value points to an internal static buffer that
-  // one should not try to delete ;)
+  // The return value points to an internal static buffer,
+  // which one should not try to delete ;)
 
   return ::Here( here, fPrefix );
 }
@@ -558,7 +558,7 @@ void THaAnalysisObject::MakePrefix()
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::ReadDatabase( const TDatime& /* date */ )
 {
-  // Default database reader. Currently does nothing.
+  // Default database reader. Currently, does nothing.
 
   return kOK;
 }

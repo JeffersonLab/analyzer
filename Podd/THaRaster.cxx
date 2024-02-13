@@ -261,10 +261,10 @@ Int_t THaRaster::Process()
   for( Int_t i = 0; i < NPOS; i++ ) {
 
     //      fPosition[i] = fRaw2Pos[i]*fRawPos+fPosOff[i] ;
-    //    this is how i wish it would look like,
+    //    this is how I wish it would look like,
     //    but unluckily multiplications between tmatrix and tvector
     //    are not defined, as well as adding a tvector and a tvector3
-    //    so i have to do it by hand instead ):
+    //    so I have to do it by hand instead ):
 
     TVectorD dum(fRawPos);
     dum *= fRaw2Pos[i];

@@ -18,7 +18,7 @@ namespace THaString {
 //_____________________________________________________________________________
 int CmpNoCase( const string& r, const string& s )
 {
-  // Case insensitive compare.  Returns -1 if "less", 0 if equal, 1 if
+  // Case-insensitive compare.  Returns -1 if "less", 0 if equal, 1 if
   // "greater".
 
   string::const_iterator p =  r.begin();
@@ -37,7 +37,7 @@ int CmpNoCase( const string& r, const string& s )
 //_____________________________________________________________________________
 string::size_type FindNoCase( string data, string chunk )
 {
-  // Find position of "chunk" in "data".  Case insensitive.
+  // Find position of "chunk" in "data". Case-insensitive.
 
   Lower(data);
   Lower(chunk);

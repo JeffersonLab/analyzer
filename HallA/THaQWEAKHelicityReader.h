@@ -21,8 +21,8 @@ public:
   THaQWEAKHelicityReader();
   virtual ~THaQWEAKHelicityReader() = default;
   
-  // when an event trigger the acquisition the reported helicity, T_settle and Pattern sync
-  //signals are recorded by the an Input Register.
+  // When an event triggers the acquisition, the reported helicity, T_settle and
+  // Pattern sync signals are recorded by the Input Register.
   UInt_t GetPatternTir() const { return fPatternTir; };
   UInt_t GetHelicityTir() const { return fHelicityTir; };
   UInt_t GetTSettleTir() const { return fTSettleTir; };
@@ -30,7 +30,7 @@ public:
   // in parallel, these signals are recorded in the ring buffer of the helicity gated scaler
   // the maximum depth of this ring is for now 500.
   UInt_t GetRingDepth() const { return fIRing; }; // how many events are in the ring
-  // I should have the depth of the ring defined in the data base
+  // I should have the depth of the ring defined in the database
   // let call it kHelRingDepth for now
   void Print();
 

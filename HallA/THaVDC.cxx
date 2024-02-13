@@ -1059,7 +1059,7 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
   for( Int_t t = 0; t < n_exist; t++ ) {
     auto* track = static_cast<THaTrack*>( tracks.At(t) );
 
-    // calculate the correction, since it's on a per track basis
+    // calculate the correction, since it's on a per-track basis
     Double_t s1_dist = 0.0, vdc_dist = 0.0;
     s1->CalcPathLen(track, s1_dist);
     CalcPathLen(track, vdc_dist);

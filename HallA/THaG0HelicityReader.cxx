@@ -140,7 +140,7 @@ Int_t THaG0HelicityReader::ReadData( const THaEvData& evdata )
   if( fNegGate )
     fGate = !fGate;
 
-  // Look for redundant clock info and patch up time if it appears wrong
+  // Look for redundant clock info and patch up the time if it appears wrong
 
   if( fROCinfo[kROC2].valid() && fROCinfo[kROC3].valid() ) {
     UInt_t itime2 = FindWord( evdata, fROCinfo[kROC2] );

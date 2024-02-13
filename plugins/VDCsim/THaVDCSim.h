@@ -60,7 +60,7 @@ public:
     : wirenum(0), type(0), rawTime(0), rawTDCtime(0), time(0), distance(0),
       wireFail(false), pos(0) {}
   Int_t wirenum;      // Wire number
-  Int_t type;         // flag for tyep of hit. actual = 0, noise = 1
+  Int_t type;         // flag for type of hit. actual = 0, noise = 1
   Double_t rawTime;   // Time of wire hit in nanoseconds
   Int_t rawTDCtime;   //tdc time w/out noise
   Int_t time;         //tdctime w/additional noise

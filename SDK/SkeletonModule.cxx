@@ -93,7 +93,7 @@ void SkeletonModule::Init( const char* configstr )
 
   // Use the local variable somehow, for example to set an Int_t member
   // variable. (NB: fMode is defined in the Decoder::Module base class.) This
-  // is for illustration only. In practice you'll want to do something else.
+  // is for illustration only. In practice, you'll want to do something else.
   fMode = ( mode > kMaxUShort ) ?
           -1 : static_cast<UShort_t>(mode); // truncate to lower 16 bits
 }

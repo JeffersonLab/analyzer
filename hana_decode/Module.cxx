@@ -51,7 +51,7 @@ Module::Module(UInt_t crate, UInt_t slot)
 void Module::Init()
 {
 // Suggestion: call this Init() before calling the inheriting class's Init.
-// Otherwise some variables may be undefined.  The "factory" method
+// Otherwise, some variables may be undefined.  The "factory" method
 // using TClass::New does NOT call the c'tor of this base class !!
 // Make sure all your variables are defined.
   fHeader=0;

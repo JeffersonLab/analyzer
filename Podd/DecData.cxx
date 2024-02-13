@@ -141,7 +141,7 @@ Int_t DecData::DefineVariables( EMode mode )
 
   // Each defined decoder data location defines its own global variable(s)
   // The BdataLoc have their own equivalent of fIsSetup, so we can
-  // unconditionally call their DefineVariables() here (similar to detetcor
+  // unconditionally call their DefineVariables() here (similar to detector
   // initialization in THaApparatus::Init).
   Int_t retval = kOK;
   TIter next( &fBdataLoc );
@@ -372,7 +372,7 @@ THaAnalysisObject::EStatus DecData::Init( const TDatime& run_time )
 
   // Standard analysis object init, calls MakePrefix(), ReadDatabase()
   // and DefineVariables(), and Clear("I")
-  return THaAnalysisObject::Init( run_time );
+  return THaAnalysisObject::Init( run_time ); // NOLINT(*-parent-virtual-call)
 }
 
 //_____________________________________________________________________________
@@ -410,7 +410,7 @@ void DecData::Print( Option_t* opt ) const
 {
   // Print current status of all DecData variables
 
-  THaAnalysisObject::Print(opt);
+  THaAnalysisObject::Print(opt); // NOLINT(*-parent-virtual-call)
 
   cout << " event types,  CODA = " << evtype
        << "   bit pattern = 0x"      << hex << evtypebits << dec

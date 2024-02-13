@@ -47,7 +47,7 @@ protected:
   TString     fBlockname;   // Name of block this cut belongs to
   UInt_t      fNCalled;     // Number of times this cut has been evaluated
   UInt_t      fNPassed;     // Number of times this cut was true when evaluated
-  EvalMode    fMode;        // Evaluation mode of array expressions (AND/OR etc)
+  EvalMode    fMode;        // Evaluation mode of array expressions (AND/OR etc.)
 
   Bool_t      EvalElement( Int_t instance );
   EvalMode    ParsePrefix( TString& expr );

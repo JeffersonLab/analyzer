@@ -159,7 +159,7 @@ Int_t THaSecondaryKine::Process( const THaEvData& )
   // 4-momentum of X
   fX.SetVectM( pX3, fMX );
 
-  // 4-momenta of the the primary interaction
+  // 4-momenta of the primary interaction
   const TLorentzVector* pA  = fPrimary->GetA();  // Initial target
   const TLorentzVector* pA1 = fPrimary->GetA1(); // Final target
   const TLorentzVector* pQ  = fPrimary->GetQ();  // Momentum xfer

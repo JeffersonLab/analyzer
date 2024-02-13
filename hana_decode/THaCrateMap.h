@@ -7,7 +7,7 @@
 //  Layout, or "map", of DAQ Crates.
 //
 //  THaCrateMap contains info on how the DAQ crates
-//  are arranged in Hall A, i.e whether slots are
+//  are arranged in Hall A, i.e. whether slots are
 //  fastbus or vme, what the module types are, and
 //  what header info to expect.  Probably nobody needs
 //  to know about this except the author, and at present

@@ -80,7 +80,7 @@ protected:
   Double_t       fSlope, fSigmaSlope;// Slope and error in slope
   Double_t       fInt, fSigmaInt;    // Intercept and error
   Double_t       fT0, fSigmaT0;      // Fitted common timing offset and error
-  OldVDCHit*     fPivot;             // Pivot - hit with smallest drift time
+  OldVDCHit*     fPivot;             // Pivot - hit with the smallest drift time
   Double_t       fTimeCorrection;    // correction to be applied when fitting
                                      // drift times
   bool           fFitOK;             // Flag indicating that fit results valid

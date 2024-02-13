@@ -65,7 +65,7 @@ public:
 
   // Bits and bit masks for this object
   enum {
-    kOnlyFastest    = BIT(14), // Only use fastest hit for each wire (highest TDC)
+    kOnlyFastest    = BIT(14), // Only use the fastest hit for each wire (highest TDC)
     kTDCbits        = BIT(15) | BIT(16),  // Mask for TDC mode bits
     kHardTDCcut     = BIT(15), // Use hard TDC cuts (fMinTime, fMaxTime)
     kSoftTDCcut     = BIT(16), // Use soft TDC cut (reasonable estimated drifts)

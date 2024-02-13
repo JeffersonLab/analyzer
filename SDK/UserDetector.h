@@ -20,7 +20,7 @@ public:
 
   // We must provide a default constructor (for technical reasons)!
   // If the detector class defines any raw pointers as data members, they
-  // must be initialized to nullptr here. Otherwise "default" will do.
+  // must be initialized to nullptr here. Otherwise, "default" will do.
   UserDetector() = default;
 
   // If any global variables are created by DefineVariables, the destructor
@@ -60,7 +60,7 @@ protected:
     Int_t   fChannel;   // Logical channel number
     Data_t  fRawADC;    // Raw ADC data
     Data_t  fCalADC;    // Pedestal-subtracted and gain-calibrated ADC data
-    // Define a constructor so we can fill all fields in one line
+    // Define a constructor, so we can fill all fields in one line
     EventData(Int_t chan, Data_t raw, Data_t cal)
       : fChannel(chan), fRawADC(raw), fCalADC(cal) {}
   };

@@ -57,8 +57,8 @@ TVector pedestal(8);
 c1->Clear();
 c1->Divide(2,2);
 
-// would be nice to do the following in a loop, but dont know how to create arrays of
-// histograms using the outputdef file from the analyzer
+// would be nice to do the following in a loop, but I don't know how to create
+// arrays of histograms using the outputdef file from the analyzer
 
 c1->cd(1);
 bpmaraw1->Draw();
@@ -98,8 +98,8 @@ cin>>dummy;
 c1->Clear();
 c1->Divide(2,2);
 
-// would be nice to do the following in a loop, but dont know how to create arrays of
-// histograms using the outputdef file from the analyzer
+// would be nice to do the following in a loop, but I don't know how to create
+// arrays of histograms using the outputdef file from the analyzer
 
 c1->cd(1);
 bpmbraw1->Draw();

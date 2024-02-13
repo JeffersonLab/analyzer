@@ -48,7 +48,7 @@
    TNtuple *ntup = new TNtuple("ascal","Scaler Rates",string_ntup);
  
    Float_t* farray_ntup = new Float_t[26];   // dimension of farray must match number of 
-                                             // semi-colon separated strings of string_ntup
+                                             // semicolon-separated strings of string_ntup
 
 // Define BCMs here.  Left Arm  u1,u3,u10,d1,d3,d10
    Int_t nbcm = 6;

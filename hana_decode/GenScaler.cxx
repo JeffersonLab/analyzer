@@ -290,7 +290,7 @@ UInt_t GenScaler::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer, const UI
     fWordsSeen = 0;
     Clear();
 
-    // How can set set this just once?
+    // How can we set this just once?
     //    fHeader = fSlot << 8;
     //    fHeaderMask = 0x3f00;
 

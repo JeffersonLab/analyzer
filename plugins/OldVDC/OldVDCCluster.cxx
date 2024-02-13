@@ -460,7 +460,7 @@ void OldVDCCluster::FitSimpleTrackWgt()
 //_____________________________________________________________________________
 Int_t OldVDCCluster::GetPivotWireNum() const
 {
-  // Get wire number of cluster pivot (hit with smallest drift distance)
+  // Get wire number of cluster pivot (hit with the smallest drift distance)
 
   return fPivot ? fPivot->GetWireNum() : -1;
 }

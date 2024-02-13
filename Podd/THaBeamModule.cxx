@@ -4,9 +4,8 @@
 //
 // THaBeamModule
 //
-// Base class for a "beam" processing module. This is a  
-// physics module that provides a generic information about
-// beam properties.
+// Base class for a "beam" processing module. This is a physics module
+// that provides generic information about beam properties.
 //
 //////////////////////////////////////////////////////////////////////////
 

@@ -118,7 +118,7 @@
        << "  gHaApps->Print()" << endl
        << "to see the defined apparatuses and" << endl
        << "  gHaApps->Print(\"DETS\")" << endl
-       << "to see the appratuses and the detectors they contain." << endl
+       << "to see the apparatuses and the detectors they contain." << endl
        << endl
        << "To proceed to a real analysis, edit the detector configurations and" << endl
        << "input file names in this script as appropriate. Then, set up a database" << endl

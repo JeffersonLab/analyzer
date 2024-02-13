@@ -39,7 +39,7 @@ class THaUsrstrutils {
                          Value assumed decimal, unless preceded by 0x for hex
 			 Return 0 if keyword not present or has no value.
    int getSignedInt(char *s) - If keyword present, interpret value as an 
-                         integer and it can have a sign.
+                         integer, and it can have a sign.
                          Value assumed decimal, unless preceded by 0x for hex
 			 Return 0 if keyword not present or has no value.
 

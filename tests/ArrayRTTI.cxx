@@ -37,7 +37,7 @@ namespace Tests {
 ArrayRTTI::ArrayRTTI( const char* name, const char* description ) :
   UnitTest(name,description), fN(0), fVarArr(nullptr)
 {
-  // Constructor. Initialize fixed variables with with kBig
+  // Constructor. Initialize fixed variables with kBig
 
   for( auto& i : fArray )
     i = kBig;

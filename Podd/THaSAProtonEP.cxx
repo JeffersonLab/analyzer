@@ -2,10 +2,10 @@
 
 // THaSAProtonEP
 // 
-// This module is calculates the kinematics for elastic X(e,X)e'
+// This module calculates the kinematics for elastic X(e,X)e'
 // (and only that reaction!!!) when only the outbound X is detected.
 //
-// By default X = proton. For heavier targets, use SetMass() or
+// By default, X = proton. For heavier targets, use SetMass() or
 // giv ethe target mass explicitly in the constructor.
 
 #include "THaSAProtonEP.h"

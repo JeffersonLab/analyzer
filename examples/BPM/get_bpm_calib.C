@@ -8,7 +8,7 @@
 //         corresponding harp scans
 //         always adjust pedestals before analyzing bulls eye scans
 //         never change pedestals without reanalyzing it
-//         do not worry, if you dont have new pedestals
+//         do not worry, if you don't have new pedestals
 //         since the bpm calibration here corrects for them
 //         anyhow
 

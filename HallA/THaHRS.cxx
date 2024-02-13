@@ -200,7 +200,7 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
     //
     // Chi2/dof is a well-defined quantity, and the track selected in this
     // way is immediately physically meaningful. The geometrical match
-    // criterion is mathematically less well defined and not usually used
+    // criterion is mathematically less well-defined and not usually used
     // in track reconstruction. Hence, chi2 sorting is preferable, albeit
     // obviously slower.
 

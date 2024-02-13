@@ -5,7 +5,7 @@
 //
 //   CodaDecoder
 //
-//           Object Oriented version of decoder
+//           Object-Oriented version of decoder
 //           Sept, 2014    R. Michaels
 //
 /////////////////////////////////////////////////////////////////////

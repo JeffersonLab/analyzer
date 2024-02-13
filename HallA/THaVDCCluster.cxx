@@ -570,7 +570,7 @@ void THaVDCCluster::Linear3DFit( Double_t& m, Double_t& b, Double_t& d0 ) const
 //_____________________________________________________________________________
 Int_t THaVDCCluster::GetPivotWireNum() const
 {
-  // Get wire number of cluster pivot (hit with smallest drift distance)
+  // Get wire number of cluster pivot (the hit with the smallest drift distance)
 
   return fPivot ? fPivot->GetWireNum() : -1;
 }

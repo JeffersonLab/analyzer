@@ -62,7 +62,7 @@ Int_t TrigBitLoc::DefineVariables( EMode mode )
   // stored in the "data" member of the base class, not in the rdata array, so
   // here we just do what the base class does.
 
-  return BdataLoc::DefineVariables(mode);
+  return BdataLoc::DefineVariables(mode); // NOLINT(*-parent-virtual-call)
 }
 
 //_____________________________________________________________________________

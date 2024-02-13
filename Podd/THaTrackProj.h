@@ -39,7 +39,7 @@ protected:
   Double_t          fX;              // x-coord of track crossing in detector coords (m)
   Double_t          fY;              // y-coord of track crossing in detector coords (m)
   Double_t          fPathl;          // Pathlength from tracking reference plane (m)
-  Double_t          fdX;             // x-pos diff betw hit and and track proj (m)
+  Double_t          fdX;             // x-pos diff betw hit and track proj (m)
   Int_t             fChannel;        // Detector element number (starting at 0)
   Bool_t            fIsOK;           // True if data valid (within defined detector area)
 

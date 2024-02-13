@@ -269,8 +269,8 @@ Int_t THaVhist::FindVarSize()
  // Find the size of this object, according to these rules:
  //
  // 1) Scalar: One histogram
- // If this histogram was declared as "sTH1F", "sTH2F" etc in the
- // output definition file (type starts with "s", case insensitive), 
+ // If this histogram was declared as "sTH1F", "sTH2F" etc. in the
+ // output definition file (type starts with "s", case-insensitive),
  // it is a scalar, i.e. one histogram.  
  // If X (Y) is a vector and Y (X) is a scalar, then all the vectors 
  // get filled for the given scalar.
@@ -281,7 +281,7 @@ Int_t THaVhist::FindVarSize()
  // the indices track with the variable which is a vector.
  //
  // 2) potentially a vector -- the old (ca 2003) behavior.
- // If the histogram was declared as vTH1F, vTH2F, etc it is 
+ // If the histogram was declared as vTH1F, vTH2F, etc. it is
  // potentially a vector, depending on rules 2a, 2b, 2c below.  
  // Actually this is the case if the first character is not "s"
  // or is absent, e.g. just TH1F, TH2F, etc. (old behavior).
@@ -435,7 +435,7 @@ Int_t THaVhist::Process()
   // of the variables is an array then all its elements are put 
   // into that histogram.  
   // If it's a vector, then (as previously verified) 2 or more 
-  // from among [x, y, cuts] are vectors of same size.  Hence 
+  // from among [x, y, cuts] are vectors of same size.  Hence,
   // fill a vector of histograms with indices running in parallel.
   // Also, a vector of histograms can grow in size (up to a 
   // sensible limit) if the inputs grow in size.

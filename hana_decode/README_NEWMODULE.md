@@ -1,4 +1,4 @@
-Writing a new Object Oriented Decoder module
+Writing a new Object-Oriented Decoder module
 ============================================
 
 It is possible to develop and test without needing to
@@ -27,7 +27,8 @@ This ID number is ideally the model number of the module,
 but must be different from any of the module IDs already in
 use in the analyzer.
 
-In addition to the the source code for decoding the new module, create a Linkdef file.  (We assume here it is called ``Yoyodyne_Linkdef.h``).  Its contents are:
+In addition to the source code for decoding the new module, create a Linkdef file. 
+(We assume here it is called ``Yoyodyne_Linkdef.h``).  Its contents are:
 ~~~~
 #ifdef __CINT__
 #pragma link off all globals;

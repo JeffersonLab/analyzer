@@ -210,7 +210,7 @@ Int_t THaPrimaryKine::ReadRunDatabase( const TDatime& date )
   // then search for them in the run database.
   //
   // For the particle mass, first search for "<prefix>.M", then, 
-  // if not found, for "M". If still not found, use electron mass mass.
+  // if not found, for "M". If still not found, use electron mass.
   //
   // For the target mass, first search for "<prefix>.MA", then, if not found, 
   // for "MA". If still not found, use proton mass.

@@ -171,7 +171,7 @@ THaAnalysisObject::EStatus UserEvtHandler::Init(const TDatime& /* date */ )
   // one can obtain them in the ROOT output using lines like this in the
   // output definition file.  like, T->Draw("IPM1H04B.YPOS:fEvtHdr.fEvtNum")
   // (Careful:  variables with ":" in the name don't plot well, i.e. T->Draw()
-  // has a problem with the ":".  Also arithmetic characters.)
+  // has a problem with the ":".  Also, arithmetic characters.)
   //    variable hac_bcm_average
   //    variable IPM1H04B.YPOS
 

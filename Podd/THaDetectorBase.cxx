@@ -96,7 +96,7 @@ void THaDetectorBase::DefineAxes( Double_t rotation_angle )
 Int_t THaDetectorBase::GetView( const DigitizerHitInfo_t& hitinfo ) const
 {
   // Default method for getting the readout number of a detector element
-  // from the hardware channel given in 'hitinfo'. The the detector map is
+  // from the hardware channel given in 'hitinfo'. The detector map is
   // assumed to be organized in groups of fNelem consecutive channels
   // corresponding to each view.
   //

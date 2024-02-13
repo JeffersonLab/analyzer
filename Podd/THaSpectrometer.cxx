@@ -465,7 +465,7 @@ void THaSpectrometer::TrackToLab( THaTrack& track, TVector3& pvect ) const
   // for the transformation.
   // 
   // The track origin (vertex) is not calculated here because
-  // doing so requires knowledge of beam positions and and angles.
+  // doing so requires knowledge of beam positions and angles.
   // Vertex calculations are done in a separate physics module.
 
   TransportToLab( track.GetP(), track.GetTTheta(), track.GetTPhi(), pvect );

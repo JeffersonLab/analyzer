@@ -318,7 +318,7 @@ OldVDCPlane::~OldVDCPlane()
 //_____________________________________________________________________________
 void OldVDCPlane::Clear( Option_t* opt )
 {
-  // Clears the contents of the and hits and clusters
+  // Clears the contents of the hit and cluster arrays
   THaSubDetector::Clear(opt);
   fNWiresHit = 0;
   fHits->Clear();
@@ -346,7 +346,7 @@ Int_t OldVDCPlane::Decode( const THaEvData& evData)
   if( fVDC ) {
     // If true, add only the first (earliest) hit for each wire
     only_fastest_hit = fVDC->TestBit(OldVDC::kOnlyFastest);
-    // If true, ignore negativ drift times completely
+    // If true, ignore negative drift times completely
     no_negative      = fVDC->TestBit(OldVDC::kIgnoreNegDrift);
   }
 
@@ -393,7 +393,7 @@ Int_t OldVDCPlane::Decode( const THaEvData& evData)
 	// (due to noise or miscalibration). Use with care.
 	// If only fastest hit requested, find maximum TDC value and record the
 	// hit after the hit loop is done (see below).
-	// Otherwise just record all hits.
+	// Otherwise, just record all hits.
 	if( !no_negative || time > 0.0 ) {
 	  if( only_fastest_hit ) {
 	    if( data > max_data )

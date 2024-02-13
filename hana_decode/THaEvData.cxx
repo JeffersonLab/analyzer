@@ -131,7 +131,7 @@ Int_t THaEvData::Init()
 void THaEvData::SetRunTime( Long64_t tloc )
 {
   // Set run time and re-initialize crate map (and possibly other
-  // database parameters for the new time.
+  // database parameters) for the new time.
   if( fRunTime == tloc )
     return;
   fRunTime = tloc;

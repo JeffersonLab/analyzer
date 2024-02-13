@@ -379,7 +379,7 @@ Int_t THaVform::Init()
 void THaVform::ReAttach( )
 {
 // Store one pointer to be able to get the size.
-// (see explanation in Init).  Also recompile the
+// (see explanation in Init).  Also, recompile the
 // THaCut's and THaFormula's to reattach to variables.
   for (Int_t i = 0; i < fNvar; ++i) {
     if (fVarStat[i] != kFAType ) continue;
@@ -396,7 +396,7 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
 { // Make the vector formula (fVectSform) from index flo to fhi.
   // Return status :
   //    0 = ok
-  // kUnkPre = tried to use an unknown prefix ("OR:", etc)
+  // kUnkPre = tried to use an unknown prefix ("OR:", etc.)
   // kIllPre = ambiguity of whether this is a cut.
 
   Int_t status = 0;
@@ -581,7 +581,7 @@ Int_t THaVform::Process()
 {
 // Process this THaVform.  Must be done once per event.
 // fData is the data of 1st element which is relevant
-// if this is a scaler.  Otherwise fOdata is vector data.
+// if this is a scaler.  Otherwise, fOdata is vector data.
 
   if (fOdata) fOdata->Clear();
   fData = 0;

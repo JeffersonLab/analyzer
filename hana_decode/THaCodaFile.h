@@ -4,14 +4,11 @@
 /////////////////////////////////////////////////////////////////////
 //
 //  THaCodaFile
-//  File of CODA data
 //
-//  CODA data file, and facilities to open, close, read,
-//  write, filter CODA data to disk files, etc.
-//  A lot of this relies on the "evio.cpp" code from
-//  DAQ group which is a C++ rendition of evio.c that
-//  we have used for years, but here are some useful
-//  added features.
+//  Class for accessing a CODA data file. Provides facilities to open,
+//  close, read, write, filter CODA data to disk files, etc.
+//
+//  This is largely a wrapper around the JLAB EVIO library.
 //
 //  author  Robert Michaels (rom@jlab.org)
 //

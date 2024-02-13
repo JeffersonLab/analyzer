@@ -171,7 +171,7 @@ Int_t THaEtClient::codaRead()
     }
   }
 
-// pull out a ET_CHUNK_SIZE of events from ET
+// pull out ET_CHUNK_SIZE events from ET
   et_event *evs[ET_CHUNK_SIZE];
   if (nused >= nread) {
     int err;

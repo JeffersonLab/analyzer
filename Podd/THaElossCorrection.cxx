@@ -270,7 +270,7 @@ Double_t THaElossCorrection::ElossElectron( Double_t beta, Double_t z_med,
   //      pathlength     flight path through medium     (m)
   //
   //  z_med = sum(i)(w(i)*z(i))/sum(i)w(i)
-  //            w(i) is the abundacy of element i in the medium
+  //            w(i) is the abundance of element i in the medium
   //
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
   //
@@ -344,8 +344,8 @@ Double_t THaElossCorrection:: ElossHadron( Int_t Z_hadron, Double_t beta,
   // Energy loss of hadrons taking into account the  usual  Bethe-Bloch
   // stopping power + the Density Effect Corrections (important at high
   // energy) + the Shell Corrections (important at small energy). 
-  // The approximation 2 * gamma * m_e / M << 1 is used for the  Bethe-
-  // Bloch formulae: for a 4 GeV/c pion, this leads to an effect about
+  // The approximation 2 * gamma * m_e / M << 1 is used for the Bethe-
+  // Bloch formula: for a 4 GeV/c pion, this leads to an effect about
   // 0.5-0.7 % on the total stopping power.
   // 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 

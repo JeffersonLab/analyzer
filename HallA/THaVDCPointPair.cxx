@@ -194,7 +194,7 @@ void THaVDCPointPair::Use()
     (fUpperPoint->GetV() - fLowerPoint->GetV()) /
     (fUpperPoint->GetZV() - fLowerPoint->GetZV());
 
-  // Set point an cluster data
+  // Set point and cluster data
   THaVDCPoint* point[2] = { fLowerPoint, fUpperPoint };
   for( int i = 0; i<2; ++i ) {
     point[i]->SetPartner( point[!i] );

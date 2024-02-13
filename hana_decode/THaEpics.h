@@ -20,7 +20,7 @@
 namespace Decoder {
 
 class EpicsChan {
-// utility class of one epics channel
+// utility class of one EPICS channel
 public:
   EpicsChan() : evnum(0), dvalue(0), timestamp(0) {}
   EpicsChan( std::string _tg, std::string _dt, ULong64_t _ev,

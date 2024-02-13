@@ -104,7 +104,7 @@ protected:
   Double_t       fSigmaSlope;        // Error estimate of fLocalSlope from fit
   Double_t       fInt, fSigmaInt;    // Intercept and error estimate
   Double_t       fT0, fSigmaT0;      // Fitted common timing offset and error
-  THaVDCHit*     fPivot;             // Pivot - hit with smallest drift time
+  THaVDCHit*     fPivot;             // Pivot - hit with the smallest drift time
   //FIXME: in the code, this is used as a distance correction!!
   Double_t       fTimeCorrection;    // correction to be applied when fitting
 				     // drift times

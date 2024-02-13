@@ -400,7 +400,7 @@ Int_t OldVDC::ReadDatabase( const TDatime& date )
   // space, this is actually pretty simple
   const THaDetector* s1 = nullptr;
   if( GetApparatus() )
-    // TODO: neeed? if so, change to HRS reference detector
+    // TODO: need? if so, change to HRS reference detector
     s1 = GetApparatus()->GetDetector("s1");
   if( !s1 )
     fCentralDist = 0;
@@ -628,8 +628,10 @@ Int_t OldVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	  found = true;
 	  break;
 	}
-	// FIXME: for debugging
-	n_oops++;
+#ifdef WITH_DEBUG
+        // FIXME: for debugging
+        //n_oops++;
+#endif
       }
 
       UInt_t flag = theStage;
@@ -1004,7 +1006,7 @@ void OldVDC::CorrectTimeOfFlight(TClonesArray& tracks)
   for( Int_t t = 0; t < n_exist; t++ ) {
     auto* track = static_cast<THaTrack*>( tracks.At(t) );
     
-    // calculate the correction, since it's on a per track basis
+    // calculate the correction, since it's on a per-track basis
     Double_t s1_dist = 0.0, vdc_dist = 0.0;
     s1->CalcPathLen(track, s1_dist);
     CalcPathLen(track, vdc_dist);

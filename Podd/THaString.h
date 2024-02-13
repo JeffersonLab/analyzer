@@ -16,7 +16,7 @@ namespace THaString {
   // case insensitive compare
   int CmpNoCase( const std::string&, const std::string& );
 
-  // case insensitive find
+  // case-insensitive find
   std::string::size_type FindNoCase( std::string data, std::string chunk );
 
   // split on whitespace

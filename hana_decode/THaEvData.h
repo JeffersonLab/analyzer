@@ -70,9 +70,9 @@ public:
   Bool_t    IsSpecialEvent()   const;  // e.g. detmap or trigger file insertion
   // number of raw words in crate, slot
   UInt_t    GetNumRaw( UInt_t crate, UInt_t slot ) const;
-  // raw words for hit 0,1,2.. on crate, slot
+  // raw words for hit 0,1,2... on crate, slot
   UInt_t    GetRawData( UInt_t crate, UInt_t slot, UInt_t hit ) const;
-  // To retrieve data by crate, slot, channel, and hit# (hit=0,1,2,..)
+  // To retrieve data by crate, slot, channel, and hit# (hit=0,1,2,...)
   UInt_t    GetRawData( UInt_t crate, UInt_t slot, UInt_t chan, UInt_t hit ) const;
   // To get element #i of the raw evbuffer
   UInt_t    GetRawData( UInt_t i ) const;

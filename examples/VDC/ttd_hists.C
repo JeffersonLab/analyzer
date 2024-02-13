@@ -155,7 +155,7 @@ void CalcTTDHists(const char *treefile, const char *planename,
   // set up to read tree
   tt->SetBranchAddress("Event Branch", &event);
   
-  // make an array big enough to hold all of the time entries
+  // make an array big enough to hold all time entries
   if(nentries==0)
     nentries = (Int_t)T->GetEntries();
 
@@ -207,7 +207,7 @@ void CalcTTDHists(const char *treefile, const char *planename,
       cout<<(table[i] - table[i-1])<<endl;
   }
 
-  // autocalculate the scale factor, if the user'd like
+  // auto-calculate the scale factor
   K = kLongestDist/table[num_bins-1];
   cout<<"K estimate: "<<K<<endl;
 
@@ -215,7 +215,7 @@ void CalcTTDHists(const char *treefile, const char *planename,
     table[i] *= K;
    
 
-  // plot correspondance
+  // plot correspondence
   TH2F *t2dhist = new TH2F("t2dhist", "Time v. Dist", num_bins, low, high,
   			   320, 0, 16);
   //TH2F *t2dhist = new TH2F("t2dhist", "Time v. Dist", num_bins, low, high,

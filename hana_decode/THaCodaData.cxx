@@ -252,7 +252,7 @@ void EvtBuffer::updateImpl()
 //_____________________________________________________________________________
 // Grow event buffer.
 // If newsize == 0 (default), use heuristics to guess a new size.
-// If newsize > size(), grow buffer to 'newsize'. Otherwise leave buffer as is.
+// If newsize > size(), grow buffer to 'newsize'. Otherwise, leave buffer as is.
 //
 // Returns false if buffer is already at maximum size.
 Bool_t EvtBuffer::grow( UInt_t newsize )

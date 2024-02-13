@@ -64,8 +64,8 @@ protected:
   TVector3      fOrigin;    // Position of detector (m)
   Double_t      fSize[3];   // Detector size in x,y,z (m) - x,y are half-widths
 
-  TVector3      fXax;       // X axis of the detector plane
-  TVector3      fYax;       // Y axis of the detector plane
+  TVector3      fXax;       // X-axis of the detector plane
+  TVector3      fYax;       // Y-axis of the detector plane
   TVector3      fZax;       // Normal to the detector plane
 
   // Generic per-event data (optional)

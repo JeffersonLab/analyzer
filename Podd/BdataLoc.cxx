@@ -48,7 +48,8 @@ BdataLoc::~BdataLoc()
   // The following call will always invoke the base class instance 
   // BdataLoc::DefineVariables, even when destroying derived class
   // objects. But that's OK since the kDelete mode is the same for 
-  // the entire class hierarchy; it simply removes the name.
+  // the entire class hierarchy; it simply removes variables with the
+  // current prefix.
 
   DefineVariables( kDelete );
 }

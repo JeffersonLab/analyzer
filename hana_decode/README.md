@@ -49,7 +49,7 @@ II. Getting Started
 
  tstio    --  simple tests of CODA I/O from a file.
               Reads a file and does something with it; depending
-              on arguments it will printout, or filter to an output,
+              on arguments it will print out, or filter to an output,
               or make a fast sum of event types.
 
  tdecpr   --  test of decoder with self-explanatory printouts.
@@ -59,7 +59,7 @@ II. Getting Started
               A developer writing a detector class should imitate this.
 
  etclient --  test of ET connection for online data.
-              Either does a printout of data, or a fast access to test speed.
+              Either does a printout of data, or fast access to test speed.
 
  prfact   --  standalone code to print the prescale factors and exit.
 

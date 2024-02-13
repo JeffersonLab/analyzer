@@ -75,7 +75,7 @@ UInt_t F1TDCModule::LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer,
   // According to the labelling and internal numbering scheme,
   // the F1 module has odd numbered channels on one connector
   // and even numbered channels on the other.
-  // However we usually put neighboring blocks/wires into the same
+  // However, we usually put neighboring blocks/wires into the same
   // cable, connector etc.
   // => hana therefore uses a numbering scheme different from the module
   //
