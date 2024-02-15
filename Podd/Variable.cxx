@@ -33,12 +33,9 @@ Variable::Variable( THaVar* pvar, const void* addr, VarType type )
 }
 
 //_____________________________________________________________________________
-Variable::~Variable() = default;
-
-//_____________________________________________________________________________
-Variable* Variable::clone( THaVar* pvar ) const
+Variable::VarPtr_t Variable::clone( THaVar* pvar ) const
 {
-  return new Variable(pvar, fValueP, fType);
+  return make_unique<Variable>(pvar, fValueP, fType);
 }
 
 //_____________________________________________________________________________

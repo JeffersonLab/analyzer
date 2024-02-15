@@ -54,6 +54,7 @@
 #include "SeqCollectionMethodVar.h"
 #include "VectorObjMethodVar.h"
 #include "TError.h"
+#include "TMethodCall.h"
 #include "DataType.h"  // for kBig
 #include <utility>     // for std::exchange
 
@@ -76,15 +77,15 @@ THaVar::THaVar( const char* name, const char* descript, T& var,
   if( type >= kIntV && type <= kDoubleV ) {
     if( count )
       Warning( here, "Ignoring size counter for std::vector variable %s", name );
-    fImpl = new Podd::VectorVar( this, &var, type );
+    fImpl = make_unique<Podd::VectorVar>( this, &var, type );
   }
   else if( type != kVarTypeEnd ) {
     if( count )
-      fImpl = new Podd::VariableArrayVar( this, &var, type, count );
+      fImpl = make_unique<Podd::VariableArrayVar>( this, &var, type, count );
     else if( fName.Index("[") != kNPOS )
-      fImpl = new Podd::FixedArrayVar( this, &var, type );
+      fImpl = make_unique<Podd::FixedArrayVar>( this, &var, type );
     else
-      fImpl = new Podd::Variable( this, &var, type );
+      fImpl = make_unique<Podd::Variable>( this, &var, type );
 
     if( fImpl->IsError() )
       MakeZombie();
@@ -97,8 +98,10 @@ THaVar::THaVar( const char* name, const char* descript, T& var,
 
 //_____________________________________________________________________________
 THaVar::THaVar( const char* name, const char* descript, const void* obj,
-	VarType type, Int_t offset, TMethodCall* method, const Int_t* count )
-  : TNamed(name,descript), fImpl(nullptr)
+	VarType type, Int_t offset, unique_ptr<TMethodCall> method,
+        const Int_t* count )
+  : TNamed(name,descript)
+  , fImpl(nullptr)
 {
   // Generic constructor (used by THaVarList::DefineByType)
 
@@ -118,7 +121,7 @@ THaVar::THaVar( const char* name, const char* descript, const void* obj,
       Warning( here, "Ignoring size counter for std::vector variable %s. "
 	       "Fix code or call expert", name );
     }
-    fImpl = new Podd::VectorVar( this, obj, type );
+    fImpl = make_unique<Podd::VectorVar>( this, obj, type );
   }
   else if( count ) {
     if( offset >= 0 || method ) {
@@ -127,7 +130,7 @@ THaVar::THaVar( const char* name, const char* descript, const void* obj,
       MakeZombie();
       return;
     }
-    fImpl = new Podd::VariableArrayVar( this, obj, type, count );
+    fImpl = make_unique<Podd::VariableArrayVar>( this, obj, type, count );
   }
   else if( method || offset >= 0 ) {
     if( method && offset >= 0 ) {
@@ -135,16 +138,17 @@ THaVar::THaVar( const char* name, const char* descript, const void* obj,
 	Warning( here, "Variable %s: Offset > 0 ignored for method call on "
 		 "object in collection. Fix code or call expert", name );
       }
-      fImpl = new Podd::SeqCollectionMethodVar( this, obj, type, method );
+      fImpl = make_unique<Podd::SeqCollectionMethodVar>(this, obj, type,
+                                                        std::move(method));
     } else if( !method )
-      fImpl = new Podd::SeqCollectionVar( this, obj, type, offset );
+      fImpl = make_unique<Podd::SeqCollectionVar>( this, obj, type, offset );
     else
-      fImpl = new Podd::MethodVar( this, obj, type, method );
+      fImpl = make_unique<Podd::MethodVar>(this, obj, type, std::move(method));
   }
   else if( fName.Index("[") != kNPOS )
-    fImpl = new Podd::FixedArrayVar( this, obj, type );
+    fImpl = make_unique<Podd::FixedArrayVar>( this, obj, type );
   else
-    fImpl = new Podd::Variable( this, obj, type );
+    fImpl = make_unique<Podd::Variable>( this, obj, type );
 
   if( fImpl->IsError() )
     MakeZombie();
@@ -152,8 +156,10 @@ THaVar::THaVar( const char* name, const char* descript, const void* obj,
 
 //_____________________________________________________________________________
 THaVar::THaVar( const char* name, const char* descript, const void* obj,
-	VarType type, Int_t elem_size, Int_t offset, TMethodCall* method )
-  : TNamed(name,descript), fImpl(nullptr)
+	VarType type, Int_t elem_size, Int_t offset,
+        unique_ptr<TMethodCall> method )
+  : TNamed(name,descript)
+  , fImpl(nullptr)
 {
   // Generic constructor for std::vector<TObject(*)>
   // (used by THaVarList::DefineByType)
@@ -175,9 +181,10 @@ THaVar::THaVar( const char* name, const char* descript, const void* obj,
       Warning( here, "Variable %s: Offset > 0 ignored for method call on "
 	       "object", name );
     }
-    fImpl = new Podd::VectorObjMethodVar( this, obj, type, elem_size, method );
+    fImpl = make_unique<Podd::VectorObjMethodVar>(this, obj, type, elem_size,
+                                                  std::move(method));
   } else {
-    fImpl = new Podd::VectorObjVar( this, obj, type, elem_size, offset );
+    fImpl = make_unique<Podd::VectorObjVar>( this, obj, type, elem_size, offset );
   }
 
   if( fImpl->IsError() )
@@ -195,12 +202,11 @@ THaVar::THaVar( const THaVar& src )
 //_____________________________________________________________________________
 THaVar::THaVar( THaVar&& src ) noexcept
   : TNamed(src)
-  , fImpl{src.fImpl}
+  , fImpl{std::move(src.fImpl)}
 {
   // Move constructor
 
   fImpl->fSelf = this;
-  src.fImpl = nullptr;
   // Clear name & description of moved-from variable to avoid ambiguities
   src.Clear();
 }
@@ -223,18 +229,11 @@ THaVar& THaVar::operator=( THaVar&& rhs ) noexcept
   // Move assignment
 
   if( this != &rhs ) {
-    fImpl = std::exchange(rhs.fImpl, fImpl);
+    fImpl = std::move(rhs.fImpl);
     fImpl->fSelf = this;
-    rhs.fImpl->fSelf = &rhs;
     rhs.Clear();
   }
   return *this;
-}
-
-//_____________________________________________________________________________
-THaVar::~THaVar()
-{
-  delete fImpl;
 }
 
 //_____________________________________________________________________________

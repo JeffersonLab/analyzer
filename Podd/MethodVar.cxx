@@ -23,8 +23,8 @@ namespace Podd {
 
 //_____________________________________________________________________________
 MethodVar::MethodVar( THaVar* pvar, const void* addr,
-		      VarType type, TMethodCall* method )
-  : Variable(pvar,addr,type), fMethod(method), fData(0)
+		      VarType type, MethodPtr_t method )
+  : Variable(pvar,addr,type), fMethod(std::move(method)), fData(0)
 {
   // Constructor
   assert( fMethod );
@@ -36,17 +36,10 @@ MethodVar::MethodVar( THaVar* pvar, const void* addr,
 }
 
 //_____________________________________________________________________________
-MethodVar::~MethodVar()
+Variable::VarPtr_t MethodVar::clone( THaVar* pvar ) const
 {
-  // Destructor
-
-  delete fMethod;
-}
-
-//_____________________________________________________________________________
-Variable* MethodVar::clone( THaVar* pvar ) const
-{
-  return new MethodVar(pvar, fValueP, fType, new TMethodCall(*fMethod));
+  return make_unique<MethodVar>(pvar, fValueP, fType,
+                                make_unique<TMethodCall>(*fMethod));
 }
 
 //_____________________________________________________________________________

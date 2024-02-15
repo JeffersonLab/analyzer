@@ -18,18 +18,18 @@ namespace Podd {
 
 //_____________________________________________________________________________
 SeqCollectionMethodVar::SeqCollectionMethodVar( THaVar* pvar, const void* addr,
-	VarType type, TMethodCall* method )
-  : Variable(pvar,addr,type), MethodVar(pvar,addr,type,method),
+	VarType type, MethodPtr_t method )
+  : Variable(pvar,addr,type), MethodVar(pvar,addr,type,std::move(method)),
     SeqCollectionVar(pvar,addr,type,0)
 {
   // Constructor
 }
 
 //_____________________________________________________________________________
-Variable* SeqCollectionMethodVar::clone( THaVar* pvar ) const
+Variable::VarPtr_t SeqCollectionMethodVar::clone( THaVar* pvar ) const
 {
-  return new SeqCollectionMethodVar(pvar, fValueP, fType,
-                                    new TMethodCall(*fMethod));
+  return make_unique<SeqCollectionMethodVar>(pvar, fValueP, fType,
+                                    make_unique<TMethodCall>(*fMethod));
 }
 
 //_____________________________________________________________________________

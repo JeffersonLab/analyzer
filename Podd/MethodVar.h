@@ -10,25 +10,24 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "Variable.h"
-
-class TMethodCall;
+#include "TMethodCall.h"
 
 namespace Podd {
 
   class MethodVar : virtual public Variable {
-
+  protected:
+    using MethodPtr_t = std::unique_ptr<TMethodCall>;
   public:
     MethodVar( THaVar* pvar, const void* addr, VarType type,
-	       TMethodCall* method );
-    virtual ~MethodVar();
+	       MethodPtr_t method );
 
-    virtual Variable*    clone( THaVar* pvar ) const;
+    virtual VarPtr_t     clone( THaVar* pvar ) const;
 
     virtual const void*  GetDataPointer( Int_t i = 0 ) const;
     virtual Bool_t       IsBasic() const;
 
   protected:
-    TMethodCall*         fMethod;   //Member function to access data in object
+    MethodPtr_t          fMethod;   //Member function to access data in object
     // Data cache, filled in GetDataPointer()
     mutable Double_t     fData;     //Function call result (interpretation depends on fType!)
 

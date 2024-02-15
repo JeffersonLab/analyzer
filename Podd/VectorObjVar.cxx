@@ -34,9 +34,9 @@ VectorObjVar::VectorObjVar( THaVar* pvar, const void* addr, VarType type,
 }
 
 //_____________________________________________________________________________
-Variable* VectorObjVar::clone( THaVar* pvar ) const
+Variable::VarPtr_t VectorObjVar::clone( THaVar* pvar ) const
 {
-  return new VectorObjVar(pvar, fValueP, fType, fElemSize, fOffset);
+  return make_unique<VectorObjVar>(pvar, fValueP, fType, fElemSize, fOffset);
 }
 
 //_____________________________________________________________________________

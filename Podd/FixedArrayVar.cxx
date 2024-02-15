@@ -34,9 +34,9 @@ FixedArrayVar::FixedArrayVar( THaVar* pvar, const void* addr, VarType type )
 }
 
 //_____________________________________________________________________________
-Variable* FixedArrayVar::clone( THaVar* pvar ) const
+Variable::VarPtr_t FixedArrayVar::clone( THaVar* pvar ) const
 {
-  return new FixedArrayVar(pvar, fValueP, fType);
+  return make_unique<FixedArrayVar>(pvar, fValueP, fType);
 }
 
 //_____________________________________________________________________________

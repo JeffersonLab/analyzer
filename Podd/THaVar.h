@@ -12,10 +12,11 @@
 #include "TNamed.h"
 #include "VarType.h"
 #include "Variable.h"
+#include "TMethodCall.h"
 #include <vector>
+#include <memory>
 
 class THaArrayString;
-class TMethodCall;
 
 class THaVar : public TNamed {
 
@@ -28,16 +29,18 @@ public:
   THaVar( const char* name, const char* descript, T& var, const Int_t* count=nullptr );
 
   THaVar( const char* name, const char* descript, const void* obj,
-	  VarType type, Int_t offset, TMethodCall* method=nullptr, const Int_t* count=nullptr );
+	  VarType type, Int_t offset,
+          std::unique_ptr<TMethodCall> method=nullptr, const Int_t* count=nullptr );
 
   THaVar( const char* name, const char* descript, const void* obj,
-	  VarType type, Int_t elem_size, Int_t offset, TMethodCall* method=nullptr );
+          VarType type, Int_t elem_size, Int_t offset,
+          std::unique_ptr<TMethodCall> method=nullptr );
 
   THaVar( const THaVar& src );
   THaVar( THaVar&& src ) noexcept;
   THaVar& operator=( const THaVar& );
   THaVar& operator=( THaVar&& rhs ) noexcept;
-  virtual ~THaVar();
+  ~THaVar() override = default;
 
   Int_t        GetLen()                         const { return fImpl->GetLen(); }
   Int_t        GetNdim()                        const { return fImpl->GetNdim(); }
@@ -79,7 +82,7 @@ public:
                                                       { fImpl->SetNameTitle(name,descript); }
 
 protected:
-  Podd::Variable* fImpl;   //Pointer to implementation
+  std::unique_ptr<Podd::Variable> fImpl;   //Pointer to implementation
 
   ClassDefOverride(THaVar,0)   //Global symbolic variable
 };

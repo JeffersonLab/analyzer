@@ -33,9 +33,9 @@ VariableArrayVar::VariableArrayVar( THaVar* pvar, const void* addr,
 }
 
 //_____________________________________________________________________________
-Variable* VariableArrayVar::clone( THaVar* pvar ) const
+Variable::VarPtr_t VariableArrayVar::clone( THaVar* pvar ) const
 {
-  return new VariableArrayVar(pvar, fValueP, fType, fCount);
+  return make_unique<VariableArrayVar>(pvar, fValueP, fType, fCount);
 }
 
 //_____________________________________________________________________________

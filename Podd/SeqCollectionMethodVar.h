@@ -19,9 +19,9 @@ namespace Podd {
 
   public:
     SeqCollectionMethodVar( THaVar* pvar, const void* addr, VarType type,
-			    TMethodCall* method );
+                            MethodPtr_t method );
 
-    virtual Variable*    clone( THaVar* pvar ) const;
+    virtual VarPtr_t     clone( THaVar* pvar ) const;
 
     virtual const void*  GetDataPointer( Int_t i = 0 ) const;
     virtual Bool_t       IsBasic() const;

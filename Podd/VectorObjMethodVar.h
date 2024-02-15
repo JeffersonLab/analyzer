@@ -19,9 +19,9 @@ namespace Podd {
 
   public:
     VectorObjMethodVar( THaVar* pvar, const void* addr, VarType type,
-			Int_t elem_size, TMethodCall* method );
+                        Int_t elem_size, MethodPtr_t method );
 
-    virtual Variable*    clone( THaVar* pvar ) const;
+    virtual VarPtr_t     clone( THaVar* pvar ) const;
 
     virtual const void*  GetDataPointer( Int_t i = 0 ) const;
     virtual Bool_t       IsBasic() const;

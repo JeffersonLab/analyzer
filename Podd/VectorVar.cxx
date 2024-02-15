@@ -35,9 +35,9 @@ VectorVar::VectorVar( THaVar* pvar, const void* addr, VarType type )
 }
 
 //_____________________________________________________________________________
-Variable* VectorVar::clone( THaVar* pvar ) const
+Variable::VarPtr_t VectorVar::clone( THaVar* pvar ) const
 {
-  return new VectorVar(pvar, fValueP, fType);
+  return make_unique<VectorVar>(pvar, fValueP, fType);
 }
 
 //_____________________________________________________________________________

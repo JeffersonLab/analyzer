@@ -46,9 +46,9 @@ SeqCollectionVar::SeqCollectionVar( THaVar* pvar, const void* addr,
 }
 
 //_____________________________________________________________________________
-Variable* SeqCollectionVar::clone( THaVar* pvar ) const
+Variable::VarPtr_t SeqCollectionVar::clone( THaVar* pvar ) const
 {
-  return new SeqCollectionVar(pvar, fValueP, fType, fOffset);
+  return make_unique<SeqCollectionVar>(pvar, fValueP, fType, fOffset);
 }
 
 //_____________________________________________________________________________

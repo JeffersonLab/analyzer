@@ -20,7 +20,7 @@ namespace Podd {
     SeqCollectionVar( THaVar* pvar, const void* addr, VarType type,
 		      Int_t offset );
 
-    virtual Variable*    clone( THaVar* pvar ) const;
+    virtual VarPtr_t     clone( THaVar* pvar ) const;
 
     virtual Int_t        GetLen()  const;
     virtual Int_t        GetNdim() const;

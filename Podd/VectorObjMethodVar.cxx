@@ -18,20 +18,21 @@ namespace Podd {
 
 //_____________________________________________________________________________
 VectorObjMethodVar::VectorObjMethodVar( THaVar* pvar, const void* addr,
-	VarType type, Int_t elem_size, TMethodCall* method )
+                                        VarType type, Int_t elem_size,
+                                        MethodPtr_t method )
   : Variable(pvar,addr,type),
     SeqCollectionVar(pvar,addr,type,0),
-    MethodVar(pvar,addr,type,method),
+    MethodVar(pvar,addr,type,std::move(method)),
     VectorObjVar(pvar,addr,type,elem_size,0)
 {
   // Constructor
 }
 
 //_____________________________________________________________________________
-Variable* VectorObjMethodVar::clone( THaVar* pvar ) const
+Variable::VarPtr_t VectorObjMethodVar::clone( THaVar* pvar ) const
 {
-  return new VectorObjMethodVar(pvar, fValueP, fType, fElemSize,
-                                new TMethodCall(*fMethod));
+  return make_unique<VectorObjMethodVar>(pvar, fValueP, fType, fElemSize,
+                                         make_unique<TMethodCall>(*fMethod));
 }
 
 //_____________________________________________________________________________

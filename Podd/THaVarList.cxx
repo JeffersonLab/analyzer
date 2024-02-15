@@ -61,6 +61,7 @@
 
 #include <string>  // for TFunction::GetReturnTypeNormalizedName
 #include <cassert>
+#include <memory>
 
 ClassImp(THaVarList)
 
@@ -320,18 +321,16 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     assert(pos2 != kNPOS );  // else EndsWith("()") lied
     funcName = funcName(0, pos2);
 
-    auto* theMethod = new TMethodCall(theClass, funcName, "" );
+    auto theMethod = make_unique<TMethodCall>(theClass, funcName, "" );
     if( !theMethod->IsValid() ) {
       Warning( errloc, "Error getting function information for variable %s. "
 	       "Not defined.", name.Data() );
-      delete theMethod;
       return nullptr;
     }
     TFunction* func = theMethod->GetMethod();
     if( !func ) {
       Warning( errloc, "Function %s does not exist. Variable %s not defined.",
 	       s[ndot].Data(), name.Data() );
-      delete theMethod;
       return nullptr;
     }
 
@@ -339,7 +338,6 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     if( rtype != TMethodCall::kLong && rtype != TMethodCall::kDouble ) {
       Warning( errloc, "Unsupported return type for function %s. "
 	       "Variable %s not defined.", s[ndot].Data(), name.Data() );
-      delete theMethod;
       return nullptr;
     }
 
@@ -384,7 +382,6 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     if( type == kVarTypeEnd ) {
       Warning( errloc, "Unsupported return type \"%s\" for function %s. "
 	       "Variable %s not defined.", ntype.c_str(), s[ndot].Data(), name.Data() );
-      delete theMethod;
       return nullptr;
     }
     if( (rtype == TMethodCall::kDouble && type != kDouble && type != kFloat) ||
@@ -392,24 +389,22 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       // Someone lied to us
       Warning( errloc, "Ill-formed TMethodCall returned from ROOT for function %s, "
 	       "variable %s. Call expert.", s[ndot].Data(), name.Data() );
-      delete theMethod;
       return nullptr;
     }
     if( !objrtti.IsObjVector() )
       var = new THaVar( name, desc, (void*)loc, type, ((ndot==2) ? 0 : -1),
-			theMethod );
+                        std::move(theMethod) );
     else {
       assert( ndot == 1 );
       VarType otype = objrtti.GetType();
       assert( otype == kObjectV || otype == kObjectPV );
       Int_t sz = (otype == kObjectV) ? objrtti.GetClass()->Size() : 0;
-      var = new THaVar( name, desc, (void*)loc, type, sz, 0, theMethod );
+      var = new THaVar( name, desc, (void*)loc, type, sz, 0, std::move(theMethod) );
     }
     if( !var->IsZombie() )
       AddLast( var );
     else {
       Warning( errloc, "Error creating variable %s", name.Data() );
-      delete theMethod;
       delete var;
       return nullptr;
     }

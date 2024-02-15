@@ -11,6 +11,7 @@
 
 #include "Rtypes.h"
 #include "VarType.h"
+#include <memory>
 
 class THaVar;
 class THaArrayString;
@@ -24,9 +25,10 @@ namespace Podd {
     Variable( Variable&& ) = delete;
     Variable& operator=( const Variable& ) = delete;
     Variable& operator=( Variable&& ) = delete;
-    virtual ~Variable();
+    virtual ~Variable() = default;
 
-    virtual Variable*    clone( THaVar* pvar ) const;
+    using VarPtr_t = std::unique_ptr<Variable>;
+    virtual VarPtr_t     clone( THaVar* pvar ) const;
 
     virtual Int_t        GetLen()  const;
     virtual Int_t        GetNdim() const;

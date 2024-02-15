@@ -18,7 +18,7 @@ namespace Podd {
     VariableArrayVar( THaVar* pvar, const void* addr, VarType type,
 		      const Int_t* count );
 
-    virtual Variable*    clone( THaVar* pvar ) const;
+    virtual VarPtr_t     clone( THaVar* pvar ) const;
 
     virtual Int_t        GetLen()  const;
     virtual Int_t        GetNdim() const;
