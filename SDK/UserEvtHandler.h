@@ -24,19 +24,15 @@ public:
 
    virtual Int_t Analyze(THaEvData *evdata);
    virtual EStatus Init( const TDatime& run_time);
-   Float_t GetData(const std::string& tag) const;
+   Data_t GetData(const std::string& tag) const;
 
 private:
 
-   std::map<std::string, Float_t> theDataMap;
+   std::map<std::string, Data_t> theDataMap;
    std::vector<std::string> dataKeys;
-   Double_t *dvars;
-
-   UserEvtHandler(const UserEvtHandler& fh);
-   UserEvtHandler& operator=(const UserEvtHandler& fh);
+   Data_t *dvars;
 
    ClassDef(UserEvtHandler,0)  // Example of an Event handler
-
 };
 
 #endif

@@ -21,12 +21,12 @@ public:
   
   virtual void  Clear( Option_t* opt="" );
 
-  Double_t      GetResultA() const { return fResultA; }
-  Double_t      GetResultB() const { return fResultB; }
+  Data_t        GetResultA() const { return fResultA; }
+  Data_t        GetResultB() const { return fResultB; }
   
-  Double_t      GetParameter() const { return fParameter; }
+  Data_t        GetParameter() const { return fParameter; }
 
-  void          SetParameter( Double_t value );
+  void          SetParameter( Data_t value );
   void          SetSpectrometer( const char* name );
 
   virtual EStatus Init( const TDatime& run_time );
@@ -34,10 +34,10 @@ public:
 
 protected:
 
-  Double_t      fResultA;      // Example result A
-  Double_t      fResultB;      // Example result B
+  Data_t        fResultA;      // Example result A
+  Data_t        fResultB;      // Example result B
 
-  Double_t      fParameter;    // Example parameter
+  Data_t        fParameter;    // Example parameter
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
   virtual Int_t ReadRunDatabase( const TDatime& date );

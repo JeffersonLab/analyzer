@@ -22,8 +22,8 @@ public:
 
 protected:
   Int_t     fPaddle;      // Paddle number hit by first track
-  Double_t  fYtdc;        // Transverse position within paddle from TDCs (m)
-  Double_t  fYtrk;        // Transverse position within paddle from track (m)
+  Data_t    fYtdc;        // Transverse position within paddle from TDCs (m)
+  Data_t    fYtrk;        // Transverse position within paddle from track (m)
 
   Bool_t    fGoodToGo;    // True if all required parameters available
 

@@ -161,7 +161,7 @@ Int_t UserModule::ReadRunDatabase( const TDatime& date )
 }
   
 //_____________________________________________________________________________
-void UserModule::SetParameter( Double_t value ) 
+void UserModule::SetParameter( Data_t value )
 {
   if( !IsInit())
     fParameter = value; 

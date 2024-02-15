@@ -42,7 +42,7 @@ UserEvtHandler::UserEvtHandler(const char *name, const char* description)
 UserEvtHandler::~UserEvtHandler() = default;
 
 // GetData is a public method which other classes may use
-Float_t UserEvtHandler::GetData(const std::string& tag) const
+Data_t UserEvtHandler::GetData(const std::string& tag) const
 {
   auto elem = theDataMap.find(tag);
   if( elem == theDataMap.end() )
@@ -105,7 +105,7 @@ Int_t UserEvtHandler::Analyze(THaEvData *evdata)
     if( wtag.empty() || wtag[0] == 0 ) continue;
     istringstream::pos_type spos = il.tellg();
     il >> wval >> sunit;
-    Double_t dval;
+    Data_t dval;
     istringstream iv(wval);
     if( !(iv >> dval) ) {
       string::size_type lpos = line.find_first_not_of(" \t",spos);
@@ -175,17 +175,17 @@ THaAnalysisObject::EStatus UserEvtHandler::Init(const TDatime& /* date */ )
   //    variable hac_bcm_average
   //    variable IPM1H04B.YPOS
 
+  VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;
+
   UInt_t Nvars = dataKeys.size();
   if (Nvars > 0) {
     delete [] dvars; dvars = nullptr;
-    dvars = new Double_t[Nvars];  // dvars is a member of this class
+    dvars = new Data_t[Nvars];  // dvars is a member of this class
 		 // the index of the dvars array tracks the index of dataKeys
-    memset(dvars, 0, Nvars*sizeof(Double_t));
+    memset(dvars, 0, Nvars*sizeof(Data_t));
     if (gHaVars) {
-#ifdef WITH_DEBUG
       if( fDebug>1 )
 	cout << "EvtHandler:: Have gHaVars.  Good thing. "<<gHaVars<<endl;
-#endif
     } else {
       Error( Here("UserEvtHandler::Init"),
 	     "No gHaVars ?!  Well, that is a problem !!" );
@@ -194,7 +194,7 @@ THaAnalysisObject::EStatus UserEvtHandler::Init(const TDatime& /* date */ )
     const Int_t* count = nullptr;
     for( UInt_t i = 0; i < Nvars; i++ ) {
       gHaVars->DefineByType(dataKeys[i].c_str(), "epics data",
-                            &dvars[i], kDouble, count);
+                            &dvars[i], kDataType, count);
     }
   }
 

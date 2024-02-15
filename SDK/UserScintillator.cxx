@@ -189,13 +189,12 @@ Int_t UserScintillator::FineProcess( TClonesArray& tracks )
   // Determine the paddle number using the focal plane coordinates
   // x and y are the coordinates of the track in the scintillator plane
   // (scintillator plane coordinate system)
-  Double_t fpe_x  = theTrack->GetX();
-  Double_t fpe_th = theTrack->GetTheta();
-  Double_t fpe_y  = theTrack->GetY();
-  Double_t fpe_ph = theTrack->GetPhi();
-  Double_t cos_angle = fXax.X(), sin_angle = fXax.Z();
-  Double_t x = (fpe_x + fpe_th * fOrigin.Z()) /
-               (cos_angle + fpe_th * sin_angle);
+  Data_t fpe_x  = theTrack->GetX();
+  Data_t fpe_th = theTrack->GetTheta();
+  Data_t fpe_y  = theTrack->GetY();
+  Data_t fpe_ph = theTrack->GetPhi();
+  Data_t cos_angle = fXax.X(), sin_angle = fXax.Z();
+  Data_t x = (fpe_x + fpe_th * fOrigin.Z()) / (cos_angle + fpe_th * sin_angle);
   // transverse position from track data
   fYtrk = fpe_y + fpe_ph * fOrigin.Z() - fpe_ph * sin_angle * x;
 
@@ -206,8 +205,8 @@ Int_t UserScintillator::FineProcess( TClonesArray& tracks )
 
   // Compute y-position from TDC data
   else {
-    Double_t ltdc = fLeftPMTs ->GetPMT(fPaddle).tdc_c;
-    Double_t rtdc = fRightPMTs->GetPMT(fPaddle).tdc_c;
+    Data_t ltdc = fLeftPMTs ->GetPMT(fPaddle).tdc_c;
+    Data_t rtdc = fRightPMTs->GetPMT(fPaddle).tdc_c;
     fYtdc = 0.5 * fCn * ((fCommonStop) ? rtdc - ltdc : ltdc - rtdc);
   }
 
