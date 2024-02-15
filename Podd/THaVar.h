@@ -33,7 +33,10 @@ public:
   THaVar( const char* name, const char* descript, const void* obj,
 	  VarType type, Int_t elem_size, Int_t offset, TMethodCall* method=nullptr );
 
-  //TODO: copy, assignment
+  THaVar( const THaVar& src );
+  THaVar( THaVar&& src ) noexcept;
+  THaVar& operator=( const THaVar& );
+  THaVar& operator=( THaVar&& rhs ) noexcept;
   virtual ~THaVar();
 
   Int_t        GetLen()                         const { return fImpl->GetLen(); }

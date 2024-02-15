@@ -55,6 +55,7 @@
 #include "VectorObjMethodVar.h"
 #include "TError.h"
 #include "DataType.h"  // for kBig
+#include <utility>     // for std::exchange
 
 using namespace std;
 
@@ -181,6 +182,53 @@ THaVar::THaVar( const char* name, const char* descript, const void* obj,
 
   if( fImpl->IsError() )
     MakeZombie();
+}
+
+//_____________________________________________________________________________
+THaVar::THaVar( const THaVar& src )
+  : TNamed(src)
+  , fImpl{src.fImpl->clone(this)}
+{
+  // Copy constructor
+}
+
+//_____________________________________________________________________________
+THaVar::THaVar( THaVar&& src ) noexcept
+  : TNamed(src)
+  , fImpl{src.fImpl}
+{
+  // Move constructor
+
+  fImpl->fSelf = this;
+  src.fImpl = nullptr;
+  // Clear name & description of moved-from variable to avoid ambiguities
+  src.Clear();
+}
+
+//_____________________________________________________________________________
+THaVar& THaVar::operator=( const THaVar& rhs )
+{
+  // Copy assignment
+
+  if( this != &rhs ) {
+    TNamed::operator=(rhs);
+    fImpl = rhs.fImpl->clone(this);
+  }
+  return *this;
+}
+
+//_____________________________________________________________________________
+THaVar& THaVar::operator=( THaVar&& rhs ) noexcept
+{
+  // Move assignment
+
+  if( this != &rhs ) {
+    fImpl = std::exchange(rhs.fImpl, fImpl);
+    fImpl->fSelf = this;
+    rhs.fImpl->fSelf = &rhs;
+    rhs.Clear();
+  }
+  return *this;
 }
 
 //_____________________________________________________________________________

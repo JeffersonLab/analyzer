@@ -18,6 +18,8 @@ namespace Podd {
   public:
     VectorVar( THaVar* pvar, const void* addr, VarType type );
 
+    virtual Variable*    clone( THaVar* pvar ) const;
+
     virtual Int_t        GetLen()  const;
     virtual Int_t        GetNdim() const;
     virtual const Int_t* GetDim()  const;

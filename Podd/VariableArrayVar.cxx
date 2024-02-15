@@ -33,6 +33,12 @@ VariableArrayVar::VariableArrayVar( THaVar* pvar, const void* addr,
 }
 
 //_____________________________________________________________________________
+Variable* VariableArrayVar::clone( THaVar* pvar ) const
+{
+  return new VariableArrayVar(pvar, fValueP, fType, fCount);
+}
+
+//_____________________________________________________________________________
 Int_t VariableArrayVar::GetLen() const
 {
   // Get number of elements of the variable

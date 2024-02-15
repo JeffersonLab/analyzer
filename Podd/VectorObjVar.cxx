@@ -34,6 +34,12 @@ VectorObjVar::VectorObjVar( THaVar* pvar, const void* addr, VarType type,
 }
 
 //_____________________________________________________________________________
+Variable* VectorObjVar::clone( THaVar* pvar ) const
+{
+  return new VectorObjVar(pvar, fValueP, fType, fElemSize, fOffset);
+}
+
+//_____________________________________________________________________________
 Int_t VectorObjVar::GetLen() const
 {
   // Get number of elements of the variable

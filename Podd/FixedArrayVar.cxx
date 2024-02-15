@@ -34,6 +34,12 @@ FixedArrayVar::FixedArrayVar( THaVar* pvar, const void* addr, VarType type )
 }
 
 //_____________________________________________________________________________
+Variable* FixedArrayVar::clone( THaVar* pvar ) const
+{
+  return new FixedArrayVar(pvar, fValueP, fType);
+}
+
+//_____________________________________________________________________________
 Bool_t FixedArrayVar::VerifyArrayName( const THaArrayString& parsed_name ) const
 {
   // Return true if the variable string has valid array syntax

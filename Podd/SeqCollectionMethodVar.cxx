@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "SeqCollectionMethodVar.h"
+#include "TMethodCall.h"
 
 using namespace std;
 
@@ -22,6 +23,13 @@ SeqCollectionMethodVar::SeqCollectionMethodVar( THaVar* pvar, const void* addr,
     SeqCollectionVar(pvar,addr,type,0)
 {
   // Constructor
+}
+
+//_____________________________________________________________________________
+Variable* SeqCollectionMethodVar::clone( THaVar* pvar ) const
+{
+  return new SeqCollectionMethodVar(pvar, fValueP, fType,
+                                    new TMethodCall(*fMethod));
 }
 
 //_____________________________________________________________________________

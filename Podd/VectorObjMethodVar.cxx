@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "VectorObjMethodVar.h"
+#include "TMethodCall.h"
 
 using namespace std;
 
@@ -24,6 +25,13 @@ VectorObjMethodVar::VectorObjMethodVar( THaVar* pvar, const void* addr,
     VectorObjVar(pvar,addr,type,elem_size,0)
 {
   // Constructor
+}
+
+//_____________________________________________________________________________
+Variable* VectorObjMethodVar::clone( THaVar* pvar ) const
+{
+  return new VectorObjMethodVar(pvar, fValueP, fType, fElemSize,
+                                new TMethodCall(*fMethod));
 }
 
 //_____________________________________________________________________________

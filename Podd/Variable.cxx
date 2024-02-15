@@ -10,6 +10,7 @@
 #include "THaVar.h"
 #include "THaArrayString.h"
 #include "TError.h"
+#include "Variable.h"
 #include <cassert>
 #include <iostream>
 #include <cstring>
@@ -33,6 +34,12 @@ Variable::Variable( THaVar* pvar, const void* addr, VarType type )
 
 //_____________________________________________________________________________
 Variable::~Variable() = default;
+
+//_____________________________________________________________________________
+Variable* Variable::clone( THaVar* pvar ) const
+{
+  return new Variable(pvar, fValueP, fType);
+}
 
 //_____________________________________________________________________________
 Bool_t Variable::VerifyNonArrayName( const char* name ) const

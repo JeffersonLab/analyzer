@@ -46,6 +46,12 @@ SeqCollectionVar::SeqCollectionVar( THaVar* pvar, const void* addr,
 }
 
 //_____________________________________________________________________________
+Variable* SeqCollectionVar::clone( THaVar* pvar ) const
+{
+  return new SeqCollectionVar(pvar, fValueP, fType, fOffset);
+}
+
+//_____________________________________________________________________________
 Int_t SeqCollectionVar::GetLen() const
 {
   // Get number of elements of the variable

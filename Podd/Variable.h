@@ -20,7 +20,13 @@ namespace Podd {
 
   public:
     Variable( THaVar* pvar, const void* addr, VarType type );
+    Variable( const Variable& ) = delete;
+    Variable( Variable&& ) = delete;
+    Variable& operator=( const Variable& ) = delete;
+    Variable& operator=( Variable&& ) = delete;
     virtual ~Variable();
+
+    virtual Variable*    clone( THaVar* pvar ) const;
 
     virtual Int_t        GetLen()  const;
     virtual Int_t        GetNdim() const;
@@ -65,6 +71,7 @@ namespace Podd {
     const char*          GetTypeName() const;
     Bool_t               VerifyNonArrayName( const char* name ) const;
 
+    friend class ::THaVar;
   };
 
 } //namespace Podd

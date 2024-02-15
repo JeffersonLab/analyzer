@@ -19,6 +19,8 @@ namespace Podd {
     VectorObjVar( THaVar* pvar, const void* addr, VarType type,
 		  Int_t elem_size, Int_t offset );
 
+    virtual Variable*    clone( THaVar* pvar ) const;
+
     virtual Int_t        GetLen()  const;
     virtual const void*  GetDataPointer( Int_t i = 0 ) const;
     virtual Bool_t       HasSameSize( const Variable& rhs ) const;

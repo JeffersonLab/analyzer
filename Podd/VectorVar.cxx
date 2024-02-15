@@ -35,6 +35,12 @@ VectorVar::VectorVar( THaVar* pvar, const void* addr, VarType type )
 }
 
 //_____________________________________________________________________________
+Variable* VectorVar::clone( THaVar* pvar ) const
+{
+  return new VectorVar(pvar, fValueP, fType);
+}
+
+//_____________________________________________________________________________
 Int_t VectorVar::GetLen() const
 {
   // Get number of elements of the variable

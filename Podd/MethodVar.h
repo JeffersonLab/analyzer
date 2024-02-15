@@ -22,6 +22,8 @@ namespace Podd {
 	       TMethodCall* method );
     virtual ~MethodVar();
 
+    virtual Variable*    clone( THaVar* pvar ) const;
+
     virtual const void*  GetDataPointer( Int_t i = 0 ) const;
     virtual Bool_t       IsBasic() const;
 
