@@ -147,20 +147,34 @@ protected:
   // Channels in this map start counting at 0. Used by hit iterators.
   Bool_t fStartAtZero;
 
+public:
+  // CRTP mix-in to get the right operator signatures ...
+  template<class Derived>
+  struct IncrOp {
+    Derived& operator++() {
+      auto* obj = static_cast<Derived*>(this);
+      obj->incr();
+      return *obj;
+    }
+    // For the rationale behind the const return type here, see
+    // https://releases.llvm.org/15.0.0/tools/clang/tools/extra/docs/clang-tidy/checks/cert/dcl21-cpp.html
+    const Derived operator++(int) {
+      auto* obj = static_cast<Derived*>(this);
+      Derived clone(*obj);
+      ++(*obj);
+      return clone;
+    }
+  };
   //___________________________________________________________________________
   // Utility classes for iterating over active channels in current event data
-public:
-  class Iterator {
+  class Iterator : public IncrOp<Iterator> {
   public:
     Iterator( THaDetMap& detmap, const THaEvData& evdata, bool do_init = true );
     Iterator() = delete;
     virtual ~Iterator() = default;
 
     // Positioning
-    virtual Iterator& operator++();
-    const Iterator operator++(int) {
-      Iterator clone(*this); ++(*this); return clone;
-    }
+    virtual void incr();
     virtual void reset();
     UInt_t size() const { return fNTotChan; }
 
@@ -224,7 +238,7 @@ public:
     std::string msg( const char* txt ) const;
   };
 
-  class MultiHitIterator : public Iterator {
+  class MultiHitIterator : public Iterator, public IncrOp<MultiHitIterator> {
   public:
     MultiHitIterator( THaDetMap& detmap, const THaEvData& evdata,
                       bool do_init = true );
@@ -234,7 +248,8 @@ public:
       return (Iterator::operator bool() and fIHit >= 0 and
               fIHit < static_cast<Int_t>(fHitInfo.nhit));
     }
-    virtual Iterator& operator++();
+    using IncrOp<MultiHitIterator>::operator++;
+    virtual void incr();
     virtual void reset();
   protected:
     Int_t fIHit;         // Current raw hit number

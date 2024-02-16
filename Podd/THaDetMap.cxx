@@ -452,14 +452,14 @@ inline bool NO_NEXT( Int_t& i, UInt_t n ) {
 }
 
 //_____________________________________________________________________________
-THaDetMap::Iterator& THaDetMap::Iterator::operator++()
+void THaDetMap::Iterator::incr()
 {
   // Advance iterator to next active channel
  nextmod:
   if( LOOPDONE(fIChan, fNChan) ) {
     if( NO_NEXT(fIMod, fNMod) ) {
       fHitInfo.reset();
-      return *this;
+      return;
     }
     fMod = fDetMap.GetModule(fIMod);
     if( !fMod )
@@ -503,8 +503,6 @@ THaDetMap::Iterator& THaDetMap::Iterator::operator++()
     throw std::invalid_argument(msg(ostr.str().c_str()));
   }
   fHitInfo.lchan = lchan;
-
-  return *this;
 }
 
 //_____________________________________________________________________________
@@ -529,7 +527,7 @@ THaDetMap::MultiHitIterator::MultiHitIterator( THaDetMap& detmap,
 }
 
 //_____________________________________________________________________________
-THaDetMap::Iterator& THaDetMap::MultiHitIterator::operator++()
+void THaDetMap::MultiHitIterator::incr()
 {
   // Advance iterator to next active hit or channel, allowing multiple hits
   // per channel
@@ -537,14 +535,12 @@ THaDetMap::Iterator& THaDetMap::MultiHitIterator::operator++()
   if( LOOPDONE(fIHit, fHitInfo.nhit) ) {
     Iterator::operator++();
     if( !Iterator::operator bool() )
-      return *this;
+      return;
     fIHit = -1;
   }
   if( NO_NEXT(fIHit, fHitInfo.nhit) )
     goto nexthit;
   fHitInfo.hit = fIHit; // overwrite value of single-hit case (0 or nhit-1)
-
-  return *this;
 }
 
 //_____________________________________________________________________________
