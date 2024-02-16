@@ -33,35 +33,33 @@ public:
   THaOdata& operator=(const THaOdata& rhs);
   virtual ~THaOdata() { delete [] data; };
   void AddBranches(TTree* T, std::string name);
-  void Clear( Option_t* ="" ) { ndata = 0; }  
-  Bool_t Resize(Int_t i);
-  Int_t Fill(Int_t i, Double_t dat) {
-    if( i<0 || (i>=nsize && Resize(i)) ) return 0;
-    if( i>=ndata ) ndata = i+1;
+  void Clear( Option_t* ="" ) { ndata = 0; }
+  Int_t Fill( Int_t i, Double_t dat ) {
+    if( i < 0 || (i >= nsize && !Resize(i + 1, true)) ) return 0;
+    if( i >= ndata ) ndata = i + 1;
     data[i] = dat;
     return 1;
   }
-  Int_t Fill(Int_t n, const Double_t* array) {
-    if( n<=0 || (n>nsize && Resize(n-1)) ) return 0;
-    memcpy( data, array, n*sizeof(Double_t));
+  Int_t Fill( Int_t n, const Double_t* array ) {
+    if( n <= 0 || (n > nsize && !Resize(n)) ) return 0;
     ndata = n;
+    memcpy(data, array, ndata * sizeof(Double_t));
     return 1;
   }
   Int_t Fill(Double_t dat) { return Fill(0, dat); };
-  Double_t Get(Int_t index=0) const {
-    if( index<0 || index>=ndata ) return 0;
+  Double_t Get( Int_t index = 0 ) const {
+    if( index < 0 || index >= ndata ) return 0;
     return data[index];
   }
     
   TTree*      tree;    // Tree that we belong to
   std::string name;    // Name of the tree branch for the data
-  Int_t       ndata;   // Number of array elements
-  Int_t       nsize;   // Maximum number of elements
+  Int_t       ndata;   // Number of valid array elements, size()
+  Int_t       nsize;   // Maximum number of elements, capacity()
   Double_t*   data;    // [ndata] Array data
 
 private:
-
-  //  ClassDef(THaOdata,3)  // Variable sized array
+  Bool_t Resize( Int_t i, bool save_old_data = false );
 };
 
 

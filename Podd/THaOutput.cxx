@@ -43,6 +43,8 @@
 #include <vector>
 
 #include "THaBenchmark.h"
+#include <stdexcept>
+#include <cassert>
 
 using namespace std;
 using namespace THaString;
@@ -119,18 +121,19 @@ THaOdata::THaOdata( const THaOdata& other )
   : tree{other.tree}, name{other.name}, ndata{other.ndata}, nsize{other.nsize},
     data{new Double_t[nsize]}
 {
-  memcpy(data, other.data, nsize * sizeof(Double_t));
+  memcpy(data, other.data, ndata * sizeof(Double_t));
 }
 
 //_____________________________________________________________________________
 THaOdata& THaOdata::operator=(const THaOdata& rhs )
 {
   if( this != &rhs ) {
-    tree = rhs.tree; name = rhs.name;
-    if( nsize < rhs.nsize ) {
-      nsize = rhs.nsize; delete [] data; data = new Double_t[nsize];
-    }
-    ndata = rhs.ndata; memcpy( data, rhs.data, nsize*sizeof(Double_t));
+    if( rhs.nsize > nsize && !Resize(rhs.nsize) )
+      throw std::runtime_error("Failed to assign THaOdata. Out of memory?");
+    tree = rhs.tree;
+    name = rhs.name;
+    ndata = rhs.ndata;
+    memcpy(data, rhs.data, ndata * sizeof(Double_t));
   }
   return *this;
 }
@@ -138,30 +141,50 @@ THaOdata& THaOdata::operator=(const THaOdata& rhs )
 //_____________________________________________________________________________
 void THaOdata::AddBranches( TTree* _tree, string _name )
 {
-  name = std::move(_name);
   tree = _tree;
-  string sname = "Ndata." + name;
-  string leaf = sname;
-  tree->Branch(sname.c_str(),&ndata,(leaf+"/I").c_str());
+  name = std::move(_name);
+  string leaf = "Ndata." + name;
+  tree->Branch(leaf.c_str(),&ndata,(leaf+"/I").c_str());
   // FIXME: defined this way, ROOT always thinks we are variable-size
   leaf = name + "[" + leaf + "]/D";
   tree->Branch(name.c_str(),data,leaf.c_str());
 }
 
 //_____________________________________________________________________________
-Bool_t THaOdata::Resize(Int_t i)
+// Grow data array to at least size 'i'. If 'save_old_data', preserve previous
+// contents of data array (up to 'ndata').
+// 'i' must be larger than current size, to be ensured by caller.
+// Returns 'true' if successful, false otherwise (i > 1 Mi).
+Bool_t THaOdata::Resize( Int_t i, bool save_old_data )
 {
   constexpr Int_t MAX = 1<<20; // 1,048,576 elements ought to be enough for anyone ;-)
-  if( i > MAX ) return true;
-  Int_t newsize = nsize;
-  while ( i >= newsize ) { newsize *= 2; }
-  if( newsize > MAX ) newsize = MAX;
-  auto* tmp = new Double_t[newsize];
-  memcpy( tmp, data, nsize*sizeof(Double_t) );
-  delete [] data; data = tmp; nsize = newsize;
+  if( i > MAX ) return false;
+  Int_t newsize = nsize > 0 ? nsize : 1;
+  assert(i > nsize);
+  if( i > MAX/2 ) {
+    newsize = MAX;
+  } else {
+    while( i > newsize ) { newsize *= 2; }
+    if( newsize > MAX ) newsize = MAX;
+  }
+  // To ensure exception safety, the new allocation must be made first, so
+  // the object can be left in its prior state if the allocation fails.
+  // This should not be an issue since the max. allocation is 8 MiB.
+  Double_t* tmp;
+  try {
+    tmp = new Double_t[newsize];
+  } catch( const bad_alloc& e ) {
+    return false;
+  }
+  if( save_old_data && data != nullptr ) {
+    memcpy(tmp, data, ndata * sizeof(Double_t));
+  }
+  delete [] data;
+  data = tmp;
+  nsize = newsize;
   if( tree )
     tree->SetBranchAddress( name.c_str(), data );
-  return false;
+  return true;
 }
 
 //_____________________________________________________________________________
