@@ -20,7 +20,6 @@ class UserEvtHandler : public THaEvtTypeHandler {
 public:
 
    UserEvtHandler(const char* name, const char* description);
-   virtual ~UserEvtHandler();
 
    virtual Int_t Analyze(THaEvData *evdata);
    virtual EStatus Init( const TDatime& run_time);

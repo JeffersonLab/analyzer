@@ -19,8 +19,7 @@ public:
   THaSAProtonEP( const char* name, const char* description,
                  const char* spectro, const char* beam,
                  Double_t target_mass = -1.0 /* GeV/c2 */ );
-  virtual ~THaSAProtonEP() = default;
-  
+
   virtual Int_t  Process( const THaEvData& );
 
   ClassDef(THaSAProtonEP,0)   //Single arm proton kinematics

@@ -40,6 +40,12 @@ THaVDCTrackID::THaVDCTrackID( const THaVDCPoint* lower,
 }
 
 //_____________________________________________________________________________
+TObject* THaVDCTrackID::Clone( const char* ) const
+{
+  return new THaVDCTrackID(*this);
+}
+
+//_____________________________________________________________________________
 void THaVDCTrackID::Print( Option_t* ) const
 {
   // Print ID description

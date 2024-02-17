@@ -20,7 +20,6 @@ public:
    F1TDCModule() : fNumHits(0), fResol(ILO), IsInit(false),
                    slotmask(0), chanmask(0), datamask(0) {}
    F1TDCModule( UInt_t crate, UInt_t slot );
-   virtual ~F1TDCModule() = default;
 
    using VmeModule::GetData;
    using VmeModule::LoadSlot;

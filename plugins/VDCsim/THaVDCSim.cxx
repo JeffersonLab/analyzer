@@ -63,9 +63,7 @@ void THaVDCSimTrack::Print( Option_t* ) const
 
 THaVDCSimEvent::THaVDCSimEvent() : event_num(0) {}
 
-THaVDCSimEvent::~THaVDCSimEvent() = default;
-
-void THaVDCSimEvent::Clear( Option_t* opt ) {
+void THaVDCSimEvent::Clear( Option_t* ) {
   for( auto& planehits : wirehits )
     planehits.clear();
 
@@ -97,8 +95,6 @@ THaVDCSimConditions::THaVDCSimConditions()
   }
   databaseFile += "db_L.vdc.dat";
 }
-
-THaVDCSimConditions::~THaVDCSimConditions() = default;
 
 void THaVDCSimConditions::set(Double_t *something,
 			      Double_t a, Double_t b, Double_t c, Double_t d) {

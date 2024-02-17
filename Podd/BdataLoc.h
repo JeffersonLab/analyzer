@@ -42,6 +42,10 @@ public:
   static TypeSet_t& fgBdataLocTypes();
 
   BdataLoc() : crate(0), data(0) {}   // For ROOT TClass & I/O
+  BdataLoc( const BdataLoc& ) = delete;
+  BdataLoc( BdataLoc&& ) = delete;
+  BdataLoc& operator=( const BdataLoc& ) = delete;
+  BdataLoc& operator=( BdataLoc&& ) = delete;
   virtual ~BdataLoc();
 
   // Main function: extract the defined data from the event
@@ -100,7 +104,6 @@ public:
   CrateLoc( const char* nm, UInt_t cra, UInt_t slo, UInt_t cha )
     : BdataLoc(nm,cra), slot(slo), chan(cha) { ResetBit(kIsSetup); }
   CrateLoc() : slot(0), chan(0) {}
-  virtual ~CrateLoc() = default;
 
   virtual void   Load( const THaEvData& evt );
   virtual Int_t  Configure( const TObjArray* params, Int_t start = 0 );
@@ -129,7 +132,6 @@ public:
   CrateLocMulti( const char* nm, UInt_t cra, UInt_t slo, UInt_t cha )
     : CrateLoc(nm,cra,slo,cha) { }
   CrateLocMulti() = default;
-  virtual ~CrateLocMulti() = default;
 
   virtual void    Load( const THaEvData& evt );
 
@@ -160,7 +162,6 @@ public:
   WordLoc( const char* nm, UInt_t cra, UInt_t head, UInt_t skip )
     : BdataLoc(nm,cra), header(head), ntoskip(skip) { }
   WordLoc() : header(0), ntoskip(1) {}
-  virtual ~WordLoc() = default;
 
   virtual void   Load( const THaEvData& evt );
   virtual Int_t  Configure( const TObjArray* params, Int_t start = 0 );
@@ -188,7 +189,6 @@ public:
   // Event length of a crate
   RoclenLoc( const char* nm, UInt_t cra ) : BdataLoc(nm, cra) { }
   RoclenLoc() = default;
-  virtual ~RoclenLoc() = default;
 
   virtual void   Load( const THaEvData& evt );
   virtual Int_t  GetNparams() const       { return fgThisType->fNparams; }

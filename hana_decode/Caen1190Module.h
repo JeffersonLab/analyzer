@@ -21,7 +21,6 @@ public:
 
   Caen1190Module() : fSlotData(nullptr), fEvBuf(nullptr), fNfill(0) {}
   Caen1190Module( Int_t crate, Int_t slot );
-  virtual ~Caen1190Module() = default;
 
   using VmeModule::GetData;
   using VmeModule::Init;

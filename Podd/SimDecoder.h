@@ -110,7 +110,6 @@ public:
     : fMCTrack(mctrk), fPlane(plane), fType(type), fStatus(0), fNFound(0),
       fClustSize(0), fMCPoint(point), fMCP(pvect), fMCTime(kBig), fDeltaE(kBig),
       fDeflect(kBig), fToF(kBig), fHitResid(kBig), fTrackResid(kBig)  {}
-  virtual ~MCTrackPoint() = default;
 
   virtual Int_t  Compare( const TObject* obj ) const;
   virtual Bool_t IsSortable() const { return true; }

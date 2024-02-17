@@ -23,7 +23,6 @@ public:
   explicit THaHashList(TObject* parent,
 	      Int_t capacity = TCollection::kInitHashTableCapacity, 
 	      Int_t rehash = 0) : THashList(parent,capacity,rehash) {}
-  virtual ~THaHashList() = default;
 
   virtual void PrintOpt( Option_t* opt ) const;
   ClassDef(THaHashList,1) //A THashList list with a PrintOpt method

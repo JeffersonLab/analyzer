@@ -29,10 +29,7 @@ public:
     fSpectro(nullptr)
   {}
 
-  THaTrackInfo( const THaTrackInfo& t ) = default;
-  THaTrackInfo& operator=( const THaTrackInfo& );
   THaTrackInfo& operator=( const THaTrack& );
-  virtual ~THaTrackInfo() = default;
 
   void      Clear( Option_t* opt="" );
 
@@ -78,7 +75,7 @@ protected:
 
   THaSpectrometer* fSpectro; //! Spectrometer creating this track
 
-  ClassDef(THaTrackInfo,1)  // Track information
+  ClassDefNV(THaTrackInfo,1) // Track information
 };
 
 //_____________________________________________________________________________

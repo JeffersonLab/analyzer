@@ -18,8 +18,7 @@ class THaG0HelicityReader {
   
 public:
   THaG0HelicityReader();
-  virtual ~THaG0HelicityReader() = default;
-  
+
   Bool_t GetValidTime() const { return fValidTime; }
 
   // Get ROC helicity information (for debugging)
@@ -40,10 +39,10 @@ protected:
     UInt_t  index;            // Index into buffer
   };
 
-  virtual void  Clear( Option_t* opt="" );
-  virtual Int_t ReadData( const THaEvData& evdata );
-  Int_t         ReadDatabase( const char* dbfilename, const char* prefix,
-			      const TDatime& date, int debug_flag = 0 );
+  void  Clear( Option_t* opt="" );
+  Int_t ReadData( const THaEvData& evdata );
+  Int_t ReadDatabase( const char* dbfilename, const char* prefix,
+                      const TDatime& date, int debug_flag = 0 );
 
   Int_t   fPresentReading;    // Current helicity reading
   Int_t   fQrt;               // Current QRT
@@ -69,7 +68,7 @@ private:
 
   static UInt_t FindWord( const THaEvData& evdata, const ROCinfo& info );
 
-  ClassDef(THaG0HelicityReader,2) // Helper class for reading G0 helicity data
+  ClassDefNV(THaG0HelicityReader,2) // Helper class for reading G0 helicity data
 
 };
 

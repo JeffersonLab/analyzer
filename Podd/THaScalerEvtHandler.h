@@ -43,8 +43,6 @@ class THaScalerEvtHandler : public THaEvtTypeHandler {
 public:
 
   THaScalerEvtHandler(const char* name, const char* description);
-  THaScalerEvtHandler(const THaScalerEvtHandler& fh) = delete;
-  THaScalerEvtHandler& operator=(const THaScalerEvtHandler& fh) = delete;
   virtual ~THaScalerEvtHandler();
 
    virtual Int_t Analyze(THaEvData *evdata);

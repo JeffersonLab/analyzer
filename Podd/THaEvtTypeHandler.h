@@ -42,10 +42,6 @@ protected:
 
    virtual void MakePrefix();
 
-private:
-   THaEvtTypeHandler(const THaEvtTypeHandler &fh);
-   THaEvtTypeHandler& operator=(const THaEvtTypeHandler &fh);
-
    ClassDef(THaEvtTypeHandler,0)  // Event type handler
 
 };

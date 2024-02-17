@@ -26,7 +26,6 @@ class Textvars {
 
 public:
   Textvars() = default;
-  virtual ~Textvars() = default;
 
   Int_t    Add( const std::string& name, const std::string& value );
   Int_t    AddVerbatim( const std::string& name, const std::string& value );
@@ -56,7 +55,7 @@ private:
   
   Textvars_t fVars;
 
-  ClassDef(Textvars, 0)  // String substitution facility
+  ClassDefNV(Textvars, 0)  // String substitution facility
 };
 
 //_____________________________________________________________________________

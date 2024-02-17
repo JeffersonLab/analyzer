@@ -21,8 +21,6 @@ public:
     : fWire(wire), fRawTime(rawtime), fTime(time),
       fNthit(nthit), fDist(kBig), fdDist(1.0), ftrDist(kBig),
       fltrDist(kBig), fTrkNum(0), fClsNum(-1) {}
-  THaVDCHit( const THaVDCHit& ) = default;
-  THaVDCHit& operator=( const THaVDCHit& ) = default;
 
   virtual Double_t ConvertTimeToDist(Double_t slope);
   Int_t  Compare ( const TObject* obj ) const;

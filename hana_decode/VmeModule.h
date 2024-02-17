@@ -18,7 +18,6 @@ public:
 
    VmeModule(UInt_t crate, UInt_t slot);
    VmeModule() = default;
-   virtual ~VmeModule() = default;
 
    using Module::LoadSlot;
 

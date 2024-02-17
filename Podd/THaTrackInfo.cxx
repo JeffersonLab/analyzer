@@ -16,25 +16,6 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaTrackInfo& THaTrackInfo::operator=( const THaTrackInfo& rhs )
-{
-  // Assignment operator
-
-  if( this != &rhs ) {
-    fP     = rhs.fP;
-    fDp    = rhs.fDp;
-    fX     = rhs.fX;
-    fY     = rhs.fY;
-    fTheta = rhs.fTheta;
-    fPhi   = rhs.fPhi;
-    fPvect = rhs.fPvect;
-    fOK    = rhs.fOK;
-    fSpectro = rhs.fSpectro;
-  }
-  return *this;
-}
-
-//_____________________________________________________________________________
 THaTrackInfo& THaTrackInfo::operator=( const THaTrack& track )
 {
   // Assignment to a track

@@ -18,7 +18,6 @@ public:
   THaEventHeader() :
     fEvtTime(0), fEvtNum(0), fEvtType(0), fEvtLen(0), fHelicity(0),
     fTrigBits(0), fRun(0) {}
-  virtual ~THaEventHeader() = default;
 
   void Set( ULong64_t num, UInt_t type, UInt_t len, ULong64_t time,
             Int_t hel, UInt_t tbits, UInt_t run ) {
@@ -48,7 +47,7 @@ private:
   UInt_t    fTrigBits;        // Trigger bitpattern
   UInt_t    fRun;             // Run number
 
-  ClassDef(THaEventHeader,8)  // Header for analyzed event data in ROOT file
+  ClassDefNV(THaEventHeader,8)// Header for analyzed event data in ROOT file
 };
 
 
@@ -56,7 +55,6 @@ class THaEvent : public TObject {
 
 public:
   THaEvent();
-  virtual ~THaEvent() = default;
 
   THaEventHeader*   GetHeader() { return &fEvtHdr; }
 

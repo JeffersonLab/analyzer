@@ -9,6 +9,7 @@
 
 #include "THaPhysicsModule.h"
 #include <vector>
+#include <string_view> // for std::swap (since C++17)
 
 class THaVar;
 class TH1F;
@@ -36,6 +37,24 @@ protected:
     VDCvar_t( const char* nm, const char* hn, Int_t nw )
       : name(nm), histname(hn), pvar(nullptr), nwire(nw), hist_nhit(nullptr),
         hist_eff(nullptr) {}
+    VDCvar_t() : pvar{nullptr}, nwire{0}, hist_nhit{nullptr}, hist_eff{nullptr} {}
+    // Copying is unwise because of the TH1F members. Don't want duplicate names.
+    VDCvar_t( const VDCvar_t& src ) = delete;
+    VDCvar_t& operator=( const VDCvar_t& rhs ) = delete;
+    // Moving is unproblematic. Needed for storing these objects by value in a vector
+    VDCvar_t( VDCvar_t&& src ) noexcept : VDCvar_t() { swap( *this, src); }
+    VDCvar_t& operator=( VDCvar_t&& rhs ) noexcept { swap( *this, rhs); return *this; }
+    friend void swap( VDCvar_t& a, VDCvar_t& b ) noexcept {
+      using std::swap;
+      swap(a.name, b.name);
+      swap(a.histname, b.histname);
+      swap(a.pvar, b.pvar);
+      swap(a.nwire, b.nwire);
+      swap(a.ncnt, b.ncnt);
+      swap(a.nhit, b.nhit);
+      swap(a.hist_nhit, b.hist_nhit);
+      swap(a.hist_eff, b.hist_eff);
+    }
     ~VDCvar_t();
     void     Reset( Option_t* opt ="" );
     TString  name;

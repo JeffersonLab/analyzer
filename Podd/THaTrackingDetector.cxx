@@ -35,14 +35,8 @@ THaTrackingDetector::THaTrackingDetector( const char* name,
 }
 
 //_____________________________________________________________________________
-THaTrackingDetector::THaTrackingDetector( )
-  : THaSpectrometerDetector( )
-{
-  // Constructor for ROOT I/O only
-}
-
-//_____________________________________________________________________________
-THaTrackingDetector::~THaTrackingDetector() = default;
+// Constructor for ROOT I/O only
+THaTrackingDetector::THaTrackingDetector( ) = default;
 
 //_____________________________________________________________________________
 THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,

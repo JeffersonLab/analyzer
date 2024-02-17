@@ -17,7 +17,6 @@ public:
                          Double_t dx=kBig, Int_t ch=-1 )
     : fX(x), fY(y), fPathl(pathl), fdX(dx), fChannel(ch),
       fIsOK(x<0.5*kBig&&y<0.5*kBig) {}
-  virtual ~THaTrackProj() = default;
 
   virtual void Clear( Option_t* opt="" );
   virtual void Print( Option_t* opt="" ) const;

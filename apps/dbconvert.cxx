@@ -1338,8 +1338,7 @@ protected:
 // Cherenkov
 class Cherenkov : public Detector {
 public:
-  explicit Cherenkov( const string& name ): Detector(name) {}
-  virtual ~Cherenkov() = default;
+  explicit Cherenkov( const string& name ) : Detector(name) {}
 
   virtual int ReadDB( FILE* fi, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
@@ -1358,7 +1357,6 @@ public:
   explicit Scintillator( const string& name )
     : Detector(name), fTdc2T(0), fCn(3e8), fAdcMIP(0), fAttenuation(0),
       fResolution(5e-10), fNTWalkPar(0), fHaveExtras(false) {}
-  virtual ~Scintillator() = default;
 
   virtual int ReadDB( FILE* fi, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
@@ -1384,7 +1382,6 @@ public:
   explicit Shower( const string& name )
     : Detector(name), fNcols(0), fNrows(0), fEmin(0), fMaxCl(kMaxInt)
       { fDetMapHasLogicalChan = false; }
-  virtual ~Shower() = default;
 
   virtual void Clear() { Detector::Clear(); fMaxCl = -1; }
   virtual int ReadDB( FILE* fi, time_t date_from, time_t date_until );

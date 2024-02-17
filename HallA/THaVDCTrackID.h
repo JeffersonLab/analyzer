@@ -18,11 +18,12 @@ public:
   THaVDCTrackID( Int_t lowerU, Int_t lowerV, Int_t upperU, Int_t upperV )
     : fLowerU(lowerU), fLowerV(lowerV), fUpperU(upperU), fUpperV(upperV) {}
   THaVDCTrackID( const THaVDCPoint* lower, const THaVDCPoint* upper );
-  virtual ~THaVDCTrackID() = default;
 
   Bool_t  operator==( const THaTrackID& ) override;
   Bool_t  operator!=( const THaTrackID& ) override;
   void    Print( Option_t* opt="" ) const override;
+
+  TObject* Clone(const char* ="") const override;
 
 protected:
 

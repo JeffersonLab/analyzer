@@ -33,9 +33,6 @@ private:
    UInt_t NVars;
    Double_t *dvars; 
 
-   THaEvt125Handler(const THaEvt125Handler& fh);
-   THaEvt125Handler& operator=(const THaEvt125Handler& fh);
-
    ClassDef(THaEvt125Handler,0)  // Hall C event type 125
 
 };

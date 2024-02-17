@@ -13,10 +13,11 @@ class THaTrackID : public TObject {
 
 public:
   THaTrackID() = default;
-  virtual ~THaTrackID() = default;
 
   virtual Bool_t  operator==( const THaTrackID& ) = 0;
   virtual Bool_t  operator!=( const THaTrackID& ) = 0;
+
+  TObject* Clone(const char* ="") const override = 0;
 
 protected:
 

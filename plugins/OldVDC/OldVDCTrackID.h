@@ -18,14 +18,12 @@ public:
   OldVDCTrackID( Int_t lowerU, Int_t lowerV, Int_t upperU, Int_t upperV )
     : fLowerU(lowerU), fLowerV(lowerV), fUpperU(upperU), fUpperV(upperV) {}
   OldVDCTrackID( const OldVDCUVTrack* lower, const OldVDCUVTrack* upper );
-  OldVDCTrackID( const OldVDCTrackID& );
-  OldVDCTrackID& operator=( const OldVDCTrackID& );
-  
-  virtual ~OldVDCTrackID() {}
 
   virtual Bool_t  operator==( const THaTrackID& );
   virtual Bool_t  operator!=( const THaTrackID& );
   virtual void    Print( Option_t* opt="" ) const;
+
+  virtual TObject* Clone(const char* ="") const;
 
 protected:
 

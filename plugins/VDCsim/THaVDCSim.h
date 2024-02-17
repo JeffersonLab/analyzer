@@ -16,7 +16,6 @@
 class THaVDCSimConditions : public TObject {
  public:
   THaVDCSimConditions();
-  virtual ~THaVDCSimConditions();
 
   TString  filename;          //name of output file
   TString  textFile;          //name of output text file (holds track information)
@@ -119,7 +118,6 @@ public:
 class THaVDCSimEvent : public TObject {
 public:
   THaVDCSimEvent();
-  virtual ~THaVDCSimEvent();
 
   // Administrative data
   Int_t event_num;

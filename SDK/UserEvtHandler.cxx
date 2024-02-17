@@ -39,8 +39,6 @@ UserEvtHandler::UserEvtHandler(const char *name, const char* description)
 {
 }
 
-UserEvtHandler::~UserEvtHandler() = default;
-
 // GetData is a public method which other classes may use
 Data_t UserEvtHandler::GetData(const std::string& tag) const
 {

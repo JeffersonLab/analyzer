@@ -87,7 +87,14 @@ public:
     if(pid) pid->Clear();
   }
 
+  // C++ Core Guidelines C.67: A polymorphic class should suppress public
+  // copy/move. Use Clone() to copy, swap pointers to move.
+  THaTrack& operator=( const THaTrack& rhs ) = delete;
+  THaTrack( THaTrack&& src ) = delete;
+  THaTrack& operator=( THaTrack&& rhs ) = delete;
   virtual ~THaTrack();
+
+  TObject*          Clone(const char* ="") const override;
 
   Int_t             AddCluster( THaCluster* c );
   void              Clear( Option_t* opt="" );
@@ -204,6 +211,7 @@ public:
   Int_t	            Compare(const TObject* obj) const override;
 
 protected:
+  THaTrack( const THaTrack& src );  // for Clone()
 
   static constexpr Int_t kMAXCL = 4;
 

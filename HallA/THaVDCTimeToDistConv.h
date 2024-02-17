@@ -18,6 +18,11 @@ namespace VDC {
   class TimeToDistConv {
 
   public:
+    explicit TimeToDistConv( UInt_t npar = 0 );
+    TimeToDistConv( const TimeToDistConv& ) = default;
+    TimeToDistConv( TimeToDistConv&& ) = default;
+    TimeToDistConv& operator=( const TimeToDistConv& ) = default;
+    TimeToDistConv& operator=( TimeToDistConv&& ) = default;
     virtual ~TimeToDistConv() = default;
 
     virtual Double_t ConvertTimeToDist( Double_t time, Double_t tanTheta,
@@ -28,8 +33,6 @@ namespace VDC {
     virtual Int_t    SetParameters( const std::vector<double>& );
 
 protected:
-    explicit TimeToDistConv( UInt_t npar = 0 );
-
     UInt_t   fNparam;     // Number of parameters
     Double_t fDriftVel;   // Drift velocity (m/s)
     Bool_t   fIsSet;      // Flag to indicate that all parameters are set

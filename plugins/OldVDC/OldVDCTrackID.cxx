@@ -40,26 +40,9 @@ OldVDCTrackID::OldVDCTrackID( const OldVDCUVTrack* lower,
 }
 
 //_____________________________________________________________________________
-OldVDCTrackID::OldVDCTrackID( const OldVDCTrackID& rhs ) : THaTrackID(rhs),
-  fLowerU(rhs.fLowerU), fLowerV(rhs.fLowerV),
-  fUpperU(rhs.fUpperU), fUpperV(rhs.fUpperV)
+TObject* OldVDCTrackID::Clone( const char* ) const
 {
-  // Copy constructor.
-}
-
-//_____________________________________________________________________________
-OldVDCTrackID& OldVDCTrackID::operator=( const OldVDCTrackID& rhs )
-{
-  // Assignment operator.
-
-  THaTrackID::operator=(rhs);
-  if ( this != &rhs ) {
-    fLowerU = rhs.fLowerU;
-    fLowerV = rhs.fLowerV;
-    fUpperU = rhs.fUpperU;
-    fUpperV = rhs.fUpperV;
-  }
-  return *this;
+  return new OldVDCTrackID(*this);
 }
 
 //_____________________________________________________________________________

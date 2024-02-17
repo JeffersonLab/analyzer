@@ -23,7 +23,6 @@ public:
   THaRTTI() :
     fOffset(-1), fType(kDouble), fArrayType(kScalar), fCountOffset(-1),
     fDataMember(nullptr), fRealData(nullptr), fElemClass(nullptr) {}
-  virtual ~THaRTTI() = default;
 
   Int_t        Find( TClass* cl, const TString& var,
 		     const void* p = nullptr );
@@ -61,7 +60,7 @@ protected:
   TRealData*   fRealData;     // Associated ROOT TRealData
   TClass*      fElemClass;    // Class of object vector element type
 
-  ClassDef(THaRTTI,0)   //Parsed type information for a ROOT class member variable
+  ClassDefNV(THaRTTI,0) //Parsed type information for a ROOT class member variable
 };
 
 #endif

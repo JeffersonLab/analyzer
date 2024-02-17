@@ -21,7 +21,6 @@ public:
     : fLowerPoint(lp), fUpperPoint(up), fSpacing(spacing), fError(kBig),
       fStatus(0) {}
   THaVDCPointPair() = delete;
-  virtual ~THaVDCPointPair() = default;
 
   void            Analyze();
   void            Associate( THaTrack* track );

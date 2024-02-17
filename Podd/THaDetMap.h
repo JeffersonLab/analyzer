@@ -35,14 +35,7 @@ public:
   class Module {
   public:
     Module() = default;
-#if __clang__ || __GNUC__ > 4
-    Module( const Module& rhs ) = default;
-    Module& operator=( const Module& rhs ) = default;
-#else
-    // work around apparent g++ 4 bug
-    Module( Module& rhs ) = default;
-    Module& operator=( Module& rhs ) = default;
-#endif
+
     UInt_t   crate;
     UInt_t   slot;
     UInt_t   lo;
@@ -103,7 +96,9 @@ public:
 
   THaDetMap() : fStartAtZero(false) {}
   THaDetMap( const THaDetMap& );
+  THaDetMap( THaDetMap&& ) = default;
   THaDetMap& operator=( const THaDetMap& );
+  THaDetMap& operator=( THaDetMap&& ) = default;
   virtual ~THaDetMap() = default;
 
   THaDetMap::Iterator MakeIterator( const THaEvData& evdata );
@@ -169,8 +164,13 @@ public:
   // Utility classes for iterating over active channels in current event data
   class Iterator : public IncrOp<Iterator> {
   public:
-    Iterator( THaDetMap& detmap, const THaEvData& evdata, bool do_init = true );
+    Iterator( const THaDetMap& detmap, const THaEvData& evdata,
+              bool do_init = true );
     Iterator() = delete;
+    Iterator( const Iterator& ) = default;
+    Iterator( Iterator&& ) = default;
+    Iterator& operator=( const Iterator& ) = default;
+    Iterator& operator=( Iterator&& ) = default;
     virtual ~Iterator() = default;
 
     // Positioning
@@ -224,8 +224,8 @@ public:
     const HitInfo_t& operator* () const { return fHitInfo; }
 
   protected:
-    THaDetMap& fDetMap;
-    const THaEvData& fEvData;
+    const THaDetMap* fDetMap;
+    const THaEvData* fEvData;
     const THaDetMap::Module* fMod;
     UInt_t fNMod;         // Number of modules in detector map (cached)
     UInt_t fNTotChan;     // Total number of detector map channels (cached)
@@ -243,7 +243,6 @@ public:
     MultiHitIterator( THaDetMap& detmap, const THaEvData& evdata,
                       bool do_init = true );
     MultiHitIterator() = delete;
-    virtual ~MultiHitIterator() = default;
     explicit virtual operator bool() const {
       return (Iterator::operator bool() and fIHit >= 0 and
               fIHit < static_cast<Int_t>(fHitInfo.nhit));

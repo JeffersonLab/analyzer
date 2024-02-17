@@ -11,7 +11,12 @@ class TList;
 class THaPostProcess : public TObject {
  public:
   THaPostProcess();
+  THaPostProcess( const THaPostProcess& ) = delete;
+  THaPostProcess( THaPostProcess&& ) = delete;
+  THaPostProcess& operator=( const THaPostProcess& ) = delete;
+  THaPostProcess& operator=( THaPostProcess&& ) = delete;
   virtual ~THaPostProcess();
+
   virtual Int_t Init(const TDatime& )=0;
   virtual Int_t Process( const THaEvData*, const THaRunBase*, Int_t code )=0;
   virtual Int_t Close()=0;

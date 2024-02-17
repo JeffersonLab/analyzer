@@ -34,7 +34,6 @@ public:
 
   SkeletonModule() : fMaxBufLen(256), fNumHits(0) {};
   SkeletonModule( UInt_t crate, UInt_t slot );
-  virtual ~SkeletonModule();
 
   using Module::GetData;
   using Module::LoadSlot;

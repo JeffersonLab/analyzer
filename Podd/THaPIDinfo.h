@@ -20,7 +20,6 @@ public:
   THaPIDinfo();
   THaPIDinfo( UInt_t ndet, UInt_t npart );
   explicit THaPIDinfo( const THaTrack* track );
-  virtual ~THaPIDinfo() = default;
 
   virtual void      Clear( Option_t* opt="" );
   virtual void      CombinePID();

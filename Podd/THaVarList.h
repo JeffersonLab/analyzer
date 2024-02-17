@@ -16,7 +16,6 @@ class THaVarList : public THashList {
   
 public:
   THaVarList();
-  virtual ~THaVarList() = default;
 
   // Define() with reference to variable
   THaVar*  Define( const char* name, const char* descript, 

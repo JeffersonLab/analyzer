@@ -43,9 +43,6 @@ public:
 
    PipeliningModule() : PipeliningModule(0,0) {}
    PipeliningModule( UInt_t crate, UInt_t slot );
-   PipeliningModule(const PipeliningModule &fh) = delete;
-   PipeliningModule& operator=(const PipeliningModule &fh) = delete;
-   virtual ~PipeliningModule() = default;
 
    using VmeModule::Init;
    virtual void Init( const char* configstr );

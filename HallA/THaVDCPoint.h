@@ -20,7 +20,6 @@ class THaVDCPoint : public THaCluster {
 public:
   THaVDCPoint( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
 	       THaVDCChamber* chamber );
-  virtual ~THaVDCPoint() = default;
 
   void CalcDetCoords();
 

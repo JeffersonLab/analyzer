@@ -94,7 +94,6 @@ class THaUsrstrutils {
 
 public:
   THaUsrstrutils() = default;
-  virtual ~THaUsrstrutils() = default;
   int getflag(const char *s) const;
   char *getstr(const char *s) const;
   unsigned int getint(const char *s) const;
@@ -110,7 +109,7 @@ protected:
   static void getflagpos_instring( const char *confstr, const char *s,
                                    const char **pos_ret, const char **val_ret);
 
-   ClassDef(THaUsrstrutils,0)   //  User string utilities, DAQ parsing code.
+  ClassDefNV(THaUsrstrutils,0)   //  User string utilities, DAQ parsing code.
 
 };
 

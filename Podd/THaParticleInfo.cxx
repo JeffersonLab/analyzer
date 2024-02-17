@@ -20,19 +20,6 @@ THaParticleInfo::THaParticleInfo() : fMass(0), fCharge(0)
 }
 
 //_____________________________________________________________________________
-THaParticleInfo& THaParticleInfo::operator=(const THaParticleInfo& rhs )
-{
-  // Assignment operator
-
-  if( this != &rhs ) {
-    TNamed::operator=(rhs);
-    fMass    = rhs.fMass;
-    fCharge  = rhs.fCharge;
-  }
-  return *this;
-}
-
-//_____________________________________________________________________________
 void THaParticleInfo::Print( Option_t* opt ) const
 {
   // Print particle info

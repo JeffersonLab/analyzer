@@ -16,8 +16,6 @@ class THaTrackID;
 class THaTrackingDetector : public THaSpectrometerDetector {
   
 public:
-  virtual ~THaTrackingDetector();
-  
   virtual Int_t    CoarseTrack( TClonesArray& tracks ) = 0;
   virtual Int_t    FineTrack( TClonesArray& tracks )  = 0;
   // For backward-compatibility

@@ -16,6 +16,62 @@
 using namespace std;
 
 //_____________________________________________________________________________
+TObject* THaTrack::Clone( const char* ) const
+{
+  return new THaTrack(*this);
+}
+
+//_____________________________________________________________________________
+THaTrack::THaTrack(const THaTrack& src)
+  : TObject(src)
+  , fX(src.fX)
+  , fY(src.fY)
+  , fTheta(src.fTheta)
+  , fPhi(src.fPhi)
+  , fP(src.fP)
+  , fDX(src.fDX)
+  , fDY(src.fDY)
+  , fDTheta(src.fDTheta)
+  , fDPhi(src.fDPhi)
+  , fRX(src.fRX)
+  , fRY(src.fRY)
+  , fRTheta(src.fRTheta)
+  , fRPhi(src.fRPhi)
+  , fTX(src.fTX)
+  , fTY(src.fTY)
+  , fTTheta(src.fTTheta)
+  , fTPhi(src.fTPhi)
+  , fDp(src.fDp)
+  , fPvect(src.fPvect)
+  , fVertex(src.fVertex)
+  , fVertexError(src.fVertexError)
+  , fPathl(src.fPathl)
+  , fTime(src.fTime)
+  , fdTime(src.fdTime)
+  , fBeta(src.fBeta)
+  , fdBeta(src.fdBeta)
+  , fNclusters(src.fNclusters)
+  , fClusters{src.fClusters[0], src.fClusters[1],
+              src.fClusters[2], src.fClusters[3]}
+  , fPIDinfo(src.fPIDinfo)
+  , fCreator(src.fCreator)
+  , fIndex(src.fIndex)
+  , fTrkNum(src.fTrkNum)
+  , fID(static_cast<THaTrackID*>(src.fID->Clone()))
+  , fFlag(src.fFlag)
+  , fType(src.fType)
+  , fChi2(src.fChi2)
+  , fNDoF(src.fNDoF)
+  , fDedx(src.fDedx)
+  , fEnergy(src.fEnergy)
+  , fNPMT(src.fNPMT)
+  , fBetaChi2(src.fBetaChi2)
+  , fFPTime(src.fFPTime)
+  , fGoodPlane3(src.fGoodPlane3)
+  , fGoodPlane4(src.fGoodPlane4)
+{}
+
+//_____________________________________________________________________________
 THaTrack::~THaTrack()
 {
   // Destructor. Delete objects owned by this track.

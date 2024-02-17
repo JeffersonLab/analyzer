@@ -42,7 +42,6 @@ class THaVDCCluster : public TObject {
 public:
 
   explicit THaVDCCluster( THaVDCPlane* owner = nullptr );
-  virtual ~THaVDCCluster() = default;
 
   enum EMode { kSimple, kWeighted, kT0 };
 

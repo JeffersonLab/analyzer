@@ -12,6 +12,7 @@
 #include <map>
 #include <string> 
 #include <cstring>
+#include <string_view> // for std::swap (since C++17)
 
 class THaVar;
 class TH1F;
@@ -27,11 +28,26 @@ class THaOdata {
 // Utility class used by THaOutput to store arrays 
 // up to size 'nsize' for tree output.
 public:
-  explicit THaOdata(int n=1) :
-    tree{nullptr}, ndata{0}, nsize{n}, data{new Double_t[n]} {}
+  explicit THaOdata(int n=1)
+    : tree{nullptr}
+    , ndata{0}
+    , nsize{n > 0 ? n : 0}
+    , data{n > 0 ? new Double_t[n] : nullptr}
+  {}
   THaOdata(const THaOdata& other);
   THaOdata& operator=(const THaOdata& rhs);
-  virtual ~THaOdata() { delete [] data; };
+  THaOdata( THaOdata&& other ) noexcept: THaOdata(0) { swap(*this, other); }
+  THaOdata& operator=(THaOdata&& rhs) noexcept { swap(*this, rhs); return *this; }
+  friend void swap(THaOdata& a, THaOdata& b) noexcept {
+    using std::swap;
+    swap(a.tree, b.tree);
+    swap(a.name, b.name);
+    swap(a.ndata, b.ndata);
+    swap(a.nsize, b.nsize);
+    swap(a.data, b.data);
+  }
+  ~THaOdata() { delete [] data; };
+
   void AddBranches(TTree* T, std::string name);
   void Clear( Option_t* ="" ) { ndata = 0; }
   Int_t Fill( Int_t i, Double_t dat ) {

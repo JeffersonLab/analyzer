@@ -15,7 +15,6 @@ class THaCluster : public TObject {
 
 public:
   THaCluster() : fCenter(kBig,kBig,kBig) {}
-  virtual ~THaCluster() = default;
 
   TVector3&        GetCenter()       { return fCenter; }
   virtual void     SetCenter( Double_t x, Double_t y, Double_t z )

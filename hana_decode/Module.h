@@ -24,7 +24,11 @@ namespace Decoder {
 
     Module() : Module(0,0) {}   // for ROOT TClass & I/O
     Module(UInt_t crate, UInt_t slot);
-    virtual ~Module() = default;
+    Module( const Module& ) = delete;
+    Module( Module&& ) = delete;
+    Module& operator=( const Module& ) = delete;
+    Module& operator=( Module&& ) = delete;
+    virtual ~Module();
 
     class ModuleType {
     public:

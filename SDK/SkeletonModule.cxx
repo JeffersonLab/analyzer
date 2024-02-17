@@ -33,9 +33,6 @@ SkeletonModule::SkeletonModule( UInt_t crate, UInt_t slot )
 }
 
 //_____________________________________________________________________________
-SkeletonModule::~SkeletonModule() = default;
-
-//_____________________________________________________________________________
 void SkeletonModule::Init()
 {
   VmeModule::Init();

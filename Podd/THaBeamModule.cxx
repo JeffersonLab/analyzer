@@ -15,12 +15,6 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaBeamModule::THaBeamModule() = default;
-
-//_____________________________________________________________________________
-THaBeamModule::~THaBeamModule() = default;
-
-//_____________________________________________________________________________
 const RVarDef* THaBeamModule::GetRVarDef()
 {
   // Get definition block of global variables for the fBeamIfo object

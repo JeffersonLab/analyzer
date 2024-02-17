@@ -29,6 +29,11 @@ protected:
   THaTrackInfo  fTrkIfo;          //  Track information
   THaTrack*     fTrk;             //! Pointer to associated track
 
+  THaTrackingModule( const THaTrackingModule& ) = default;
+  THaTrackingModule( THaTrackingModule&& ) = default;
+  THaTrackingModule& operator=( const THaTrackingModule& ) = default;
+  THaTrackingModule& operator=( THaTrackingModule&& ) = default;
+
   ClassDef(THaTrackingModule,2)   // ABC for a tracking module
 
 };

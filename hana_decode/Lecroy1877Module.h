@@ -19,7 +19,6 @@ public:
 
    Lecroy1877Module( UInt_t crate, UInt_t slot );
    Lecroy1877Module() = default;
-   virtual ~Lecroy1877Module() = default;
 
    using FastbusModule::Init;
    virtual void Init();

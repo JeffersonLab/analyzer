@@ -18,7 +18,6 @@ public:
 
    Scaler3801( UInt_t crate, UInt_t slot );
    Scaler3801() = default;
-   virtual ~Scaler3801() = default;
 
    using GenScaler::Init;
    virtual void Init();

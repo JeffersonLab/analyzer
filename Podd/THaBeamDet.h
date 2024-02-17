@@ -14,8 +14,7 @@ class THaBeamDet : public THaDetector {
   
 public:
   THaBeamDet() = default;
-  virtual ~THaBeamDet() = default;
-  
+
   virtual TVector3 GetPosition()  const = 0;
   virtual TVector3 GetDirection() const = 0;
   virtual Int_t Process() = 0;

@@ -48,6 +48,12 @@ Module::Module(UInt_t crate, UInt_t slot)
 }
 
 //_____________________________________________________________________________
+Module::~Module()
+{
+  delete fExtra; fExtra = nullptr;
+}
+
+//_____________________________________________________________________________
 void Module::Init()
 {
 // Suggestion: call this Init() before calling the inheriting class's Init.

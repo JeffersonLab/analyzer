@@ -166,7 +166,10 @@ public:
     StreamInfo();
     explicit StreamInfo( Int_t id );
     StreamInfo( const StreamInfo& rhs );
+    StreamInfo( StreamInfo&& rhs ) = default;
     StreamInfo& operator=( const StreamInfo& rhs );
+    StreamInfo& operator=( StreamInfo&& rhs ) = default;
+    ~StreamInfo() = default;
     bool operator==( const StreamInfo& rhs ) const {
       return fID == rhs.fID && fVersion == rhs.fVersion;
     }

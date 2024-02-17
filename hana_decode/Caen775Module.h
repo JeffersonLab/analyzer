@@ -18,7 +18,6 @@ public:
 
    Caen775Module() = default;
    Caen775Module( UInt_t crate, UInt_t slot );
-   virtual ~Caen775Module() = default;
 
    using VmeModule::GetData;
    using VmeModule::Init;

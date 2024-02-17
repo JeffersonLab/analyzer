@@ -18,7 +18,6 @@ public:
 
    Scaler3800( UInt_t crate, UInt_t slot);
    Scaler3800() = default;
-   virtual ~Scaler3800() = default;
 
    using GenScaler::Init;
    virtual void Init();

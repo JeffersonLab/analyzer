@@ -17,7 +17,6 @@ namespace VDC {
 
   public:
     AnalyticTTDConv();
-    virtual ~AnalyticTTDConv() = default;
 
     Double_t ConvertTimeToDist( Double_t time, Double_t tanTheta,
                                 Double_t* ddist = nullptr ) const override;

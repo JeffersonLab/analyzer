@@ -417,12 +417,12 @@ THaDetMap::MakeMultiHitIterator( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
-THaDetMap::Iterator::Iterator( THaDetMap& detmap, const THaEvData& evdata,
+THaDetMap::Iterator::Iterator( const THaDetMap& detmap, const THaEvData& evdata,
                                bool do_init )
-  : fDetMap(detmap), fEvData(evdata), fMod(nullptr), fNMod(fDetMap.GetSize()),
-    fNTotChan(fDetMap.GetTotNumChan()), fNChan(0), fIMod(-1), fIChan(-1)
+  : fDetMap(&detmap), fEvData(&evdata), fMod(nullptr), fNMod(fDetMap->GetSize()),
+    fNTotChan(fDetMap->GetTotNumChan()), fNChan(0), fIMod(-1), fIChan(-1)
 {
-  fHitInfo.ev = fEvData.GetEvNum();
+  fHitInfo.ev = fEvData->GetEvNum();
   // Initialize iterator state to point to the first item
   if( do_init )
     ++(*this);
@@ -461,22 +461,22 @@ void THaDetMap::Iterator::incr()
       fHitInfo.reset();
       return;
     }
-    fMod = fDetMap.GetModule(fIMod);
+    fMod = fDetMap->GetModule(fIMod);
     if( !fMod )
       throw std::logic_error("NULL detector map module. Program bug. "
                              "Call expert.");
     fHitInfo.set_crate_slot(fMod);
-    fHitInfo.module = fEvData.GetModule(CRATE_SLOT(fHitInfo));
-    fNChan = fEvData.GetNumChan(CRATE_SLOT(fHitInfo));
+    fHitInfo.module = fEvData->GetModule(CRATE_SLOT(fHitInfo));
+    fNChan = fEvData->GetNumChan(CRATE_SLOT(fHitInfo));
     fIChan = -1;
   }
  nextchan:
   if( NO_NEXT(fIChan, fNChan) )
     goto nextmod;
-  UInt_t chan = fEvData.GetNextChan(CRATE_SLOT(fHitInfo), fIChan);
+  UInt_t chan = fEvData->GetNextChan(CRATE_SLOT(fHitInfo), fIChan);
   if( chan < fMod->lo or chan > fMod->hi )
     goto nextchan;  // Not one of my channels
-  UInt_t nhit = fEvData.GetNumHits(CRATE_SLOT(fHitInfo), chan);
+  UInt_t nhit = fEvData->GetNumHits(CRATE_SLOT(fHitInfo), chan);
   fHitInfo.chan = chan;
   fHitInfo.nhit = nhit;
   if( nhit == 0 ) {
@@ -492,12 +492,12 @@ void THaDetMap::Iterator::incr()
   // Determine logical channel. Decode() methods that use this hit iterator
   // should always assume that logical channel numbers start counting from zero.
   Int_t lchan = fMod->ConvertToLogicalChannel(chan);
-  if( fDetMap.fStartAtZero )
+  if( fDetMap->fStartAtZero )
     ++lchan; // ConvertToLogicalChannel subtracts 1; undo that here
   if( lchan < 0 or static_cast<UInt_t>(lchan) >= size() ) {
     ostringstream ostr;
     size_t lmin = 1, lmax = size(); // Apparent range in the database file
-    if( fDetMap.fStartAtZero ) { --lmin; --lmax; }
+    if( fDetMap->fStartAtZero ) { --lmin; --lmax; }
     ostr << "Illegal logical detector channel " << lchan << "."
          << "Must be between " << lmin << " and " << lmax << ". Fix database.";
     throw std::invalid_argument(msg(ostr.str().c_str()));
@@ -510,7 +510,7 @@ void THaDetMap::Iterator::reset()
 {
   // Reset iterator to first element, if any
 
-  fNMod = fDetMap.GetSize();
+  fNMod = fDetMap->GetSize();
   fIMod = fIChan = -1;
   fHitInfo.reset();
   ++(*this);

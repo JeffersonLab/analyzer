@@ -19,8 +19,7 @@ class THaQWEAKHelicityReader {
   
 public:
   THaQWEAKHelicityReader();
-  virtual ~THaQWEAKHelicityReader() = default;
-  
+
   // When an event triggers the acquisition, the reported helicity, T_settle and
   // Pattern sync signals are recorded by the Input Register.
   UInt_t GetPatternTir() const { return fPatternTir; };
@@ -49,11 +48,11 @@ protected:
   enum EROC { kHel = 0, kTime, kRing, kROC3 };
   Int_t SetROCinfo( EROC which, UInt_t roc, UInt_t header, UInt_t index );
 
-  virtual void  Clear( Option_t* opt="" );
-  virtual Int_t ReadData( const THaEvData& evdata );
-  Int_t         ReadDatabase( const char* dbfilename, const char* prefix,
-			      const TDatime& date, int debug_flag = 0 );
-  virtual void FillHisto();
+  void  Clear( Option_t* opt="" );
+  Int_t ReadData( const THaEvData& evdata );
+  Int_t ReadDatabase( const char* dbfilename, const char* prefix,
+                      const TDatime& date, int debug_flag = 0 );
+  void FillHisto();
   void Begin();
   void End();
 
@@ -92,7 +91,7 @@ private:
 
   static UInt_t FindWord( const THaEvData& evdata, const ROCinfo& info );
 
-  ClassDef(THaQWEAKHelicityReader,0) // Helper class for reading QWEAK helicity data
+  ClassDefNV(THaQWEAKHelicityReader,0) // Helper class for reading QWEAK helicity data
 
 };
 

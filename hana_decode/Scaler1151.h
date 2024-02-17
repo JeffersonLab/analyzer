@@ -18,7 +18,6 @@ public:
 
    Scaler1151( UInt_t crate, UInt_t slot );
    Scaler1151() = default;
-   virtual ~Scaler1151() = default;
 
    using GenScaler::Init;
    virtual void Init();

@@ -20,8 +20,6 @@ class TVector3;
 class THaSpectrometerDetector : public THaDetector {
 
 public:
-  virtual ~THaSpectrometerDetector() = default;
-
   virtual Bool_t   IsTracking() = 0;
   virtual Bool_t   IsPid()      = 0;
 

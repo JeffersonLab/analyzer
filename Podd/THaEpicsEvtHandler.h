@@ -23,7 +23,6 @@ class THaEpicsEvtHandler : public THaEvtTypeHandler {
 public:
 
    THaEpicsEvtHandler(const char* name, const char* description);
-   virtual ~THaEpicsEvtHandler() = default;
 
    virtual Int_t Analyze(THaEvData *evdata);
    virtual EStatus Init( const TDatime& run_time);
