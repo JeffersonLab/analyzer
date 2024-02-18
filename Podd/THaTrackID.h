@@ -14,8 +14,8 @@ class THaTrackID : public TObject {
 public:
   THaTrackID() = default;
 
-  virtual Bool_t  operator==( const THaTrackID& ) = 0;
-  virtual Bool_t  operator!=( const THaTrackID& ) = 0;
+  virtual Bool_t  operator==( const THaTrackID& ) const = 0;
+  Bool_t operator!=( const THaTrackID& rhs ) const { return !operator==(rhs); }
 
   TObject* Clone(const char* ="") const override = 0;
 

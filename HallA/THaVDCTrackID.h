@@ -19,10 +19,12 @@ public:
     : fLowerU(lowerU), fLowerV(lowerV), fUpperU(upperU), fUpperV(upperV) {}
   THaVDCTrackID( const THaVDCPoint* lower, const THaVDCPoint* upper );
 
-  Bool_t  operator==( const THaTrackID& ) override;
-  Bool_t  operator!=( const THaTrackID& ) override;
-  void    Print( Option_t* opt="" ) const override;
+  Bool_t  operator==( const THaTrackID& ) const override;
+  Bool_t  operator==( const THaVDCTrackID& ) const;
+  Bool_t  operator!=( const THaVDCTrackID& rhs ) const
+  { return !THaVDCTrackID::operator==(rhs); }
 
+  void     Print( Option_t* opt="" ) const override;
   TObject* Clone(const char* ="") const override;
 
 protected:
@@ -37,22 +39,19 @@ protected:
 
 //__________________ inlines __________________________________________________
 inline
-Bool_t THaVDCTrackID::operator==( const THaTrackID& RHS )
+Bool_t THaVDCTrackID::operator==( const THaVDCTrackID& rhs ) const
 {
-  if( IsA() != RHS.IsA() ) return false;
-  const auto& rhs = static_cast<const THaVDCTrackID&>(RHS);
   return ( (fLowerU == rhs.fLowerU) && (fLowerV == rhs.fLowerV) &&
 	   (fUpperU == rhs.fUpperU) && (fUpperV == rhs.fUpperV) );
 }
 
-//__________________ inlines __________________________________________________
+//_____________________________________________________________________________
 inline
-Bool_t THaVDCTrackID::operator!=( const THaTrackID& RHS )
+Bool_t THaVDCTrackID::operator==( const THaTrackID& RHS ) const
 {
-  if( IsA() != RHS.IsA() ) return true;
+  if( IsA() != RHS.IsA() ) return false;
   const auto& rhs = static_cast<const THaVDCTrackID&>(RHS);
-  return ( (fLowerU != rhs.fLowerU) || (fLowerV != rhs.fLowerV) ||
-	   (fUpperU != rhs.fUpperU) || (fUpperV != rhs.fUpperV) );
+  return THaVDCTrackID::operator==(rhs);
 }
 
 //////////////////////////////////////////////////////////////////////////////
