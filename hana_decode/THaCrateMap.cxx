@@ -242,10 +242,11 @@ Int_t THaCrateMap::readFile( FILE* fi, string& text )
     if( size > 0 ) {
       rewind(fi);
       unique_ptr<char[]> fbuf{new char[size]};
-      size_t nread = fread(fbuf.get(), sizeof(char), size, fi);
+      auto* const buf = &fbuf[0];
+      size_t nread = fread(buf, sizeof(char), size, fi);
       if( nread == static_cast<size_t>(size) ) {
         text.reserve(nread);
-        text.assign(fbuf.get(), fbuf.get()+nread);
+        text.assign(buf, buf+nread);
         ret = CM_OK;
       }
     }
