@@ -17,6 +17,7 @@
 class THaDetectorBase : public THaAnalysisObject {
 public:
   using VecDetData_t = std::vector<std::unique_ptr<Podd::DetectorData>>;
+  using DetMapPtr_t  = std::unique_ptr<THaDetMap>;
 
   virtual ~THaDetectorBase();
 
@@ -27,7 +28,7 @@ public:
   virtual void     Reset( Option_t* opt="" );
 
   VecDetData_t&    GetDetectorData() { return fDetectorData; }
-  THaDetMap*       GetDetMap() const { return fDetMap; }
+  THaDetMap*       GetDetMap() const { return fDetMap.get(); }
   Int_t            GetNelem()  const { return fNelem; }
   Int_t            GetNviews() const { return fNviews; }
   const TVector3&  GetOrigin() const { return fOrigin; }
@@ -54,7 +55,7 @@ public:
 
 protected:
   // Mapping
-  THaDetMap*    fDetMap;    // Hardware channel map for this detector
+  DetMapPtr_t   fDetMap;    // Hardware channel map for this detector
 
   // Configuration
   Int_t         fNelem;     // Number of detector elements (paddles, mirrors)
@@ -91,7 +92,7 @@ protected:
   // Only derived classes may construct me
   THaDetectorBase( const char* name, const char* description );
 
-  ClassDef(THaDetectorBase,3)   //ABC for a detector or subdetector
+  ClassDef(THaDetectorBase,4)   //ABC for a detector or subdetector
 };
 
 #endif

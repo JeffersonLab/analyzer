@@ -26,19 +26,18 @@
 using namespace std;
 
 //_____________________________________________________________________________
+// Normal constructor. Creates a detector with an empty detector map.
 THaDetectorBase::THaDetectorBase( const char* name,
-				  const char* description ) :
-  THaAnalysisObject(name,description),
-  fDetMap(new THaDetMap),
-  fNelem(0),
-  fNviews(1),
-  fSize{kBig,kBig,kBig},
-  fXax(1.0,0.0,0.0),
-  fYax(0.0,1.0,0.0),
-  fZax(0.0,0.0,1.0)
-{
-  // Normal constructor. Creates a detector with an empty detector map.
-}
+				  const char* description )
+  : THaAnalysisObject(name,description)
+  , fDetMap(make_unique<THaDetMap>())
+  , fNelem(0)
+  , fNviews(1)
+  , fSize{kBig,kBig,kBig}
+  , fXax(1.0,0.0,0.0)
+  , fYax(0.0,1.0,0.0)
+  , fZax(0.0,0.0,1.0)
+{}
 
 //_____________________________________________________________________________
 // Default constructor. For ROOT RTTI
@@ -54,7 +53,6 @@ THaDetectorBase::~THaDetectorBase()
 {
   // Destructor
   RemoveVariables();
-  delete fDetMap;
 }
 
 //_____________________________________________________________________________
