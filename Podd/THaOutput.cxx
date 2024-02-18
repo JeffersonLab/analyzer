@@ -780,15 +780,9 @@ Int_t THaOutput::LoadFile( const char* filename )
 
   // sort through fVarnames, removing identical entries
   if( fVarnames.size() > 1 ) {
-    sort(fVarnames.begin(),fVarnames.end());
-    auto Vi = fVarnames.begin();
-    while ( (Vi+1)!=fVarnames.end() ) {
-      if ( *Vi == *(Vi+1) ) {
-	fVarnames.erase(Vi+1);
-      } else {
-	++Vi;
-      }
-    }
+    std::sort(fVarnames.begin(), fVarnames.end());
+    auto it = std::unique(fVarnames.begin(), fVarnames.end());
+    fVarnames.erase(it, fVarnames.end());
   }
 
   return 0;
