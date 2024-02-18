@@ -102,9 +102,8 @@ namespace Decoder {
 
     virtual Bool_t IsSlot( UInt_t rdata );
 
-    //FIXME: do these need to be virtual?
-    virtual UInt_t GetCrate() const { return fCrate; };
-    virtual UInt_t GetSlot()  const { return fSlot; };
+    UInt_t         GetCrate() const { return fCrate; };
+    UInt_t         GetSlot()  const { return fSlot; };
 
     virtual void   SetDebugFile( std::ofstream* file )
     {
