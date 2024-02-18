@@ -60,8 +60,8 @@ VDCeff::VDCvar_t::~VDCvar_t()
 {
   // VDCvar_t destructor. Delete histograms, if defined.
 
-  SafeDeleteHist( histname + nhit_suffix, hist_eff );
-  SafeDeleteHist( histname + eff_suffix,  hist_nhit );
+  SafeDeleteHist( histname + nhit_suffix, hist_nhit );
+  SafeDeleteHist( histname + eff_suffix,  hist_eff );
 }
 
 //_____________________________________________________________________________
@@ -72,6 +72,9 @@ void VDCeff::VDCvar_t::Reset( Option_t* )
   if( nwire > 0 ) {
     ncnt.assign( nwire, 0 );
     nhit.assign( nwire, 0 );
+
+    ncnt.clear();
+    nhit.clear();
   }
   if( hist_nhit ) hist_nhit->Reset();
   if( hist_eff  ) hist_eff->Reset();
@@ -303,6 +306,7 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
     return kInitError;
   }
   fVDCvar.clear();
+  fVDCvar.reserve(nparams / NPAR);
   const TObjArray* params = vdcvars.get();
   Int_t max_nwire = 0;
   for( Int_t ip = 0; ip < nparams; ip += NPAR ) {
