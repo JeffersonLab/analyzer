@@ -1,4 +1,12 @@
-#include <math>
+#include "TDatime.h"
+#include "TFile.h"
+#include "TTree.h"
+#include "THaRun.h"
+#include "THaEvent.h"
+#include "Database.h"
+#include <cmath>
+#include <iostream>
+#include <cstdio>
 
 const int kBUFLEN = 150;
 
@@ -7,6 +15,9 @@ const int kNumBins = 3500;
 
 const int kTrue = 1;
 const int kFalse = 0;
+
+using namespace std;
+using namespace Podd;
 
 Double_t CalcT0(int *table)
 {

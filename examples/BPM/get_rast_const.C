@@ -37,10 +37,10 @@ cin>>filename;
 Double_t kappax=1.0;
 Double_t kappay=-1.0;
 
- cout<<"Enter horizontal scaling factor ( 1.0 for E94017) <<endl;
- cin<<kappax;
- cout<<"Enter vertical scaling factor ( -1.0 for E94017) <<endl;
- cin<<kappay;
+ cout<<"Enter horizontal scaling factor ( 1.0 for E94017)" <<endl;
+ cin>>kappax;
+ cout<<"Enter vertical scaling factor ( -1.0 for E94017)" <<endl;
+ cin>>kappay;
 
  // there is an intrinsic sign ambiguity for the raster correction,
  // which is furthermore not necessarily the same for the horizontal 

@@ -1,3 +1,9 @@
+#include "TDatime.h"
+#include "TH1F.h"
+#include "TFile.h"
+#include "TTree.h"
+#include "Database.h"
+#include "THaRun.h"
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -13,6 +19,9 @@ const Double_t kTimeRes = 0.5e-9;    // (s)
 
 const int kTrue = 1;
 const int kFalse = 0;
+
+using namespace std;
+using namespace Podd;
 
 Double_t CalcT0(int num_bins, TH1F *hist)
 {

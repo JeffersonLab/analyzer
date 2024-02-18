@@ -5,8 +5,8 @@
 #include "TDirectory.h"
 #include "TAxis.h"
 #include "TF1.h"
-#include "stdio.h"
-#include "iostream.h"
+#include <cstdio>
+#include <iostream>
 
 using namespace std;
 
