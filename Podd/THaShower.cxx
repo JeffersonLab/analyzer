@@ -121,7 +121,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     }
   }
   assert( fNelem >= 0 );
-  UInt_t nval = fNelem;
+  const UInt_t nval = fNelem;
 
   if( !err ) {
     // Clear out the old channel map before reading a new one
@@ -160,7 +160,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     return err;
   }
 
-  fBlockPos.clear(); fBlockPos.reserve(nval);
+  fBlockPos.clear(); fBlockPos.resize(nval);
   fClBlk.clear();    fClBlk.reserve(nclbl);
   fDetectorData.clear();
   auto detdata = MKADCDATA(GetPrefixName(), fTitle, nval, fChanMap);
@@ -184,6 +184,8 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   // Read ADC pedestals and gains
   // (in order of **logical** channel number = block number)
   vector<Data_t> ped, gain;
+  ped.assign(nval, 0.0);
+  gain.assign(nval, 1.0);
   DBRequest calib_request[] = {
     { "pedestals",    &ped,   kDataTypeV, nval, true },
     { "gains",        &gain,  kDataTypeV, nval, true },
