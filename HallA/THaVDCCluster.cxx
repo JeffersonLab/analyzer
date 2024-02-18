@@ -110,12 +110,13 @@ void THaVDCCluster::EstTrackParameters()
   // wires to be hit in the U (or V) and detector Z directions
 
   fFitOK = false;
-  if( GetSize() == 0 )
+  const auto nHits = GetSize();
+  if( nHits == 0 )
     return;
 
   // Find pivot
   Double_t minTime = 1000;  // drift-times in seconds
-  for (int i = 0; i < GetSize(); i++) {
+  for (int i = 0; i < nHits; i++) {
     Double_t time = fHits[i]->GetTime();
     if (time < minTime) { // look for lowest time
       minTime = time;
@@ -129,10 +130,10 @@ void THaVDCCluster::EstTrackParameters()
   // Now find the approximate slope
   //   X = Drift Distance (m)
   //   Y = Position of Wires (m)
-  if( GetSize() > 1 ) {
+  if( nHits > 1 ) {
     Double_t conv = fPlane->GetDriftVel();  // m/s
-    Double_t dx = conv * (fHits[0]->GetTime() + fHits[GetSize()-1]->GetTime());
-    Double_t dy = fHits[0]->GetPos() - fHits[GetSize()-1]->GetPos();
+    Double_t dx = conv * (fHits[0]->GetTime() + fHits[nHits-1]->GetTime());
+    Double_t dy = fHits[0]->GetPos() - fHits[nHits-1]->GetPos();
     fSlope = dy / dx;
   } else
     fSlope = 1.0;
@@ -246,7 +247,8 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
   //   Y = Position of Wires
 
   fFitOK = false;
-  if( GetSize() < 3 ) {
+  const auto nHits = GetSize();
+  if( nHits < 3 ) {
     return;  // Too few hits to get meaningful results
 	     // Do keep current values of slope and intercept
   }
@@ -260,7 +262,7 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
   // wires is decreasing
 
   Int_t pivotNum = 0;
-  for (int i = 0; i < GetSize(); i++) {
+  for ( int i = 0; i < nHits; i++) {
 
     // In order to take into account the varying uncertainty in the
     // drift distance, we will be working with the X' and Y', and
@@ -298,12 +300,12 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
 //    Double_t WW= 0.0;
 
     if (i == 0)
-      for (int j = pivotNum+1; j < GetSize(); j++)
+      for ( int j = pivotNum+1; j < nHits; j++)
 	fCoord[j].y *= -1;
     else if (i == 1)
       fCoord[pivotNum].y *= -1;
 
-    for (int j = 0; j < GetSize(); j++) {
+    for ( int j = 0; j < nHits; j++) {
       Double_t x = fCoord[j].x;   // Position of wire
       Double_t y = fCoord[j].y;   // Distance to wire
       Double_t w = fCoord[j].w;
@@ -394,7 +396,8 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
 
 
   fFitOK = false;
-  if( GetSize() < 4 || !fPlane ) {
+  const auto nHits = GetSize();
+  if( nHits < 4 || !fPlane ) {
     return -1;  // Too few hits to get meaningful results
 		// Do keep current values of slope and intercept
   }
@@ -404,7 +407,7 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
   fCoord.clear();
 
   //--- Copy hit data into local arrays
-  Int_t ihit = 0, incr = 1, ilast = GetSize()-1;
+  Int_t ihit = 0, incr = 1, ilast = nHits - 1;
   // Ensure that the first element of the local arrays always corresponds
   // to the wire with the smallest x position
   bool reversed = ( fPlane->GetWSpac() < 0 );
@@ -412,8 +415,8 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
     ihit = ilast;
     incr = -1;
   }
-  for( Int_t i = 0; i < GetSize(); ihit += incr, ++i ) {
-    assert( ihit >= 0 && ihit < GetSize() );
+  for( Int_t i = 0; i < nHits; ihit += incr, ++i ) {
+    assert( ihit >= 0 && ihit < nHits );
     Double_t x = fHits[ihit]->GetPos();
     Double_t y = fHits[ihit]->GetDist() + fTimeCorrection;
 
@@ -437,7 +440,7 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
   // - The last wire always has positive drift.
   // - The sign flips exactly once from - to + somewhere in between
   fCoord[0].s = -1;
-  for( Int_t i = 1; i < GetSize(); ++i )
+  for( Int_t i = 1; i < nHits; ++i )
     fCoord[i].s = 1;
 
   for( Int_t ipivot = 0; ipivot < ilast; ++ipivot ) {
