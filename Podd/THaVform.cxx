@@ -33,7 +33,7 @@ THaVform::THaVform( const char *type, const char* name, const char* formula,
     fPrefix(kNoPrefix)
 {
   SetName(name);
-  if( vlst )
+  if( !vlst )
     vlst = gHaVars;
   if( !clst )
     clst = gHaCuts;
