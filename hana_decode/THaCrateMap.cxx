@@ -288,7 +288,7 @@ int THaCrateMap::init(ULong64_t tloc)
   // 'tloc' is the time-stamp/index into the database's periods of validity.
 
   const char* const here = "THaCrateMap::init(tloc)";
-  fInitTime = tloc;
+  WithDefaultTZ(fInitTime = tloc);
   FILE* fi = Podd::OpenDBFile(fDBfileName.c_str(), fInitTime, here, "r", 1);
   return init(fi, fDBfileName.c_str());
 }
@@ -493,7 +493,8 @@ int THaCrateMap::init(const string& the_map)
   string line; line.reserve(128);
   istringstream s(the_map);
   Int_t found_tscrate=0;
-  TDatime keydate(950101, 0), prevdate(950101, 0);
+  WithDefaultTZ(const Long64_t ldate = fInitTime.Convert());
+  Long64_t keydate = 0, prevdate = 0;
   bool do_ignore = false, in_crate = false;
   int lineno = 0;
 
@@ -514,7 +515,7 @@ int THaCrateMap::init(const string& the_map)
     // To remove a previously-defined crate after a certain time stamp, use
     // crate type "unused".
     if( Podd::IsDBtimestamp(line, keydate) ) {
-      do_ignore = (keydate > fInitTime || keydate < prevdate);
+      do_ignore = (keydate > ldate || keydate < prevdate);
       in_crate = false;
       continue;
     } else if( do_ignore )

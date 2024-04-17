@@ -62,6 +62,7 @@ Int_t    SeekDBconfig( FILE* file, const char* tag, const char* label = "config"
 
 Int_t    SeekDBdate( std::istream& istr, const TDatime& date, Bool_t end_on_tag = false );
 Bool_t   IsDBtimestamp( const std::string& line, TDatime& keydate );
+Bool_t   IsDBtimestamp( const std::string& line, Long64_t& keydate );
 
 // Time zone to assume for legacy database time stamps without time zone offsets.
 // The default is "US/Eastern".

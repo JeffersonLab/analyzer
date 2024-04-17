@@ -84,7 +84,7 @@ class THaCrateMap {
      enum ECrateCode { kUnknown, kFastbus, kVME, kScaler, kCamac };
 
      std::string fDBfileName;     // Database file name
-     TDatime     fInitTime;       // Database time stamp
+     TDatime     fInitTime;       // Database time stamp BCI: -> Long64_t
      UInt_t      fTSROC;          // Crate (aka ROC) of the trigger supervisor
 
      class SlotInfo_t {

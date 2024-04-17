@@ -1335,7 +1335,17 @@ Int_t SeekDBdate( istream& istr, const TDatime& date, Bool_t end_on_tag )
 //_____________________________________________________________________________
 Bool_t IsDBtimestamp( const string& line, TDatime& date )
 {
-  WithDefaultTZ(Long64_t ldate = date.Convert());
+  Long64_t ldate = -1;
+  Bool_t ret = IsDBdate(line, ldate, true);
+  if( ret && ldate >= 0 ) {
+    WithDefaultTZ(date.Set(ldate));
+  }
+  return ret;
+}
+
+//_____________________________________________________________________________
+Bool_t IsDBtimestamp( const string& line, Long64_t& ldate )
+{
   return IsDBdate(line, ldate, true);
 }
 
