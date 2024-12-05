@@ -57,12 +57,16 @@ set(src
   )
 if(ONLINE_ET)
   if(ET_FOUND)
-  # no longer needed?
-  #  find_library(IEEE_LIBRARY ieee)
-  #  set(ONLIBS ${ET_LIBRARY} ${IEEE_LIBRARY})
-  #  set(ONLIBS ${ET_LIBRARY})
     set(ONLIBS EVIO::ET)
-    list(APPEND src THaEtClient.cxx)
+    set(ETCLT THaEtClient.cxx)
+    list(APPEND src ${ETCLT})
+    if(HAVE_BYTESWAP_H AND HAVE_BSWAP32)
+      set_source_files_properties(${ETCLT} PROPERTIES COMPILE_DEFINITIONS
+        HAVE_BYTESWAP_H)
+    elseif(HAVE_BUILTIN_BSWAP)
+      set_source_files_properties(${ETCLT} PROPERTIES COMPILE_DEFINITIONS
+        HAVE_BUILTIN_BSWAP)
+    endif()
   else()
     message(WARNING
       "Cannot find ET system. Check $CODA environment variable. Disabling ONLINE_ET")

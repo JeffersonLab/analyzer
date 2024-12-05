@@ -20,9 +20,15 @@
 #include <cstring>
 #include <ctime>        // for timespec
 #include <stdexcept>
-#include "evio.h"       // for evioswap
+#include "evio.h"
 #include "et_private.h" // for ET_VERSION
+#ifdef HAVE_BYTESWAP_H
 #include <byteswap.h>
+#elif HAVE_BUILTIN_BSWAP
+#define bswap_32 __builtin_bswap32
+#else
+#define bswap_32(x) ET_SWAP32(x)
+#endif
 
 using namespace std;
 
