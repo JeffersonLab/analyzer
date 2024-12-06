@@ -31,23 +31,15 @@ class TString;
 // The ET memory file will have this prefix.  The suffix is $SESSION.
 #define ETMEM_PREFIX "/tmp/et_sys_"
 
-// Hall A computers that run CODA/ET
-//FIXME: un-hardcode these ... sigh
-#define ADAQL1 "129.57.164.53"
-#define ADAQL2 "129.57.164.59"
-#define ADAQEP "129.57.164.78"
-#define ADAQCP "129.57.164.79"
-#define ADAQS2 "129.57.164.44"
-#define ADAQS3 "129.57.164.45"
-
 namespace Decoder {
 
 class THaEtClient : public THaCodaData {
 
 public:
 
-  explicit THaEtClient( Int_t mode = 1 );   // By default, gets data from ADAQS2
-// find data on 'computer'.  e.g. computer="129.57.164.44"
+  // By default, gets data from localhost
+  explicit THaEtClient( Int_t mode = 1 );
+  // find data on 'computer'.  e.g. computer="129.57.164.44"
   explicit THaEtClient( const char* computer, Int_t mode = 1 );
   THaEtClient( const char* computer, const char* session, Int_t mode = 1 );
   ~THaEtClient();

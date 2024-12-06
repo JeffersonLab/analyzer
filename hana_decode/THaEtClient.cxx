@@ -68,7 +68,7 @@ THaEtClient::THaEtClient( Int_t smode )
   : initflags
 {
   // uses default server (where CODA runs)
-  const char* defaultcomputer = ADAQS2;
+  const char* defaultcomputer = "127.0.0.1";
   THaEtClient::codaOpen(defaultcomputer, smode);
 }
 
