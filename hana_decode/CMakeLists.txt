@@ -21,10 +21,6 @@ if(NOT EVIO_FOUND)
   endif()
 endif()
 
-if(ONLINE_ET)
-  find_package(ET)
-endif()
-
 #----------------------------------------------------------------------------
 # Sources and headers
 set(src
@@ -56,6 +52,7 @@ set(src
   VmeModule.cxx
   )
 if(ONLINE_ET)
+  find_package(ET 16)
   if(ET_FOUND)
     set(ONLIBS EVIO::ET)
     set(ETCLT THaEtClient.cxx)
