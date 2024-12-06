@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
              cout << "Error Status from codaRead " << status << endl;
              exit(0);
 	 }
-         evbuff = et->getEvBuffer();
+         const auto* const evbuff = et->getEvBuffer();
          if (PRINTOUT) 
            cout << "Event "<<dec<<iev<<" length "<<evbuff[0]+1<<endl;
          for (UInt_t i=0; i<evbuff[0]+1; i++) {
