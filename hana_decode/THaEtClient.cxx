@@ -14,10 +14,9 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaEtClient.h"
+#include "TSystem.h"
 #include <iostream>
 #include <cstdlib>
-#include <cerrno>
-#include <cstring>
 #include <ctime>        // for timespec
 #include <stdexcept>
 #include "evio.h"
@@ -39,77 +38,57 @@ static const int BIG_TIMEOUT = 20;
 
 namespace Decoder {
 
-// Common member initialization for our constructors
-#define initflags                                       \
-  nread(0)                                              \
-, nused(0)                                              \
-, timeout(BIG_TIMEOUT)                                  \
-, id(0)                                                 \
-, my_att(0)                                             \
-, daqhost(nullptr)                                      \
-, session(nullptr)                                      \
-, etfile(nullptr)                                       \
-, waitflag(0)                                           \
-, didclose(0)                                           \
-, notopened(0)                                          \
-, firstread(1)                                          \
-, firstRateCalc(1)                                      \
-, evsum(0)                                              \
-, xcnt(0)                                               \
-, daqt1(-1)                                             \
-, ratesum(0)
-
 #define EVETCHECKINIT( x )                                        \
-  if(x.etSysId == 0) {                                            \
-    printf("%s: ERROR: evet not initiallized\n", __func__);       \
-    return -1;}
+  if( x.etSysId == nullptr || x.etChunk == nullptr ) {            \
+    printf("%s: ERROR: evet not initialized\n", __func__);        \
+    return ET_ERROR;}
 
+//______________________________________________________________________________
 THaEtClient::THaEtClient( Int_t smode )
-  : initflags
 {
   // uses default server (where CODA runs)
   const char* defaultcomputer = "127.0.0.1";
   THaEtClient::codaOpen(defaultcomputer, smode);
 }
 
+//______________________________________________________________________________
 THaEtClient::THaEtClient( const char* computer, Int_t smode )
-  : initflags
 {
   THaEtClient::codaOpen(computer, smode);
 }
 
+//______________________________________________________________________________
 THaEtClient::THaEtClient( const char* computer, const char* mysession, Int_t smode )
-  : initflags
 {
   THaEtClient::codaOpen(computer, mysession, smode);
 }
 
+//______________________________________________________________________________
 THaEtClient::~THaEtClient()
 {
-  delete[] daqhost;
-  delete[] session;
-  delete[] etfile;
-  Int_t status = THaEtClient::codaClose();
-  if( status == CODA_ERROR ) cout << "ERROR: closing THaEtClient" << endl;
+  THaEtClient::codaClose();
+  // If error, codaClose already printed a message
 }
 
+//______________________________________________________________________________
 Int_t THaEtClient::init( const char* mystation )
 {
-  static char station[ET_STATNAME_LENGTH];
-  if( !mystation || strlen(mystation) >= ET_STATNAME_LENGTH ) {
+  if( opened && THaEtClient::codaClose() != CODA_OK )
+    return CODA_ERROR;
+
+  if( !mystation || !*mystation ) {
     cout << "THaEtClient: bad station name\n";
     return CODA_FATAL;
   }
-  strcpy(station, mystation);
+  station = mystation;
 
   et_openconfig openconfig{};
   et_open_config_init(&openconfig);
 
-  et_open_config_sethost(openconfig, daqhost);
+  et_open_config_sethost(openconfig, daqhost.c_str());
   et_open_config_setcast(openconfig, ET_DIRECT);
-  et_sys_id id = 0;
-  if( et_open(&id, etfile, openconfig) != ET_OK ) {
-    notopened = 1;
+  et_sys_id id{};
+  if( et_open(&id, etfile.c_str(), openconfig) != ET_OK ) {
     cout << "THaEtClient: cannot open ET system" << endl;
     cout << "Likely causes:  " << endl;
     cout << "  1. Incorrect SESSION environment variable (it can also be passed to codaOpen)" << endl;
@@ -117,7 +96,9 @@ Int_t THaEtClient::init( const char* mystation )
     return CODA_FATAL;
   }
 
-  evetOpen(id, ET_CHUNK_SIZE, evh);
+  // Initialize evetHandle evh
+  if( evetOpen(id, ET_CHUNK_SIZE) != ET_OK )
+    return CODA_FATAL; // Error message already printed
   et_open_config_destroy(openconfig);
 
 
@@ -135,8 +116,8 @@ Int_t THaEtClient::init( const char* mystation )
   et_station_config_setprescale(sconfig, 1);
   et_station_config_setselect(sconfig, ET_STATION_SELECT_ALL);
   et_stat_id my_stat{};
-  Int_t status = et_station_create(evh.etSysId, &my_stat, station, sconfig);
-  if( status < ET_OK ) {
+  int status = et_station_create(id, &my_stat, station.c_str(), sconfig);
+  if( status != ET_OK ) {
     if( status == ET_ERROR_EXISTS ) {
       // ok
     } else if( status == ET_ERROR_TOOMANY ) {
@@ -157,57 +138,56 @@ Int_t THaEtClient::init( const char* mystation )
     }
   }
   et_station_config_destroy(sconfig);
-  if( et_station_attach(evh.etSysId, my_stat, &evh.etAttId) < 0 ) {
+  if( et_station_attach(id, my_stat, &evh.etAttId) != ET_OK ) {
     cout << "THaEtClient: error in station attach" << endl;
     return CODA_ERROR;
   }
+  opened = true;
   return CODA_OK;
 }
 
+//______________________________________________________________________________
 Int_t THaEtClient::codaClose()
 {
-  if( didclose || firstread ) return CODA_OK;
-  didclose = 1;
-  if( notopened ) return CODA_ERROR;
+  if( !opened )
+    return CODA_OK;  // If not successfully opened, close() is a no-op
   if( et_station_detach(evh.etSysId, evh.etAttId) != ET_OK ) {
-    cout << "ERROR: codaClose: detaching from ET" << endl;
-    return CODA_ERROR;
+    cout << "WARNING: codaClose: detaching from ET" << endl;
+//    return CODA_ERROR;
   }
-  if( evetClose(evh) ) {
-    cout << "ERROR: evetClose: error closing EVIO handle" << endl;
-    return CODA_ERROR;
+  auto* id = evh.etSysId;
+  evetClose(evh); // always succeeds, even if error
+  if( et_close(id) != ET_OK ) {
+    cout << "WARNING: codaClose: error closing ET" << endl;
+//    return CODA_ERROR;
   }
-  if( et_close(evh.etSysId) != ET_OK ) {
-    cout << "ERROR: codaClose: error closing ET" << endl;
-    return CODA_ERROR;
-  }
+  opened = false;
   return CODA_OK;
 }
 
+//______________________________________________________________________________
 Int_t THaEtClient::codaRead()
 {
-  if( firstread ) {
+  if( !opened ) {
     Int_t status = init();
     if( status != CODA_OK ) {
       cout << "THaEtClient: ERROR: codaRead, cannot connect to CODA" << endl;
       return CODA_FATAL;
     }
-    firstread = 0;
   }
 
   //  Read a chunk of data, return read status (0 = ok, else not).
   //  To try to use network efficiently, it actually gets
   //  the events in chunks, and passes them to the user.
-  const size_t bpi = sizeof(uint32_t);
-  int status;
-  const uint32_t* readBuffer;
-  uint32_t len;
-  status = evetReadNoCopy(evh, &readBuffer, &len);
-  if( status == 0 ) {
+  constexpr size_t bpi = sizeof(uint32_t);
+  const uint32_t* readBuffer{};
+  uint32_t len{};
+  int status = evetReadNoCopy(evh, &readBuffer, &len);
+  if( status == ET_OK ) {
     if( !evbuffer.grow(len / bpi + 1) )
       throw runtime_error("THaEtClient: Maximum event buffer size reached");
     assert(bpi * evbuffer.size() >= (size_t)len);
-    memcpy(evbuffer.get(), readBuffer, sizeof(uint32_t) * len);
+    memcpy(evbuffer.get(), readBuffer, bpi * len);
   }
 
   if( firstRateCalc ) {
@@ -217,17 +197,18 @@ Int_t THaEtClient::codaRead()
     time_t daqt2 = time(nullptr);
     double tdiff = difftime(daqt2, daqt1);
     evsum += evh.etChunkNumRead;
-    if( (tdiff > 4) && (evsum > 30) ) {
-      double daqrate = static_cast<double>(evsum) / tdiff;
+    if( tdiff > 4 && evsum > 30 ) {
+      double daqrate = evsum / tdiff;
       evsum = 0;
       ratesum += daqrate;
       double avgrate = ratesum / ++xcnt;
 
       if( evh.verbose > 0 ) {
-        printf("ET rate %4.1f Hz in %2.0f sec, avg %4.1f Hz\n", daqrate, tdiff, avgrate);
+        printf("ET rate %4.1f Hz in %2.0f sec, avg %4.1f Hz\n",
+               daqrate, tdiff, avgrate);
       }
       if( waitflag != 0 ) {
-        timeout = (avgrate > FAST) ? SMALL_TIMEOUT : BIG_TIMEOUT;
+        evh.timeout = (avgrate > FAST) ? SMALL_TIMEOUT : BIG_TIMEOUT;
       }
       daqt1 = time(nullptr);
     }
@@ -235,6 +216,7 @@ Int_t THaEtClient::codaRead()
   return status;
 }
 
+//______________________________________________________________________________
 Int_t THaEtClient::codaOpen( const char* computer,
                              const char* mysession,
                              Int_t smode )
@@ -243,41 +225,36 @@ Int_t THaEtClient::codaOpen( const char* computer,
   // 1) What computer is ET running on ? (e.g. computer='adaql2')
   // 2) What session ? (usually env. variable $SESSION, e.g. 'onla')
   // 3) mode (0 = wait forever for data,  1 = time-out in a few seconds)
-  delete[] daqhost;
-  delete[] session;
-  delete[] etfile;
-  daqhost = new char[strlen(computer) + 1];
-  strcpy(daqhost, computer);
-  etfile = new char[strlen(ETMEM_PREFIX) + strlen(mysession) + 1];
-  strcpy(etfile, ETMEM_PREFIX);
-  strcat(etfile, mysession);
-  session = new char[strlen(mysession) + 1];
-  strcpy(session, mysession);
+  daqhost = computer;
+  etfile = ETMEM_PREFIX;
+  etfile.append(mysession);
+  session = mysession;
   waitflag = smode;
   return CODA_OK;
 }
 
+//______________________________________________________________________________
 Int_t THaEtClient::codaOpen( const char* computer, Int_t smode )
 {
   // See comment in the above version of codaOpen()
-  char* s = getenv("SESSION");
+  const auto* s = gSystem->Getenv("SESSION");
   if( s == nullptr )
     return CODA_ERROR;
-  TString mysession(s);
-  return codaOpen(computer, mysession, smode);
+  session = s;
+  return codaOpen(computer, session.c_str(), smode);
 }
 
+//______________________________________________________________________________
 bool THaEtClient::isOpen() const
 {
-  return (notopened == 1 && didclose == 0);
+  return opened;
 }
 
-
-int32_t
-THaEtClient::evetOpen( et_sys_id etSysId, int32_t chunk, evetHandle_t& evh )
+//______________________________________________________________________________
+int THaEtClient::evetOpen( et_sys_id etSysId, int32_t chunksz )
 {
-  evh.etSysId = etSysId;
-  evh.etChunkSize = chunk;
+  evh.etSysId = nullptr;
+  evh.etChunkSize = chunksz;
 
   evh.etAttId = 0;
   evh.currentChunkID = -1;
@@ -287,68 +264,77 @@ THaEtClient::evetOpen( et_sys_id etSysId, int32_t chunk, evetHandle_t& evh )
   evh.currentChunkStat.length = 0;
   evh.currentChunkStat.endian = 0;
   evh.currentChunkStat.swap = 0;
+  evh.timeout = BIG_TIMEOUT;
+  evh.mode = waitflag;
 
   /* allocate some memory */
-  evh.etChunk = (et_event**)calloc((size_t)chunk, sizeof(et_event*));
-  if( evh.etChunk == NULL ) {
+  free(evh.etChunk); // NOLINT(*-multi-level-implicit-pointer-conversion)
+  evh.etChunk = (et_event**)calloc(chunksz, sizeof(et_event*));
+  if( evh.etChunk == nullptr ) {
     printf("%s: out of memory\n", __func__);
-    evh.etSysId = 0;
-    return CODA_FATAL;
+    evh.etSysId = nullptr;
+    return ET_ERROR_NOMEM;
   }
 
-  return CODA_OK;
+  evh.etSysId = etSysId; // indicates successful initialization
+
+  return ET_OK;
 }
 
-int32_t
-THaEtClient::evetClose( evetHandle_t& evh )
+//______________________________________________________________________________
+int THaEtClient::evetClose( evetHandle_t& evh )
 {
+  // This function always succeeds. Any errors print a message and continue.
 
   // Close up any currently opened evBufferOpen's.
+  int status = ET_OK;
   if( evh.currentChunkStat.evioHandle ) {
-    int32_t stat = evClose(evh.currentChunkStat.evioHandle);
-    if( stat != S_SUCCESS ) {
-      printf("%s: ERROR: evClose returned %s\n",
-             __func__, et_perror(stat));
-      return CODA_ERROR;
+    status = evClose(evh.currentChunkStat.evioHandle);
+    if( status != S_SUCCESS ) {
+      printf("%s: WARNING: evClose returned %s\n", __func__, evPerror(status));
+      //return status;  // EVIO return code
     }
   }
 
   // put any events we may still have
-  if( evh.etChunkNumRead != -1 ) {
+  if( evh.etSysId && evh.etChunkNumRead != -1 ) {
     /* putting array of events */
-    int32_t status = et_events_put(evh.etSysId, evh.etAttId, evh.etChunk, evh.etChunkNumRead);
+    status = et_events_put(evh.etSysId, evh.etAttId, evh.etChunk,
+                           evh.etChunkNumRead);
     if( status != ET_OK ) {
-      printf("%s: ERROR: et_events_put returned %s\n",
+      printf("%s: WARNING: et_events_put returned %s\n",
              __func__, et_perror(status));
-      return CODA_FATAL;
+      //return status;
     }
   }
 
   // free up the etChunk memory
-  if( evh.etChunk )
-    free(evh.etChunk);
+  free(evh.etChunk); // NOLINT(*-multi-level-implicit-pointer-conversion)
+  evh.etChunk = nullptr;
 
-  return CODA_OK;
+  evh.etSysId = nullptr;  // evetHandle_t now uninitialized
+
+  return ET_OK;
 }
 
-
-int32_t
-THaEtClient::evetGetEtChunks( evetHandle_t& evh )
+//______________________________________________________________________________
+int THaEtClient::evetGetEtChunks( evetHandle_t& evh )
 {
   if( evh.verbose > 1 )
     printf("%s: enter\n", __func__);
 
-  EVETCHECKINIT(evh);
+  EVETCHECKINIT(evh)
 
-  int32_t status;
-  if( waitflag == 0 ) {
-    status = et_events_get(evh.etSysId, evh.etAttId, evh.etChunk, ET_SLEEP, NULL, evh.etChunkSize, &evh.etChunkNumRead);
+  int status = ET_OK;
+  if( evh.mode == 0 ) {
+    status = et_events_get(evh.etSysId, evh.etAttId, evh.etChunk, ET_SLEEP,
+                           nullptr, evh.etChunkSize, &evh.etChunkNumRead);
   } else {
     struct timespec twait{};
-    twait.tv_sec = timeout;
+    twait.tv_sec = evh.timeout;
     twait.tv_nsec = 0;
-    status = et_events_get(evh.etSysId, evh.etAttId, evh.etChunk, ET_TIMED, &twait, evh.etChunkSize,
-                           &evh.etChunkNumRead);
+    status = et_events_get(evh.etSysId, evh.etAttId, evh.etChunk, ET_TIMED,
+                           &twait, evh.etChunkSize, &evh.etChunkNumRead);
   }
   if( status != ET_OK ) {
     printf("%s: ERROR: et_events_get returned (%d) %s\n",
@@ -357,41 +343,41 @@ THaEtClient::evetGetEtChunks( evetHandle_t& evh )
       printf("et_netclient: timeout calling et_events_get\n");
       printf("Probably means CODA is not running...\n");
     }
-    return CODA_FATAL;
+    return status;
   }
 
   evh.currentChunkID = -1;
 
-  return CODA_OK;
+  return status;
 }
 
-int32_t
-THaEtClient::evetGetChunk( evetHandle_t& evh )
+//______________________________________________________________________________
+int THaEtClient::evetGetChunk( evetHandle_t& evh )
 {
   if( evh.verbose > 1 )
     printf("%s: enter\n", __func__);
 
-  EVETCHECKINIT(evh);
+  EVETCHECKINIT(evh)
 
   evh.currentChunkID++;
 
   if( (evh.currentChunkID >= evh.etChunkNumRead) || (evh.etChunkNumRead == -1) ) {
     if( evh.etChunkNumRead != -1 ) {
       /* putting array of events */
-      int32_t status = et_events_put(evh.etSysId, evh.etAttId, evh.etChunk, evh.etChunkNumRead);
+      int status = et_events_put(evh.etSysId, evh.etAttId, evh.etChunk,
+                                 evh.etChunkNumRead);
       if( status != ET_OK ) {
         printf("%s: ERROR: et_events_put returned %s\n",
                __func__, et_perror(status));
-        return CODA_FATAL;
+        return status;
       }
     }
 
     // out of chunks.  get some more
-    int32_t stat = evetGetEtChunks(evh);
-    if( stat != 0 ) {
-      printf("%s: ERROR: evetGetEtChunks(evh) returned %d\n",
-             __func__, stat);
-      return CODA_FATAL;
+    int status = evetGetEtChunks(evh);
+    if( status != ET_OK ) {
+      printf("%s: ERROR: evetGetEtChunks(evh) returned %d\n", __func__, status);
+      return status;
     }
     evh.currentChunkID++;
 
@@ -399,23 +385,22 @@ THaEtClient::evetGetChunk( evetHandle_t& evh )
 
   // Close previous handle
   if( evh.currentChunkStat.evioHandle ) {
-    int32_t stat = evClose(evh.currentChunkStat.evioHandle);
-    if( stat != ET_OK ) {
-      printf("%s: ERROR: evClose returned %s\n",
-             __func__, et_perror(stat));
-      return CODA_FATAL;
+    int status = evClose(evh.currentChunkStat.evioHandle);
+    if( status != S_SUCCESS ) {
+      printf("%s: ERROR: evClose returned %s\n", __func__, evPerror(status));
+      return status;  // EVIO return code
     }
   }
 
-  et_event* currentChunk = evh.etChunk[evh.currentChunkID];
+  auto* currentChunk = evh.etChunk[evh.currentChunkID];
   et_event_getdata(currentChunk, (void**)&evh.currentChunkStat.data);
   et_event_getlength(currentChunk, &evh.currentChunkStat.length);
   et_event_getendian(currentChunk, &evh.currentChunkStat.endian);
   et_event_needtoswap(currentChunk, &evh.currentChunkStat.swap);
 
   if( evh.verbose > 1 ) {
-    uint32_t* data = evh.currentChunkStat.data;
-    uint32_t idata = 0, len = evh.currentChunkStat.length;
+    auto* data = evh.currentChunkStat.data;
+    auto len = evh.currentChunkStat.length;
 
     printf("data byte order = %s\n",
            (evh.currentChunkStat.endian == ET_ENDIAN_BIG) ? "BIG" : "LITTLE");
@@ -425,7 +410,7 @@ THaEtClient::evetGetChunk( evetHandle_t& evh )
            evh.currentChunkStat.swap ? "needs swapping" : "does not need swapping",
            evh.currentChunkStat.swap ? bswap_32(data[0]) : data[0]);
 
-    for( idata = 0; idata < ((32 < (len >> 2)) ? 32 : (len >> 2)); idata++ ) {
+    for( uint32_t idata = 0; idata < ((32 < (len >> 2)) ? 32 : (len >> 2)); idata++ ) {
       printf("0x%08x ", evh.currentChunkStat.swap ? bswap_32(data[idata]) : data[idata]);
       if( ((idata + 1) % 8) == 0 )
         printf("\n");
@@ -433,42 +418,46 @@ THaEtClient::evetGetChunk( evetHandle_t& evh )
     printf("\n");
   }
 
-  int32_t evstat = evOpenBuffer((char*)evh.currentChunkStat.data, evh.currentChunkStat.length,
-                                (char*)"r", &evh.currentChunkStat.evioHandle);
+  int status = evOpenBuffer((char*)evh.currentChunkStat.data,
+                            evh.currentChunkStat.length,
+                            (char*)"r", &evh.currentChunkStat.evioHandle);
 
-  if( evstat != 0 ) {
-    printf("%s: ERROR: evOpenBuffer returned %s\n",
-           __func__, et_perror(evstat));
-    return CODA_FATAL;
-  }
-
-  return CODA_OK;
-}
-
-int32_t
-THaEtClient::evetReadNoCopy( evetHandle_t& evh, const uint32_t** outputBuffer, uint32_t* length )
-{
-  if( evh.verbose > 1 )
-    printf("%s: enter\n", __func__);
-
-  EVETCHECKINIT(evh);
-
-  int32_t status = evReadNoCopy(evh.currentChunkStat.evioHandle,
-                                outputBuffer, length);
   if( status != S_SUCCESS ) {
-    // Get a new chunk from et_get_event
-    status = evetGetChunk(evh);
-    if( status == 0 ) {
-      status = evReadNoCopy(evh.currentChunkStat.evioHandle,
-                            outputBuffer, length);
-    } else {
-      printf("%s: ERROR: evetGetChunk failed %d\n",
-             __func__, status);
-    }
+    printf("%s: ERROR: evOpenBuffer returned %s\n",
+           __func__, evPerror(status));
+    return status;  // EVIO return code
   }
 
   return status;
 }
 
-} //Namespace
+//______________________________________________________________________________
+int THaEtClient::evetReadNoCopy( evetHandle_t& evh,
+                                 const uint32_t** outputBuffer,
+                                 uint32_t* length )
+{
+  if( evh.verbose > 1 )
+    printf("%s: enter\n", __func__);
+
+  EVETCHECKINIT(evh)
+
+  int status = evReadNoCopy(evh.currentChunkStat.evioHandle,
+                            outputBuffer, length);
+  if( status != S_SUCCESS ) {
+    // Get a new chunk from et_get_event
+    status = evetGetChunk(evh);
+    if( status == ET_OK ) {
+      status = evReadNoCopy(evh.currentChunkStat.evioHandle,
+                            outputBuffer, length);
+    } else {
+      printf("%s: ERROR: evetGetChunk failed %d\n", __func__, status);
+    }
+  }
+
+  return status; // EVIO return code
+}
+
+//______________________________________________________________________________
+} // end namespace Decoder
+
 ClassImp(Decoder::THaEtClient)
