@@ -561,7 +561,7 @@ int THaCrateMap::init(const string& the_map)
     // Set fTSROC to > MAXROC to be able to detect non-presence of a definition
     // in the crate map later. In this way, we can avoid printing a warning
     // if we're analyzing CODA 2 data, for which the TSROC doesn't matter.
-    fTSROC += 100;
+    fTSROC = MAXROC+1;
   }
 
   return CM_OK;

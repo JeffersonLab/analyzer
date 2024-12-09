@@ -412,7 +412,7 @@ Int_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer )
     return HED_ERR;
   }
   auto tsroc = fMap->getTSROC();
-  if( tsroc > MAXROC ) {
+  if( tsroc >= MAXROC ) {
     tsroc = THaCrateMap::DEFAULT_TSROC;
     Warning( "THaCrateMap", "Did not find TSROC.  Using default %u\n"
      " If this is incorrect, TS info (trigger bits etc.) will be unavailable.",
@@ -1427,7 +1427,7 @@ void CodaDecoder::ChkFbSlot( UInt_t roc, const UInt_t* evbuffer, UInt_t ipt,
     if( slot == 0 || slot >= MAXSLOT_FB )  // Used for diagnostic data words
       continue;
     UInt_t index = MAXSLOT_FB*roc + slot;
-    if( slot > 0 && index < MAXROCSLOT_FB )
+    if( index < MAXROCSLOT_FB )
       fbfound[index] = true;
   }
 }
