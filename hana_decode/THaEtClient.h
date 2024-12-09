@@ -17,13 +17,13 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaCodaData.h"
+#include "et.h"
 #include <ctime>
 #include <string>
-
-#include "et.h"
+#include <memory>
 
 // The ET memory file will have this prefix.  The suffix is $SESSION.
-static const char* ETMEM_PREFIX = "/tmp/et_sys_";
+static const char* const ETMEM_PREFIX = "/tmp/et_sys_";
 static constexpr int32_t ET_CHUNK_SIZE = 50;
 
 namespace Decoder {
@@ -36,6 +36,8 @@ public:
   explicit THaEtClient( Int_t mode = 1 );
   // find data on 'computer'.  e.g. computer="129.57.164.44"
   explicit THaEtClient( const char* computer, Int_t mode = 1 );
+  THaEtClient( const THaEtClient& fn ) = delete;
+  THaEtClient& operator=( const THaEtClient& fn ) = delete;
   THaEtClient( const char* computer, const char* session, Int_t mode = 1 );
   ~THaEtClient() override;
 
@@ -46,18 +48,17 @@ public:
   Bool_t isOpen() const override;
 
 private:
-
-  THaEtClient( const THaEtClient& fn );
-  THaEtClient& operator=( const THaEtClient& fn );
-  Int_t nread{0}, nused{0};
-  Int_t waitflag{0};
+  Int_t nread{0};
+  Int_t nused{0};
+  int32_t waitflag{0};
   bool opened{false};
   std::string daqhost, session, etfile, station;
   Int_t init( const char* computer = "hana_sta" );
 
   // rate calculation
   Int_t firstRateCalc{1};
-  Int_t evsum{0}, xcnt{0};
+  Int_t evsum{0};
+  Int_t xcnt{0};
   time_t daqt1{-1};
   double ratesum{0.0};
 
@@ -71,29 +72,33 @@ private:
     int32_t       evioHandle{0};
   };
 
-  struct evetHandle_t {
+  class EvET {
+  public:
+    EvET() = default;
+    ~EvET() { close(); }
+    // These return either ET or EVIO return codes, which are distinct.
+    int init( et_sys_id id, int32_t chunksz, int32_t waitmode );
+    int close();
+    int read_no_copy( const uint32_t** outputBuffer, uint32_t* length );
+
     et_sys_id     etSysId{nullptr};
-    et_event**    etChunk{nullptr};    // pointer to array of et_events (pe)
     et_att_id     etAttId{};
     int32_t       etChunkSize{};       // user requested (et_events in a chunk)
     int32_t       etChunkNumRead{-1};  // actual read from et_events_get
     int32_t       currentChunkID{-1};  // j
     etChunkStat_t currentChunkStat{};  // data, len, endian, swap
-    int32_t       verbose{1};          // 0 (none), 1 (data rate), 2+ (verbose)
     int32_t       timeout{20};         // timeout value (s)
-    int32_t       mode{1};             // wait mode: 0 (indefinite), 1 (timeout)
+    int16_t       mode{1};             // wait mode: 0 (indefinite), 1 (timeout)
+    int16_t       verbose{1};          // 0 (none), 1 (data rate), 2+ (verbose)
+    std::unique_ptr<et_event*[]> etChunk;// pointer to array of et_events (pe)
+
+  private:
+    int get_chunk();
+    int get_chunks();
+    void print_chunk() const;
   };
 
-  // TODO: The following can/should be member functions of evetHandle_t
-  // These return either ET or EVIO return codes, which are distinct.
-  int evetOpen( et_sys_id etSysId, int32_t chunksz );
-  static int evetClose( evetHandle_t& evh );
-  static int evetReadNoCopy( evetHandle_t& evh, const uint32_t** outputBuffer,
-                                 uint32_t* length );
-  static int evetGetEtChunks( evetHandle_t& evh );
-  static int evetGetChunk( evetHandle_t& evh );
-
-  evetHandle_t evh;
+  EvET evh;
 
   ClassDefOverride(THaEtClient, 0)   // ET client connection for online data
 };

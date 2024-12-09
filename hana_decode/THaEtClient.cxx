@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <ctime>        // for timespec
 #include <stdexcept>
+#include <algorithm>    // std::min
 #include "evio.h"
 #include "et_private.h" // for ET_VERSION
 
@@ -38,29 +39,29 @@ static const int BIG_TIMEOUT = 20;
 
 namespace Decoder {
 
-#define EVETCHECKINIT( x )                                        \
-  if( x.etSysId == nullptr || x.etChunk == nullptr ) {            \
-    printf("%s: ERROR: evet not initialized\n", __func__);        \
-    return ET_ERROR;}
-
 //______________________________________________________________________________
 THaEtClient::THaEtClient( Int_t smode )
 {
   // uses default server (where CODA runs)
   const char* defaultcomputer = "127.0.0.1";
-  THaEtClient::codaOpen(defaultcomputer, smode);
+  const char* defaultsession = "halla";
+  THaEtClient::codaOpen(defaultcomputer, defaultsession, smode);
 }
 
 //______________________________________________________________________________
 THaEtClient::THaEtClient( const char* computer, Int_t smode )
 {
-  THaEtClient::codaOpen(computer, smode);
+  if( THaEtClient::codaOpen(computer, smode) != CODA_OK )
+    throw std::invalid_argument(
+      "THaEtClient: invalid computer or session name");
 }
 
 //______________________________________________________________________________
 THaEtClient::THaEtClient( const char* computer, const char* mysession, Int_t smode )
 {
-  THaEtClient::codaOpen(computer, mysession, smode);
+  if( THaEtClient::codaOpen(computer, mysession, smode) != CODA_OK )
+    throw std::invalid_argument(
+      "THaEtClient: invalid computer or session name");
 }
 
 //______________________________________________________________________________
@@ -73,7 +74,7 @@ THaEtClient::~THaEtClient()
 //______________________________________________________________________________
 Int_t THaEtClient::init( const char* mystation )
 {
-  if( opened && THaEtClient::codaClose() != CODA_OK )
+  if( THaEtClient::codaClose() != CODA_OK )
     return CODA_ERROR;
 
   if( !mystation || !*mystation ) {
@@ -97,7 +98,7 @@ Int_t THaEtClient::init( const char* mystation )
   }
 
   // Initialize evetHandle evh
-  if( evetOpen(id, ET_CHUNK_SIZE) != ET_OK )
+  if( evh.init(id, ET_CHUNK_SIZE, waitflag) != ET_OK )
     return CODA_FATAL; // Error message already printed
   et_open_config_destroy(openconfig);
 
@@ -151,14 +152,20 @@ Int_t THaEtClient::codaClose()
 {
   if( !opened )
     return CODA_OK;  // If not successfully opened, close() is a no-op
-  if( et_station_detach(evh.etSysId, evh.etAttId) != ET_OK ) {
-    cout << "WARNING: codaClose: detaching from ET" << endl;
+  auto* id = evh.etSysId;  // this gets zeroed out in evh.close();
+  int status = et_station_detach(id, evh.etAttId);
+  if( status != ET_OK ) {
+    cerr << "WARNING: codaClose: error detaching from ET: "
+         << et_perror(status) << endl;
 //    return CODA_ERROR;
   }
-  auto* id = evh.etSysId;
-  evetClose(evh); // always succeeds, even if error
-  if( et_close(id) != ET_OK ) {
-    cout << "WARNING: codaClose: error closing ET" << endl;
+
+  evh.close(); // always succeeds, even if error
+
+  status = et_close(id);
+  if( status != ET_OK ) {
+    cerr << "WARNING: codaClose: error closing ET: " << et_perror(status)
+         << endl;
 //    return CODA_ERROR;
   }
   opened = false;
@@ -182,7 +189,7 @@ Int_t THaEtClient::codaRead()
   constexpr size_t bpi = sizeof(uint32_t);
   const uint32_t* readBuffer{};
   uint32_t len{};
-  int status = evetReadNoCopy(evh, &readBuffer, &len);
+  int status = evh.read_no_copy(&readBuffer, &len);
   if( status == ET_OK ) {
     if( !evbuffer.grow(len / bpi + 1) )
       throw runtime_error("THaEtClient: Maximum event buffer size reached");
@@ -225,10 +232,17 @@ Int_t THaEtClient::codaOpen( const char* computer,
   // 1) What computer is ET running on ? (e.g. computer='adaql2')
   // 2) What session ? (usually env. variable $SESSION, e.g. 'onla')
   // 3) mode (0 = wait forever for data,  1 = time-out in a few seconds)
+  if( !computer || !*computer ) {
+    cerr << "THaEtClient: ERROR: no computer name given" << endl;
+    return CODA_ERROR;
+  }
+  if( !mysession || !*mysession ) {
+    cerr << "THaEtClient: ERROR: no session name given" << endl;
+    return CODA_ERROR;
+  }
   daqhost = computer;
-  etfile = ETMEM_PREFIX;
-  etfile.append(mysession);
   session = mysession;
+  etfile = ETMEM_PREFIX + session;
   waitflag = smode;
   return CODA_OK;
 }
@@ -238,10 +252,11 @@ Int_t THaEtClient::codaOpen( const char* computer, Int_t smode )
 {
   // See comment in the above version of codaOpen()
   const auto* s = gSystem->Getenv("SESSION");
-  if( s == nullptr )
+  if( s == nullptr ) {
+    cerr << "THaEtClient: ERROR: $SESSION not set" << endl;
     return CODA_ERROR;
-  session = s;
-  return codaOpen(computer, session.c_str(), smode);
+  }
+  return codaOpen(computer, s, smode);
 }
 
 //______________________________________________________________________________
@@ -251,45 +266,59 @@ bool THaEtClient::isOpen() const
 }
 
 //______________________________________________________________________________
-int THaEtClient::evetOpen( et_sys_id etSysId, int32_t chunksz )
+#define EVETCHECKINIT                                             \
+  if( etSysId == nullptr || !etChunk ) {                \
+    printf("%s: ERROR: evet not initialized\n", __func__);        \
+    return ET_ERROR;}
+
+//______________________________________________________________________________
+int THaEtClient::EvET::init( et_sys_id id, int32_t chunksz, int32_t waitmode )
 {
-  evh.etSysId = nullptr;
-  evh.etChunkSize = chunksz;
+  close();
 
-  evh.etAttId = 0;
-  evh.currentChunkID = -1;
-  evh.etChunkNumRead = -1;
+  etSysId = nullptr;
+  etAttId = 0;
 
-  evh.currentChunkStat.evioHandle = 0;
-  evh.currentChunkStat.length = 0;
-  evh.currentChunkStat.endian = 0;
-  evh.currentChunkStat.swap = 0;
-  evh.timeout = BIG_TIMEOUT;
-  evh.mode = waitflag;
+  etChunkSize = chunksz;
+  etChunkNumRead = -1;
+  currentChunkID = -1;
+
+  currentChunkStat.data = nullptr;
+  currentChunkStat.length = 0;
+  currentChunkStat.endian = 0;
+  currentChunkStat.swap = 0;
+  currentChunkStat.evioHandle = 0;
+
+  timeout = BIG_TIMEOUT;
+  mode = static_cast<int16_t>(waitmode);
 
   /* allocate some memory */
-  free(evh.etChunk); // NOLINT(*-multi-level-implicit-pointer-conversion)
-  evh.etChunk = (et_event**)calloc(chunksz, sizeof(et_event*));
-  if( evh.etChunk == nullptr ) {
+  try {
+#if __cplusplus >= 201402L
+    etChunk = make_unique<et_event*[]>(chunksz);
+#else
+    etChunk = unique_ptr<et_event*[]>(new et_event*[chunksz]);
+#endif
+  } catch ( const std::bad_alloc& ) {
     printf("%s: out of memory\n", __func__);
-    evh.etSysId = nullptr;
+    etSysId = nullptr;
     return ET_ERROR_NOMEM;
   }
 
-  evh.etSysId = etSysId; // indicates successful initialization
+  etSysId = id;   // indicates successful initialization
 
   return ET_OK;
 }
 
 //______________________________________________________________________________
-int THaEtClient::evetClose( evetHandle_t& evh )
+int THaEtClient::EvET::close()
 {
   // This function always succeeds. Any errors print a message and continue.
 
   // Close up any currently opened evBufferOpen's.
   int status = ET_OK;
-  if( evh.currentChunkStat.evioHandle ) {
-    status = evClose(evh.currentChunkStat.evioHandle);
+  if( currentChunkStat.evioHandle ) {
+    status = evClose(currentChunkStat.evioHandle);
     if( status != S_SUCCESS ) {
       printf("%s: WARNING: evClose returned %s\n", __func__, evPerror(status));
       //return status;  // EVIO return code
@@ -297,10 +326,9 @@ int THaEtClient::evetClose( evetHandle_t& evh )
   }
 
   // put any events we may still have
-  if( evh.etSysId && evh.etChunkNumRead != -1 ) {
+  if( etSysId && etChunkNumRead != -1 ) {
     /* putting array of events */
-    status = et_events_put(evh.etSysId, evh.etAttId, evh.etChunk,
-                           evh.etChunkNumRead);
+    status = et_events_put(etSysId, etAttId, etChunk.get(), etChunkNumRead);
     if( status != ET_OK ) {
       printf("%s: WARNING: et_events_put returned %s\n",
              __func__, et_perror(status));
@@ -309,32 +337,32 @@ int THaEtClient::evetClose( evetHandle_t& evh )
   }
 
   // free up the etChunk memory
-  free(evh.etChunk); // NOLINT(*-multi-level-implicit-pointer-conversion)
-  evh.etChunk = nullptr;
+  etChunk.reset();
 
-  evh.etSysId = nullptr;  // evetHandle_t now uninitialized
+  currentChunkStat.evioHandle = 0;
+  etSysId = nullptr;  // this object now considered uninitialized
 
   return ET_OK;
 }
 
 //______________________________________________________________________________
-int THaEtClient::evetGetEtChunks( evetHandle_t& evh )
+int THaEtClient::EvET::get_chunks()
 {
-  if( evh.verbose > 1 )
+  if( verbose > 1 )
     printf("%s: enter\n", __func__);
 
-  EVETCHECKINIT(evh)
+  EVETCHECKINIT
 
   int status = ET_OK;
-  if( evh.mode == 0 ) {
-    status = et_events_get(evh.etSysId, evh.etAttId, evh.etChunk, ET_SLEEP,
-                           nullptr, evh.etChunkSize, &evh.etChunkNumRead);
+  if( mode == 0 ) {
+    status = et_events_get(etSysId, etAttId, etChunk.get(), ET_SLEEP,
+                           nullptr, etChunkSize, &etChunkNumRead);
   } else {
     struct timespec twait{};
-    twait.tv_sec = evh.timeout;
+    twait.tv_sec = timeout;
     twait.tv_nsec = 0;
-    status = et_events_get(evh.etSysId, evh.etAttId, evh.etChunk, ET_TIMED,
-                           &twait, evh.etChunkSize, &evh.etChunkNumRead);
+    status = et_events_get(etSysId, etAttId, etChunk.get(), ET_TIMED,
+                           &twait, etChunkSize, &etChunkNumRead);
   }
   if( status != ET_OK ) {
     printf("%s: ERROR: et_events_get returned (%d) %s\n",
@@ -346,26 +374,51 @@ int THaEtClient::evetGetEtChunks( evetHandle_t& evh )
     return status;
   }
 
-  evh.currentChunkID = -1;
+  currentChunkID = -1;
 
   return status;
 }
 
 //______________________________________________________________________________
-int THaEtClient::evetGetChunk( evetHandle_t& evh )
+void THaEtClient::EvET::print_chunk() const
 {
-  if( evh.verbose > 1 )
+  uint32_t* data = currentChunkStat.data;
+  size_t len = currentChunkStat.length;
+
+  printf("data byte order = %s\n",
+         (currentChunkStat.endian == ET_ENDIAN_BIG) ? "BIG" : "LITTLE");
+  printf(" %2d/%2d: data (len = %u) %s  int = ",
+         currentChunkID, etChunkNumRead, static_cast<unsigned>(len),
+         currentChunkStat.swap ? "needs swapping" : "does not need swapping");
+  if( data ) {
+    printf("%d\n", currentChunkStat.swap ? bswap_32(data[0]) : data[0]);
+    for( size_t idata = 0; idata < std::min((size_t)32, len >> 2); idata++ ) {
+      printf("0x%08x ", currentChunkStat.swap ? bswap_32(data[idata])
+                                              : data[idata]);
+      if( ((idata + 1) % 8) == 0 )
+        printf("\n");
+    }
+    printf("\n");
+  } else {
+    printf("(null)\n%s: ERROR: data = NULL\n", __func__);
+  }
+}
+
+//______________________________________________________________________________
+int THaEtClient::EvET::get_chunk()
+{
+  if( verbose > 1 )
     printf("%s: enter\n", __func__);
 
-  EVETCHECKINIT(evh)
+  EVETCHECKINIT
 
-  evh.currentChunkID++;
+  currentChunkID++;
 
-  if( (evh.currentChunkID >= evh.etChunkNumRead) || (evh.etChunkNumRead == -1) ) {
-    if( evh.etChunkNumRead != -1 ) {
+  if( currentChunkID >= etChunkNumRead || etChunkNumRead == -1 ) {
+    if( etChunkNumRead != -1 ) {
       /* putting array of events */
-      int status = et_events_put(evh.etSysId, evh.etAttId, evh.etChunk,
-                                 evh.etChunkNumRead);
+      int status = et_events_put(etSysId, etAttId, etChunk.get(),
+                                 etChunkNumRead);
       if( status != ET_OK ) {
         printf("%s: ERROR: et_events_put returned %s\n",
                __func__, et_perror(status));
@@ -374,53 +427,36 @@ int THaEtClient::evetGetChunk( evetHandle_t& evh )
     }
 
     // out of chunks.  get some more
-    int status = evetGetEtChunks(evh);
+    int status = get_chunks();
     if( status != ET_OK ) {
-      printf("%s: ERROR: evetGetEtChunks(evh) returned %d\n", __func__, status);
+      printf("%s: ERROR: get_chunks returned %d\n", __func__, status);
       return status;
     }
-    evh.currentChunkID++;
+    currentChunkID++;
 
   }
 
   // Close previous handle
-  if( evh.currentChunkStat.evioHandle ) {
-    int status = evClose(evh.currentChunkStat.evioHandle);
+  if( currentChunkStat.evioHandle ) {
+    int status = evClose(currentChunkStat.evioHandle);
     if( status != S_SUCCESS ) {
       printf("%s: ERROR: evClose returned %s\n", __func__, evPerror(status));
       return status;  // EVIO return code
     }
   }
 
-  auto* currentChunk = evh.etChunk[evh.currentChunkID];
-  et_event_getdata(currentChunk, (void**)&evh.currentChunkStat.data);
-  et_event_getlength(currentChunk, &evh.currentChunkStat.length);
-  et_event_getendian(currentChunk, &evh.currentChunkStat.endian);
-  et_event_needtoswap(currentChunk, &evh.currentChunkStat.swap);
+  auto* currentChunk = etChunk[currentChunkID];
+  et_event_getdata(currentChunk, (void**)&currentChunkStat.data);
+  et_event_getlength(currentChunk, &currentChunkStat.length);
+  et_event_getendian(currentChunk, &currentChunkStat.endian);
+  et_event_needtoswap(currentChunk, &currentChunkStat.swap);
 
-  if( evh.verbose > 1 ) {
-    auto* data = evh.currentChunkStat.data;
-    auto len = evh.currentChunkStat.length;
+  if( verbose > 1 )
+    print_chunk();
 
-    printf("data byte order = %s\n",
-           (evh.currentChunkStat.endian == ET_ENDIAN_BIG) ? "BIG" : "LITTLE");
-    printf(" %2d/%2d: data (len = %d) %s  int = %d\n",
-           evh.currentChunkID, evh.etChunkNumRead,
-           (int)len,
-           evh.currentChunkStat.swap ? "needs swapping" : "does not need swapping",
-           evh.currentChunkStat.swap ? bswap_32(data[0]) : data[0]);
-
-    for( uint32_t idata = 0; idata < ((32 < (len >> 2)) ? 32 : (len >> 2)); idata++ ) {
-      printf("0x%08x ", evh.currentChunkStat.swap ? bswap_32(data[idata]) : data[idata]);
-      if( ((idata + 1) % 8) == 0 )
-        printf("\n");
-    }
-    printf("\n");
-  }
-
-  int status = evOpenBuffer((char*)evh.currentChunkStat.data,
-                            evh.currentChunkStat.length,
-                            (char*)"r", &evh.currentChunkStat.evioHandle);
+  int status = evOpenBuffer((char*)currentChunkStat.data,
+                            currentChunkStat.length,
+                            (char*)"r", &currentChunkStat.evioHandle);
 
   if( status != S_SUCCESS ) {
     printf("%s: ERROR: evOpenBuffer returned %s\n",
@@ -432,25 +468,24 @@ int THaEtClient::evetGetChunk( evetHandle_t& evh )
 }
 
 //______________________________________________________________________________
-int THaEtClient::evetReadNoCopy( evetHandle_t& evh,
-                                 const uint32_t** outputBuffer,
-                                 uint32_t* length )
+int THaEtClient::EvET::read_no_copy( const uint32_t** outputBuffer,
+                                     uint32_t* length )
 {
-  if( evh.verbose > 1 )
+  if( verbose > 1 )
     printf("%s: enter\n", __func__);
 
-  EVETCHECKINIT(evh)
+  EVETCHECKINIT
 
-  int status = evReadNoCopy(evh.currentChunkStat.evioHandle,
+  int status = evReadNoCopy(currentChunkStat.evioHandle,
                             outputBuffer, length);
   if( status != S_SUCCESS ) {
     // Get a new chunk from et_get_event
-    status = evetGetChunk(evh);
+    status = get_chunk();
     if( status == ET_OK ) {
-      status = evReadNoCopy(evh.currentChunkStat.evioHandle,
+      status = evReadNoCopy(currentChunkStat.evioHandle,
                             outputBuffer, length);
     } else {
-      printf("%s: ERROR: evetGetChunk failed %d\n", __func__, status);
+      printf("%s: ERROR: get_chunk failed %d\n", __func__, status);
     }
   }
 
