@@ -377,7 +377,7 @@ Int_t CodaDecoder::LoadTrigBankInfo( UInt_t i )
   if( tbank.evTS )
     evt_time = tbank.evTS[i];      // event time (4ns clock, I think)
   else if( tbank.TSROC ) {
-    UInt_t struct_size = tbank.withTriggerBits() ? 3 : 2;
+    size_t struct_size = tbank.withTriggerBits() ? 3 : 2;
     evt_time = *(const uint64_t*) (tbank.TSROC + struct_size * i);
     // Only the lower 48 bits seem to contain the time
     evt_time &= 0x0000FFFFFFFFFFFF;
@@ -645,7 +645,7 @@ Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
           *(evbuf + 1), event_type);
     return HED_ERR;
   }
-  UInt_t pos = 0;
+  size_t pos = 0;
   while( pos < event_length ) {
     auto bankinfo = GetBank(evbuf, pos, event_length);
     if( bankinfo.status_ != BankInfo::kOK ) {
@@ -653,10 +653,10 @@ Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
       return HED_ERR;
     }
     pos = bankinfo.pos_;
-    auto len = bankinfo.len_;
+    size_t len = bankinfo.len_;
     assert(pos + len <= event_length);
     if( bankinfo.GetDataSize() == BankInfo::k8bit ) {
-      const auto* c = reinterpret_cast<const char*>(evbuf + pos);
+      const auto* c = reinterpret_cast<const char*>(evbuf + pos); // NOLINT(*-pro-type-reinterpret-cast)
       cfg->strings.emplace_back(c, c + 4 * len - bankinfo.npad_);
     } else {
       Warning(here, "Unsupported data type %#x in event type %u",
