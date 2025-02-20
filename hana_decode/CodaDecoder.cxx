@@ -88,9 +88,12 @@ Int_t CodaDecoder::Init()
   Int_t ret = THaEvData::Init();
   if( ret != HED_OK ) return ret;
   FindUsedSlots();
-  auto* cfg = DAQInfoExtra::GetFrom(fExtra);
-  if( cfg )
-    cfg->clear();
+  //FIXME: BCI: we only need ifo to access fTags, which is to be moved to cfg
+  auto* ifo = DAQInfoExtra::GetExtraInfo(fExtra);
+  if( ifo ) {
+    ifo->fDAQconfig.clear();
+    ifo->fTags.clear();
+  }
   return ret;
 }
 
@@ -632,9 +635,11 @@ Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
 
   if( !evbuf )
     return HED_FATAL;
-  auto* cfg = DAQInfoExtra::GetFrom(fExtra);
-  if( !cfg )
+  //FIXME: BCI: we only need ifo to access fTags, which is to be moved to cfg
+  auto* ifo = DAQInfoExtra::GetExtraInfo(fExtra);
+  if( !ifo )
     return HED_ERR;
+  auto* cfg = &ifo->fDAQconfig;
   size_t nbefore = cfg->strings.size();
 
 #define CFGEVT1 Decoder::DAQCONFIG_FILE1
@@ -658,9 +663,10 @@ Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
     if( bankinfo.GetDataSize() == BankInfo::k8bit ) {
       const auto* c = reinterpret_cast<const char*>(evbuf + pos); // NOLINT(*-pro-type-reinterpret-cast)
       cfg->strings.emplace_back(c, c + 4 * len - bankinfo.npad_);
+      ifo->fTags.emplace_back(bankinfo.tag_);
     } else {
-      Warning(here, "Unsupported data type %#x in event type %u",
-              bankinfo.dtyp_, event_type);
+      Warning(here, "Unsupported data type %#x in event type %u"
+               ", bank tag = %u", bankinfo.dtyp_, event_type, bankinfo.tag_ );
     }
     pos += len;
   }

@@ -82,10 +82,11 @@ public:
 		   kPrescales = BIT(3),
                    kDAQInfo   = BIT(4) };
 
-  // DAQ configuration strings (usually database file dumps) from user event
+  // DAQ configuration strings (usually database file dumps) from user events
   size_t               GetNConfig() const;
   const std::string&   GetDAQConfig( size_t i ) const;
   const std::string&   GetDAQInfo( const std::string& key ) const;
+  UInt_t               GetDAQConfigTag( size_t i ) const;
 
 protected:
   UInt_t        fNumber;        // Run number

@@ -174,16 +174,19 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
 #define CFGEVT2 Decoder::DAQCONFIG_FILE2
   if( evdata->GetEvType() == CFGEVT1 || evdata->GetEvType() == CFGEVT2 ) {
     fDataRead |= kDAQInfo;
-    auto* srcifo = DAQInfoExtra::GetFrom(evdata->GetExtra());
+    //FIXME: BCI: we only need ifo to access fTags, which is to be moved to cfg
+    auto* srcifo = DAQInfoExtra::GetExtraInfo(evdata->GetExtra());
     if( !srcifo ) {
       Warning( here, "Failed to decode DAQ config info from event type %u",
                evdata->GetEvType() );
       return -3;
     }
-    auto* ifo = DAQInfoExtra::GetFrom(fExtra);
+    auto* ifo = DAQInfoExtra::GetExtraInfo(fExtra);
     assert(ifo);     // else bug in constructor
+    // FIXME: BCI: to be moved to fDAQconfig
+    ifo->fTags = srcifo->fTags;
     // Copy info to local run parameters. NB: This may be several MB of data.
-    *ifo = *srcifo;
+    ifo->fDAQconfig = srcifo->fDAQconfig;
     fDataSet |= kDAQInfo;
     ret |= (1<<2);
   }
@@ -637,6 +640,15 @@ const string& THaRunBase::GetDAQInfo( const std::string& key ) const
   if( it == keyval.end() )
     return nullstr;
   return it->second;
+}
+
+//_____________________________________________________________________________
+UInt_t THaRunBase::GetDAQConfigTag( size_t i ) const
+{
+  auto* ifo = DAQInfoExtra::GetExtraInfo(fExtra);
+  if( !ifo || i >= ifo->fTags.size() )
+    return kMaxUInt;
+  return ifo->fTags[i];
 }
 
 //_____________________________________________________________________________
