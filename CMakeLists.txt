@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(Podd VERSION 1.7.12 LANGUAGES CXX)
-set(EXTVERS "-sbs1")
+set(EXTVERS "-sbs2")
 
 #----------------------------------------------------------------------------
 # Use our modules and utility functions
