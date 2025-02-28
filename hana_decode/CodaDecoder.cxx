@@ -1107,6 +1107,9 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
     pos += len+1;
   }
 
+  if( fDebug > 1 )
+    PrintBankInfo();
+
   for( auto slot : fMap->GetUsedSlots(roc) ) {
     assert(fMap->slotUsed(roc,slot));
     Int_t bank = fMap->getBank(roc, slot);

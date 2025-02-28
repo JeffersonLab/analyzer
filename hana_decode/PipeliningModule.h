@@ -76,6 +76,7 @@ protected:
    static Long64_t FindEventsInBlock(
      const uint32_t* buf, size_t start, size_t len, uint32_t evthdr,
      uint32_t blktrl, std::vector<Long64_t>& evtpos, uint32_t slot );
+  static Long64_t FindBlockHeader( const uint32_t* buf, size_t start, size_t len, uint32_t slot );
 
    Long64_t VerifyBlockTrailer( const UInt_t* evbuffer, UInt_t pos, UInt_t len,
                                 Long64_t ibeg, Long64_t iend ) const;
