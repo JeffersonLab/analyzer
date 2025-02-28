@@ -149,6 +149,33 @@ Long64_t PipeliningModule::VerifyBlockTrailer(
 }
 
 //_____________________________________________________________________________
+Long64_t PipeliningModule::FindBlockHeader( const uint32_t* buf, size_t start,
+                                            size_t len, uint32_t slot )
+{
+  // Find block header for given slot. Ignore any control words within blocks
+  // for other slots.
+
+  Long64_t ibeg = start, pos = -1;
+  while( true ) {
+    pos = FindIDWord(buf, ibeg, len + start - ibeg, kBlockHeader);
+    if( pos == -1 )
+      return -1;
+    auto this_slot = (buf[pos] >> 22) & 0x1F;
+    if( this_slot == slot )
+      break;
+    pos = FindIDWord(buf, pos + 1, len + start - (pos + 1),
+                     kBlockTrailer, this_slot);
+    //TODO: verify length
+    if( pos == -1 )
+      // No trailer for this_slot: something is wrong, so let's claim we
+      // didn't find anything and quit.
+      return -1;
+    ibeg = pos + 1;
+  }
+  return pos;
+}
+
+//_____________________________________________________________________________
 UInt_t PipeliningModule::LoadBank( THaSlotData* sldat,
                                    const UInt_t* evbuffer,
                                    UInt_t pos, UInt_t len )
@@ -161,7 +188,7 @@ UInt_t PipeliningModule::LoadBank( THaSlotData* sldat,
     PrintBlock(evbuffer,pos,len);
 
   // Find block for this module's slot
-  auto ibeg = FindIDWord(evbuffer, pos, len, kBlockHeader, fSlot);
+  auto ibeg = FindBlockHeader(evbuffer, pos, len, fSlot);
   if( ibeg == -1 )
     // Slot not present in buffer (OK)
     return 0;
