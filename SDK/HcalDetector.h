@@ -1,22 +1,22 @@
-#ifndef ROOT_UserDetector
-#define ROOT_UserDetector
+#ifndef ROOT_HcalDetector
+#define ROOT_HcalDetector
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
-// UserDetector                                                              //
+// HcalDetector                                                              //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaNonTrackingDetector.h"
 #include <vector>
 
-class UserDetector : public THaNonTrackingDetector {
+class HcalDetector : public THaNonTrackingDetector {
 
 public:
-  UserDetector( const char* name, const char* description = "",
+  HcalDetector( const char* name, const char* description = "",
 		THaApparatus* a = NULL );
-  UserDetector() : fRawADC(0), fCorADC(0) {}
-  virtual ~UserDetector();
+  HcalDetector() : fRawADC(0), fCorADC(0) {}
+  virtual ~HcalDetector();
 
   virtual void       Clear( Option_t* opt="" );
   virtual Int_t      Decode( const THaEvData& );
@@ -44,7 +44,7 @@ protected:
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode );
 
-  ClassDef(UserDetector,0)   // Example detector
+  ClassDef(HcalDetector,0)   // Hadron calorimeter
 };
 
 ////////////////////////////////////////////////////////////////////////////////

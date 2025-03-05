@@ -1,19 +1,16 @@
-//*-- Author :    Ole Hansen   01-Dec-03
+//*-- Author :    Bob Michaels, Jan 2017
 //
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
-// UserDetector                                                              //
+// Fastbus Detector 1
 //                                                                           //
 // Example of a user-defined detector class. This class implements a         //
 // completely new detector from scratch. Only Decode() performs non-trivial  //
 // work. CoarseProcess/FineProcess should be implemented as needed.          //
 //                                                                           //
-// See UserScintillator for an example of a detector class where the         //
-// behavior of an existing detector (scintillator) is modified and extended. //
-//                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "UserDetector.h"
+#include "FbusDetector.h"
 #include "VarDef.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
@@ -31,7 +28,7 @@ using namespace std;
 // default values. In particular, all pointers should be either zeroed or
 // assigned valid data.
 //_____________________________________________________________________________
-UserDetector::UserDetector( const char* name, const char* description,
+FbusDetector::FbusDetector( const char* name, const char* description,
 				  THaApparatus* apparatus )
   : THaNonTrackingDetector(name,description,apparatus),
     fNhit(0), fRawADC(0), fCorADC(0)
@@ -40,7 +37,7 @@ UserDetector::UserDetector( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
-UserDetector::~UserDetector()
+FbusDetector::~FbusDetector()
 {
   // Destructor. Remove variables from global list.
 
@@ -50,7 +47,7 @@ UserDetector::~UserDetector()
 }
 
 //_____________________________________________________________________________
-Int_t UserDetector::ReadDatabase( const TDatime& date )
+Int_t FbusDetector::ReadDatabase( const TDatime& date )
 {
   // Read the database for this detector.
   // This function is called once at the beginning of the analysis.
@@ -98,7 +95,7 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
     const DBRequest request[] = {
       // Required items
       { "detmap",    &detmap, kIntV },         // Detector map
-      { "nelem",     &nelem,  kInt, 0, 0, -1}, // Number of elements (e.g. PMTs)
+      { "nelem",     &nelem,  kInt },          // Number of elements (e.g. PMTs)
       // Optional items
       { "angle",     &angle,  kDouble, 0, 1 }, // Rotation angle about y (deg)
       { "pedestals", &fPed,   kFloatV, 0, 1 }, // Pedestals
@@ -191,7 +188,7 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
 
   // Use the rotation angle to set the axes vectors
   // (required for display functions, for instance)
-  // See THaDetectorBase::DefineAxes for details.
+  // See THaSpectrometerDetector::DefineAxes for details.
   const Float_t degrad = TMath::Pi()/180.0;
   DefineAxes(angle*degrad);
 
@@ -210,7 +207,7 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t UserDetector::DefineVariables( EMode mode )
+Int_t FbusDetector::DefineVariables( EMode mode )
 {
   // Define (or delete) global variables of the detector
 
@@ -227,7 +224,7 @@ Int_t UserDetector::DefineVariables( EMode mode )
 }
 
 //_____________________________________________________________________________
-void UserDetector::Clear( Option_t* opt )
+void FbusDetector::Clear( Option_t* opt )
 {
   // Reset per-event data.
 
@@ -242,7 +239,7 @@ void UserDetector::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-Int_t UserDetector::Decode( const THaEvData& evdata )
+Int_t FbusDetector::Decode( const THaEvData& evdata )
 {
   // Decode data.
   // Read all channels with hits specified in  the detector map.
@@ -251,8 +248,12 @@ Int_t UserDetector::Decode( const THaEvData& evdata )
   // (pedestal-subtracted, scaled by gain factor) here as well since
   // all the required data is available.
 
+  Int_t ldebug=0;
+
   // Clear event-by-event data
   Clear();
+
+  if (ldebug) cout << "Inside FbusDetector :: Decode().  Event num "<<evdata.GetEvNum()<<"   size "<<evdata.GetEvLength()<<endl;
 
   // Loop over all modules defined in the detector map
 
@@ -260,7 +261,14 @@ Int_t UserDetector::Decode( const THaEvData& evdata )
     THaDetMap::Module* d = fDetMap->GetModule( i );
 
     // Loop over all channels that have a hit.
-    for( Int_t j = 0; j < evdata.GetNumChan( d->crate, d->slot ); j++) {
+    if (ldebug) cout << "crate, slot "<<d->crate<<"  "<<d->slot<<endl;
+
+    if (d->crate < 0 || d->crate > 20 || d->slot < 0 || d->slot>20) {
+      // gulp      cout << "FbusDetector: warning:  strange crate slot "<<d->crate<<"  "<<d->slot<<endl;
+      continue;
+
+    }
+   for( Int_t j = 0; j < evdata.GetNumChan( d->crate, d->slot ); j++) {
 
       Int_t chan = evdata.GetNextChan( d->crate, d->slot, j );
       if( chan < d->lo || chan > d->hi ) continue;   // Not one of my channels
@@ -279,8 +287,16 @@ Int_t UserDetector::Decode( const THaEvData& evdata )
 #endif
 	continue;
       }
+
+      if(ldebug) cout << "FB data "<<i<<"  "<<d->crate<<"   "<<d->slot<<"   "<<k<<"    "<<data<<endl;
+
       fRawADC[k] = static_cast<Float_t>( data );
       fCorADC[k] = (fRawADC[k] - fPed[k]) * fGain[k];
+
+      if (fRawADC[k] == 0) {
+	cout << "Zero FB "<<k<<"  "<<evdata.GetEvNum()<<"  "<<i<<"  "<<d->crate<<"   "<<d->slot<<"   "<<k<<"    "<<data<<endl;
+      }
+
       fNhit++;
     }
   }
@@ -288,7 +304,7 @@ Int_t UserDetector::Decode( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
-Int_t UserDetector::CoarseProcess( TClonesArray& tracks )
+Int_t FbusDetector::CoarseProcess( TClonesArray& tracks )
 {
   // Coarse processing. 'tracks' contains coarse tracks.
 
@@ -296,7 +312,7 @@ Int_t UserDetector::CoarseProcess( TClonesArray& tracks )
 }
 
 //_____________________________________________________________________________
-Int_t UserDetector::FineProcess( TClonesArray& tracks )
+Int_t FbusDetector::FineProcess( TClonesArray& tracks )
 {
   // Fine processing. 'tracks' contains final tracking results.
 
@@ -320,7 +336,7 @@ static void PrintArray( const Float_t* arr, Int_t size )
 }
 
 //_____________________________________________________________________________
-void UserDetector::Print( Option_t* opt ) const
+void FbusDetector::Print( Option_t* opt ) const
 {
   // Print current configuration
 
@@ -338,4 +354,4 @@ void UserDetector::Print( Option_t* opt ) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ClassImp(UserDetector)
+ClassImp(FbusDetector)

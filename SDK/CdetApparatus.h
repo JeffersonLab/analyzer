@@ -1,20 +1,20 @@
-#ifndef ROOT_UserApparatus
-#define ROOT_UserApparatus
+#ifndef ROOT_CdetApparatus
+#define ROOT_CdetApparatus
 
 //////////////////////////////////////////////////////////////////////////
 //
-// UserApparatus
+// CdetApparatus
 //
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaApparatus.h"
 
-class UserApparatus : public THaApparatus {
+class CdetApparatus : public THaApparatus {
   
 public:
-  UserApparatus( const char* name="U", 
-		 const char* description="User Apparatus" );
-  virtual ~UserApparatus();
+  CdetApparatus( const char* name="U", 
+		 const char* description="Cdet Apparatus" );
+  virtual ~CdetApparatus();
 
   virtual void  Clear( Option_t* opt="");
   virtual Int_t Reconstruct();
@@ -25,7 +25,7 @@ protected:
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
 
-  ClassDef(UserApparatus,0) // An example apparatus
+  ClassDef(CdetApparatus,0) // Fastbus test stand
 };
 
 #endif

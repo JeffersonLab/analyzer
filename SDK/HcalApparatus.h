@@ -1,20 +1,20 @@
-#ifndef ROOT_UserApparatus
-#define ROOT_UserApparatus
+#ifndef ROOT_HcalApparatus
+#define ROOT_HcalApparatus
 
 //////////////////////////////////////////////////////////////////////////
 //
-// UserApparatus
+// HcalApparatus
 //
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaApparatus.h"
 
-class UserApparatus : public THaApparatus {
+class HcalApparatus : public THaApparatus {
   
 public:
-  UserApparatus( const char* name="U", 
-		 const char* description="User Apparatus" );
-  virtual ~UserApparatus();
+  HcalApparatus( const char* name="U", 
+		 const char* description="Hadron Arm Apparatus" );
+  virtual ~HcalApparatus();
 
   virtual void  Clear( Option_t* opt="");
   virtual Int_t Reconstruct();
@@ -25,7 +25,7 @@ protected:
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
 
-  ClassDef(UserApparatus,0) // An example apparatus
+  ClassDef(HcalApparatus,0) // Hadron Arm
 };
 
 #endif

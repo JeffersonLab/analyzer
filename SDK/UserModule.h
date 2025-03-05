@@ -1,5 +1,5 @@
-#ifndef Podd_UserModule_h_
-#define Podd_UserModule_h_
+#ifndef ROOT_UserModule
+#define ROOT_UserModule
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -41,6 +41,8 @@ protected:
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
   virtual Int_t ReadRunDatabase( const TDatime& date );
+
+  void PrintInitError( const char* here );
 
   TString             fSpectroName;  // Name of spectrometer
   THaTrackingModule*  fSpectro;      // Pointer to spectrometer object

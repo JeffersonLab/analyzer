@@ -11,10 +11,9 @@
 //   other steps
 //   1. Register (add "DoRegister" call and include the header)
 //   note: the number (4444) that is registered must appear in db_cratemap.dat
-//   2. (Optional) Put code in a suitable namespace, e.g. "Decoder" or "User"
-//   3. Add to CMakeLists.txt
-//   4. Add to <package>_LinkDef.h, where <package> is the library that will
-//      include this module
+//   2. Add to namespace Decoder.h
+//   3. Add to Makefile
+//   4. Add to haDecode_LinkDef.h
 //   5. Add line(s) for [crate,slot] in db_cratemap.dat
 //
 //   if the pre-compiler flag "LIKEV792" is defined, the decoding is
@@ -26,43 +25,35 @@
 
 #include "VmeModule.h"
 
-namespace Decoder {
-
 class SkeletonModule : public Decoder::VmeModule {
 
 public:
 
-  SkeletonModule() : fMaxBufLen(256), fNumHits(0) {};
-  SkeletonModule( UInt_t crate, UInt_t slot );
+  SkeletonModule() {};
+  SkeletonModule(Int_t crate, Int_t slot);
   virtual ~SkeletonModule();
 
   using Decoder::Module::GetData;
   using Decoder::Module::LoadSlot;
 
-  virtual UInt_t GetData( UInt_t chan ) const;
+  virtual UInt_t GetData(Int_t chan) const;
   virtual void   Init();
-  virtual void   Clear( const Option_t* opt = "" );
-  virtual Int_t  Decode( const UInt_t* /* p */ ) { return 0; };
-
-  // optional Init method only needed if using cratemap configuration string
-  virtual void   Init( const char* configstr );
+  virtual void   Clear(const Option_t* opt="");
+  virtual Int_t  Decode(const UInt_t* /* p */ ) { return 0; };
 
 #ifdef LIKEV792
   // Loads slot data.  if you don't define this, the base class's method is used
-  virtual UInt_t LoadSlot( Decoder::THaSlotData* sldat,
-                           const UInt_t* evbuffer, const UInt_t* pstop );
+  virtual Int_t LoadSlot(Decoder::THaSlotData* sldat,
+			 const UInt_t* evbuffer, const UInt_t* pstop );
 #endif
 
 private:
 
-  UInt_t fMaxBufLen;  // some arbitrary configurable parameter
-  UInt_t fNumHits;    // Number of hits in current event
+  Int_t fNumHits;
 
   static TypeIter_t fgThisType;
 
-  ClassDef(SkeletonModule,0)  // Skeleton decoder module; make your replacements
+  ClassDef(SkeletonModule,0)  //  Skeleton of a module; make your replacements
 };
-
-} // namespace Decoder
 
 #endif

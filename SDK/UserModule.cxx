@@ -24,14 +24,13 @@
 #include "VarDef.h"
 
 using namespace std;
-using namespace Podd;
 
 //_____________________________________________________________________________
 UserModule::UserModule( const char* name, const char* description,
 			const char* spectro, Double_t parameter ) :
   THaPhysicsModule(name,description), 
   fResultA(kBig), fResultB(kBig), fParameter(parameter),
-  fSpectroName(spectro), fSpectro(nullptr)
+  fSpectroName(spectro), fSpectro(NULL)
 {
   // Normal constructor. 
 
@@ -61,10 +60,13 @@ Int_t UserModule::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
+
   RVarDef vars[] = {
     { "A",  "Result A", "fResultA" },
     { "B",  "Result B", "fResultB" },
-    { nullptr }
+    { 0 }
   };
   return DefineVarsFromList( vars, mode );
 }
@@ -90,7 +92,7 @@ THaAnalysisObject::EStatus UserModule::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t UserModule::Process( const THaEvData& /* evdata */ )
+Int_t UserModule::Process( const THaEvData& evdata )
 {
   // Calculate results.
   // This function is called for every physics event.
@@ -109,7 +111,7 @@ Int_t UserModule::Process( const THaEvData& /* evdata */ )
   // the central ray, and tracks are assumed to be straight.
   // (Such simple results can also be obtained, more easily, using 
   // formulas in output.def.)
-  // One would normally do substantially more complex work here.
+  // One would normally do susbtantially more complex work here.
 
   // "x_sieve"
   fResultA = trkifo->GetX() + fParameter * trkifo->GetTheta();
@@ -146,11 +148,11 @@ Int_t UserModule::ReadRunDatabase( const TDatime& date )
   if( !f ) return kFileError;
 
   // Search database for "<prefix>.param"
-  TString name(fPrefix), key("param"); name += key;
+  TString name(fPrefix), tag("param"); name += tag;
   Int_t st = LoadDBvalue( f, date, name.Data(), fParameter );
   // Not found? Search for "param".
   if( st )
-    st = LoadDBvalue(f, date, key.Data(), fParameter );
+    st = LoadDBvalue( f, date, tag.Data(), fParameter );
   // Still not found? Use some default value.
   // (Alternatively, print message and return error code)
   if( st ) 
@@ -160,6 +162,12 @@ Int_t UserModule::ReadRunDatabase( const TDatime& date )
   return kOK;
 }
   
+//_____________________________________________________________________________
+void UserModule::PrintInitError( const char* here )
+{
+  Error( Here(here), "Cannot set. Module already initialized." );
+}
+
 //_____________________________________________________________________________
 void UserModule::SetParameter( Double_t value ) 
 {

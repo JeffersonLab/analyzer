@@ -25,10 +25,10 @@
 //    cantly more functionality than basic apparatuses. In particular,  //
 //    there is a standard Reconstruct() algorithm and a distinction     //
 //    between tracking and non-tracking detectors. Also, there are      //
-//    additional requirements for detectors to be used with spectro-    //
-//    meters. Examples of spectrometers: HRS, BigBite, HMS, CLAS, OOPS. //
+//    additional requirements for detectors to be used with spectrom-   //
+//    eters. Examples of spectrometers: HRS, BigBite, HMS, CLAS, OOPS.  //
 //    Spectrometers do not need to be magnetic. For example, a          //
-//    segmented photon or neutron calorimeter could be implemented as   //
+//    segmented photon or neutron calorimeter could be implemeted as    //
 //    as spectrometer, even if it provides only rather coarse           //
 //    particle track information. The resulting "tracks" (4-vectors)    //
 //    can then be used directly in kinematics calculations.             //
@@ -44,13 +44,13 @@
 using namespace std;
 
 //_____________________________________________________________________________
-UserApparatus::UserApparatus( const char* name, const char* description ) :
-  THaApparatus(name,description), fNtotal(0)
+UserApparatus::UserApparatus( const char* name, const char* description ) : 
+  THaApparatus(name,description)
 {
   // Constructor. Defines the _standard_ detectors for this apparatus.
   // These are the detectors that are _always_ present in the apparatus.
   // Optional detectors should be added with calls to AddDetector()
-  // in the analysis macro.
+  // in the analysis macro. 
   // NB: If in doubt, do not create detectors here.
   // Adding them later from a script costs nothing in terms of analysis
   // performance. Also, hardcoding detectors here means fixing their names,
@@ -80,7 +80,6 @@ void UserApparatus::Clear( Option_t* opt )
   // before calling Decode(), so it is guaranteed to be called for
   // every physics event.
 
-  THaApparatus::Clear(opt);
   fNtotal = 0;
 }
 
@@ -90,9 +89,12 @@ Int_t UserApparatus::DefineVariables( EMode mode )
   // Define/delete the global variables for this apparatus.
   // Typically these are results computed in Reconstruct().
 
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
+
   RVarDef vars[] = {
     { "ntot", "Total number of hits", "fNtotal" },
-    { nullptr }
+    { 0 }
   };
   return DefineVarsFromList( vars, mode );
 }
@@ -109,13 +111,13 @@ Int_t UserApparatus::Reconstruct()
 
   TIter next(fDetectors);
   while( TObject* theDetector = next()) {
-    // NB: dynamic_cast returns nullptr if the cast object does not
-    // inherit from the requested type.
+    // NB: dynamic_cast returns NULL if the cast object does not 
+    // inherit from the requested type. 
     // One could also use TClass::InheritsFrom, but dynamic_cast is faster.
-    if( auto* d = dynamic_cast<THaScintillator*>( theDetector )) {
+    if( THaScintillator* d = dynamic_cast<THaScintillator*>( theDetector )) {
       fNtotal += d->GetNHits();
-    } else if( auto* ud = dynamic_cast<UserDetector*>( theDetector )) {
-      fNtotal += ud->GetNhits();
+    } else if( UserDetector* d = dynamic_cast<UserDetector*>( theDetector )) {
+      fNtotal += d->GetNhits();
     } else {
       // do nothing for all other detector types
     }

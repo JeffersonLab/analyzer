@@ -1,19 +1,17 @@
-//*-- Author :    Ole Hansen   01-Dec-03
+//*-- Author :    Bob Michaels, Jan 2017
 //
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
-// UserDetector                                                              //
+// HcalDetector                                                              //
 //                                                                           //
 // Example of a user-defined detector class. This class implements a         //
 // completely new detector from scratch. Only Decode() performs non-trivial  //
 // work. CoarseProcess/FineProcess should be implemented as needed.          //
 //                                                                           //
-// See UserScintillator for an example of a detector class where the         //
-// behavior of an existing detector (scintillator) is modified and extended. //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "UserDetector.h"
+#include "HcalDetector.h"
 #include "VarDef.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
@@ -26,12 +24,13 @@
 #include <iostream>
 
 using namespace std;
+using namespace Decoder;
 
 // Constructors should initialize all basic-type member variables to safe
 // default values. In particular, all pointers should be either zeroed or
 // assigned valid data.
 //_____________________________________________________________________________
-UserDetector::UserDetector( const char* name, const char* description,
+HcalDetector::HcalDetector( const char* name, const char* description,
 				  THaApparatus* apparatus )
   : THaNonTrackingDetector(name,description,apparatus),
     fNhit(0), fRawADC(0), fCorADC(0)
@@ -40,7 +39,7 @@ UserDetector::UserDetector( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
-UserDetector::~UserDetector()
+HcalDetector::~HcalDetector()
 {
   // Destructor. Remove variables from global list.
 
@@ -50,7 +49,7 @@ UserDetector::~UserDetector()
 }
 
 //_____________________________________________________________________________
-Int_t UserDetector::ReadDatabase( const TDatime& date )
+Int_t HcalDetector::ReadDatabase( const TDatime& date )
 {
   // Read the database for this detector.
   // This function is called once at the beginning of the analysis.
@@ -98,7 +97,7 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
     const DBRequest request[] = {
       // Required items
       { "detmap",    &detmap, kIntV },         // Detector map
-      { "nelem",     &nelem,  kInt, 0, 0, -1}, // Number of elements (e.g. PMTs)
+      { "nelem",     &nelem,  kInt },          // Number of elements (e.g. PMTs)
       // Optional items
       { "angle",     &angle,  kDouble, 0, 1 }, // Rotation angle about y (deg)
       { "pedestals", &fPed,   kFloatV, 0, 1 }, // Pedestals
@@ -191,7 +190,7 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
 
   // Use the rotation angle to set the axes vectors
   // (required for display functions, for instance)
-  // See THaDetectorBase::DefineAxes for details.
+  // See THaSpectrometerDetector::DefineAxes for details.
   const Float_t degrad = TMath::Pi()/180.0;
   DefineAxes(angle*degrad);
 
@@ -210,7 +209,7 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t UserDetector::DefineVariables( EMode mode )
+Int_t HcalDetector::DefineVariables( EMode mode )
 {
   // Define (or delete) global variables of the detector
 
@@ -227,7 +226,7 @@ Int_t UserDetector::DefineVariables( EMode mode )
 }
 
 //_____________________________________________________________________________
-void UserDetector::Clear( Option_t* opt )
+void HcalDetector::Clear( Option_t* opt )
 {
   // Reset per-event data.
 
@@ -242,7 +241,7 @@ void UserDetector::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-Int_t UserDetector::Decode( const THaEvData& evdata )
+Int_t HcalDetector::Decode( const THaEvData& evdata )
 {
   // Decode data.
   // Read all channels with hits specified in  the detector map.
@@ -251,13 +250,62 @@ Int_t UserDetector::Decode( const THaEvData& evdata )
   // (pedestal-subtracted, scaled by gain factor) here as well since
   // all the required data is available.
 
+  Int_t ldebug=0;
+  Int_t rdata;
+  Int_t MYCRATE=10;
+  Int_t MYSLOT1=7;
+  Int_t MYCHAN1=8;
+  Int_t MYSLOT2=8;
+  Int_t MYCHAN2=7;
+
   // Clear event-by-event data
   Clear();
 
+  if (ldebug) cout << "Inside HcalDetector :: Decode().  Event num "<<evdata.GetEvNum()<<endl;
+
+  for (Int_t slot=7; slot <= 8; slot++ ) {
+
+    for (Int_t chan = 0; chan < 16; chan++) {
+
+       for (Int_t i=0; i < evdata.GetNumEvents(kSampleADC,MYCRATE,slot,chan); i++) {
+	   rdata = evdata.GetData(kSampleADC,MYCRATE,slot,chan,i);
+	   if (ldebug>1) cout << "main:  SAMPLE fadc data on ch.   "<<dec<<chan<<"  "<<i<<"  "<<rdata<<endl;
+
+           if (slot==MYSLOT1 && chan==MYCHAN1 && i==0) fRawADC[0] = 1.0*rdata;
+           if (slot==MYSLOT2 && chan==MYCHAN2 && i==0) fRawADC[1] = 1.0*rdata;
+
+	   //	   if (trignum < nsnaps) hsnaps[trignum]->Fill(i,rdata);
+       }
+       for (Int_t i=0; i < evdata.GetNumEvents(kPulseIntegral,MYCRATE,slot,chan); i++) {
+	   rdata = evdata.GetData(kPulseIntegral,MYCRATE,slot,chan,i);
+	   if (ldebug>1) cout << "main:  INTEG fadc data on ch.   "<<dec<<chan<<"  "<<i<<"  "<<rdata<<endl;
+	   //	   hinteg->Fill(rdata);
+	   //	   hinteg2->Fill(rdata);
+       }
+
+
+
+    }
+
+  }
+  if (ldebug) cout << "fRawADC  "<<fRawADC[0]<<"  "<<fRawADC[1]<<endl;
+
+  return 1;
+
+#ifdef NOTSURE
   // Loop over all modules defined in the detector map
 
   for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule( i );
+
+    if (d->crate < 0 || d->crate > 20 || d->slot < 0 || d->slot>25) {
+        cout << "HcalDetector: warning:  strange crate slot "<<d->crate<<"  "<<d->slot<<endl;
+        continue;
+
+    }
+
+    if (ldebug) cout << "hcal num chan "<<d->crate<<"   "<<d->slot<<"   "<<evdata.GetNumChan( d->crate, d->slot )<<endl;
+
 
     // Loop over all channels that have a hit.
     for( Int_t j = 0; j < evdata.GetNumChan( d->crate, d->slot ); j++) {
@@ -271,12 +319,14 @@ Int_t UserDetector::Decode( const THaEvData& evdata )
       // Get the detector channel number, starting at 0
       Int_t k = chan - d->lo + d->first;
 
+      if (ldebug) cout << "hcal data "<<k<<"  "<<data<<endl;
+
       // Always ensure that index values are sane
       if( k<0 || k>=fNelem ) {
-#ifdef WITH_DEBUG
-	// Indicates bad database
-	Warning( Here("Decode()"), "Illegal detector channel: %d", k );
-#endif
+	//#ifdef WITH_DEBUG
+	//	// Indicates bad database
+	//	Warning( Here("Decode()"), "Illegal detector channel: %d", k );
+	//#endif
 	continue;
       }
       fRawADC[k] = static_cast<Float_t>( data );
@@ -285,10 +335,12 @@ Int_t UserDetector::Decode( const THaEvData& evdata )
     }
   }
   return fNhit;
+#endif
+
 }
 
 //_____________________________________________________________________________
-Int_t UserDetector::CoarseProcess( TClonesArray& tracks )
+Int_t HcalDetector::CoarseProcess( TClonesArray& tracks )
 {
   // Coarse processing. 'tracks' contains coarse tracks.
 
@@ -296,7 +348,7 @@ Int_t UserDetector::CoarseProcess( TClonesArray& tracks )
 }
 
 //_____________________________________________________________________________
-Int_t UserDetector::FineProcess( TClonesArray& tracks )
+Int_t HcalDetector::FineProcess( TClonesArray& tracks )
 {
   // Fine processing. 'tracks' contains final tracking results.
 
@@ -320,7 +372,7 @@ static void PrintArray( const Float_t* arr, Int_t size )
 }
 
 //_____________________________________________________________________________
-void UserDetector::Print( Option_t* opt ) const
+void HcalDetector::Print( Option_t* opt ) const
 {
   // Print current configuration
 
@@ -338,4 +390,4 @@ void UserDetector::Print( Option_t* opt ) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ClassImp(UserDetector)
+ClassImp(HcalDetector)

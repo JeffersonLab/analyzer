@@ -9,6 +9,5 @@
 #pragma link C++ class UserApparatus+;
 #pragma link C++ class UserModule+;
 #pragma link C++ class UserEvtHandler+;
-#pragma link C++ class Decoder::SkeletonModule+;
 
 #endif

@@ -1,22 +1,22 @@
-#ifndef ROOT_UserDetector
-#define ROOT_UserDetector
+#ifndef ROOT_FbusDetector
+#define ROOT_FbusDetector
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
-// UserDetector                                                              //
+// FbusDetector                                                              //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaNonTrackingDetector.h"
 #include <vector>
 
-class UserDetector : public THaNonTrackingDetector {
+class FbusDetector : public THaNonTrackingDetector {
 
 public:
-  UserDetector( const char* name, const char* description = "",
+  FbusDetector( const char* name, const char* description = "",
 		THaApparatus* a = NULL );
-  UserDetector() : fRawADC(0), fCorADC(0) {}
-  virtual ~UserDetector();
+  FbusDetector() : fRawADC(0), fCorADC(0) {}
+  virtual ~FbusDetector();
 
   virtual void       Clear( Option_t* opt="" );
   virtual Int_t      Decode( const THaEvData& );
@@ -44,7 +44,7 @@ protected:
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode );
 
-  ClassDef(UserDetector,0)   // Example detector
+  ClassDef(FbusDetector,0)   // Fastbus detector 1
 };
 
 ////////////////////////////////////////////////////////////////////////////////

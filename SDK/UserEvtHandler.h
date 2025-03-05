@@ -1,5 +1,5 @@
-#ifndef Podd_UserEvtHandler_h_
-#define Podd_UserEvtHandler_h_
+#ifndef UserEvtHandler_
+#define UserEvtHandler_
 
 /////////////////////////////////////////////////////////////////////
 //

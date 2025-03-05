@@ -1,5 +1,5 @@
-#ifndef Podd_UserScintillator_h_
-#define Podd_UserScintillator_h_
+#ifndef ROOT_UserScintillator
+#define ROOT_UserScintillator
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
@@ -12,8 +12,8 @@
 class UserScintillator : public THaScintillator {
 
 public:
-  explicit UserScintillator( const char* name, const char* description = "",
-                             THaApparatus* a = nullptr );
+  UserScintillator( const char* name, const char* description = "",
+		   THaApparatus* a = NULL );
   virtual ~UserScintillator();
 
   virtual void       Clear( Option_t* ="" );
