@@ -1,5 +1,5 @@
-#ifndef VETROCtdcModule_
-#define VETROCtdcModule_
+#ifndef Podd_VETROCtdcModule_
+#define Podd_VETROCtdcModule_
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -50,9 +50,9 @@ const Int_t MAXHIT   = 100;
    Int_t Decode(const UInt_t *p) { return 0; };
 
    // Loads slot data for bank structures
-   virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t pos, Int_t len);
+   virtual UInt_t LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t pos, Int_t len);
 // Loads sldat and increments ptr to evbuffer
-   Int_t LoadSlot(THaSlotData *sldat,  const UInt_t* evbuffer, const UInt_t *pstop );
+   UInt_t LoadSlot(THaSlotData *sldat,  const UInt_t* evbuffer, const UInt_t *pstop );
 
 private:
 

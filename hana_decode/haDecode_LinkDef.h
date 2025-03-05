@@ -32,6 +32,7 @@
 #pragma link C++ class Decoder::THaEpics+;
 #pragma link C++ class Decoder::THaSlotData+;
 #pragma link C++ class Decoder::THaUsrstrutils+;
+#pragma link C++ class Decoder::VETROCtdcModule+;
 
 #pragma link C++ class THaBenchmark+;
 #pragma link C++ class THaEvData+;

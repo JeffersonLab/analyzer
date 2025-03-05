@@ -83,7 +83,7 @@ void VETROCtdcModule::Clear(const Option_t* opt) {
 }
 
 
-Int_t VETROCtdcModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t pos, Int_t len) {
+UInt_t VETROCtdcModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t pos, Int_t len) {
 // the 4-arg version of LoadSlot.  Let it call the 3-arg version.
 // I'm not sure we need both (historical)
 
@@ -132,7 +132,7 @@ Int_t VETROCtdcModule::GetNumHits(Int_t chan, Bool_t edge) {
 	}
 }
 
-Int_t VETROCtdcModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UInt_t *pstop) {
+UInt_t VETROCtdcModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UInt_t *pstop) {
 // This is the 3-arg version of LoadSlot
 // Note, this increments evbuffer
   if (fDebugFile) *fDebugFile << "VETROCtdcModule:: loadslot "<<endl;

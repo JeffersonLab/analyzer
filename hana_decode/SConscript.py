@@ -37,6 +37,7 @@ THaEvData.cxx
 THaSlotData.cxx
 THaUsrstrutils.cxx
 VmeModule.cxx
+VETROCtdcModule.cxx
 """
 
 dcenv = baseenv.Clone()
