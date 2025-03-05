@@ -1,0 +1,5 @@
+#!/bin/sh
+rm -fr builddir
+cmake -DCMAKE_INSTALL_PREFIX=/work/hallc/gep/brash/Podd/1.7.0 -B builddir -S .
+cmake --build builddir -j8
+cmake --install builddir
