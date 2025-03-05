@@ -54,6 +54,7 @@ set(src
   THaSlotData.cxx
   THaUsrstrutils.cxx
   VmeModule.cxx
+  VETROCtdcModule.cxx
   )
 if(ONLINE_ET)
   if(ET_FOUND)
