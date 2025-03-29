@@ -196,10 +196,20 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
     }
   }
 
-  else if( event_type <= MAX_PHYS_EVTYPE && !PrescanModeEnabled() ) {
-    if( fDataVersion == 3 &&
-        (ret = trigBankDecode(evbuffer)) != HED_OK ) {
-      return ret;
+  else if( event_type > 0 && event_type <= MAX_PHYS_EVTYPE &&
+           !PrescanModeEnabled() ) {
+    if( fDataVersion == 3 ) {
+      if( (ret = trigBankDecode(evbuffer)) != HED_OK )
+        return ret;
+      assert( event_type == 1 ); // else bug in InterpretBankTag
+      // Copy the CODA3 "event type" from the trigger bank to event_type
+      // so that physics events do not all trivially have type = 1.
+      // event_type is what goes into each event header in the ROOT file.
+      // Caution: tsEvType comes from a 16-bit word in the data stream
+      // and so could be way larger than MAX_PHYS_EVTYPE, or it could be zero.
+      // That should be safe, though, since nothing in physics_decode appears
+      // to care about this number.
+      event_type = tsEvType;
     }
     ret = physics_decode(evbuffer);
   }
@@ -353,15 +363,23 @@ UInt_t CodaDecoder::InterpretBankTag( UInt_t tag )
       case 0xff70:
         evtyp = 1;      // for CODA 3.* physics events are type 1.
         break;
-      default:          // Undefined CODA 3 event type
-        cerr << "CodaDecoder:: WARNING:  Undefined CODA 3 event type, tag = "
-             << "0x" << hex << tag << dec << endl;
-        evtyp = 0;
-        //FIXME evtyp = 0 could also be a user event type ...
-        // maybe throw an exception here?
+      default:          // Unsupported CODA 3 event type
+        // May need to accommodate, or it really is garbage data
+        cerr << "CodaDecoder:: WARNING:  Unsupported CODA 3 event type, tag = "
+             << "0x" << hex << tag << dec << ". Call expert." << endl;
+        evtyp = 0;      // tells decoder that this is not usable data
     }
   } else {              // User event type
     evtyp = tag;        // ET-insertions
+    if( evtyp <= MAX_PHYS_EVTYPE || evtyp == PRESTART_EVTYPE ||
+        evtyp == GO_EVTYPE || evtyp == END_EVTYPE ) {
+      // FIXME: This is not a CODA3 error, but the result of our internal
+      //  legacy event type numbering. But we can't go with it until we
+      //  rewrite the downstream code
+      cerr << "CodaDecoder:: ERROR:  User event type number " << evtyp
+           << " clashes with a reserved value. Call expert." << endl;
+      evtyp = 0;
+    }
   }
 
   return evtyp;
