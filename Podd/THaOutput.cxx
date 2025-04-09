@@ -682,9 +682,16 @@ Int_t THaOutput::LoadFile( const char* filename )
 	(pos = sline.find_first_not_of(kWhiteSpace)) == string::npos ||
 	sline[pos] == comment )
       continue;
-    // Get rid of trailing comments
-    if( (pos = sline.find(comment)) != string::npos )
-      sline.erase(pos);
+    // Get rid of trailing comments, unless escaped
+    while( (pos = sline.find(comment, pos)) != string::npos ) {
+      assert( pos > 0 );  // else bug in check for all-comment line above
+      if( sline[pos - 1] != '\\' ) {
+        sline.erase(pos);
+        break;
+      }
+      // Erase the escape character and keep searching past the escaped '#'
+      sline.erase(pos - 1, 1);
+    }
     // Substitute text variables
     vector<string> lines( 1, sline );
     if( gHaTextvars->Substitute(lines) )
