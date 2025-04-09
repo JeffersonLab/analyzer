@@ -148,12 +148,12 @@ UInt_t VETROCtdcModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, con
    // VETROC
    const UInt_t VET_BlkHeader = 1<<31;
    const UInt_t VET_BlkHeader_mask = 0xF8000000;
-   UInt_t VET_BlkSlot;
-   const UInt_t VET_slot_mask      = 0x07C00000;
+   //UInt_t VET_BlkSlot;
+   //const UInt_t VET_slot_mask      = 0x07C00000;
    const UInt_t VET_id = 0x9;
    const UInt_t VET_id_mask        = 0x003C0000;
-   UInt_t VET_BlkNum;
-   const UInt_t VET_BlkNum_mask    = 0x0003FF00;
+   //UInt_t VET_BlkNum;
+   //const UInt_t VET_BlkNum_mask    = 0x0003FF00;
    UInt_t VET_BlkLevel;
    const UInt_t VET_BlkLevel_mask  = 0x000000FF;
 
@@ -161,7 +161,7 @@ UInt_t VETROCtdcModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, con
    Bool_t gotBlkHeader=0;
    Bool_t gotEvtHeader=0;
 
-   UInt_t evtNum, evtSlot;
+   //UInt_t evtNum, evtSlot;
    UInt_t timeA=0;
    UInt_t timeB=0;
    Int_t t_hit;
@@ -186,10 +186,10 @@ cout << "";
 			gotBlkHeader=1;
 
 			// Not doing anything now with slot read from BLOCK_HEADER
-			VET_BlkSlot = ((*loc)&VET_slot_mask)>>22; // is this correct?
+//			VET_BlkSlot = ((*loc)&VET_slot_mask)>>22; // is this correct?
 
 			// Not doing anything now with Block#
-			VET_BlkNum = ((*loc)&VET_BlkNum_mask)>>8; // is this correct?
+//			VET_BlkNum = ((*loc)&VET_BlkNum_mask)>>8; // is this correct?
 
 			// Check if blocklevel is 1 (all this decoder is doing so far)
 			VET_BlkLevel = ((*loc)&VET_BlkLevel_mask);
@@ -209,8 +209,8 @@ cout << "";
 			// Check for event header
 			if(head == 0x12) { // Event header
 					gotEvtHeader=1;
-					evtNum = (*loc) & 0x003FFFFF; // doesn't seems right... ignoring for now.
-					evtSlot = ((*loc)&VET_slot_mask)>>22; // is this correct?
+//					evtNum = (*loc) & 0x003FFFFF; // doesn't seems right... ignoring for now.
+//					evtSlot = ((*loc)&VET_slot_mask)>>22; // is this correct?
 					//cout << "Event: " << Form("%x",(*loc))<< evtNum << endl;
 					t_previous = -1;
 					ch_previous = -1;
