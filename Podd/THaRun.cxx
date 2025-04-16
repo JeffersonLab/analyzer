@@ -278,11 +278,14 @@ TString THaRun::GetInitInfoFileName( TString fname )
 {
   // Based on the given file name, get the file name pattern that matches
   // runs containing initialization info.
-  // This version simply changes the segment number to 0.
+  // This version simply changes the segment number to 0, i.e.
+  // file.dat.2.3 -> file.dat.2.0
 
   // Extract the file base name
-  Ssiz_t dot = fname.Last('.');
-  if( dot != kNPOS) {
+  static TRegexp re("\\.[0-9]+$");
+  assert(re.Status() == TRegexp::kOK);
+  Ssiz_t dot = fname.Index(re);
+  if( dot != kNPOS ) {
     fname.Remove(dot);
     fname.Append(".0");
   }

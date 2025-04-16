@@ -222,6 +222,7 @@ protected:
   virtual Bool_t   FindSegmentNumber();
   virtual Int_t    FindNextStream() const;
   virtual TString  FindInitInfoFile( const TString& fname );
+  virtual TString  GetInitInfoFileName( TString fname );
 
   bool  CheckWarnAbsFilename();
   void  ClearStreams();
@@ -242,6 +243,7 @@ private:
   Int_t CheckFilesConsistency();
   Int_t DescendInto( const TString& curpath, const std::vector<TString>& splitpath,
                      Int_t level, const action_t& action );
+  TString FindInitInfoFileImpl( const TString& fname, TString initinfo_file );
   Int_t ForEachMatchItemInDir( const TString& dir, const TRegexp& match_re,
                                const action_t& action );
   Int_t ScanForFilename( const path_t& path, bool regex_mode, const action_t& action );
