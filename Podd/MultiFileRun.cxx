@@ -907,15 +907,50 @@ Int_t MultiFileRun::FindNextStream() const
 }
 
 //_____________________________________________________________________________
-// Find a file matching the name pattern returned by GetInitInfoFile().
+TString MultiFileRun::GetInitInfoFileName( TString fname )
+{
+  // Based on the given file name, get the file name pattern that matches
+  // runs containing initialization info.
+  // Returns 'fname' with stream and segment number both set to 0, i.e.
+  // file.dat.2.3 -> file.dat.0.0
+
+  // Extract the file base name
+  static TRegexp re("\\.[0-9]+\\.[0-9]+$");
+  assert(re.Status() == TRegexp::kOK);
+  Ssiz_t pos = fname.Index(re);
+  if( pos != kNPOS ) {
+    fname.Remove(pos);
+    fname.Append(".0.0");
+  }
+
+  return fname;
+}
+
+//_____________________________________________________________________________
+TString MultiFileRun::FindInitInfoFile( const TString& fname )
+{
+  // First try (stream,segment) = (0,0)
+  TString file00 = GetInitInfoFileName(fname);
+  TString initinfo_file = FindInitInfoFileImpl(fname, file00);
+  if( !initinfo_file.IsNull() )
+    return initinfo_file;
+
+  // If that fails, try (stream,segment) = (stream,0)
+  TString file0 = THaRun::GetInitInfoFileName(fname);
+  if( file0 != file00 )
+    initinfo_file = FindInitInfoFileImpl(fname, file0);
+  return initinfo_file;
+}
+
+//_____________________________________________________________________________
+// Find a file matching the name pattern given in 'initinfo_file'.
 // The file must exist on disk and have at least read permissions.
 // - First, in the same directory as the continuation segment.
 // - Then, look in the directories in fPathList
 // Returns an empty string if no matching file can be found.
-TString MultiFileRun::FindInitInfoFile( const TString& fname )
+TString MultiFileRun::FindInitInfoFileImpl( const TString& fname,
+                                            TString initinfo_file )
 {
-  // Full path of the file that should contain the init info
-  TString initinfo_file = GetInitInfoFileName(fname);
   // Check current directory
   if( !gSystem->AccessPathName(initinfo_file, kReadPermission) )
     return initinfo_file;
