@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(Podd VERSION 1.7.12 LANGUAGES CXX)
-set(EXTVERS "-sbs4")
+set(EXTVERS "-sbs5")
 
 #----------------------------------------------------------------------------
 # Use our modules and utility functions
