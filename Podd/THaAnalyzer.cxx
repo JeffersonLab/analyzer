@@ -1545,6 +1545,8 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
     if( fDoBench ) fBench->Stop("Output");
   }
 
+  UInt_t errcount = 0;
+  constexpr UInt_t MAXSEQERR = 10;
   while ( !terminate && fNev < nlast &&
 	  (status = ReadOneEvent()) != THaRunBase::READ_EOF ) {
 
@@ -1553,8 +1555,17 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
       terminate = fatal = true;
       break;
     }
-    if( status != THaRunBase::READ_OK )
+    if( status != THaRunBase::READ_OK ) {
+      // Quit after 10 consecutive errors to prevent runaway jobs
+      if( ++errcount > MAXSEQERR ) {
+        terminate = true;
+        Error( here, "Terminating analysis because of %u consecutive "
+               "read errors", MAXSEQERR );
+        break;
+      }
       continue;
+    }
+    errcount = 0;
 
     UInt_t evnum = fEvData->GetEvNum();
 
