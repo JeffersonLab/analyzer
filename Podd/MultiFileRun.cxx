@@ -833,7 +833,7 @@ Int_t MultiFileRun::ReadEvent() // NOLINT(misc-no-recursion)
 
   if( !IsOpen() ) {
     cerr << "Not open" << endl;
-    return READ_ERROR;
+    return READ_FATAL;
   }
   if( fNActive <= 0 )
     return READ_EOF;
@@ -1416,7 +1416,7 @@ Int_t MultiFileRun::StreamInfo::Read()
   assert(fCodaData);
   if( !fCodaData->isOpen() ) {
     cerr << "Not open" << endl;
-    return CODA_ERROR;
+    return CODA_FATAL;
   }
   if( !fActive )
     return CODA_EOF;
