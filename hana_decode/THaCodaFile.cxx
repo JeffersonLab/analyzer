@@ -19,6 +19,7 @@
 #include <iostream>
 #include <memory>
 #include <algorithm>
+#include <cerrno>
 
 using namespace std;
 
@@ -61,8 +62,9 @@ namespace Decoder {
   {
     // Open CODA file 'fname' with 'readwrite' access
     init(fname);
+    errno = 0;
     Int_t status = evOpen((char*)fname, (char*)readwrite, &handle);
-    fIsGood = (status == S_SUCCESS);
+    fIsGood = (status == S_SUCCESS && handle != 0 );
     staterr("open",status);
     return ReturnCode(status);
   }
@@ -73,6 +75,7 @@ namespace Decoder {
     if( !handle ) {
       return ReturnCode(S_SUCCESS);
     }
+    errno = 0;
     Int_t status = evClose(handle);
     handle = 0;
     fIsGood = (status == S_SUCCESS);
@@ -95,6 +98,7 @@ namespace Decoder {
     Int_t status = S_SUCCESS;
     do {
       evbuffer.updateSize();
+      errno = 0;
       status = evRead(handle, getEvBuffer(), getBuffSize());
       if( status == S_EVFILE_TRUNC ) {
         // At least with EVIO version 5.2, probably earlier and hopefully later
@@ -124,6 +128,7 @@ namespace Decoder {
       cout << "codaWrite ERROR: tried to access file with handle = 0" << endl;
       return ReturnCode(S_EVFILE_BADHANDLE);
     }
+    errno = 0;
     Int_t status = evWrite(handle, evbuf);
     fIsGood = (status == S_SUCCESS);
     staterr("write",status);

@@ -98,7 +98,10 @@ void THaCodaData::staterr(const char* tried_to, Int_t status) const
     break;
 #endif
   default:
-    cerr << "Unknown error " << hex << status << dec << endl;
+    if( errno != 0 )
+      perror(filename.Data());
+    else
+      cerr << "Unknown error " << hex << status << dec << endl;
     break;
   }
 }
@@ -137,8 +140,9 @@ Int_t THaCodaData::ReturnCode( Int_t evio_retcode )
     assert( false );
     return CODA_FATAL;
 
+  // Give up on unknown errors (file not found etc.)
   default:
-    return CODA_ERROR;
+    return CODA_FATAL;
   }
 }
 
