@@ -216,6 +216,7 @@ UInt_t THaSlotData::LoadNextEvBuffer() {
     cerr << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl;
     return 0;
   }
+  fModule->Clear("E"); // clear the module's event data only
   return fModule->LoadNextEvBuffer(this);
 }
 

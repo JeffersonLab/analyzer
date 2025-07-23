@@ -9,8 +9,9 @@
 #include "PipeliningModule.h"
 #include "THaSlotData.h"
 #include "Helper.h"
+#include "TString.h"
 #include <iostream>
-#include <cstring>     // for memcpy
+#include <cstring>     // for memcpy, strstr
 #include <algorithm>   // for std::transform
 #include <utility>     // for std::swap
 
@@ -97,8 +98,11 @@ void PipeliningModule::Init( const char* configstr )
 void PipeliningModule::Clear( Option_t* opt )
 {
   VmeModule::Clear(opt);
-  evtblk.clear();
-  index_buffer = 0;
+  TString sopt(opt);
+  if( !sopt.Contains("E") ) {
+    evtblk.clear();
+    index_buffer = 0;
+  }
 }
 
 //_____________________________________________________________________________

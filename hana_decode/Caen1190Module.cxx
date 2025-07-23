@@ -11,6 +11,7 @@
 
 #include "Caen1190Module.h"
 #include "THaSlotData.h"
+#include "TString.h"
 #include <iostream>
 #include <sstream>
 #include <cassert>
@@ -224,13 +225,16 @@ UInt_t Caen1190Module::GetOpt( UInt_t chan, UInt_t hit ) const
 }
 
 //_____________________________________________________________________________
-void Caen1190Module::Clear( Option_t* )
+void Caen1190Module::Clear( Option_t* opt )
 {
-  PipeliningModule::Clear();
+  PipeliningModule::Clear(opt);
+  TString sopt(opt);
   fNumHits.assign(NTDCCHAN, 0);
   fTdcData.assign(NTDCCHAN * MAXHIT, 0);
   fTdcOpt.assign(NTDCCHAN * MAXHIT, 0);
-  fNfill = 0;
+  if( !sopt.Contains("E") ) {
+    fNfill = 0;
+  }
 }
 
 //_____________________________________________________________________________

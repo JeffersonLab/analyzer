@@ -12,6 +12,7 @@
 #include "Textvars.h"  // for Podd::Tokenize
 #include "Helper.h"
 #include "TError.h"
+#include "TString.h"
 #include <algorithm>
 #include <stdexcept>
 #include <sstream>
@@ -69,16 +70,19 @@ void Module::Init()
 }
 
 //_____________________________________________________________________________
-void Module::Clear( Option_t* )
+void Module::Clear( Option_t* opt )
 {
   // Clear event-by-event data.
   // This is called for each event block read from file, but not for each
   // individual event in a multi-event block.
 
-  fWordsSeen = 0;
-  block_size = 1;
-  fMultiBlockMode = false;
-  fBlockIsDone = false;
+  TString sopt(opt);
+  if( !sopt.Contains("E")) {
+    fWordsSeen = 0;
+    block_size = 1;
+    fMultiBlockMode = false;
+    fBlockIsDone = false;
+  }
 }
 
 //_____________________________________________________________________________
