@@ -160,6 +160,15 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     return err;
   }
 
+  // All DAQ modules are assumed to be ADCs
+  UInt_t nmodules = fDetMap->GetSize();
+  for( UInt_t i = 0; i < nmodules; i++ ) {
+    THaDetMap::Module* d = fDetMap->GetModule(i);
+    if( !d->model ) {
+      d->MakeADC();
+    }
+  }
+
   fBlockPos.clear(); fBlockPos.resize(nval);
   fClBlk.clear();    fClBlk.reserve(nclbl);
   fDetectorData.clear();
