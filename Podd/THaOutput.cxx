@@ -692,7 +692,6 @@ Int_t THaOutput::LoadFile( const char* filename )
       // Erase the escape character and keep searching past the escaped '#'
       sline.erase(pos - 1, 1);
     }
-    cout << "LoadFile read line: \"" << sline << "\"" << endl;
     // Substitute text variables
     vector<string> lines( 1, sline );
     if( gHaTextvars->Substitute(lines) )
