@@ -280,6 +280,18 @@ void THaEvData::SetCrateMapName( const char* name )
 }
 
 //_____________________________________________________________________________
+TString THaEvData::GetCrateMapName() const
+{
+  return fCrateMapName.IsNull() ? fgDefaultCrateMapName : fCrateMapName;
+}
+
+//_____________________________________________________________________________
+TString THaEvData::GetDefaultCrateMapName()
+{
+  return fgDefaultCrateMapName;
+}
+
+//_____________________________________________________________________________
 // Set up and initialize the crate map
 int THaEvData::init_cmap()  {
   if( fCrateMapName.IsNull() )

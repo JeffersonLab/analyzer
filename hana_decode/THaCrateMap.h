@@ -78,6 +78,7 @@ class THaCrateMap {
      static const UInt_t DEFAULT_TSROC;
 
      const char* GetName() const { return fDBfileName.c_str(); }
+     ULong64_t GetInitTime() const;
 
  private:
 

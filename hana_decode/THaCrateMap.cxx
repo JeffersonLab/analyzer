@@ -568,6 +568,13 @@ int THaCrateMap::init(const string& the_map)
 }
 
 //_____________________________________________________________________________
+ULong64_t THaCrateMap::GetInitTime() const
+{
+  WithDefaultTZ(ULong64_t tloc = fInitTime.Convert())
+  return tloc;
+}
+
+//_____________________________________________________________________________
 THaCrateMap::CrateInfo_t::CrateInfo_t() :
   crate_code(kUnknown), crate_type_name("unknown"),
   crate_used(false), bank_structure(false), all_banks(false)

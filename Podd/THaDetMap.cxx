@@ -9,6 +9,9 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaDetMap.h"
+#include "THaEvData.h"
+#include "THaAnalyzer.h"
+#include "THaCrateMap.h"
 #include "Decoder.h"
 #include "Helper.h"
 #include <iostream>
@@ -17,6 +20,8 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
+#include <memory>
+#include <cassert>
 
 using namespace std;
 using namespace Decoder;
@@ -44,6 +49,39 @@ static const vector<ModuleDef> module_list {
   { 1190, ChannelType::kCommonStopTDC },
   { 250,  ChannelType::kMultiFunctionADC },
 };
+
+static unique_ptr<THaCrateMap> fgCrateMap = nullptr;
+
+//_____________________________________________________________________________
+Int_t THaDetMap::InitCmap( ULong64_t tloc )
+{
+  if( fgCrateMap && fgCrateMap->GetInitTime() == tloc )
+    return THaCrateMap::CM_OK;
+  if( !fgCrateMap ) {
+    TString cmap_name;
+    auto* analyzer = THaAnalyzer::GetInstance();
+    if( analyzer ) {
+      auto* decoder = analyzer->GetDecoder();
+      if( decoder )
+        cmap_name = decoder->GetCrateMapName();
+    }
+    if( cmap_name.IsNull() )
+      cmap_name = THaEvData::GetDefaultCrateMapName();
+    assert(!cmap_name.IsNull());
+#if __cplusplus >= 201402L
+    fgCrateMap = make_unique<Decoder::THaCrateMap>(cmap_name);
+#else
+    fgCrateMap.reset(new THaCrateMap(cmap_name));
+#endif
+  }
+  return fgCrateMap->init(tloc);
+}
+
+//_____________________________________________________________________________
+Decoder::THaCrateMap* THaDetMap::GetCrateMap()
+{
+  return fgCrateMap.get();
+}
 
 //_____________________________________________________________________________
 void THaDetMap::Module::SetModel( Int_t mod )
@@ -314,6 +352,13 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
     auto slot  = static_cast<UInt_t>(values[i+1]);
     auto ch_lo = static_cast<UInt_t>(values[i+2]);
     auto ch_hi = static_cast<UInt_t>(values[i+3]);
+
+    // If no model given, try to retrieve it from the crate map
+    // FIXME: This sort-of assumes that the crate map was read successfully
+    //  but for now we'll let the caller deal with that.
+    if( model == 0 && fgCrateMap )
+      model = fgCrateMap->getModel(crate, slot);
+
     ret = AddModule(crate, slot, ch_lo, ch_hi,
                     first, model, ref, rchan, plane, signal);
     if( ret <= 0 )

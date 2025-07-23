@@ -23,7 +23,6 @@ class THaCut;
 class THaBenchmark;
 class THaEvData;
 class THaPostProcess;
-class THaCrateMap;
 class THaEvtTypeHandler;
 class THaEpicsEvtHandler;
 class THaApparatus;

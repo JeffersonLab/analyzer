@@ -41,6 +41,7 @@
 #include "TSystem.h"
 #include "TROOT.h"
 #include "TDirectory.h"
+#include "THaDetMap.h"   // for crate map access
 #include "THaCrateMap.h"
 #include "Helper.h"
 
@@ -663,6 +664,18 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   // the event(s) where these data come from (usually Prestart).
   WithDefaultTZ(ULong64_t run_tloc = run->GetDate().Convert());
   fEvData->SetRunInfo(run->GetNumber(),run->GetType(), run_tloc);
+
+  // Load the crate map into the detector map class.
+  //FIXME Eliminate duplicate crate map kept by the decoder
+  retval = THaDetMap::InitCmap(run_tloc);
+  if( retval != THaCrateMap::CM_OK ) {
+    const auto* cmap = THaDetMap::GetCrateMap();
+    TString cmap_name = cmap ? cmap->GetName() : "?";
+    Error(here, "Failed to read crate map \"db_%s.dat\". "
+                "Check if file exists under $DB_DIR and is readable.",
+          cmap_name.Data() );
+    return -16;
+  }
 
   // Deal with the run.
   bool new_run   = ( !fRun || *fRun != *run );
