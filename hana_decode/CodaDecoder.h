@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <cstring> // for memcpy
 
 namespace Decoder {
 
@@ -145,7 +146,12 @@ public:
      bool     withTimeStamp()   const { return (tag & 1) != 0; }
      bool     withRunInfo()     const { return (tag & 2) != 0; }
      bool     withTriggerBits() const { return (tsrocLen > 2*blksize);}
-
+     uint64_t GetEvTS( size_t i ) {
+       uint64_t ts{0};
+       if( evTS && i < blksize )
+         memcpy(&ts, evTS + 2 * i, sizeof(ts));
+       return ts;
+     }
      uint32_t blksize;          /* total number of triggers in the Bank */
      uint16_t tag;              /* Trigger Bank Tag ID = 0xff2x */
      uint16_t nrocs;            /* Number of ROC Banks in the Event Block (val = 1-256) */
@@ -154,8 +160,8 @@ public:
      uint64_t evtNum;           /* Starting Event # of the Block */
      uint64_t runInfo;          /* Run Info Data (optional) */
      const uint32_t *start;     /* Pointer to start of the Trigger Bank */
-     const uint64_t *evTS;      /* Pointer to the array of Time Stamps (optional) */
-     const uint16_t *evType;    /* Pointer to the array of Event Types */
+     const uint32_t *evTS;      /* Pointer to array of 64-bit timestamps (optional) */
+     const uint16_t *evType;    /* Pointer to array of Event Types */
      const uint32_t *TSROC;     /* Pointer to Trigger Supervisor ROC segment data */
    };
 

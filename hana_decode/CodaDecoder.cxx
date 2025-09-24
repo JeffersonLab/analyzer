@@ -403,10 +403,10 @@ Int_t CodaDecoder::LoadTrigBankInfo( UInt_t i )
     return -1;
   tsEvType = tbank.evType[i];      // event type (configuration-dependent)
   if( tbank.evTS )
-    evt_time = tbank.evTS[i];      // event time (4ns clock, I think)
+    evt_time = tbank.GetEvTS(i);   // event time (4ns clock, I think)
   else if( tbank.TSROC ) {
     size_t struct_size = tbank.withTriggerBits() ? 3 : 2;
-    evt_time = *(const uint64_t*) (tbank.TSROC + struct_size * i);
+    memcpy(&evt_time, tbank.TSROC + struct_size * i, sizeof(evt_time));
     // Only the lower 48 bits seem to contain the time
     evt_time &= 0x0000FFFFFFFFFFFF;
   }
@@ -798,6 +798,7 @@ uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
   len = evbuffer[0] + 1;
   tag = (evbuffer[1] & 0xffff0000) >> 16;
   nrocs = evbuffer[1] & 0xff;
+  runInfo = 0;
 
   const uint32_t* p = evbuffer + 2;
   // Segment 1:
@@ -805,13 +806,13 @@ uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
   //  uint64_t run_info                if withRunInfo
   //  uint64_t time_stamp[blkSize]     if withTimeStamp
   {
-    uint32_t slen = *p & 0xffff;
+    uint32_t slen = *p & 0xffff;  // segment length in 32-bit words
     if( slen != 2*(1 + (withRunInfo() ? 1 : 0) + (withTimeStamp() ? blkSize : 0)))
       throw coda_format_error("Invalid length for Trigger Bank seg 1");
-    const auto* q = (const uint64_t*) (p + 1);
-    evtNum  = *q++;
-    runInfo = withRunInfo()   ? *q++ : 0;
-    evTS    = withTimeStamp() ? q    : nullptr;
+    memcpy(&evtNum, p + 1, sizeof(evtNum));
+    if( withRunInfo() )
+      memcpy(&runInfo, p + 3, sizeof(runInfo));
+    evTS = withTimeStamp() ? p + 3 + (withRunInfo() ? 2 : 0) : nullptr;
     p += slen + 1;
   }
   if( p-evbuffer >= len )
@@ -1347,7 +1348,7 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
     *fDebugFile << "         Event #       Time Stamp       Event Type"<<endl;
     for( UInt_t i = 0; i < tbank.blksize; i++ ) {
       if( tbank.evTS ) {
-          *fDebugFile << "      "<<dec<<tbank.evtNum+i<<"   "<<tbank.evTS[i]<<"   "<<tbank.evType[i];
+          *fDebugFile << "      "<<dec<<tbank.evtNum+i<<"   "<< tbank.GetEvTS(i) <<"   "<<tbank.evType[i];
           *fDebugFile << endl;
        } else {
           *fDebugFile << "     "<<tbank.evtNum+i<<"(No Time Stamp)   "<<tbank.evType[i];
