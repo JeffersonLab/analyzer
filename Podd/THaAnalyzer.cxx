@@ -153,6 +153,9 @@ THaAnalyzer::THaAnalyzer()
 
   // Timers
   fBench = new THaBenchmark;
+
+  // Alternate event type reporting is off by default
+  ResetBit(kUseAltEvType);
 }
 
 //_____________________________________________________________________________
@@ -327,6 +330,13 @@ void THaAnalyzer::EnablePhysicsEvents( Bool_t b )
 void THaAnalyzer::EnableSlowControl( Bool_t b )
 {
   fDoSlowControl = b;
+}
+
+//_____________________________________________________________________________
+void THaAnalyzer::EnableAltEvType( Bool_t b )
+{
+  //fUseAltEvType = b;
+  SetBit(kUseAltEvType, b);
 }
 
 //_____________________________________________________________________________
@@ -1524,11 +1534,14 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
   // needed by some modules
   gHaRun = fRun;
 
+  // Configure decoder flags
   // Enable/disable helicity decoding as requested
   fEvData->EnableHelicity( HelicityEnabled() );
   // Set decoder reporting level. FIXME: update when THaEvData is updated
   fEvData->SetVerbose( (fVerbose>2) );
   fEvData->SetDebug( (fVerbose>3) );
+  // Use alternate event type (currently only implemented by CodaDecoder)
+  fEvData->EnableAltEvType(AltEvTypeEnabled());
 
   // Informational messages
   if( fVerbose>1 ) {

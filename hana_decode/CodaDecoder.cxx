@@ -146,6 +146,7 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
   evt_time = 0;
   bankdat.clear();
   blkidx = 0;
+  ResetBit(kPhysicsTrigger);
 
   // Determine event type
   if (fDataVersion == 2) {
@@ -196,29 +197,22 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
     }
   }
 
-  else if( event_type > 0 && event_type <= MAX_PHYS_EVTYPE &&
-           !PrescanModeEnabled() ) {
-    if( fDataVersion == 3 ) {
-      if( (ret = trigBankDecode(evbuffer)) != HED_OK )
-        return ret;
-      assert( event_type == 1 ); // else bug in InterpretBankTag
-      // Copy the CODA3 "event type" from the trigger bank to event_type
-      // so that physics events do not all trivially have type = 1.
-      // event_type is what goes into each event header in the ROOT file.
-      //
-      // Caution: tsEvType comes from a 16-bit word in the data stream
-      // and so could be way larger than MAX_PHYS_EVTYPE, or it could be zero.
-      // Even though nothing in physics_decode currently cares about this
-      // value, the IsPhysicsTrigger() member function does. To maintain
-      // compatibility, we let event_type = MAX_PHYS_EVTYPE if the tsEvType is
-      // out of range, so IsPhysicsTrigger() still gives the right answer.
-      // FIXME BCI loosen this restriction in v1.8
-      event_type = (tsEvType > 0 && tsEvType <= MAX_PHYS_EVTYPE)
-                   ? tsEvType
-                   : MAX_PHYS_EVTYPE; // a kludgy way to tell the user that
-                                      // this is an out-of-range event type
+  else if( event_type > 0 && event_type <= MAX_PHYS_EVTYPE ) {
+    SetBit(kPhysicsTrigger);
+    if( !PrescanModeEnabled() ) {
+      if( fDataVersion == 3 ) {
+        if( (ret = trigBankDecode(evbuffer)) != HED_OK )
+          return ret;
+        assert( event_type == 1 ); // else bug in InterpretBankTag
+        if( AltEvTypeEnabled() ) {
+          // Copy the CODA3 "event type" from the trigger bank to event_type
+          // so that physics events do not all trivially have type = 1.
+          // event_type is what goes into each event header in the ROOT file.
+          event_type = tsEvType;
+        }
+      }
+      ret = physics_decode(evbuffer);
     }
-    ret = physics_decode(evbuffer);
   }
 
   return ret;

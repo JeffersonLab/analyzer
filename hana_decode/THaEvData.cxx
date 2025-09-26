@@ -179,6 +179,13 @@ void THaEvData::EnablePrescanMode( Bool_t enable )
 }
 
 //_____________________________________________________________________________
+void THaEvData::EnableAltEvType( Bool_t enable )
+{
+  // Enable/disable alternate event type reporting
+  SetBit(kUseAltEvType, enable);
+}
+
+//_____________________________________________________________________________
 void THaEvData::SetVerbose( Int_t level )
 {
   // Set verbosity level. Identical to SetDebug(). Kept for compatibility.

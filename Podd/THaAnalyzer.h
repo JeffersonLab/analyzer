@@ -57,6 +57,7 @@ public:
   void           EnablePhysicsEvents( Bool_t b = true );
   void           EnableRunUpdate( Bool_t b = true );
   void           EnableSlowControl( Bool_t b = true );
+  void           EnableAltEvType( Bool_t b = true );
   const char*    GetOutFileName()      const  { return fOutFileName.Data(); }
   const char*    GetCutFileName()      const  { return fCutFileName.Data(); }
   const char*    GetOdefFileName()     const  { return fOdefFileName.Data(); }
@@ -80,6 +81,9 @@ public:
   Bool_t         PhysicsEnabled()      const  { return fDoPhysics; }
   Bool_t         OtherEventsEnabled()  const  { return fDoOtherEvents; }
   Bool_t         SlowControlEnabled()  const  { return fDoSlowControl; }
+  Bool_t         RunUpdateEnabled()    const  { return fUpdateRun; }
+  Bool_t         OverwriteEnabled()    const  { return fOverwrite; }
+  Bool_t         AltEvTypeEnabled()    const  { return TestBit(kUseAltEvType); }
   virtual Int_t  SetCountMode( Int_t mode );
   void           SetCrateMapFileName( const char* name );
   void           SetEvent( THaEvent* event )        { fEvent = event; }
@@ -185,6 +189,9 @@ protected:
   Bool_t         fDoPhysics;       // Enable physics event processing
   Bool_t         fDoOtherEvents;   // Enable other event processing
   Bool_t         fDoSlowControl;   // Enable slow control processing
+  //FIXME BCI: make member variable
+  //Bool_t         fUseAltEvType;    // Take event type from trigger supervisor
+  enum { kUseAltEvType = BIT(17) };
 
   // Variables used by analysis functions
   Bool_t         fFirstPhysics;    // Status flag for physics analysis

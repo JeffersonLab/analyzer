@@ -61,7 +61,7 @@ public:
   UInt_t    GetRunType()     const { return run_type; }
   UInt_t    GetRocLength( UInt_t crate ) const;   // Get the ROC length
 
-  Bool_t    IsPhysicsTrigger() const;  // physics trigger (event types 1-14)
+  Bool_t    IsPhysicsTrigger() const;  // physics trigger
   Bool_t    IsScalerEvent()    const;  // scalers from data stream
   Bool_t    IsPrestartEvent()  const;  // prestart event
   Bool_t    IsEpicsEvent()     const;  // slow control data
@@ -136,6 +136,9 @@ public:
   Bool_t  ScalersEnabled() const;
   void    EnablePrescanMode( Bool_t enable=true );
   Bool_t  PrescanModeEnabled() const;
+  void    EnableAltEvType( Bool_t enable = true );
+  Bool_t  AltEvTypeEnabled() const;
+
   void    SetOrigPS( Int_t event_type );
   TString GetOrigPS() const;
 
@@ -166,7 +169,9 @@ protected:
   enum {
     kHelicityEnabled = BIT(14),
     kScalersEnabled  = BIT(15),
-    kPrescanMode     = BIT(16)
+    kPrescanMode     = BIT(16),
+    kUseAltEvType    = BIT(17),
+    kPhysicsTrigger  = BIT(18)
   };
 
   // Initialization routines
@@ -348,7 +353,8 @@ inline UInt_t THaEvData::GetNextChan( UInt_t crate, UInt_t slot,
 
 inline
 Bool_t THaEvData::IsPhysicsTrigger() const {
-  return ((event_type > 0) && (event_type <= Decoder::MAX_PHYS_EVTYPE));
+  return ((event_type > 0 && event_type <= Decoder::MAX_PHYS_EVTYPE) or
+          TestBit(kPhysicsTrigger));
 }
 
 
@@ -399,6 +405,12 @@ inline
 Bool_t THaEvData::PrescanModeEnabled() const {
   // Test if prescan mode enabled
   return TestBit(kPrescanMode);
+}
+
+inline
+Bool_t THaEvData::AltEvTypeEnabled() const {
+  // Test if alternate event type mode enabled
+  return TestBit(kUseAltEvType);
 }
 
 // Dummy versions of EPICS data access functions. These will always fail
