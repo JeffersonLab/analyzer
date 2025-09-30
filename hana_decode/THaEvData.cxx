@@ -226,10 +226,10 @@ TString THaEvData::GetOrigPS() const
   TString answer = "PS from ";
   if (fTrigSupPS) {
     answer += " Trig Sup evtype ";
-    answer.Append(Form("%d",TS_PRESCALE_EVTYPE));
+    answer += TS_PRESCALE_EVTYPE;
   } else {
     answer += " PS evtype ";
-    answer.Append(Form("%d",PRESCALE_EVTYPE));
+    answer += PRESCALE_EVTYPE;
   }
   return answer;
 }
