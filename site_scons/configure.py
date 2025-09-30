@@ -62,7 +62,8 @@ def config(env, args):
     else:
         print ('ERROR! unrecognized platform.  Twonk.')
 
-####### ROOT Definitions ####################
+####### Dependencies ####################
+#--- ROOT ---
 def FindROOT(env, need_glibs = True):
     root_config = 'root-config'
     try:
@@ -107,7 +108,7 @@ def FindROOT(env, need_glibs = True):
         print('!!! Cannot find ROOT.  Check if root-config is in your PATH.')
         env.Exit(1)
 
-# EVIO environment
+#--- EVIO ---
 def FindEVIO(env, build_it = True, fail_if_missing = True):
     env.Replace(LOCAL_EVIO = 0)
     uname = os.uname()
@@ -215,5 +216,82 @@ def FindEVIO(env, build_it = True, fail_if_missing = True):
 
     print ("EVIO lib Directory = %s" % env.subst('$EVIO_LIB'))
     print ("EVIO include Directory = %s" % env.subst('$EVIO_INC'))
+
+#--- ET ---
+def FindET(env, build_it = True, fail_if_missing = True):
+    env.Replace(LOCAL_ET = 0)
+    uname = os.uname()
+    platform = uname[0]
+    machine = uname[4]
+    et_arch = platform + '-' + machine
+    et_header_file = 'et.h'
+    et_library_file = 'libet' + env.subst('$SHLIBSUFFIX')
+
+    coda_dir = os.getenv('CODA')
+    if coda_dir:
+        et_lib_dir = os.path.join(coda_dir, et_arch, 'lib')
+        et_inc_dir = os.path.join(coda_dir, et_arch, 'include')
+        th = env.FindFile(et_header_file, et_inc_dir)
+        tl = env.FindFile(et_library_file, et_lib_dir)
+    else:
+        et_lib_dir = None
+        et_inc_dir = None
+        th = None
+        tl = None
+    if th and tl:
+        env.Append(ET_LIB = et_lib_dir)
+        env.Append(ET_INC = et_inc_dir)
+    elif build_it:
+        print ("No external ET environment configured !!!")
+        print ("Using local installation ... ")
+        et_version = '16.5.0'
+        et_revision = 'v%s' % et_version
+        et_tarfile = et_revision + ".tar.gz"
+        et_local = os.path.join(env.Dir('.').abspath, 'et')
+        et_unpack_dir = os.path.join(et_local,et_revision)
+        et_libsrc =  os.path.join(et_unpack_dir, "src", "libsrc")
+        if not os.path.exists(et_local):
+            os.makedirs(et_local, mode=0o755)
+        et_tarpath = os.path.join(et_local, et_tarfile)
+
+        if not os.path.isfile(os.path.join(et_local, 'et.h')) \
+                or not os.path.exists(et_tarpath):
+            # If needed, download ET archive
+            if not os.path.exists(et_tarpath):
+                et_url = 'https://github.com/JeffersonLab/et/archive/%s' % et_tarfile
+                print('Dowloading ET tarball %s' % et_url)
+                urlhandle = urllib2.urlopen(et_url)
+                with open(et_tarpath, 'wb') as out_file:
+                    shutil.copyfileobj( urlhandle, out_file )
+                urlhandle.close()
+            # Extract ET C-API sources (libsrc directory)
+            print('Extracting ET tarball %s' % et_tarpath)
+            tar = tarfile.open(et_tarpath, 'r')
+            tar_members = tar.getmembers()
+            top_dir = tar_members[0].name.split('/')[0]
+            to_extract = []
+            for m in tar_members:
+                if '/libsrc/' in m.name:
+                    to_extract.append(m)
+            tar.extractall( et_local, to_extract )
+            tar.close()
+            os.rename( os.path.join(et_local, top_dir), et_unpack_dir )
+            for f in glob.glob(os.path.join(et_libsrc, "*.[ch]")):
+                shutil.copy2(f, et_local)
+            shutil.rmtree(et_unpack_dir)
+        # Build ET libsrc
+        env.SConscript(os.path.join(et_local, "SConscript.py"))
+
+        env.Append(ET_LIB = et_local)
+        env.Append(ET_INC = et_local)
+        env.Replace(LOCAL_ET = 1)
+    elif fail_if_missing:
+        print('!!! Cannot find ET library. Set CODA to top-level of installation.')
+        env.Exit(1)
+    else:
+        return
+
+    print ("ET lib Directory = %s" % env.subst('$ET_LIB'))
+    print ("ET include Directory = %s" % env.subst('$ET_INC'))
 
 # end configure.py

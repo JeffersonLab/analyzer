@@ -2,7 +2,7 @@
 # Set up project properties
 cmake_minimum_required(VERSION 3.19)
 
-project(EVIO VERSION @EVIO_VERSION@ LANGUAGES C)
+project(ET VERSION @ET_VERSION@ LANGUAGES C)
 string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LC)
 string(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UC)
 
@@ -12,11 +12,14 @@ set(LIBNAME ${PROJECT_NAME_LC})
 
 #----------------------------------------------------------------------------
 # Sources and headers
-set(src evio.c eviofmt.c eviofmtswap.c evioswap.c)
-set(hdr evio.h)
+set(src et_attachment.c et_bridge.c et_common.c et_data.c et_event.c
+  et_init.c et_local.c et_mem.c et_network.c et_noshare.c et_openconfig.c
+  et_readwrite.c et_remote.c et_server.c et_statconfig.c et_station.c
+  et_sysconfig.c et_system.c etCommonNetwork.c et_fifo.c)
+set(hdr et.h et_data.h et_private.h et_fifo.h et_network.h etCommonNetwork.h)
 
 #----------------------------------------------------------------------------
-# EVIO library
+# Library
 add_library(${LIBNAME} SHARED ${src} ${hdr})
 add_library(${PROJECT_NAME_UC}::${PROJECT_NAME} ALIAS ${LIBNAME})
 set_property(TARGET ${LIBNAME} PROPERTY EXPORT_NAME ${PROJECT_NAME})
@@ -31,6 +34,8 @@ target_compile_options(${LIBNAME}
     $<$<CONFIG:Debug>:-O0>
     $<$<CONFIG:RelWithDebInfo>:-fno-omit-frame-pointer>
     -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable
+  # Suppress numerous ET compilation warnings
+    -Wno-sign-compare -Wno-unused-function -Wno-uninitialized
   )
 set_target_properties(${LIBNAME} PROPERTIES
   SOVERSION ${PROJECT_VERSION_MAJOR}

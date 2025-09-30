@@ -12,12 +12,14 @@ if( DEFINED ENV{CODA} )
   set(coda_arch_lib $ENV{CODA}/${evio_arch}/lib $ENV{CODA}/${CMAKE_SYSTEM_NAME}/lib)
   set(coda_arch_inc $ENV{CODA}/${evio_arch}/include $ENV{CODA}/common/include)
 endif()
+unset(evio_arch)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(evio_dbg evio-dbg)
 endif()
+# $ENV{EVIO} and $ENV{CODA} paths are searched first, then all other locations
 find_library(EVIO_LIBRARY ${evio_dbg} evio
-  PATHS ENV EVIO_LIBDIR ${evio_arch_lib} ${coda_arch_lib} NO_DEFAULT_PATHS
+  PATHS ENV EVIO_LIBDIR ${evio_arch_lib} ${coda_arch_lib} NO_DEFAULT_PATH
   DOC "EVIO C-API library"
   )
 find_library(EVIO_LIBRARY ${evio_dbg} evio
@@ -25,7 +27,7 @@ find_library(EVIO_LIBRARY ${evio_dbg} evio
   )
 find_path(EVIO_INCLUDE_DIR
   NAMES evio.h
-  PATHS ENV EVIO_INCDIR ${evio_arch_inc} ${coda_arch_inc} NO_DEFAULT_PATHS
+  PATHS ENV EVIO_INCDIR ${evio_arch_inc} ${coda_arch_inc} NO_DEFAULT_PATH
   DOC "EVIO C-API header include directory"
   )
 find_path(EVIO_INCLUDE_DIR

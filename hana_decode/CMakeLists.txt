@@ -20,6 +20,15 @@ if(NOT EVIO_FOUND)
     include(FetchBuildEVIO)
   endif()
 endif()
+if(ONLINE_ET)
+  find_package(ET 16 CONFIG QUIET)
+  if(NOT ET_FOUND)
+    find_package(ET 16 MODULE)
+    if(NOT ET_FOUND)
+      include(FetchBuildET)
+    endif()
+  endif()
+endif()
 
 #----------------------------------------------------------------------------
 # Sources and headers
@@ -52,22 +61,15 @@ set(src
   VmeModule.cxx
   )
 if(ONLINE_ET)
-  find_package(ET 16)
-  if(ET_FOUND)
-    set(ONLIBS EVIO::ET)
-    set(ETCLT THaEtClient.cxx)
-    list(APPEND src ${ETCLT})
-    if(HAVE_BYTESWAP_H AND HAVE_BSWAP32)
-      set_source_files_properties(${ETCLT} PROPERTIES COMPILE_DEFINITIONS
-        HAVE_BYTESWAP_H)
-    elseif(HAVE_BUILTIN_BSWAP)
-      set_source_files_properties(${ETCLT} PROPERTIES COMPILE_DEFINITIONS
-        HAVE_BUILTIN_BSWAP)
-    endif()
-  else()
-    message(WARNING
-      "Cannot find ET system. Check $CODA environment variable. Disabling ONLINE_ET")
-    set(ONLINE_ET FALSE CACHE BOOL "ET system not found, disabled" FORCE)
+  set(ONLIBS ET::ET)
+  set(ETCLT THaEtClient.cxx)
+  list(APPEND src ${ETCLT})
+  if(HAVE_BYTESWAP_H AND HAVE_BSWAP32)
+    set_source_files_properties(${ETCLT} PROPERTIES COMPILE_DEFINITIONS
+      HAVE_BYTESWAP_H)
+  elseif(HAVE_BUILTIN_BSWAP)
+    set_source_files_properties(${ETCLT} PROPERTIES COMPILE_DEFINITIONS
+      HAVE_BUILTIN_BSWAP)
   endif()
 endif()
 
