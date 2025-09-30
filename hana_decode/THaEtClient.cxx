@@ -21,7 +21,7 @@
 #include <stdexcept>
 #include <algorithm>    // std::min
 #include "evio.h"
-#include "et_private.h" // for ET_VERSION
+#include "et.h"
 
 #ifdef HAVE_BYTESWAP_H
 #include <byteswap.h>
@@ -97,7 +97,7 @@ Int_t THaEtClient::init( const char* mystation )
     return CODA_FATAL;
   }
 
-  // Initialize evetHandle evh
+  // Initialize eventHandle evh
   if( evh.init(id, ET_CHUNK_SIZE, waitflag) != ET_OK )
     return CODA_FATAL; // Error message already printed
   et_open_config_destroy(openconfig);
@@ -267,9 +267,13 @@ bool THaEtClient::isOpen() const
 
 //______________________________________________________________________________
 #define EVETCHECKINIT                                             \
-  if( etSysId == nullptr || !etChunk ) {                \
+  if( verbose > 1 )                                               \
+    printf("%s: enter\n", __func__);                              \
+                                                                  \
+  if( etSysId == nullptr || !etChunk ) {                          \
     printf("%s: ERROR: evet not initialized\n", __func__);        \
-    return ET_ERROR;}
+    return ET_ERROR;                                              \
+  }
 
 //______________________________________________________________________________
 int THaEtClient::EvET::init( et_sys_id id, int32_t chunksz, int32_t waitmode )
@@ -348,9 +352,6 @@ int THaEtClient::EvET::close()
 //______________________________________________________________________________
 int THaEtClient::EvET::get_chunks()
 {
-  if( verbose > 1 )
-    printf("%s: enter\n", __func__);
-
   EVETCHECKINIT
 
   int status = ET_OK;
@@ -407,9 +408,6 @@ void THaEtClient::EvET::print_chunk() const
 //______________________________________________________________________________
 int THaEtClient::EvET::get_chunk()
 {
-  if( verbose > 1 )
-    printf("%s: enter\n", __func__);
-
   EVETCHECKINIT
 
   currentChunkID++;
@@ -471,9 +469,6 @@ int THaEtClient::EvET::get_chunk()
 int THaEtClient::EvET::read_no_copy( const uint32_t** outputBuffer,
                                      uint32_t* length )
 {
-  if( verbose > 1 )
-    printf("%s: enter\n", __func__);
-
   EVETCHECKINIT
 
   int status = evReadNoCopy(currentChunkStat.evioHandle,
