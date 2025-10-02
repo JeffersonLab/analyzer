@@ -785,28 +785,31 @@ void CodaDecoder::PrintBankInfo() const
 uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
                                    uint32_t blkSize, uint32_t tsroc )
 {
+  // For the data format, see the "Physics Event's Built Trigger Bank" diagram
+  // in https://coda.jlab.org/drupal/system/files/eventbuilding.pdf
+
   if( blkSize == 0 )
     throw std::invalid_argument("CODA block size must be > 0");
   start = evbuffer;
   blksize = blkSize;
   len = evbuffer[0] + 1;
-  tag = (evbuffer[1] & 0xffff0000) >> 16;
+  tag = evbuffer[1] >> 16;
   nrocs = evbuffer[1] & 0xff;
   runInfo = 0;
 
   const uint32_t* p = evbuffer + 2;
   // Segment 1:
   //  uint64_t event_number
-  //  uint64_t run_info                if withRunInfo
   //  uint64_t time_stamp[blkSize]     if withTimeStamp
+  //  uint64_t run_info                if withRunInfo
   {
     uint32_t slen = *p & 0xffff;  // segment length in 32-bit words
-    if( slen != 2*(1 + (withRunInfo() ? 1 : 0) + (withTimeStamp() ? blkSize : 0)))
+    if( slen != 2*(1 + withTimeStamp() * blkSize + withRunInfo()) )
       throw coda_format_error("Invalid length for Trigger Bank seg 1");
     memcpy(&evtNum, p + 1, sizeof(evtNum));
+    evTS = withTimeStamp() ? p + 3 : nullptr;
     if( withRunInfo() )
-      memcpy(&runInfo, p + 3, sizeof(runInfo));
-    evTS = withTimeStamp() ? p + 3 + (withRunInfo() ? 2 : 0) : nullptr;
+      memcpy(&runInfo, p + 3 + withTimeStamp() * 2UL * blksize, sizeof(runInfo));
     p += slen + 1;
   }
   if( p-evbuffer >= len )
@@ -835,7 +838,7 @@ uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
     if( p-evbuffer >= len )
       throw coda_format_error("Past end of bank while scanning trigger bank segments");
     uint32_t slen = *p & 0xffff;
-    uint32_t rocnum = (*p & 0xff000000) >> 24;
+    uint32_t rocnum = *p >> 24;
     if( rocnum == tsroc ) {
       TSROC = p + 1;
       tsrocLen = slen;
