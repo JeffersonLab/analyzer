@@ -806,7 +806,7 @@ uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
     memcpy(&evtNum, p + 1, sizeof(evtNum));
     evTS = withTimeStamp() ? p + 3 : nullptr;
     if( withRunInfo() )
-      memcpy(&runInfo, p + (evTS ? 2*(blksize-1)+5  : 3), sizeof(runInfo));
+      memcpy(&runInfo, p + 3 + (evTS ? 2*(blksize)  : 0), sizeof(runInfo));
     p += slen + 1;
   }
   if( p-evbuffer >= len )
