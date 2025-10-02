@@ -804,9 +804,9 @@ uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
     if( slen != 2*(1 + (withRunInfo() ? 1 : 0) + (withTimeStamp() ? blkSize : 0)))
       throw coda_format_error("Invalid length for Trigger Bank seg 1");
     memcpy(&evtNum, p + 1, sizeof(evtNum));
+    evTS = withTimeStamp() ? p + 3 : nullptr;
     if( withRunInfo() )
-      memcpy(&runInfo, p + 3, sizeof(runInfo));
-    evTS = withTimeStamp() ? p + 3 + (withRunInfo() ? 2 : 0) : nullptr;
+      memcpy(&runInfo, p + (evTS ? 2*(blksize-1)+5  : 3), sizeof(runInfo));
     p += slen + 1;
   }
   if( p-evbuffer >= len )
