@@ -859,7 +859,9 @@ CodaDecoder::BankDat_t* CodaDecoder::CheckForBank( UInt_t roc, UInt_t slot )
   // Internal function used by bank_decode() and LoadFromMultiBlock().
 
   Int_t bank = fMap->getBank(roc, slot);
-  assert(bank < MAXBANK); // bank numbers are uint16_t
+//FIXME: code duplication with FindBank. Return Optional_t<BankDat_t> by value
+// and make this method const
+  assert(bank <= MAXBANK); // bank numbers are uint16_t
   if( bank < 0 )
     return nullptr;
   UInt_t key = (roc << 16) + bank;
@@ -1142,6 +1144,21 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
 }
 
 //_____________________________________________________________________________
+CodaDecoder::BankDat_t CodaDecoder::FindBank( UInt_t roc, Int_t bank ) const
+{
+  // Return start position of given roc/bank combination
+
+  assert(bank <= MAXBANK); // bank numbers are uint16_t
+  if( roc >= MAXROC || bank < 0 )
+    return {};
+  UInt_t key = (roc << 16) + bank;
+  auto theBank = find(ALL(bankdat), key);
+  if( theBank == bankdat.end() )
+    return {};
+  return *theBank;
+}
+
+//_____________________________________________________________________________
  Int_t CodaDecoder::FillBankData( UInt_t *rdat, UInt_t roc, Int_t bank,
                                   UInt_t offset, UInt_t num ) const
 {
@@ -1151,16 +1168,13 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
   if( fDebugFile )
     *fDebugFile << "Check FillBankData " << roc << "  " << bank << endl;
 
-  if( roc >= MAXROC )
-    return HED_ERR;
-  UInt_t jk = (roc << 16) + bank;
-  auto bankInfo = find(ALL(bankdat), jk);
-  if( bankInfo == bankdat.end() ) {
-    cerr << "FillBankData::ERROR:  bankdat not in current event "<<endl;
+  auto bankInfo = FindBank(roc, bank);
+  if( !bankInfo ) {
+    cerr << "FillBankData::ERROR:  bank data not in current event " << endl;
     return HED_ERR;
   }
-  UInt_t pos = bankInfo->pos;
-  UInt_t len = bankInfo->len;
+  UInt_t pos = bankInfo.pos;
+  UInt_t len = bankInfo.len;
   if( fDebug > 1 )
     cout        << "FillBankData: pos, len " << pos << "   " << len << endl;
   if( fDebugFile )
@@ -1168,13 +1182,10 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
   assert( pos < event_length && pos+len <= event_length ); // else bug in bank_decode
   if( offset+2 > len )
     return HED_ERR;
-  if( num > len )
-    num = len;
   UInt_t ilo = pos + offset;
   assert( ilo < event_length );  // else offset not correctly checked above
-  UInt_t ihi = pos + offset + num;
-  if( ihi > event_length )
-    ihi = event_length;
+  num = std::min(num, len);
+  UInt_t ihi = std::min(pos + offset + num, event_length);
   memcpy(rdat, buffer+ilo, ihi-ilo);
 
   return HED_OK;

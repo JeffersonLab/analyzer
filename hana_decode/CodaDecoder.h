@@ -64,6 +64,8 @@ public:
     enum EDataSize { kUndef = 0, k8bit = 1, k16bit = 2, k32bit = 4, k64bit = 8 };
     enum EIntFloat { kInteger = 0, kFloat };
     enum ESigned   { kUnknown = 0, kUnsigned, kSigned };
+    explicit operator bool() const { return status_ == kOK && len_ > 0; }
+    bool operator!() const { return !((bool)*this); }
     Int_t Fill( const UInt_t* evbuf, UInt_t pos, UInt_t len );
     EDataSize GetDataSize() const; // Size of data in bytes/element
     EIntFloat GetFloat()    const;
@@ -83,6 +85,32 @@ public:
     BankInfo ifo;
     ifo.Fill(evbuf, pos, len);
     return ifo;
+  }
+
+  class BankDat_t {            // Coordinates of bank data in raw event
+  public:
+    BankDat_t() : key(kMaxUInt), pos(0), len(0) {}
+    BankDat_t( UInt_t key, UInt_t pos, UInt_t len ) : key(key), pos(pos), len(len) {}
+    bool operator==( const BankDat_t& rhs ) const { return key == rhs.key; }
+    bool operator==( UInt_t key_to_find )   const { return key == key_to_find; }
+    bool operator< ( const BankDat_t& rhs ) const { return key <  rhs.key; }
+    explicit operator bool() const { return key != kMaxUInt; }
+    bool operator!() const { return key == kMaxUInt; }
+    UInt_t key;   // bank number + (roc << 16)
+    UInt_t pos;   // position in evbuffer[]
+    UInt_t len;   // length of data including pos, so pos+len-1 = last word of data
+  };
+
+  // Methods to find position, length, and parameters of a CODA bank in
+  // the current event buffer. Must call LoadEvent first.
+  BankDat_t FindBank( UInt_t roc, Int_t bank ) const;
+  BankInfo  GetBank( const BankDat_t& bank ) {
+    return GetBank( buffer, bank.pos, bank.len );
+  }
+  BankInfo  GetBank( UInt_t roc, Int_t bank ) {
+    auto dat = FindBank(roc, bank);
+    if( !dat ) return {};
+    return GetBank(dat);
   }
 
 protected:
@@ -116,17 +144,6 @@ protected:
   Bool_t buffmode,synchmiss,synchextra,fdfirst;
   Int_t  chkfbstat;
 
-  class BankDat_t {            // Coordinates of bank data in raw event
-  public:
-    BankDat_t() : key(kMaxUInt), pos(0), len(0) {}
-    BankDat_t( UInt_t key, UInt_t pos, UInt_t len ) : key(key), pos(pos), len(len) {}
-    bool operator==( const BankDat_t& rhs ) const { return key == rhs.key; }
-    bool operator==( UInt_t key_to_find )   const { return key == key_to_find; }
-    bool operator< ( const BankDat_t& rhs ) const { return key <  rhs.key; }
-    UInt_t key;   // bank number + (roc << 16)
-    UInt_t pos;   // position in evbuffer[]
-    UInt_t len;   // length of data including pos, so pos+len-1 = last word of data
-  };
   std::vector<BankDat_t> bankdat;
   BankDat_t* CheckForBank( UInt_t roc, UInt_t slot );
 
