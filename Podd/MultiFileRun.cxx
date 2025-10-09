@@ -913,15 +913,16 @@ TString MultiFileRun::GetInitInfoFileName( TString fname )
   // runs containing initialization info.
   // Returns 'fname' with stream and segment number both set to 0, i.e.
   // file.dat.2.3 -> file.dat.0.0
+  // Returns empty string if the file name does not match the expected pattern
 
-  // Extract the file base name
   static TRegexp re("\\.[0-9]+\\.[0-9]+$");
   assert(re.Status() == TRegexp::kOK);
   Ssiz_t pos = fname.Index(re);
-  if( pos != kNPOS ) {
-    fname.Remove(pos);
-    fname.Append(".0.0");
-  }
+  if( pos == kNPOS )
+    return {};
+  // Replace trailing numbers with .0.0
+  fname.Remove(pos);
+  fname.Append(".0.0");
 
   return fname;
 }
@@ -929,13 +930,19 @@ TString MultiFileRun::GetInitInfoFileName( TString fname )
 //_____________________________________________________________________________
 TString MultiFileRun::FindInitInfoFile( const TString& fname )
 {
-  // First try (stream,segment) = (0,0)
+  // First try (stream,segment) -> (0,0)
   TString file00 = GetInitInfoFileName(fname);
-  TString initinfo_file = FindInitInfoFileImpl(fname, file00);
-  if( !initinfo_file.IsNull() )
-    return initinfo_file;
+  TString initinfo_file;
+  if( !file00.IsNull() ) {
+    // Try this only if the name actually ends with two numbers .[0-9].[0-9],
+    // otherwise we try the standard way below.
+    initinfo_file = FindInitInfoFileImpl(fname, file00);
+    if( !initinfo_file.IsNull() )
+      return initinfo_file;
+  }
 
-  // If that fails, try (stream,segment) = (stream,0)
+  // Try as before, i.e. replace a trailing number .[0-9] with .0
+  // If the name does not end with .[0-9] at all, just try the plain file name.
   TString file0 = THaRun::GetInitInfoFileName(fname);
   if( file0 != file00 )
     initinfo_file = FindInitInfoFileImpl(fname, file0);
@@ -951,6 +958,8 @@ TString MultiFileRun::FindInitInfoFile( const TString& fname )
 TString MultiFileRun::FindInitInfoFileImpl( const TString& fname,
                                             TString initinfo_file )
 {
+  if( initinfo_file.IsNull() )
+    return {};
   // Check current directory
   if( !gSystem->AccessPathName(initinfo_file, kReadPermission) )
     return initinfo_file;
