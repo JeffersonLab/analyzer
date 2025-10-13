@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
 
-project(Podd VERSION 1.7.16 LANGUAGES CXX)
+project(Podd VERSION 1.7.17 LANGUAGES CXX)
 set(EXTVERS)
 
 #----------------------------------------------------------------------------
