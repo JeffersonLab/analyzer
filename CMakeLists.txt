@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 
 project(Podd VERSION 1.8.0 LANGUAGES CXX)
-set(EXTVERS -dev)
+set(EXTVERS "-moldev")
 
 #----------------------------------------------------------------------------
 # Use our modules and utility functions
