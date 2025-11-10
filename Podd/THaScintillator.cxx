@@ -221,16 +221,22 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   for( UInt_t i = 0; i < nval; ++i ) {
     auto& calibR = fRightPMTs->GetCalib(i);
     auto& calibL = fLeftPMTs->GetCalib(i);
-    calibR.tdc2t = tdc2t;
-    calibR.off   = roff[i];
-    calibR.ped   = rped[i];
-    calibR.gain  = rgain[i];
-    calibR.mip   = adcmip;
-    calibL.tdc2t = tdc2t;
-    calibL.off   = loff[i];
-    calibL.ped   = lped[i];
-    calibL.gain  = lgain[i];
-    calibR.mip   = adcmip;
+    calibR.tdc2t   = tdc2t;
+    if( !roff.empty() )
+      calibR.off   = roff[i];
+    if( !rped.empty() )
+      calibR.ped   = rped[i];
+    if( !rgain.empty() )
+      calibR.gain  = rgain[i];
+    calibR.mip     = adcmip;
+    calibL.tdc2t   = tdc2t;
+    if( !loff.empty() )
+      calibL.off   = loff[i];
+    if( !lped.empty() )
+      calibL.ped   = lped[i];
+    if( !lgain.empty() )
+      calibL.gain  = lgain[i];
+    calibR.mip     = adcmip;
     if( !twalk.empty() ) {
       calibR.twalk = twalk[i];
       calibL.twalk = twalk[nval+i];
