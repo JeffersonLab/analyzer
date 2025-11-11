@@ -85,12 +85,12 @@ Int_t FADCData::ReadConfig( FILE* file, const TDatime& date, const char* prefix 
 
   fConfig.reset();  // Sets default TDC scale
   DBRequest calib_request[] = {
-    {"NPED",     &fConfig.nped,     kInt},
-    {"NSA",      &fConfig.nsa,      kInt},
-    {"NSB",      &fConfig.nsb,      kInt},
-    {"Win",      &fConfig.win,      kInt},
-    {"TFlag",    &fConfig.tflag,    kInt},
-    {"TDCscale", &fConfig.tdcscale, kDataType, 0, true},
+    {"adc.NPED",   &fConfig.nped,     kInt},
+    {"adc.NSA",    &fConfig.nsa,      kInt},
+    {"adc.NSB",    &fConfig.nsb,      kInt},
+    {"adc.Win",    &fConfig.win,      kInt},
+    {"adc.TFlag",  &fConfig.tflag,    kInt},
+    {"tdc.scale",  &fConfig.tdcscale, kDataType, 0, true},
     {nullptr}
   };
   return THaAnalysisObject::LoadDB(file, date, calib_request, prefix);
@@ -123,7 +123,14 @@ OptUInt_t FADCData::LoadFADCData( const DigitizerHitInfo_t& hitinfo )
     throw logic_error("Bad module type (expected Fadc250Module). "
                       "Should never happen. Call expert.");
 
-  return GetFADCValue( kPulseIntegral, hitinfo, fadc );
+  auto ret = GetFADCValue( kPulseIntegral, hitinfo, fadc );
+  if( !ret ) {
+    // FADC may be in waveform mode. As a quick hack, we set a dummy value
+    // and handle the waveform data in StoreHit (see below)
+    if( fadc->GetNumEvents(kSampleADC, hitinfo.chan ) > 0 )
+      ret = kMaxUInt;
+  }
+  return ret;
 }
 
 //_____________________________________________________________________________
@@ -143,50 +150,74 @@ Int_t FADCData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 
   auto* fadc = dynamic_cast<Fadc250Module*>(hitinfo.module);
   assert(fadc);  // should have been caught in LoadData
+  if( !fadc )
+    return 0;
 
   auto& FDAT = fFADCData[k];
-  FDAT.fIntegral  = data;
-  FDAT.fOverflow  = fadc->GetOverflowBit(hitinfo.chan, hitinfo.hit);
-  FDAT.fUnderflow = fadc->GetUnderflowBit(hitinfo.chan, hitinfo.hit);
-  FDAT.fPedq      = fadc->GetPedestalQuality(hitinfo.chan, hitinfo.hit);
+  if( data != kMaxUInt ) {  //FIXME: kMaxUInt is a temporary hack
+    // We have good pulse integral data
+    FDAT.fIntegral = data;
+    FDAT.fOverflow = fadc->GetOverflowBit(hitinfo.chan, hitinfo.hit);
+    FDAT.fUnderflow = fadc->GetUnderflowBit(hitinfo.chan, hitinfo.hit);
+    FDAT.fPedq = fadc->GetPedestalQuality(hitinfo.chan, hitinfo.hit);
 
-  class TypeItem { public: EModuleType type; const string name; };
-  static const vector<TypeItem> items = {
-    { kPulsePeak,     "kPulsePeak" },
-    { kPulseTime,     "kPulseTime" },
-    { kPulsePedestal, "kPulsePedestal" }
-  };
+    class TypeItem {
+    public:
+      EModuleType type;
+      const string name;
+    };
+    static const vector<TypeItem> items = {
+      {kPulsePeak,     "kPulsePeak"},
+      {kPulseTime,     "kPulseTime"},
+      {kPulsePedestal, "kPulsePedestal"}
+    };
 
-  for( const auto& item : items ) {
-    OptUInt_t val = GetFADCValue(item.type, hitinfo, fadc);
-    if( !val ) {
-      string s("Error retrieving FADC item type ");
-      s += item.name; s += ". Decoder bug. Call expert.";
-      throw logic_error(msg(hitinfo,s.c_str())); // FADC's GetNumHits lied to us
-    }
-    switch( item.type ) {
-      case kPulsePeak:
-        FDAT.fPeak = val.value();
-        break;
-      case kPulseTime:
-        FDAT.fT   = val.value();
-        FDAT.fT_c = FDAT.fT * fConfig.tdcscale;
-        break;
-      case kPulsePedestal:
-        // Retrieve pedestal, if available
-        if( FDAT.fPedq == 0 ) {
-          Data_t p = val.value();
-          if( fConfig.tflag ) {
-            p *= static_cast<Data_t>(fConfig.nsa + fConfig.nsb) / fConfig.nped;
-          } else {
-            p *= static_cast<Data_t>(fConfig.win) / fConfig.nped;
+    for( const auto& item: items ) {
+      OptUInt_t tval = GetFADCValue(item.type, hitinfo, fadc);
+      if( !tval ) {
+        string s("Error retrieving FADC item type ");
+        s += item.name;
+        s += ". Decoder bug. Call expert.";
+        throw std::logic_error(msg(hitinfo, s.c_str())); // FADC's GetNumHits lied to us
+      }
+      auto val = tval.value();
+      switch( item.type ) {
+        case kPulsePeak:
+          FDAT.fPeak = val;
+          break;
+        case kPulseTime:
+          FDAT.fT = val;
+          FDAT.fT_c = FDAT.fT * fConfig.tdcscale;
+          break;
+        case kPulsePedestal:
+          // Retrieve pedestal, if available
+          if( FDAT.fPedq == 0 ) {
+            Data_t p = val;
+            if( fConfig.tflag ) {
+              p *= static_cast<Data_t>(fConfig.nsa + fConfig.nsb) / fConfig.nped;
+            } else {
+              p *= static_cast<Data_t>(fConfig.win) / fConfig.nped;
+            }
+            FDAT.fPedestal = p;
           }
-          FDAT.fPedestal = p;
-        }
-        break;
-      default:
-        assert(false); // Not reached
+          break;
+        default:
+          assert(false); // Not reached
+      }
     }
+  }
+  if( UInt_t nsamp = fadc->GetNumEvents(kSampleADC, hitinfo.chan); nsamp > 0 ) {
+    // Waveform data present
+    FDAT.fSamples.clear();
+    FDAT.fSamples.reserve(nsamp);
+    for( UInt_t i = 0; i < nsamp; ++i ) {
+      //TODO Just get a pointer to the waveform data array since these data will
+      // not be exported directly as a global variable
+      auto samp = fadc->GetData(kSampleADC, hitinfo.chan, i);
+      FDAT.fSamples.push_back(samp);
+    }
+    //TODO waveform analysis
+    //TODO synthesize hit data from results of waveform analysis
   }
   fHitDone = true;
   return 0;
@@ -213,6 +244,8 @@ Int_t FADCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
     { "overflow",  "Overflow bit of FADC pulse %s",         "fFADCData.fOverflow" },
     { "underflow", "Underflow bit of FADC pulse %s",        "fFADCData.fUnderflow" },
     { "badped",    "Pedestal quality bit of FADC pulse %s", "fFADCData.fPedq" },
+//TODO: support vector of vectors? Arrange differently?
+//    { "samples",   "FADC waveform data",                    "fFADCData.fSamples" },
     { nullptr }
   };
   return StdDefineVariables(vars, mode, key_prefix, here, comment_subst);

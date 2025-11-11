@@ -16,6 +16,7 @@
 #include "THaDetMap.h"
 #include <memory>
 #include <utility>
+#include <vector>
 
 class TDatime;
 class THaDetectorBase;
@@ -32,6 +33,7 @@ public:
     // FIXME: init some of these to kBig?
     fIntegral = fPeak = fT = fT_c = fPedestal = 0.0;
     fOverflow = fUnderflow = fPedq = 0;
+    fSamples.clear();
   }
   Data_t fIntegral;  // ADC peak integral
   Data_t fPeak;      // ADC peak value
@@ -41,6 +43,7 @@ public:
   UInt_t fUnderflow; // FADC underflow bit
   UInt_t fPedq;      // FADC pedestal quality bit
   Data_t fPedestal;  // Extracted pedestal value
+  std::vector<UShort_t> fSamples; // Waveform data
 };
 
 // Calibration
@@ -97,7 +100,7 @@ protected:
     const char* key_prefix = "",
     const char* comment_subst = "" ) override;
 
-  ClassDef(FADCData,1)  // FADC raw data
+  ClassDef(FADCData,2)  // FADC raw data
 };
 
 //_____________________________________________________________________________
