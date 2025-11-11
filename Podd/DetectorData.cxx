@@ -183,7 +183,6 @@ Int_t ADCData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 
   switch( hitinfo.type ) {
     case ChannelType::kADC:
-    case ChannelType::kMultiFunctionADC:
       StoreADC(fADCs[k], fCalib[k], hitinfo, data);
       fNHits++;
       fHitDone = true;
@@ -267,7 +266,6 @@ Int_t PMTData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 
   switch( hitinfo.type ) {
     case ChannelType::kADC:
-    case ChannelType::kMultiFunctionADC:
       StoreADC(fPMTs[k], fCalib[k], hitinfo, data);
       fNHits.adc++;
       fHitDone = true;
@@ -275,7 +273,6 @@ Int_t PMTData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 
     case ChannelType::kCommonStopTDC:
     case ChannelType::kCommonStartTDC:
-    case ChannelType::kMultiFunctionTDC:
       StoreTDC(fPMTs[k], fCalib[k], hitinfo, data);
       fNHits.tdc++;
       fHitDone = true;
