@@ -885,9 +885,9 @@ Value_t MakeValueP( const unique_ptr<THaDetMap>& detmap, size_t extras )
 
 //-----------------------------------------------------------------------------
 template<> inline
-Value_t MakeValue( const TVector3* vec3, size_t size )
+Value_t MakeValue( const TVector3* vec3, size_t /* size */ )
 {
-  size = 3;
+  constexpr size_t size = 3;
   Double_t darr[size];
   vec3->GetXYZ( darr );
   return MakeValue( darr, size );
