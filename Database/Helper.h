@@ -26,8 +26,12 @@ namespace Podd {
 
   //___________________________________________________________________________
   // Cast unsigned to signed where unsigned is expected to be within signed range
+#ifdef __cpp_concepts
+  template<typename T> requires (std::is_integral_v<T> and std::is_unsigned_v<T>)
+#else
   template<typename T, std::enable_if_t
     <std::is_integral_v<T> && std::is_unsigned_v<T>, bool> = true>
+#endif
   static inline std::make_signed_t<T> SINT( T uint )
   {
 #ifndef NDEBUG
@@ -37,13 +41,22 @@ namespace Podd {
 #endif
     return static_cast<std::make_signed_t<T>>(uint);
   }
+
   // Trivial case
+#ifdef __cpp_concepts
+  template<typename T> requires (std::is_integral_v<T> and std::is_signed_v<T>)
+#else
   template<typename T, std::enable_if_t
     <std::is_integral_v<T> && std::is_signed_v<T>, bool> = true>
+#endif
   static inline T SINT( T ival ) { return ival; }
 
   template<typename Container>
+#ifdef __cpp_lib_ssize
+  static inline auto SSIZE( const Container& c ) { return std::ssize(c); }
+#else
   static inline auto SSIZE( const Container& c ) { return SINT(c.size()); }
+#endif
 
   //___________________________________________________________________________
   template< typename VectorElem > inline void

@@ -687,37 +687,57 @@ Int_t conversion_error( const char* key, const string& value )
 // The following is not terribly elegant, but allows us to call the most
 // efficient conversion function for a given type
 //_____________________________________________________________________________
+#ifdef __cpp_concepts
+template<typename T> requires (is_integral_v<T> and is_signed_v<T>)
+#else
 template<typename T,
   enable_if_t<is_integral_v<T> && is_signed_v<T>, bool> = true>
+#endif
 inline long long int convert_string( const char* p, char*& end )
 {
   return strtoll(p, &end, 10);
 }
 
 //_____________________________________________________________________________
+#ifdef __cpp_concepts
+template<typename T> requires (is_integral_v<T> and is_unsigned_v<T>)
+#else
 template<typename T,
   enable_if_t<is_integral_v<T> && is_unsigned_v<T>, bool> = true>
-inline unsigned long long int convert_string( const char* p, char*& end )
+#endif
+    inline unsigned long long int convert_string( const char* p, char*& end )
 {
   return strtoull(p, &end, 10);
 }
 
 //_____________________________________________________________________________
+#ifdef __cpp_concepts
+template<typename T> requires is_same_v<T, float>
+#else
 template<typename T, enable_if_t<is_same_v<T, float>, bool> = true>
+#endif
 inline T convert_string( const char* p, char*& end )
 {
   return strtof(p, &end);
 }
 
 //_____________________________________________________________________________
+#ifdef __cpp_concepts
+template<typename T> requires is_same_v<T, double>
+#else
 template<typename T, enable_if_t<is_same_v<T, double>, bool> = true>
+#endif
 inline T convert_string( const char* p, char*& end )
 {
   return strtod(p, &end);
 }
 
 //_____________________________________________________________________________
+#ifdef __cpp_concepts
+template<typename T> requires is_same_v<T, long double>
+#else
 template<typename T, enable_if_t<is_same_v<T, long double>, bool> = true>
+#endif
 inline T convert_string( const char* p, char*& end )
 {
   return strtold(p, &end);
@@ -727,7 +747,11 @@ inline T convert_string( const char* p, char*& end )
 // Function to check if source value of type S will fit into target value
 // of type T. T and S must either both be integer or floating point types.
 // Trivial case of identical types.
+#ifdef __cpp_concepts
+template<typename T, typename S> requires is_same_v<T, S>
+#else
 template<typename T, typename S, enable_if_t<is_same_v<T, S>, bool> = true>
+#endif
 inline bool is_in_range( S )
 {
   return true;
@@ -736,12 +760,20 @@ inline bool is_in_range( S )
 //_____________________________________________________________________________
 // Non-trivial case of different types.
 // Currently only used for like-signed integers.
+#ifdef __cpp_concepts
+template<typename T, typename S> requires (not is_same_v<T, S> and (
+  (is_integral_v<T> and is_integral_v<S> ) or
+  (is_floating_point_v<T> and is_floating_point_v<S>)))
+inline bool is_in_range( S val )
+{
+#else
 template<typename T, typename S, enable_if_t<not is_same_v<T, S>, bool> = true>
 inline bool is_in_range( S val )
 {
   static_assert((is_integral_v<T> && is_integral_v<S>) ||
                 (is_floating_point_v<T> && is_floating_point_v<S>),
                 "Inconsistent types");
+#endif
   bool ret = (val <= numeric_limits<T>::max());
   if( ret ) {
     if( is_integral_v<T> ) {
