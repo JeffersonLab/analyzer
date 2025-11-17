@@ -17,16 +17,24 @@
 #include "TError.h"
 #include "TSystem.h"
 
+#include <cassert>
 #include <cerrno>
 #include <cctype>    // for isspace
 #include <cstring>
-#include <cstdlib>   // for atoi, strtod, strtol etc.
+#include <cstdlib>   // for strtod, strtol etc.
 #include <iterator>  // for std::distance
 #include <ctime>     // for struct tm
 #include <limits>
 #include <algorithm>
 #include <type_traits>
 #include <iostream>
+#include <filesystem>
+#include <stdexcept>
+#ifdef __cpp_lib_ranges
+#include <ranges>
+#endif
+
+namespace fs = std::filesystem;
 
 // This is a well-known problem with strerror_r
 #if defined(__linux__) && (defined(_GNU_SOURCE) || !(_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE > 600))
@@ -87,30 +95,14 @@ TString& GetObjArrayString( const TObjArray* array, Int_t i )
 }
 
 //_____________________________________________________________________________
-vector<string> GetDBFileList( const char* name, const TDatime& date,
-                              const char* here )
+namespace {
+
+inline fs::path FindDBDir( const char* here )
 {
-  // Return the database file searchlist as a vector of strings.
-  // The file names are relative to the current directory.
-
-  static const string defaultdir = "DEFAULT";
-  static const string dirsep = "/", allsep = "/";
-
-  vector<string> fnames;
-  if( !name || !*name )
-    return fnames;
-
-  // If name contains a directory separator, we take the name verbatim
-  string filename = name;
-  if( filename.find_first_of(allsep) != string::npos ) {
-    fnames.push_back(filename);
-    return fnames;
-  }
-
   // Build search list of directories
   vector<string> dnames;
-  if( const char* dbdir = gSystem->Getenv("DB_DIR") )
-    dnames.emplace_back(dbdir);
+  if( const char* envdir = std::getenv("DB_DIR") ) // NOLINT(*-mt-unsafe)
+    dnames.emplace_back(envdir);
   dnames.emplace_back("DB");
   dnames.emplace_back("db");
   dnames.emplace_back(".");
@@ -118,89 +110,112 @@ vector<string> GetDBFileList( const char* name, const TDatime& date,
   // Try to open the database directories in the search list.
   // The first directory that can be opened is taken as the database
   // directory. Subsequent directories are ignored.
-  auto it = dnames.begin();
-  void* dirp = nullptr;
-  while( !(dirp = gSystem->OpenDirectory((*it).c_str())) &&
-         (++it != dnames.end()) ) {}
+  std::error_code ec;
+  for( const auto& thedir: dnames ) {
+    if( fs::is_directory(thedir, ec) ) {
+      return thedir;
 
-  // None of the directories can be opened?
-  if( it == dnames.end() ) {
-    ::Error(here, "Cannot open any database directories. Check your disk!");
+    } else if( thedir == "." ) {
+      // At least "." should exist
+      string msg = (here && *here) ? here : "";
+      if( !msg.empty() ) msg += ": ";
+      msg += "Error opening current directory. Check your file system.";
+      throw fs::filesystem_error(msg, thedir, ec);
+    }
+  }
+  return {};
+}
+
+} // anonymous namespace
+
+//_____________________________________________________________________________
+vector<string> GetDBFileList( const char* name, const TDatime& date,
+                              const char* here )
+{
+  // Return the database file searchlist as a vector of strings.
+  // The file names are relative to the current directory.
+
+  static const string defaultdir = "DEFAULT";
+
+  if( !name || !*name )
+    return {};
+
+  // If name contains a directory separator, we take the name verbatim
+  vector<string> fnames;
+  string filename = name;
+  if( filename.find(fs::path::preferred_separator) != string::npos ) {
+    fnames.push_back(filename);
     return fnames;
   }
 
-  // Pointer to database directory string
-  string thedir = *it;
+  // Determine the root database directory, typically $DB_DIR
+  fs::path dbdir = FindDBDir(here);
+
+  assert(!dbdir.empty()); // else bug in FindDBDir
 
   // In the database directory, get the names of all subdirectories matching
   // a YYYYMMDD pattern.
   vector<string> time_dirs;
   bool have_defaultdir = false;
-  while( const char* result = gSystem->GetDirEntry(dirp) ) {
-    string item = result;
-    if( item.length() == 8 ) {
-      Int_t pos = 0;
-      for( ; pos < 8; ++pos )
-        if( !isdigit(item[pos]) ) break;
-      if( pos == 8 )
-        time_dirs.push_back(item);
-    } else if( item == defaultdir )
+  for( const auto& direntry: fs::directory_iterator(dbdir) ) {
+    if( !direntry.is_directory() ) continue;
+    string item = direntry.path().filename();
+    if( item.length() == 8 &&
+        item.find_first_not_of("0123456789") == string::npos )
+      time_dirs.push_back(std::move(item));
+    else if( item == defaultdir )
       have_defaultdir = true;
   }
-  gSystem->FreeDirectory(dirp);
 
-  // Search a date-coded subdirectory that corresponds to the requested date.
-  bool found = false;
-  if( !time_dirs.empty() ) {
-    sort(time_dirs.begin(), time_dirs.end());
-    for( it = time_dirs.begin(); it != time_dirs.end(); ++it ) {
-      Int_t item_date = atoi((*it).c_str());
-      if( it == time_dirs.begin() && date.GetDate() < item_date )
-        break;
-      if( it != time_dirs.begin() && date.GetDate() < item_date ) {
-        --it;
-        found = true;
-        break;
-      }
-      // Assume that the last directory is valid until infinity.
-      if( it + 1 == time_dirs.end() && date.GetDate() >= item_date ) {
-        found = true;
-        break;
-      }
+  // Find a date-coded subdirectory that corresponds to the requested date.
+  // The encoded directory date indicates the beginning of the validity time
+  // of the files contained in the directory.
+  Int_t req_date = date.GetDate();
+  string datedir;
+  sort(time_dirs.begin(), time_dirs.end());
+#ifdef __cpp_lib_ranges
+  for( auto& time_dir: ranges::reverse_view(time_dirs) ) {
+#else
+  // Fallback for C++17 and compilers with incomplete C++20 support
+  for( auto it = time_dirs.rbegin(); it != time_dirs.rend(); ++it ) {
+    const auto& time_dir = *it;
+#endif
+    Int_t dir_date = stoi(time_dir);
+    if( req_date >= dir_date ) {
+      datedir = time_dir;
+      break;
     }
   }
 
   // Construct the database file name. It is of the form db_<prefix>.dat.
   // Subdetectors use the same files as their parent detectors!
   // If filename does not start with "db_", make it so
-  if( filename.substr(0, 3) != "db_" )
-    filename.insert(0, "db_");
-    // If filename does not end with ".dat", make it so
-#ifndef NDEBUG
-  // should never happen
-  assert(filename.length() >= 4);
+#ifdef __cpp_lib_starts_ends_with
+  if( !filename.starts_with("db_") )
 #else
-  if( filename.length() < 4 ) { fnames.clear(); return fnames; }
+  if( filename.find("db_") != 0 )
 #endif
-  if( *filename.rbegin() == '.' ) {
-    filename += "dat";
-  } else if( filename.substr(filename.length() - 4) != ".dat" ) {
-    filename += ".dat";
-  }
+    filename = "db_" + filename;
+  // If filename does not end with ".dat", make it so
+  fs::path fname{std::move(filename)};
+  auto ext = fname.extension();
+  if( ext == "." )
+    fname.replace_extension(".dat");
+  else if( ext != ".dat" )
+    fname += ".dat";
 
   // Build the searchlist of file names in the order:
-  // ./filename <dbdir>/<date-dir>/filename
-  //    <dbdir>/DEFAULT/filename <dbdir>/filename
-  fnames.push_back(filename);
-  if( found ) {
-    string item = thedir + dirsep + *it + dirsep + filename;
-    fnames.push_back(item);
-  }
-  if( have_defaultdir ) {
-    string item = thedir + dirsep + defaultdir + dirsep + filename;
-    fnames.push_back(item);
-  }
-  fnames.push_back(thedir + dirsep + filename);
+  // ./filename
+  // <dbdir>/<datedir>/filename
+  // <dbdir>/DEFAULT/filename
+  // <dbdir>/filename
+  fnames.emplace_back(fname);
+  if( !datedir.empty() )
+    fnames.emplace_back(dbdir / datedir / fname);
+  if( have_defaultdir )
+    fnames.emplace_back(dbdir / defaultdir / fname);
+  if( dbdir != "." )
+    fnames.emplace_back(dbdir / fname);
 
   return fnames;
 }
@@ -226,8 +241,7 @@ FILE* OpenDBFile( const char* name, const TDatime& date, const char* here,
 
   // Get list of database file candidates and try to open them in turn
   FILE* fi = nullptr;
-  vector<string> fnames(GetDBFileList(name, date, here));
-  for( auto& fpath : fnames ) {
+  for( fs::path fpath: GetDBFileList(name, date, here) ) {
     if( detailed )
       cout << "Info in <" << here << ">: Opening database file " << fpath;
 
@@ -238,16 +252,7 @@ FILE* OpenDBFile( const char* name, const TDatime& date, const char* here,
       else if( verbose )
 	::Info(here, "Opened database file %s", fpath.c_str());
 
-      if( gSystem->IsAbsoluteFileName(fpath.c_str()) )
-	openpath = std::move(fpath);
-      else {
-	const char* wd = gSystem->WorkingDirectory();
-	if( wd && *wd ) {
-	  openpath = wd;
-	  openpath += "/";
-	}
-	openpath += fpath;
-      }
+      openpath = fpath.is_absolute() ? fpath : fs::current_path() / fpath;
       break;
     }
     else if( detailed )
@@ -646,8 +651,7 @@ Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key,
     if( gHaTextvars )
       gHaTextvars->Substitute(lines);
     for( auto& line : lines ) {
-      Int_t status = 0;
-      if( !do_ignore && (status = IsDBkey(line, key, value)) != 0 ) {
+      if( Int_t status; !do_ignore && (status = IsDBkey(line, key, value)) != 0 ) {
         if( status > 0 ) {
           // Found a matching key for a newer date than before
           found = true;
@@ -858,10 +862,10 @@ Int_t LoadDBarray( FILE* file, const TDatime& date, const char* key,
     in_field = istxt;
   }
   values.reserve(nelem);
-  const char* p = text.c_str(), * endp = p + text.length();
+  const char *p = text.c_str(), *endp = p + text.length();
   char* end = nullptr;
   // Read the fields into the vector
-  while( true ) {
+  do {
     errno = 0;
     // Convert each value depending on the requested type
     auto dval = convert_string<T>(p, end);
@@ -870,10 +874,9 @@ Int_t LoadDBarray( FILE* file, const TDatime& date, const char* key,
       return conversion_error(key, text);
     }
     values.push_back(static_cast<T>(dval));
-    if( end == endp )
-      break;
     p = end;
-  }
+  } while( p != endp );
+
   return 0;
 }
 
@@ -1195,7 +1198,7 @@ Int_t SeekDBconfig( FILE* file, const char* tag, const char* label,
     bool quit = false;
     const int LEN = 256;
     char buf[LEN];
-    while( !errno && !found && !quit && fgets(buf, LEN, file) ) {
+    while( !errno && !quit && fgets(buf, LEN, file) ) {
       size_t len = strlen(buf);
       if( len < 2 || buf[0] == '#' ) continue;      //skip comments
       if( buf[len - 1] == '\n' ) buf[len - 1] = 0;     //delete trailing newline
