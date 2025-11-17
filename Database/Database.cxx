@@ -63,8 +63,8 @@ const char* Here( const char* method, const char* prefix )
       full_prefix.Chop();
     full_prefix.Prepend("(\"");
     full_prefix.Append("\")");
-    const char* scope = nullptr;
-    if( method && *method && (scope = strstr(method, "::")) ) {
+    if( const char* scope;
+        method && *method && (scope = strstr(method, "::")) ) {
       assert(scope >= method);
       auto pos = static_cast<Ssiz_t>(std::distance(method, scope));
       txt = method;
@@ -432,7 +432,7 @@ Int_t GetLine( FILE* file, char* buf, Int_t bufsiz, string& line )
   // Also, convert all tabs to spaces.
   // Returns 0 on success, or EOF if no more data (or error).
 
-  char* r = nullptr;
+  char* r;
   line.clear();
   while( (r = fgets(buf, bufsiz, file)) ) {
     char* c = strchr(buf, '\n');
@@ -529,37 +529,37 @@ Int_t ReadDBline( FILE* file, char* buf, Int_t bufsiz, string& line )
   while( unfinished && fgetpos(file, &oldpos) == 0 &&
          (r = GetLine(file, buf, bufsiz, linbuf)) == 0 ) {
     bool continued = false, comment = false,
-      trailing_space = false, leading_space = false, is_assignment = false;
+      trailing_space = false, leading_space = false;
 
     prepare_line(linbuf,comment,continued,leading_space, trailing_space);
 
-    if( line.empty() && linbuf.empty() )
-      // Nothing to do, i.e. no line building in progress and no data
-      continue;
-
-    if( !linbuf.empty() ) {
-      is_assignment = IsAssignment(linbuf);
-      // Tentative continuation is canceled by a subsequent line with a '='
-      if( maybe_continued && is_assignment ) {
-        // We must have data at this point, so we can exit. However, the line
-        // we've just read is obviously a good one, so we must also rewind the
-        // file to the previous position so this line can be read again.
-        assert(!line.empty());  // else maybe_continued not set correctly
-        fsetpos(file, &oldpos);
+    if( linbuf.empty() ) {
+      if( // Nothing to do, i.e. no line building in progress and no data
+          line.empty() ||
+          // Skip empty continuation lines and comments in the middle of a
+          // continuation block
+          continued || comment ) {
+        continue;
+      } else {
+        // An empty line, except for a comment or continuation, ends continuation.
+        // Since we have data here, and this line is blank and would later be
+        // skipped anyway, we can simply exit
         break;
       }
-      // If the line has data, it isn't a comment, even if there was a '#'
-      //      comment = false;  // not used
-    } else if( continued || comment ) {
-      // Skip empty continuation lines and comments in the middle of a
-      // continuation block
-      continue;
-    } else {
-      // An empty line, except for a comment or continuation, ends continuation.
-      // Since we have data here, and this line is blank and would later be
-      // skipped anyway, we can simply exit
+    }
+
+    bool is_assignment = IsAssignment(linbuf);
+    // Tentative continuation is canceled by a subsequent line with a '='
+    if( maybe_continued && is_assignment ) {
+      // We must have data at this point, so we can exit. However, the line
+      // we've just read is obviously a good one, so we must also rewind the
+      // file to the previous position so this line can be read again.
+      assert(!line.empty());  // else maybe_continued not set correctly
+      fsetpos(file, &oldpos);
       break;
     }
+    // If the line has data, it isn't a comment, even if there was a '#'
+    //      comment = false;  // not used
 
     if( line.empty() && !continued && is_assignment ) {
       // If the first line of a potential result contains a '=', this
@@ -918,7 +918,7 @@ inline
 Int_t load_and_assign( FILE* f, const TDatime& date, const char* key,
                        void* dest, UInt_t& nelem )
 {
-  Int_t st = -1;
+  Int_t st;
   if( nelem < 2 ) {
     T val{};
     st = LoadDBvalue(f, date, key, val);
