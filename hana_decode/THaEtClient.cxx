@@ -16,19 +16,25 @@
 #include "THaEtClient.h"
 #include "TSystem.h"
 #include <iostream>
-#include <cstdlib>
+#include <cstdio>
+#include <cstdint>
 #include <ctime>        // for timespec
 #include <stdexcept>
 #include <algorithm>    // std::min
 #include "evio.h"
 #include "et.h"
 
+#ifdef __cpp_lib_byteswap
+#include <bit>
+#define bswap_32(x) std::byteswap<uint32_t>(x)
+#else
 #ifdef HAVE_BYTESWAP_H
 #include <byteswap.h>
 #elif HAVE_BUILTIN_BSWAP
 #define bswap_32 __builtin_bswap32
 #else
 #define bswap_32(x) ET_SWAP32(x)
+#endif
 #endif
 
 using namespace std;
