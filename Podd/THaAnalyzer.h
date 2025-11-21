@@ -10,6 +10,7 @@
 #include "TObject.h"
 #include "TString.h"
 #include <vector>
+#include <memory>
 
 class THaEvent;
 class THaRunBase;
@@ -22,7 +23,6 @@ class THaCut;
 class THaBenchmark;
 class THaEvData;
 class THaPostProcess;
-class THaCrateMap;
 class THaEvtTypeHandler;
 class THaEpicsEvtHandler;
 class THaApparatus;
@@ -44,8 +44,10 @@ public:
   virtual void   Close();
   virtual Int_t  Init( THaRunBase* run );
           Int_t  Init( THaRunBase& run )    { return Init( &run ); }
+          Int_t  Init( std::shared_ptr<THaRunBase> run );
   virtual Long64_t Process( THaRunBase* run = nullptr );
           Long64_t Process( THaRunBase& run ) { return Process(&run); }
+          Int_t  Process( std::shared_ptr<THaRunBase> run );
   virtual void   Print( Option_t* opt="" ) const;
 
   void           EnableBenchmarks( Bool_t b = true );
@@ -55,6 +57,7 @@ public:
   void           EnablePhysicsEvents( Bool_t b = true );
   void           EnableRunUpdate( Bool_t b = true );
   void           EnableSlowControl( Bool_t b = true );
+  void           EnableAltEvType( Bool_t b = true );
   const char*    GetOutFileName()      const  { return fOutFileName.Data(); }
   const char*    GetCutFileName()      const  { return fCutFileName.Data(); }
   const char*    GetOdefFileName()     const  { return fOdefFileName.Data(); }
@@ -78,6 +81,9 @@ public:
   Bool_t         PhysicsEnabled()      const  { return fDoPhysics; }
   Bool_t         OtherEventsEnabled()  const  { return fDoOtherEvents; }
   Bool_t         SlowControlEnabled()  const  { return fDoSlowControl; }
+  Bool_t         RunUpdateEnabled()    const  { return fUpdateRun; }
+  Bool_t         OverwriteEnabled()    const  { return fOverwrite; }
+  Bool_t         AltEvTypeEnabled()    const  { return fUseAltEvType; }
   virtual Int_t  SetCountMode( Int_t mode );
   static void    SetCrateMapFileName( const char* name );
   void           SetEvent( THaEvent* event )        { fEvent = event; }
@@ -183,6 +189,7 @@ protected:
   Bool_t         fDoPhysics;       // Enable physics event processing
   Bool_t         fDoOtherEvents;   // Enable other event processing
   Bool_t         fDoSlowControl;   // Enable slow control processing
+  Bool_t         fUseAltEvType;    // Take event type from trigger supervisor
 
   // Variables used by analysis functions
   Bool_t         fFirstPhysics;    // Status flag for physics analysis

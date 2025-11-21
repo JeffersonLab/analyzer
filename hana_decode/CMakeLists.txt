@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.19)
 
 #----------------------------------------------------------------------------
 # Names of the main items built here
@@ -8,7 +8,7 @@ set(SUBPROJECT_NAME Decode)
 
 #----------------------------------------------------------------------------
 # Configuration options
-option(ONLINE_ET "Enable support ET message system" OFF)
+option(ONLINE_ET "Enable support for ET message system" OFF)
 option(STANDALONE "Enable building of test/example programs" OFF)
 
 #----------------------------------------------------------------------------
@@ -20,9 +20,14 @@ if(NOT EVIO_FOUND)
     include(FetchBuildEVIO)
   endif()
 endif()
-
 if(ONLINE_ET)
-  find_package(ET)
+  find_package(ET 16 CONFIG QUIET)
+  if(NOT ET_FOUND)
+    find_package(ET 16 MODULE)
+    if(NOT ET_FOUND)
+      include(FetchBuildET)
+    endif()
+  endif()
 endif()
 
 #----------------------------------------------------------------------------
@@ -56,17 +61,15 @@ set(src
   VmeModule.cxx
   )
 if(ONLINE_ET)
-  if(ET_FOUND)
-  # no longer needed?
-  #  find_library(IEEE_LIBRARY ieee)
-  #  set(ONLIBS ${ET_LIBRARY} ${IEEE_LIBRARY})
-  #  set(ONLIBS ${ET_LIBRARY})
-    set(ONLIBS EVIO::ET)
-    list(APPEND src THaEtClient.cxx)
-  else()
-    message(WARNING
-      "Cannot find ET system. Check $CODA environment variable. Disabling ONLINE_ET")
-    set(ONLINE_ET FALSE CACHE BOOL "ET system not found, disabled" FORCE)
+  set(ONLIBS ET::ET)
+  set(ETCLT THaEtClient.cxx)
+  list(APPEND src ${ETCLT})
+  if(HAVE_BYTESWAP_H AND HAVE_BSWAP32)
+    set_source_files_properties(${ETCLT} PROPERTIES COMPILE_DEFINITIONS
+      HAVE_BYTESWAP_H)
+  elseif(HAVE_BUILTIN_BSWAP)
+    set_source_files_properties(${ETCLT} PROPERTIES COMPILE_DEFINITIONS
+      HAVE_BUILTIN_BSWAP)
   endif()
 endif()
 

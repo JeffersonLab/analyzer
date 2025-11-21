@@ -138,7 +138,7 @@ Int_t THaDetectorBase::FillDetMap( const vector<Int_t>& values, UInt_t flags,
   } else if( ret == -128 ) {
     Error( Here(here), "Bad flag combination for filling "
                        "detector map. Call expert." );
-  } else if( ret < 0 ) {
+  } else {
     Error( Here(here), "Invalid detector map data format "
                        "(wrong number of values). Check database." );
   }

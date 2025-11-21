@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------
 # Set up project properties
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.19)
 
 project(EVIO VERSION @EVIO_VERSION@ LANGUAGES C)
 string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LC)
@@ -18,7 +18,7 @@ set(hdr evio.h)
 #----------------------------------------------------------------------------
 # EVIO library
 add_library(${LIBNAME} SHARED ${src} ${hdr})
-add_library(EVIO::${PROJECT_NAME} ALIAS ${LIBNAME})
+add_library(${PROJECT_NAME_UC}::${PROJECT_NAME} ALIAS ${LIBNAME})
 set_property(TARGET ${LIBNAME} PROPERTY EXPORT_NAME ${PROJECT_NAME})
 
 target_include_directories(${LIBNAME}
@@ -54,7 +54,7 @@ set(_configdir ${${PROJECT_NAME_UC}_INSTALL_CONFIGDIR})
 
 install(EXPORT ${PROJECT_NAME}-exports
   FILE ${PROJECT_NAME}Targets.cmake
-  NAMESPACE ${PROJECT_NAME}::
+  NAMESPACE ${PROJECT_NAME_UC}::
   DESTINATION ${_configdir}
   )
 

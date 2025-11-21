@@ -175,6 +175,13 @@ void THaEvData::EnablePrescanMode( Bool_t enable )
 }
 
 //_____________________________________________________________________________
+void THaEvData::EnableAltEvType( Bool_t enable )
+{
+  // Enable/disable alternate event type reporting
+  SetBit(kUseAltEvType, enable);
+}
+
+//_____________________________________________________________________________
 void THaEvData::SetVerbose( Int_t level )
 {
   // Set verbosity level. Identical to SetDebug(). Kept for compatibility.
@@ -215,10 +222,10 @@ TString THaEvData::GetOrigPS() const
   TString answer = "PS from ";
   if (fTrigSupPS) {
     answer += " Trig Sup evtype ";
-    answer.Append(Form("%d",TS_PRESCALE_EVTYPE));
+    answer += TS_PRESCALE_EVTYPE;
   } else {
     answer += " PS evtype ";
-    answer.Append(Form("%d",PRESCALE_EVTYPE));
+    answer += PRESCALE_EVTYPE;
   }
   return answer;
 }
@@ -273,6 +280,18 @@ void THaEvData::SetCrateMapName( const char* name )
     fCrateMapName = fgDefaultCrateMapName;
     fNeedInit = true;
   }
+}
+
+//_____________________________________________________________________________
+TString THaEvData::GetCrateMapName() const
+{
+  return fCrateMapName.IsNull() ? fgDefaultCrateMapName : fCrateMapName;
+}
+
+//_____________________________________________________________________________
+TString THaEvData::GetDefaultCrateMapName()
+{
+  return fgDefaultCrateMapName;
 }
 
 //_____________________________________________________________________________

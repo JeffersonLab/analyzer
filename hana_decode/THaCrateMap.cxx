@@ -290,7 +290,8 @@ int THaCrateMap::init( Long64_t tloc )
 
   const char* const here = "THaCrateMap::init(tloc)";
   fInitTime = tloc;
-  FILE* fi = Podd::OpenDBFile(fDBfileName.c_str(), fInitTime, here, "r", 1);
+  WithDefaultTZ(TDatime date = tloc);
+  FILE* fi = Podd::OpenDBFile(fDBfileName.c_str(), date, here, "r", 1);
   return init(fi, fDBfileName.c_str());
 }
 
@@ -344,7 +345,8 @@ Int_t THaCrateMap::loadConfig( string& line, string& cfgstr )
       string fname = line.substr(pos2 + 7);
       Podd::Trim(fname);
       errno = 0;
-      FILE* fi = Podd::OpenDBFile(fname.c_str(), fInitTime, here);
+      WithDefaultTZ(TDatime date = fInitTime);
+      FILE* fi = Podd::OpenDBFile(fname.c_str(), date, here);
       if ( !fi ) {
         ::Error(here, "Error opening decoder module database file "
                       "\"db_%s.dat\": %s\n line = %s",
@@ -494,7 +496,8 @@ int THaCrateMap::init(const string& the_map)
   string line; line.reserve(128);
   istringstream s(the_map);
   Int_t found_tscrate=0;
-  TDatime keydate(950101, 0), prevdate(950101, 0);
+  const Long64_t ldate = fInitTime;
+  Long64_t keydate = 0, prevdate = 0;
   bool do_ignore = false, in_crate = false;
   int lineno = 0;
 
@@ -515,7 +518,7 @@ int THaCrateMap::init(const string& the_map)
     // To remove a previously-defined crate after a certain time stamp, use
     // crate type "unused".
     if( Podd::IsDBtimestamp(line, keydate) ) {
-      do_ignore = (keydate > fInitTime || keydate < prevdate);
+      do_ignore = (keydate > ldate || keydate < prevdate);
       in_crate = false;
       continue;
     } else if( do_ignore )
@@ -558,11 +561,19 @@ int THaCrateMap::init(const string& the_map)
   SetBankInfo();
 
   if ( !found_tscrate ) {
-    cout << "THaCrateMap: WARNING:  Did not find TSROC.  Using default " << fTSROC    << endl
-         << " If this is incorrect, TS info (trigger bits etc.) will be unavailable." << endl;
+    // Set fTSROC to > MAXROC to be able to detect non-presence of a definition
+    // in the crate map later. In this way, we can avoid printing a warning
+    // if we're analyzing CODA 2 data, for which the TSROC doesn't matter.
+    fTSROC += 100;
   }
 
   return CM_OK;
+}
+
+//_____________________________________________________________________________
+Long64_t THaCrateMap::GetInitTime() const
+{
+  return fInitTime;
 }
 
 //_____________________________________________________________________________

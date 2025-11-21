@@ -132,6 +132,9 @@ public:
 
   void SetStartAtZero( Bool_t value ) { fStartAtZero = value; }
 
+  static  Int_t     InitCmap( Long64_t tloc = 0 );
+  static Decoder::THaCrateMap* GetCrateMap();
+
 protected:
   using ModuleVec_t = std::vector<std::unique_ptr<Module>>;
   ModuleVec_t fMap;     // Modules of this detector map

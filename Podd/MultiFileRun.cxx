@@ -822,7 +822,7 @@ Int_t MultiFileRun::ReadEvent() // NOLINT(misc-no-recursion)
 
   if( !IsOpen() ) {
     cerr << "Not open" << endl;
-    return READ_ERROR;
+    return READ_FATAL;
   }
   if( fNActive <= 0 )
     return READ_EOF;
@@ -896,15 +896,59 @@ Int_t MultiFileRun::FindNextStream() const
 }
 
 //_____________________________________________________________________________
-// Find a file matching the name pattern returned by GetInitInfoFile().
+TString MultiFileRun::GetInitInfoFileName( TString fname )
+{
+  // Based on the given file name, get the file name pattern that matches
+  // runs containing initialization info.
+  // Returns 'fname' with stream and segment number both set to 0, i.e.
+  // file.dat.2.3 -> file.dat.0.0
+  // Returns empty string if the file name does not match the expected pattern
+
+  static TRegexp re("\\.[0-9]+\\.[0-9]+$");
+  assert(re.Status() == TRegexp::kOK);
+  Ssiz_t pos = fname.Index(re);
+  if( pos == kNPOS )
+    return {};
+  // Replace trailing numbers with .0.0
+  fname.Remove(pos);
+  fname.Append(".0.0");
+
+  return fname;
+}
+
+//_____________________________________________________________________________
+TString MultiFileRun::FindInitInfoFile( const TString& fname )
+{
+  // First try (stream,segment) -> (0,0)
+  TString file00 = GetInitInfoFileName(fname);
+  TString initinfo_file;
+  if( !file00.IsNull() ) {
+    // Try this only if the name actually ends with two numbers .[0-9].[0-9],
+    // otherwise we try the standard way below.
+    initinfo_file = FindInitInfoFileImpl(fname, file00);
+    if( !initinfo_file.IsNull() )
+      return initinfo_file;
+  }
+
+  // Try as before, i.e. replace a trailing number .[0-9] with .0
+  // If the name does not end with .[0-9] at all, just try the plain file name.
+  TString file0 = THaRun::GetInitInfoFileName(fname);
+  if( file0 != file00 )
+    initinfo_file = FindInitInfoFileImpl(fname, file0);
+  return initinfo_file;
+}
+
+//_____________________________________________________________________________
+// Find a file matching the name pattern given in 'initinfo_file'.
 // The file must exist on disk and have at least read permissions.
 // - First, in the same directory as the continuation segment.
 // - Then, look in the directories in fPathList
 // Returns an empty string if no matching file can be found.
-TString MultiFileRun::FindInitInfoFile( const TString& fname )
+TString MultiFileRun::FindInitInfoFileImpl( const TString& fname,
+                                            TString initinfo_file )
 {
-  // Full path of the file that should contain the init info
-  TString initinfo_file = GetInitInfoFileName(fname);
+  if( initinfo_file.IsNull() )
+    return {};
   // Check current directory
   if( !gSystem->AccessPathName(initinfo_file, kReadPermission) )
     return initinfo_file;
@@ -1370,7 +1414,7 @@ Int_t MultiFileRun::StreamInfo::Read()
   assert(fCodaData);
   if( !fCodaData->isOpen() ) {
     cerr << "Not open" << endl;
-    return CODA_ERROR;
+    return CODA_FATAL;
   }
   if( !fActive )
     return CODA_EOF;

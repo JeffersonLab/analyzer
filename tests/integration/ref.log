@@ -1,0 +1,26 @@
+Started analysis, run 3132
+End of file.
+Summary for run 3132
+Counter summary:
+314292  events read
+314292  events decoded
+313476  physics events
+   816  other event types
+313476  physics events analyzed
+204328  events accepted
+109964  skipped after Reconstruct
+
+Cut summary:
+Name                Def                  Called     Passed
+-------------------------------------------------------------------
+BLOCK: Reconstruct
+HasTrack            L.tr.n>0             313476     203512 (64.9%)
+Reconstruct_master  HasTrack             313476     203512 (64.9%)
+
+BLOCK: Physics
+GoodGoldenTrack     L.gold.ok==1         203512     203512 (100%)
+GoodPhi             abs(L.gold.ph)<0.05  203512     194751 (95.7%)
+GoodTheta           abs(L.gold.th)<0.1   203512     195054 (95.8%)
+InAcceptance        GoodPhi&&GoodTheta   203512     193853 (95.3%)
+Physics_master      GoodGoldenTrack      203512     203512 (100%)
+

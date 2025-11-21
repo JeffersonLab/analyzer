@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.19)
 
 #----------------------------------------------------------------------------
 # Names of the main items we build here

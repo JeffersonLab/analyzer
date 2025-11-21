@@ -16,7 +16,7 @@ option(WITH_DEBUG "Enable additional/verbose debug messages" ON)
 option(PODD_SET_RPATH "Set RPATH on installed executables & libraries" ON)
 
 #----------------------------------------------------------------------------
-# Project-specific build flags
+# System-specific build flags
 if(CMAKE_SYSTEM_NAME MATCHES Darwin)
   if(CMAKE_CXX_COMPILER_ID STREQUAL AppleClang
     AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
@@ -26,6 +26,25 @@ if(CMAKE_SYSTEM_NAME MATCHES Darwin)
   endif()
   list(REMOVE_DUPLICATES CMAKE_SHARED_LINKER_FLAGS)
 endif()
+
+# Detect byte swap support in system libraries
+include(CheckIncludeFileCXX)
+include(CheckSourceCompiles)
+# Caution: ROOT provides Byteswap.h, which may be picked instead of the
+# system header on macOS's case-insensitive file system. Despite this, the
+# following check will not normally find the ROOT header since the ROOT
+# include directory is not a standard location searched by the compiler.
+check_include_file_cxx(byteswap.h HAVE_BYTESWAP_H)
+if(HAVE_BYTESWAP_H)
+  # Even if byteswap.h is found, it may not provide bswap_32. Fun fun.
+  check_source_compiles(CXX
+    "#include <byteswap.h>
+     int main() { int i = 666; i = bswap_32(i); return i; }"
+    HAVE_BSWAP32)
+endif()
+check_source_compiles(CXX
+  "int main() { int i = 666; i = __builtin_bswap32(i); return i; }"
+  HAVE_BUILTIN_BSWAP)
 
 #----------------------------------------------------------------------------
 # Useful shorthands

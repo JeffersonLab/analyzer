@@ -71,10 +71,11 @@ THaRunParameters* DAQInfoExtra::UpdateRunParam( THaRunBase* run )
   //rp->Print();
   //cerr << "nstrings = " << ifo->fDAQconfig.strings.size() << endl;
   //int i = 0;
-  for( auto& text : ifo->fDAQconfig.strings ) {
+  for( size_t i = 0; auto& text : ifo->fDAQconfig.strings ) {
     //cerr << "size(" << i++ << ") = " << text.size() << endl;
-    DAQConfigString cfg(0, std::move(text)); // Parses text
-    rp->AddDAQConfig(std::move(cfg));
+    UInt_t crate = (i >= ifo->fTags.size()) ? 0 : ifo->fTags[i];
+    rp->AddDAQConfig({crate, std::move(text)});  // Parses text
+    ++i;
   }
   ifo->fDAQconfig.strings.clear();
   ifo->fDAQconfig.keyval.clear();

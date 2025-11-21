@@ -177,10 +177,13 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 
   for( UInt_t i = 0; i < nval; ++i ) {
     auto& calib = fPMTData->GetCalib(i);
-    calib.tdc2t = tdc2t;
-    calib.off   = off[i];
-    calib.ped   = ped[i];
-    calib.gain  = gain[i];
+    calib.tdc2t  = tdc2t;
+    if( !off.empty() )
+      calib.off  = off[i];
+    if( !ped.empty() )
+      calib.ped  = ped[i];
+    if( !gain.empty() )
+      calib.gain = gain[i];
   }
 
 #ifdef WITH_DEBUG

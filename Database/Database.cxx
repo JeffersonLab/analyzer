@@ -285,12 +285,12 @@ thread_local int loaddb_depth = 0; // Recursion depth in LoadDB
 thread_local string loaddb_prefix; // Actual prefix of object in LoadDB (for err msg)
 
 //_____________________________________________________________________________
-Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
+Int_t IsDBdate( const string& line, Long64_t& date, bool warn = true )
 {
   // Check if 'line' contains a valid database time stamp. If so,
   // parse the line, set 'date' to the extracted time stamp, and return 1.
   // Else return 0;
-  // Time stamps must be in SQL format: [ yyyy-mm-dd hh:mi:ss ]
+  // Time stamps must be in SQL format: [ yyyy-mm-dd hh:mi:ss gmtoffset]
 
   auto lbrk = line.find('[');
   if( lbrk == string::npos || lbrk >= line.size() - 12 ) return 0;
@@ -300,47 +300,61 @@ Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
 
   bool err = false;
   struct tm tmc{};
+  time_t ldate = 0;
   const char* c = strptime(ts.c_str(), " %Y-%m-%d %H:%M:%S %z ", &tmc);
-  if( !c || c != ts.c_str()+ts.size() ) {
-    // No time zone field: try again without that field.
-    // We allow this for compatibility with old databases.
-    c = strptime(ts.c_str(), " %Y-%m-%d %H:%M:%S ", &tmc);
-    if( !c || c != ts.c_str()+ts.size() )
-      err = true;
-    // If this succeeds, assume the value represents local time.
-    // This may cause errors if the database and the local time zone differ!
-  }
+  if( c && c == ts.c_str()+ts.size() ) {
 #ifdef __GLIBC__
-  else {
-    // Time zone offset explicitly given. If using glibc, strptime does not
-    // apply the time zone offset to the result, so we need to explicitly
-    // convert it to localtime, which is what TDatime wants.
-    // Get localtime GMT offset at the specified date
+    // With glibc, strptime does not apply the given time zone offset to the
+    // result. It parses the offset and fills the gmtoff field, but does not
+    // adjust tm_hour/tm_min accordingly. In short, handling of the %z field is
+    // currently not fully implemented in glibc. So we need to do this by hand.
     struct tm tml = tmc;
     tml.tm_isdst = -1;
-    time_t tval = mktime(&tml);
-    if( tval != -1 ) {
+    // Get localtime GMT offset at the specified date.
+    ldate = mktime(&tml);
+    if( ldate != -1 ) {
+      // tmc holds the GMT offset from the parsed string (%z).
+      // tml holds the GMT offset of the local system time zone.
+      // tmc.tm_{hour,min} come directly from the parsed string w/o adjustments
+      // mktime ignores the tm_gmtime field and interprets the time as local
+      // time. However, the time is actually given not in the local time zone,
+      // but as having tml.tm_gmtoff GMT offset. So we need to shift the parsed
+      // time from that offset to the GMT offset of the local time zone. Then
+      // mktime sees actual local time and returns the correct Unix time.
       long tzdiff = tml.tm_gmtoff - tmc.tm_gmtoff;
       if( tzdiff != 0 ) {
         tmc.tm_hour += (int) (tzdiff / 3600);
         tmc.tm_min += (int) ((tzdiff % 3600) / 60);
         tmc.tm_isdst = tml.tm_isdst;
-        tval = mktime(&tmc);  // Normalizes tmc, converts to localtime
-        if( tval == -1 )
-          err = true;
+        ldate = mktime(&tmc);  // Normalizes tmc (e.g. hour >= 24 wraps, etc.)
       }
-    } else {
-      err = true;
     }
-  }
+#else
+    // This just works on macOS
+    ldate = mktime(&tmc);
 #endif
+  } else {
+    // No time zone field: try again without that field.
+    // We allow this for compatibility with old databases.
+    WithDefaultTZ(
+      c = strptime(ts.c_str(), " %Y-%m-%d %H:%M:%S ", &tmc);
+      if( c && c == ts.c_str()+ts.size() ) {
+        // If this succeeds, assume the value represents time in the
+        // default timezone
+        tmc.tm_isdst = -1;
+        ldate = mktime(&tmc);
+      } else
+        err = true;
+    )
+  }
+  if( ldate == -1 )
+    err = true;
   if( err || tmc.tm_year < 95 ) {
     if( warn )
       ::Warning("IsDBdate()", "Invalid date tag %s", line.c_str());
     return 0;
   }
-  date.Set(tmc.tm_year + 1900, tmc.tm_mon + 1, tmc.tm_mday,
-           tmc.tm_hour, tmc.tm_min, tmc.tm_sec);
+  date = ldate;
   errno = 0;  // strptime() may set errno to spurious values despite succeeding
   return 1;
 }
@@ -609,7 +623,7 @@ Bool_t DBDatesDiffer( const TDatime& a, const TDatime& b )
 }
 
 //_____________________________________________________________________________
-Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key,
+Int_t LoadDBvalue( FILE* file, const TDatime& datime, const char* key,
                    string& value )
 {
   // Load a data value tagged with 'key' from the database 'file'.
@@ -632,7 +646,9 @@ Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key,
   unique_ptr<char[]> buf{new char[bufsiz]};
   char* const bufp = buf.get();
 
-  TDatime keydate(950101, 0), prevdate(950101, 0);
+  WithDefaultTZ(Long64_t date = datime.Convert());
+  Long64_t keydate = 0, prevdate = 0;
+
   bool found = false, do_ignore = false;
   string dbline;
   vector<string> lines;
@@ -1244,10 +1260,6 @@ Int_t SeekDBdate( FILE* file, const TDatime& date, Bool_t end_on_tag )
   static const char* const here = "SeekDBdateTag";
 
   if( !file ) return 0;
-  const int LEN = 256;
-  char buf[LEN];
-  TDatime tagdate(950101, 0), prevdate(950101, 0);
-  const bool kNoWarn = false;
 
   errno = 0;
   off_t pos = ftello(file);
@@ -1256,6 +1268,14 @@ Int_t SeekDBdate( FILE* file, const TDatime& date, Bool_t end_on_tag )
       perror(here);
     return 0;
   }
+
+  WithDefaultTZ(Long64_t ldate = date.Convert());
+  Long64_t tagdate = 0, prevdate = 0;
+
+  const bool kNoWarn = false;
+  const int LEN = 256;
+  char buf[LEN];
+
   off_t foundpos = -1;
   bool found = false, quit = false;
   while( !errno && !quit && fgets(buf, LEN, file) ) {
@@ -1264,7 +1284,7 @@ Int_t SeekDBdate( FILE* file, const TDatime& date, Bool_t end_on_tag )
     if( buf[len - 1] == '\n' ) buf[len - 1] = 0; //delete trailing newline
     string line(buf);
     if( IsDBdate(line, tagdate, kNoWarn)
-        && tagdate <= date && tagdate >= prevdate ) {
+        && tagdate <= ldate && tagdate >= prevdate ) {
       prevdate = tagdate;
       foundpos = ftello(file);
       found = true;
@@ -1299,12 +1319,13 @@ Int_t SeekDBdate( istream& istr, const TDatime& date, Bool_t end_on_tag )
 
   if( !istr.good() )
     return 0;
-  TDatime tagdate(950101, 0), prevdate(950101, 0);
-  const bool kNoWarn = false;
-
   auto pos = istr.tellg();
   if( pos == -1 )
     return 0;
+
+  WithDefaultTZ(Long64_t ldate = date.Convert());
+  Long64_t tagdate = 0, prevdate = 0;
+  const bool kNoWarn = false;
 
   string line;
   decltype(pos) foundpos{-1};
@@ -1316,7 +1337,7 @@ Int_t SeekDBdate( istream& istr, const TDatime& date, Bool_t end_on_tag )
     if( line.find_first_not_of(" \t") == string::npos )
       continue;
     if( IsDBdate(line, tagdate, kNoWarn)
-        && tagdate <= date && tagdate >= prevdate ) {
+        && tagdate <= ldate && tagdate >= prevdate ) {
       prevdate = tagdate;
       foundpos = istr.tellg();
       found = true;
@@ -1335,7 +1356,64 @@ Int_t SeekDBdate( istream& istr, const TDatime& date, Bool_t end_on_tag )
 //_____________________________________________________________________________
 Bool_t IsDBtimestamp( const string& line, TDatime& date )
 {
-  return IsDBdate(line, date, true);
+  Long64_t ldate = -1;
+  Bool_t ret = IsDBdate(line, ldate, true);
+  if( ret && ldate >= 0 ) {
+    WithDefaultTZ(date.Set(ldate));
+  }
+  return ret;
+}
+
+//_____________________________________________________________________________
+Bool_t IsDBtimestamp( const string& line, Long64_t& ldate )
+{
+  return IsDBdate(line, ldate, true);
+}
+
+//_____________________________________________________________________________
+// Timezone handling
+const char* const gDefaultTZString = "US/Eastern";
+
+TString gDefaultTZ = gDefaultTZString;
+Bool_t  gNeedTZCorrection = true;
+
+//_____________________________________________________________________________
+// Set time zone to assume for legacy database time stamps without time zone
+// offsets. The default is "US/Eastern".
+void SetDefaultTZ( const char* tz )
+{
+  if( !tz || !*tz ) {
+    tz = gDefaultTZString;
+  }
+  gDefaultTZ = tz;
+}
+
+//_____________________________________________________________________________
+// Helper function for time zone calculations. Determine offset between
+// the default time zone and the local time zone at Unix time 'tloc'.
+Long64_t GetTZOffsetToLocal( UInt_t tloc )
+{
+  // Returns the offset in seconds between the given time zone 'tz' and
+  // the time zone of the local machine
+  auto timet = static_cast<time_t>(tloc);
+  struct tm tml{}, tmd{};
+  localtime_r(&timet, &tml);
+
+  TString cur_tz = gSystem->Getenv("TZ");
+  gSystem->Setenv("TZ", gDefaultTZ);
+#ifdef __GLIBC__
+  tzset();
+#endif
+  localtime_r(&timet, &tmd);
+  if( !cur_tz.IsNull() )
+    gSystem->Setenv("TZ", cur_tz);
+  else
+    gSystem->Unsetenv("TZ");
+
+#ifdef __GLIBC__
+  tzset();
+#endif
+  return tmd.tm_gmtoff - tml.tm_gmtoff;
 }
 
 //_____________________________________________________________________________

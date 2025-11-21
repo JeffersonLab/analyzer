@@ -13,6 +13,8 @@
 #include "THaEvData.h"
 #include "DAQConfigString.h"
 #include "THaPrintOption.h"
+#include "Database.h"
+#include "TSystem.h"
 #include "TClass.h"
 #include "TError.h"
 #include "Helper.h"   // ALL()
@@ -22,6 +24,7 @@
 #include <cassert>
 
 using namespace std;
+using namespace Podd;
 
 constexpr Int_t     UNDEFDATE      = 19950101;
 const char* const   NOTINIT        = "uninitialized run";
@@ -142,7 +145,9 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
   if( evdata->IsPrestartEvent() ) {
     fDataRead |= kDate|kRunNumber|kRunType;
     if( !fAssumeDate ) {
-      fDate.Set( evdata->GetRunTime() );
+      Long64_t tloc = evdata->GetRunTime();
+      gNeedTZCorrection = (GetTZOffsetToLocal(tloc) != 0);
+      WithDefaultTZ(fDate.Set(tloc)); //TODO support 64-bit time. fDate.Set takes 32-bit
       fDataSet |= kDate;
     }
     SetNumber( evdata->GetRunNum() );
@@ -509,7 +514,8 @@ void THaRunBase::SetDate( Long64_t tloc )
   // Set timestamp of this run to 'tloc' which is in Unix time
   // format (number of seconds since 01 Jan 1970).
 
-  TDatime date( tloc );  //FIXME: support 64-bit time
+  gNeedTZCorrection = (GetTZOffsetToLocal(tloc) != 0);
+  WithDefaultTZ(TDatime date( tloc ));
   SetDate( date );
 }
 

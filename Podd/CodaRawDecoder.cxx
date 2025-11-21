@@ -35,6 +35,7 @@ CodaRawDecoder::CodaRawDecoder()
         { "evtime",    "Event time",     kULong,  0, &evt_time },
         { "datatype",  "Data type",      kUInt,   0, &data_type },
         { "trigbits",  "Trigger bits",   kUInt,   0, &trigger_bits },
+        { "tsevtyp",   "TS event type",  kUInt,   0, &tsEvType },
         { nullptr }
     };
     TString prefix("g");

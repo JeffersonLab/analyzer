@@ -133,7 +133,7 @@ Int_t FADCData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
   // Must call LoadData first. Pass LoadData's return value (= pulse integral
   // value) into this routine as 'data'.
 
-  if( hitinfo.type != ChannelType::kMultiFunctionADC )
+  if( hitinfo.modtype != ChannelType::kMultiFunctionADC )
     return 0;
 
   size_t k = GetLogicalChannel(hitinfo);

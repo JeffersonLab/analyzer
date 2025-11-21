@@ -165,6 +165,15 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     return err;
   }
 
+  // All DAQ modules are assumed to be ADCs
+  UInt_t nmodules = fDetMap->GetSize();
+  for( UInt_t i = 0; i < nmodules; i++ ) {
+    THaDetMap::Module* d = fDetMap->GetModule(i);
+    if( !d->model ) {
+      d->MakeADC();
+    }
+  }
+
   fBlockPos.clear(); fBlockPos.resize(nval);
   fClBlk.clear();    fClBlk.reserve(nclbl);
   fDetectorData.clear();
@@ -202,10 +211,14 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   if( err )
     return err;
 
-  for( UInt_t i = 0; i < nval; ++i ) {
-    auto& calib = fADCData->GetCalib(i);
-    calib.ped   = ped[i];
-    calib.gain  = gain[i];
+  if( !(ped.empty() && gain.empty()) ) {
+    for( UInt_t i = 0; i < nval; ++i ) {
+      auto& calib = fADCData->GetCalib(i);
+      if( !ped.empty() )
+        calib.ped = ped[i];
+      if( !gain.empty() )
+        calib.gain = gain[i];
+    }
   }
 
 #ifdef WITH_DEBUG

@@ -11,6 +11,7 @@
 
 #include "THaCut.h"
 #include "THaPrintOption.h"
+#include "THaGlobals.h"
 #include "TMath.h"
 
 #include <iostream>
@@ -43,6 +44,10 @@ THaCut::THaCut( const char* name, const char* expression, const char* block,
   // expressions would get reparsed instead of queried. This wouldn't
   // work properly with a non-default array evaluation mode (OR/XOR).
 
+  if( !vlst )
+    vlst = gHaVars;
+  if( !clst )
+    clst = gHaCuts;
   SetList(vlst);
   SetCutList(clst);
 

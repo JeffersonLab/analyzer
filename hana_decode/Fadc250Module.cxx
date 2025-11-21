@@ -172,6 +172,7 @@ void Fadc250Module::Init()
   Clear();
   IsInit = true;
   fName = "FADC250 JLab Flash ADC Module";
+  fFirmwareVers = 2;
 }
 
 //_____________________________________________________________________________
@@ -199,7 +200,7 @@ UInt_t Fadc250Module::GetNumEvents( Decoder::EModuleType emode,
       ret = fPulseData[chan].peak.size();
       break;
     case kPulsePedestal:
-      if( fFirmwareVers == 2 )
+      if( fFirmwareVers >= 2 )
         ret = fPulseData[chan].pedestal.size();
       else
         ret = fPulseData[chan].integral.size();
@@ -388,7 +389,7 @@ UInt_t Fadc250Module::GetPulsePedestalData( UInt_t chan, UInt_t ievent ) const
          << chan << endl;
     return kMaxUInt;
   }
-  if( fFirmwareVers == 2 ) {
+  if( fFirmwareVers >= 2 ) {
     if( ievent >= nevent ) {
       cout << "ERROR:: Fadc250Module:: GetPulsePedestalData:: invalid data vector size = " << fSlot << ", channel = "
            << chan << endl;
@@ -423,13 +424,28 @@ UInt_t Fadc250Module::GetPedestalQuality( UInt_t chan, UInt_t ievent ) const
 {
   vsiz_t nevent = fPulseData[chan].pedestal_quality.size();
   if( nevent == 0 ) {
-    cout << "ERROR:: Fadc250Module:: GetPedestalQuality:: data vector empty for slot = " << fSlot << ", channel = "
-         << chan << endl;
+    cout << "ERROR:: Fadc250Module:: GetPedestalQuality:: data vector empty for slot = "
+         << fSlot << ", channel = " << chan << endl;
     return kMaxUInt;
   }
+  if( fFirmwareVers >= 2 ) {
+    if( ievent >= nevent ) {
+      cout << "ERROR:: Fadc250Module:: GetPulsePedestalQuality:: invalid data vector size = "
+           << fSlot << ", channel = " << chan << endl;
+      return kMaxUInt;
+    } else {
+#ifdef WITH_DEBUG
+      if( fDebugFile )
+        *fDebugFile << "Fadc250Module::GetPulsePedestalQuality channel "
+                    << chan << ", event " << ievent << " = "
+                    << fPulseData[chan].pedestal_quality[ievent] << endl;
+#endif
+      return fPulseData[chan].pedestal_quality[ievent];
+    }
+  }
   if( nevent != 1 ) {
-    cout << "ERROR:: Fadc250Module:: GetPedestalQuality:: invalid data vector size = " << fSlot << ", channel = "
-         << chan << endl;
+    cout << "ERROR:: Fadc250Module:: GetPedestalQuality:: invalid data vector size = "
+         << fSlot << ", channel = " << chan << endl;
     return kMaxUInt;
   } else {
 #ifdef WITH_DEBUG
@@ -618,11 +634,11 @@ UInt_t Fadc250Module::GetNumFadcEvents( UInt_t chan ) const
     (mode == 8 &&
      (sz = fPulseData[chan].time.size()) == fPulseData[chan].pedestal.size() &&
      fPulseData[chan].peak.size() == sz) ||
-    (mode == 9 && fFirmwareVers == 2 &&
+    (mode == 9 && fFirmwareVers >= 2 &&
      (sz = fPulseData[chan].integral.size()) == fPulseData[chan].time.size() &&
      fPulseData[chan].pedestal.size() == sz &&
      fPulseData[chan].peak.size() == sz) ||
-    (mode == 10 && fFirmwareVers == 2 &&
+    (mode == 10 && fFirmwareVers >= 2 &&
      (sz = fPulseData[chan].integral.size()) == fPulseData[chan].time.size() &&
      fPulseData[chan].pedestal.size() == sz &&
      fPulseData[chan].peak.size() == sz) ||

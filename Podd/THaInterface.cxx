@@ -44,7 +44,7 @@ THaDB*       gHaDB       = nullptr;  // Database system to use
 
 THaInterface* THaInterface::fgAint = nullptr;  // Pointer to this interface
 
-static TString fgTZ;
+static const char* fgTZ = nullptr;
 
 //_____________________________________________________________________________
 THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
@@ -114,21 +114,8 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
     ss = s(re);
   }
 
-  // Because of lack of foresight, the analyzer uses TDatime objects,
-  // which are kept in localtime() and hence are not portable, and also
-  // uses localtime() directly in several places. As a result, database
-  // lookups depend on the timezone of the machine that the replay is done on!
-  // If this timezone is different from the one in which the data were taken,
-  // mismatches may occur. This is bad.
-  // FIXME: Use TTimeStamp to keep time in UTC internally.
-  // To be done in version 1.6
-  //
-  // As a temporary workaround, we assume that all data were taken in
-  // US/Eastern time, and that the database has US/Eastern timestamps.
-  // This is certainly true for all JLab production data..
+  // Save user's TZ. Podd::Database temporarily overrides this.
   fgTZ = gSystem->Getenv("TZ");
-  gSystem->Setenv("TZ","US/Eastern");
-
 
   fgAint = this;
 }
@@ -140,7 +127,10 @@ THaInterface::~THaInterface()
 
   if( fgAint == this ) {
     // Restore the user's original TZ
-    gSystem->Setenv("TZ",fgTZ.Data());
+    if( fgTZ )
+      gSystem->Setenv("TZ",fgTZ);
+    else
+      gSystem->Unsetenv("TZ");
     // Clean up the analyzer object if defined
     delete THaAnalyzer::GetInstance();
     // Delete all global lists and objects contained in them

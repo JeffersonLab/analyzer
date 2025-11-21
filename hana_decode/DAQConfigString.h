@@ -29,6 +29,7 @@ struct DAQConfigString {
   unsigned     crate_;
   unsigned     evtyp_;
   std::string  text_;
+  // FIXME: change to multimap
   std::map<std::string, std::string>  keyval_;
 } __attribute__((aligned(64)));
 

@@ -36,9 +36,10 @@ public:
   static void DeleteExtra( THaRunBase* run );
 
   DAQconfig fDAQconfig;
+  std::vector<UInt_t> fTags;
   UInt_t fMinScan;
 
-  ClassDef(DAQInfoExtra, 2)
+  ClassDef(DAQInfoExtra, 3)
 };
 
 //_____________________________________________________________________________

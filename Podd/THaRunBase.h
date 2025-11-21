@@ -85,6 +85,7 @@ public:
   size_t               GetNDAQConfig() const;
   UInt_t               GetDAQConfigCrate( size_t i ) const;
   const std::string&   GetDAQConfigString( size_t i ) const;
+  UInt_t               GetDAQConfigTag( size_t i ) const { return GetDAQConfigCrate(i); }
   const std::string&   GetDAQConfigValue( size_t i, const std::string& key ) const;
 
   friend class DAQInfoExtra;    // For schema evolution from v6
@@ -93,7 +94,7 @@ protected:
   UInt_t        fNumber;        // Run number
   UInt_t        fType;          // Run type/mode/etc.
   //FIXME: support 64-bit time
-  TDatime       fDate;          // Run date and time
+  TDatime       fDate;          // Run date and time TODO support 64-bit time
   ULong64_t     fEvtRange[2];   // Event range to analyze
   ULong64_t     fNumAnalyzed;   // Number of physics events actually analyzed
   Bool_t        fDBRead;        // True if database successfully read.

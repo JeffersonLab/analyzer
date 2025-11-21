@@ -85,7 +85,7 @@ Int_t CodaDecoder::GetPrescaleFactor( UInt_t trigger_type ) const
 Int_t CodaDecoder::Init()
 {
   Int_t ret = THaEvData::Init();
-  if( ret != HED_OK ) 
+  if( ret != HED_OK )
     return ret;
   FindUsedSlots();
   fDAQconfig.clear();
@@ -141,6 +141,7 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
   evt_time = 0;
   bankdat.clear();
   blkidx = 0;
+  ResetBit(kPhysicsTrigger);
 
   // Determine event type
   if (fDataVersion == 2) {
@@ -191,7 +192,8 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
     }
   }
 
-  else if( event_type <= MAX_PHYS_EVTYPE ) {
+  else if( event_type > 0 && event_type <= MAX_PHYS_EVTYPE ) {
+    SetBit(kPhysicsTrigger);
     // Once physics events start, there will be no more DAQconfig events, so
     // we can release these potentially large data structures. The analyzer
     // or THaRun::PrescanFile have copied them to the run parameters.
@@ -203,6 +205,13 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
       if( fDataVersion == 3 ) {
         if( (ret = trigBankDecode(evbuffer)) != HED_OK )
           return ret;
+        assert( event_type == 1 ); // else bug in InterpretBankTag
+        if( AltEvTypeEnabled() ) {
+          // Copy the CODA3 "event type" from the trigger bank to event_type
+          // so that physics events do not all trivially have type = 1.
+          // event_type is what goes into each event header in the ROOT file.
+          event_type = tsEvType;
+        }
       }
       ret = physics_decode(evbuffer);
     }
@@ -357,15 +366,23 @@ UInt_t CodaDecoder::InterpretBankTag( UInt_t tag )
       case 0xff70:
         evtyp = 1;      // for CODA 3.* physics events are type 1.
         break;
-      default:          // Undefined CODA 3 event type
-        cerr << "CodaDecoder:: WARNING:  Undefined CODA 3 event type, tag = "
-             << "0x" << hex << tag << dec << endl;
-        evtyp = 0;
-        //FIXME evtyp = 0 could also be a user event type ...
-        // maybe throw an exception here?
+      default:          // Unsupported CODA 3 event type
+        // May need to accommodate, or it really is garbage data
+        cerr << "CodaDecoder:: WARNING:  Unsupported CODA 3 event type, tag = "
+             << "0x" << hex << tag << dec << ". Call expert." << endl;
+        evtyp = 0;      // tells decoder that this is not usable data
     }
   } else {              // User event type
     evtyp = tag;        // ET-insertions
+    if( evtyp <= MAX_PHYS_EVTYPE || evtyp == PRESTART_EVTYPE ||
+        evtyp == GO_EVTYPE || evtyp == END_EVTYPE ) {
+      // FIXME: This is not a CODA3 error, but the result of our internal
+      //  legacy event type numbering. But we can't go with it until we
+      //  rewrite the downstream code
+      cerr << "CodaDecoder:: ERROR:  User event type number " << evtyp
+           << " clashes with a reserved value. Call expert." << endl;
+      evtyp = 0;
+    }
   }
 
   return evtyp;
@@ -382,16 +399,16 @@ Int_t CodaDecoder::LoadTrigBankInfo( UInt_t i )
     return -1;
   tsEvType = tbank.evType[i];      // event type (configuration-dependent)
   if( tbank.evTS )
-    evt_time = tbank.evTS[i];      // event time (4ns clock, I think)
+    evt_time = tbank.GetEvTS(i);   // event time (4ns clock, I think)
   else if( tbank.TSROC ) {
     size_t struct_size = tbank.withTriggerBits() ? 3 : 2;
-    evt_time = *(const uint64_t*) (tbank.TSROC + struct_size * i);
+    memcpy(&evt_time, tbank.TSROC + struct_size * i, sizeof(evt_time));
     // Only the lower 48 bits seem to contain the time
     evt_time &= 0x0000FFFFFFFFFFFF;
   }
   if( tbank.withTriggerBits() )
-    // Trigger bits. Only the lower 6 bits seem to contain the actual bits
-    trigger_bits = tbank.TSROC[2 + 3 * i] & 0x3F;
+    // Trigger bits
+    trigger_bits = tbank.TSROC[2 + 3 * i];
 
   return 0;
 }
@@ -418,8 +435,19 @@ Int_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer )
     Error(here, "CODA 3 format error: Physics event with block size 0");
     return HED_ERR;
   }
+  auto tsroc = fMap->getTSROC();
+  if( tsroc > MAXROC ) {
+    static bool dowarn = true;
+    tsroc = THaCrateMap::DEFAULT_TSROC;
+    if( dowarn ) {
+      Warning("THaCrateMap", "Did not find TSROC.  Using default %u\n"
+                             " If this is incorrect, TS info (trigger bits"
+                             " etc.) will be unavailable.", tsroc);
+      dowarn = false;
+    }
+  }
   try {
-    tbank.Fill(evbuffer + 2, block_size, fMap->getTSROC());
+    tbank.Fill(evbuffer + 2, block_size, tsroc);
   }
   catch( const coda_format_error& e ) {
     Error(here, "CODA 3 format error: %s", e.what() );
@@ -643,7 +671,7 @@ Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
     return HED_ERR;
   }
   auto prev_size = fDAQconfig.size();
-  UInt_t pos = 0;
+  size_t pos = 0;
   while( pos < event_length ) {
     auto bankinfo = GetBank(evbuf, pos, event_length);
     if( bankinfo.status_ != BankInfo::kOK ) {
@@ -655,12 +683,12 @@ Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
     assert(pos + len <= event_length);
     if( bankinfo.GetDataSize() == BankInfo::k8bit ) {
       UInt_t crate = bankinfo.tag_;  // The bank tag is the crate number
-      const auto* c = reinterpret_cast<const char*>(evbuf + pos);
+      const auto* c = reinterpret_cast<const char*>(evbuf + pos); // NOLINT(*-pro-type-reinterpret-cast)
       string textdata(c, c + 4 * len - bankinfo.npad_);
       fDAQconfig.emplace_back(crate, textdata);
     } else {
-      Warning(here, "Unsupported data type %#x in event type %u",
-              bankinfo.dtyp_, event_type);
+      Warning(here, "Unsupported data type %#x in event type %u"
+               ", bank tag = %u", bankinfo.dtyp_, event_type, bankinfo.tag_ );
     }
     pos += len;
   }
@@ -757,27 +785,31 @@ void CodaDecoder::PrintBankInfo() const
 uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
                                    uint32_t blkSize, uint32_t tsroc )
 {
+  // For the data format, see the "Physics Event's Built Trigger Bank" diagram
+  // in https://coda.jlab.org/drupal/system/files/eventbuilding.pdf
+
   if( blkSize == 0 )
     throw std::invalid_argument("CODA block size must be > 0");
   start = evbuffer;
   blksize = blkSize;
   len = evbuffer[0] + 1;
-  tag = (evbuffer[1] & 0xffff0000) >> 16;
+  tag = evbuffer[1] >> 16;
   nrocs = evbuffer[1] & 0xff;
+  runInfo = 0;
 
   const uint32_t* p = evbuffer + 2;
   // Segment 1:
   //  uint64_t event_number
-  //  uint64_t run_info                if withRunInfo
   //  uint64_t time_stamp[blkSize]     if withTimeStamp
+  //  uint64_t run_info                if withRunInfo
   {
-    uint32_t slen = *p & 0xffff;
-    if( slen != 2*(1 + (withRunInfo() ? 1 : 0) + (withTimeStamp() ? blkSize : 0)))
+    uint32_t slen = *p & 0xffff;  // segment length in 32-bit words
+    if( slen != 2*(1 + withTimeStamp() * blkSize + withRunInfo()) )
       throw coda_format_error("Invalid length for Trigger Bank seg 1");
-    const auto* q = (const uint64_t*) (p + 1);
-    evtNum  = *q++;
-    runInfo = withRunInfo()   ? *q++ : 0;
-    evTS    = withTimeStamp() ? q    : nullptr;
+    memcpy(&evtNum, p + 1, sizeof(evtNum));
+    evTS = withTimeStamp() ? p + 3 : nullptr;
+    if( withRunInfo() )
+      memcpy(&runInfo, p + 3 + withTimeStamp() * 2UL * blksize, sizeof(runInfo));
     p += slen + 1;
   }
   if( p-evbuffer >= len )
@@ -806,7 +838,7 @@ uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
     if( p-evbuffer >= len )
       throw coda_format_error("Past end of bank while scanning trigger bank segments");
     uint32_t slen = *p & 0xffff;
-    uint32_t rocnum = (*p & 0xff000000) >> 24;
+    uint32_t rocnum = *p >> 24;
     if( rocnum == tsroc ) {
       TSROC = p + 1;
       tsrocLen = slen;
@@ -827,7 +859,9 @@ CodaDecoder::BankDat_t* CodaDecoder::CheckForBank( UInt_t roc, UInt_t slot )
   // Internal function used by bank_decode() and LoadFromMultiBlock().
 
   Int_t bank = fMap->getBank(roc, slot);
-  assert(bank < MAXBANK); // bank numbers are uint16_t
+//FIXME: code duplication with FindBank. Return Optional_t<BankDat_t> by value
+// and make this method const
+  assert(bank <= MAXBANK); // bank numbers are uint16_t
   if( bank < 0 )
     return nullptr;
   UInt_t key = (roc << 16) + bank;
@@ -1084,6 +1118,9 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
     pos += len+1;
   }
 
+  if( fDebug > 1 )
+    PrintBankInfo();
+
   for( auto slot : fMap->GetUsedSlots(roc) ) {
     assert(fMap->slotUsed(roc,slot));
     Int_t bank = fMap->getBank(roc, slot);
@@ -1107,6 +1144,21 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
 }
 
 //_____________________________________________________________________________
+CodaDecoder::BankDat_t CodaDecoder::FindBank( UInt_t roc, Int_t bank ) const
+{
+  // Return start position of given roc/bank combination
+
+  assert(bank <= MAXBANK); // bank numbers are uint16_t
+  if( roc >= MAXROC || bank < 0 )
+    return {};
+  UInt_t key = (roc << 16) + bank;
+  auto theBank = find(ALL(bankdat), key);
+  if( theBank == bankdat.end() )
+    return {};
+  return *theBank;
+}
+
+//_____________________________________________________________________________
  Int_t CodaDecoder::FillBankData( UInt_t *rdat, UInt_t roc, Int_t bank,
                                   UInt_t offset, UInt_t num ) const
 {
@@ -1116,16 +1168,13 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
   if( fDebugFile )
     *fDebugFile << "Check FillBankData " << roc << "  " << bank << endl;
 
-  if( roc >= MAXROC )
-    return HED_ERR;
-  UInt_t jk = (roc << 16) + bank;
-  auto bankInfo = find(ALL(bankdat), jk);
-  if( bankInfo == bankdat.end() ) {
-    cerr << "FillBankData::ERROR:  bankdat not in current event "<<endl;
+  auto bankInfo = FindBank(roc, bank);
+  if( !bankInfo ) {
+    cerr << "FillBankData::ERROR:  bank data not in current event " << endl;
     return HED_ERR;
   }
-  UInt_t pos = bankInfo->pos;
-  UInt_t len = bankInfo->len;
+  UInt_t pos = bankInfo.pos;
+  UInt_t len = bankInfo.len;
   if( fDebug > 1 )
     cout        << "FillBankData: pos, len " << pos << "   " << len << endl;
   if( fDebugFile )
@@ -1133,13 +1182,10 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
   assert( pos < event_length && pos+len <= event_length ); // else bug in bank_decode
   if( offset+2 > len )
     return HED_ERR;
-  if( num > len )
-    num = len;
   UInt_t ilo = pos + offset;
   assert( ilo < event_length );  // else offset not correctly checked above
-  UInt_t ihi = pos + offset + num;
-  if( ihi > event_length )
-    ihi = event_length;
+  num = std::min(num, len);
+  UInt_t ihi = std::min(pos + offset + num, event_length);
   memcpy(rdat, buffer+ilo, ihi-ilo);
 
   return HED_OK;
@@ -1310,7 +1356,7 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
     *fDebugFile << "         Event #       Time Stamp       Event Type"<<endl;
     for( UInt_t i = 0; i < tbank.blksize; i++ ) {
       if( tbank.evTS ) {
-          *fDebugFile << "      "<<dec<<tbank.evtNum+i<<"   "<<tbank.evTS[i]<<"   "<<tbank.evType[i];
+          *fDebugFile << "      "<<dec<<tbank.evtNum+i<<"   "<< tbank.GetEvTS(i) <<"   "<<tbank.evType[i];
           *fDebugFile << endl;
        } else {
           *fDebugFile << "     "<<tbank.evtNum+i<<"(No Time Stamp)   "<<tbank.evType[i];
