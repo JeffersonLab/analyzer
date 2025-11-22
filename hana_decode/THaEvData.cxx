@@ -68,6 +68,7 @@ THaEvData::THaEvData() :
   event_type{0},
   event_length{0},
   event_num{0},
+  raw_event_num{0},
   run_num{0},
   run_type{0},
   data_type{0},

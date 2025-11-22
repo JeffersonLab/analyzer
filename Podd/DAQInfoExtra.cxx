@@ -12,7 +12,6 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "DAQInfoExtra.h"
-#include "DAQConfigString.h"
 #include "THaRun.h"
 #include "THaRunParameters.h"
 #include "TVirtualObject.h"
@@ -74,7 +73,9 @@ THaRunParameters* DAQInfoExtra::UpdateRunParam( THaRunBase* run )
   for( size_t i = 0; auto& text : ifo->fDAQconfig.strings ) {
     //cerr << "size(" << i++ << ") = " << text.size() << endl;
     UInt_t crate = (i >= ifo->fTags.size()) ? 0 : ifo->fTags[i];
-    rp->AddDAQConfig({crate, std::move(text)});  // Parses text
+    // Event number and event type are not available in previous class versions.
+    // crate (roc) is available starting with analyzer 1.7.14
+    rp->AddDAQConfig({0, 0, crate, std::move(text)});  // Parses text
     ++i;
   }
   ifo->fDAQconfig.strings.clear();

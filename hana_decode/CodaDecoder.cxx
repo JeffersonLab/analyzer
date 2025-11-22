@@ -130,10 +130,12 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
     if( fDataVersion == 3 )
       LoadTrigBankInfo(blkidx);
     ++event_num;    // _should_ be sequential
+    ++raw_event_num;
     return LoadFromMultiBlock();
   }
 
   buffer = evbuffer;
+  ++raw_event_num;
   event_length = evbuffer[0]+1;  // in longwords (4 bytes)
   event_type = 0;
   data_type = 0;
@@ -684,8 +686,11 @@ Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
     if( bankinfo.GetDataSize() == BankInfo::k8bit ) {
       UInt_t crate = bankinfo.tag_;  // The bank tag is the crate number
       const auto* c = reinterpret_cast<const char*>(evbuf + pos); // NOLINT(*-pro-type-reinterpret-cast)
-      string textdata(c, c + 4 * len - bankinfo.npad_);
-      fDAQconfig.emplace_back(crate, textdata);
+      DAQConfigString cfg{raw_event_num, event_type, crate,
+                          {c, c + 4 * len - bankinfo.npad_}};
+      // Prevent duplicates, which might occur when adding multiple runs
+      if( std::find(ALL(fDAQconfig), cfg) == fDAQconfig.end() )
+        fDAQconfig.emplace_back(std::move(cfg));
     } else {
       Warning(here, "Unsupported data type %#x in event type %u"
                ", bank tag = %u", bankinfo.dtyp_, event_type, bankinfo.tag_ );

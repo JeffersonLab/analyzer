@@ -9,6 +9,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaRun.h"
+#include "THaRunParameters.h"
 #include "THaEvData.h"
 #include "THaCodaFile.h"
 #include "THaGlobals.h"
@@ -269,8 +270,9 @@ Int_t THaRun::PrescanFile()
     if( TESTBIT(st, kPrescalesEvt) )
       cout << "Prescales at " << nev << endl;
     if( TESTBIT(st, kDAQinfoEvt) )
-      cout << "DAQ info at " << setw(2) << nev
-           << " len " << evdata->GetEvLength() << endl;
+      cout << "DAQ info at " << setw(2) << nev << " len "
+           // Event length in bytes
+           << evdata->GetEvLength() * sizeof(decltype(*GetEvBuffer())) << endl;
   }//end while
 
   if( status != READ_OK )

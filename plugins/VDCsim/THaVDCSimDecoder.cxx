@@ -95,6 +95,7 @@ int THaVDCSimDecoder::LoadEvent(const UInt_t* evbuffer )
 
   // Local copy of evbuffer pointer - any good use for it?
   buffer = evbuffer;
+  ++raw_event_num;
 
   // Cast the evbuffer pointer back to exactly the event type that is present
   // in the input file (in THaVDCSimRun). The pointer-to-integer is there

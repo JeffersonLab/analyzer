@@ -55,6 +55,7 @@ public:
   UInt_t    GetEvLength()    const { return event_length; }
   UInt_t    GetTrigBits()    const { return trigger_bits; }
   ULong64_t GetEvNum()       const { return event_num; }
+  ULong64_t GetRawEvNum()    const { return raw_event_num; }
   UInt_t    GetRunNum()      const { return run_num; }
   Int_t     GetDataVersion() const { return fDataVersion; }
   // Run time/date. Time of prestart event (UNIX time).
@@ -212,7 +213,7 @@ protected:
   std::ofstream *fDebugFile;  // debug output
 
   UInt_t event_type, event_length;
-  ULong64_t event_num;
+  ULong64_t event_num, raw_event_num;
   UInt_t run_num, run_type, data_type, trigger_bits;
   Int_t  evscaler;
   Long64_t  fRunTime; // Run start time (Unix time)

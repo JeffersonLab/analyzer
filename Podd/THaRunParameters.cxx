@@ -11,9 +11,12 @@
 #include "TDatime.h"
 #include "TError.h"
 #include "TMath.h"
-#include "CodaDecoder.h"
+#include "Helper.h"
+#include "TString.h"
 #include <iostream>
+#include <iomanip>
 #include <utility>
+#include <cctype>  // for std::iscntrl
 
 using namespace std;
 
@@ -47,9 +50,11 @@ void THaRunParameters::Clear( Option_t* )
 }
 
 //_____________________________________________________________________________
-void THaRunParameters::Print( Option_t* ) const
+void THaRunParameters::Print( Option_t* opt ) const
 {
   // Print run parameters
+
+  TString option(opt);
 
   cout << "Run parameters: " << fRunName << endl;
   cout << " Beam: " << fBeamName <<endl;
@@ -84,7 +89,25 @@ void THaRunParameters::Print( Option_t* ) const
     }
   }
   cout << "  DAQconfig strings: " << fDAQconfig.size()
-       << ", " << nkey << " keys" << ", " << sz << " bytes" << endl;
+       << ", " << sz << " bytes" << ", " << nkey << " keys" << endl;
+  if( option.Contains("FULL") ) {
+    for( const auto& cfg: fDAQconfig ) {
+      string preview = cfg.text_.substr(0, 40);
+      // Replace control characters (newline etc.) with spaces
+      std::for_each(ALL(preview), []( auto& c ) {
+        if( std::iscntrl(static_cast<unsigned char>(c)) ) c = ' ';
+      });
+      cout << setw(5)  << cfg.evnum_
+           << setw(6)  << cfg.evtyp_
+           << setw(5)  << cfg.crate_
+           << setw(10) << cfg.text_.size()
+           << setw(7)  << cfg.keyval_.size()
+           << "  \""   << preview << "\"";
+      if( cfg.text_.size() > preview.size() )
+        cout << "...";
+      cout << endl;
+    }
+  }
 }
 
 //_____________________________________________________________________________

@@ -28,7 +28,7 @@ CodaRawDecoder::CodaRawDecoder()
     VarDef vars[] = {
         { "runnum",    "Run number",     kUInt,   0, &run_num },
         { "runtype",   "CODA run type",  kUInt,   0, &run_type },
-        { "runtime",   "CODA run time",  kLong,   0, &fRunTime },
+        { "runtime",   "Run start time (Unix)", kLong, 0, &fRunTime },
         { "evnum",     "Event number",   kULong,  0, &event_num },
         { "evtyp",     "Event type",     kUInt,   0, &event_type },
         { "evlen",     "Event length",   kUInt,   0, &event_length },
@@ -36,6 +36,7 @@ CodaRawDecoder::CodaRawDecoder()
         { "datatype",  "Data type",      kUInt,   0, &data_type },
         { "trigbits",  "Trigger bits",   kUInt,   0, &trigger_bits },
         { "tsevtyp",   "TS event type",  kUInt,   0, &tsEvType },
+        { "rawevnum",  "Raw event number", kULong,0, &raw_event_num },
         { nullptr }
     };
     TString prefix("g");
