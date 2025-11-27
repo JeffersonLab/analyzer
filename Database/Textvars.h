@@ -25,7 +25,8 @@ std::vector<std::string> vsplit( const std::string& s );
 class Textvars {
 
 public:
-  using Textvars_t = std::map<std::string, std::vector<std::string>>;
+  using StrVec_t = std::vector<std::string>;
+  using Textvars_t = std::map<std::string, StrVec_t>;
 
   Textvars() = default;
 
@@ -33,26 +34,25 @@ public:
   Int_t    AddVerbatim( const std::string& name, const std::string& value );
   void     Clear() { fVars.clear(); }
   void     Print( Option_t* opt="" ) const;
-  void     Remove( const std::string& name ) { fVars.erase(name); }
+  StrVec_t Remove( const std::string& name );
   UInt_t   Size() const { return fVars.size(); }
 
-  const char*               Get( const std::string& name, Int_t idx=0 ) const;
+  const char*               Get( const std::string& name, UInt_t idx=0 ) const;
   const Textvars_t&         GetAllStringsMap() const { return fVars; }
-  std::vector<std::string>  GetArray( const std::string& name );
-  UInt_t                    GetArray( const std::string& name,
-				      std::vector<std::string>& array );
+  StrVec_t                  GetArray( const std::string& name ) const;
+  StrVec_t                  GetNames() const;
   UInt_t                    GetNvalues( const std::string& name ) const;
 
   Int_t    Set( const std::string& name, const std::string& value ) {
     return Add(name,value);
   }
   Int_t    Substitute( std::string& line ) const;
-  Int_t    Substitute( std::vector<std::string>& lines ) const {
+  Int_t    Substitute( StrVec_t& lines ) const {
     return Substitute( lines, true );
   }
 
 private:
-  Int_t Substitute( std::vector<std::string>& lines, bool do_multi ) const;
+  Int_t Substitute( StrVec_t& lines, bool do_multi ) const;
   
   Textvars_t fVars;
 

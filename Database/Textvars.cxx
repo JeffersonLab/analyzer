@@ -29,13 +29,59 @@
 
 using namespace std;
 
-typedef string::size_type ssiz_t;
-typedef vector<string>::size_type vssiz_t;
+using ssiz_t = string::size_type;
+using vssiz_t = vector<string>::size_type;
 
 static const string whtspc = " \t\n\v\f\r";
 
 // Text variable definitions. To be assigned by main program.
 Podd::Textvars* gHaTextvars = nullptr;
+
+//_____________________________________________________________________________
+namespace {
+
+string ValStr( const vector <string>& s )
+{
+  // Assemble vector of strings into a comma-separated single string.
+  // Used by print functions.
+
+  string val;
+  if( !s.empty() ) {
+    val = "\"" + s[0] + "\"";
+    for( vssiz_t i = 1; i < s.size(); ++i )
+      val.append(",\"" + s[i] + "\"");
+  }
+  return val;
+}
+
+//_____________________________________________________________________________
+ssiz_t Index( const string& s, ssiz_t& ext /*, ssiz_t start*/ )
+{
+  // Find index of text variable pattern in string 's'. 'ext' is the length
+  // of the pattern. Search starts at 'start'.
+  // This is equivalent to searching for regexp "\$\{[^\{\}]*\}"
+
+  if( s.empty() || /*start == string::npos || start+*/2 >= s.length() )
+    return string::npos;
+
+  const char* c = s.c_str() /*+ start*/, *end;
+  if( (c = strchr(c,'$')) && *(++c) == '{' ) {
+    if( !(end = strchr(++c,'}')) ) return string::npos;
+    const char *c2;
+    do {
+      // Find innermost bracket, allowing nesting
+      if( (c2 = strchr(c,'$')) && *(++c2) != '{' ) c2 = nullptr;
+    } while( c2 && ++c2 < end && (c = c2) );
+  } else
+    return string::npos;
+
+  c -= 2;   // Point to beginning of pattern: ${
+  assert( end>c );
+  ext = end-c+1;
+  return (c - s.c_str());
+}
+
+} // namespace
 
 namespace Podd {
 
@@ -68,49 +114,6 @@ vector<string> vsplit( const string& s )
 }
 
 //_____________________________________________________________________________
-static string ValStr( const vector<string>& s )
-{
-  // Assemble vector of strings into a comma-separated single string.
-  // Used by print functions.
-
-  string val;
-  if( !s.empty() ) {
-    val = "\"" + s[0] + "\"";
-    for( vssiz_t i = 1; i < s.size(); ++i )
-      val.append(",\"" + s[i] + "\"");
-  }
-  return val;
-}
-
-//_____________________________________________________________________________
-static ssiz_t Index( const string& s, ssiz_t& ext /*, ssiz_t start*/ )
-{
-  // Find index of text variable pattern in string 's'. 'ext' is the length
-  // of the pattern. Search starts at 'start'.
-  // This is equivalent to searching for regexp "\$\{[^\{\}]*\}"
-
-  if( s.empty() || /*start == string::npos || start+*/2 >= s.length() )
-    return string::npos;
-
-  const char* c = s.c_str() /*+ start*/, *end;
-  if( (c = strchr(c,'$')) && *(++c) == '{' ) {
-    if( !(end = strchr(++c,'}')) ) return string::npos;
-    const char *c2;
-    do {
-      // Find innermost bracket, allowing nesting
-      if( (c2 = strchr(c,'$')) && *(++c2) != '{' ) c2 = nullptr;
-    }
-    while( c2 && ++c2 < end && (c = c2) );
-  } else
-    return string::npos;
-
-  c -= 2;   // Point to beginning of pattern: ${
-  assert( end>c );
-  ext = end-c+1;
-  return (c - s.c_str());
-}
-
-//_____________________________________________________________________________
 Int_t Textvars::Add( const string& name, const string& value )
 {
   // Add or Set/Replace text variable with given name and value.
@@ -121,7 +124,7 @@ Int_t Textvars::Add( const string& name, const string& value )
     return 0;
 
   static const string delim(",");
-  vector<string> tokens;
+  StrVec_t tokens;
   Tokenize( value, delim, tokens );
   if( tokens.empty() )
     tokens.emplace_back("");
@@ -129,7 +132,7 @@ Int_t Textvars::Add( const string& name, const string& value )
   auto it = fVars.find(name);
 
   if( it != fVars.end() ) {  // already exists?
-    (*it).second.swap(tokens);
+    it->second.swap(tokens);
   } else {                   // if not, add a new one
 #ifndef NDEBUG
     pair<Textvars_t::iterator,bool> ret =
@@ -149,12 +152,12 @@ Int_t Textvars::AddVerbatim( const string& name, const string& value )
   if( name.empty() )
     return 0;
 
-  vector<string> values( 1, value );
+  StrVec_t values( 1, value );
 
   auto it = fVars.find(name);
 
   if( it != fVars.end() ) {  // already exists?
-    (*it).second.swap(values);
+    it->second.swap(values);
   } else {                   // if not, add a new one
 #ifndef NDEBUG
     pair<Textvars_t::iterator,bool> ret =
@@ -166,50 +169,53 @@ Int_t Textvars::AddVerbatim( const string& name, const string& value )
 }
 
 //_____________________________________________________________________________
-const char* Textvars::Get( const string& name, Int_t idx ) const
+const char* Textvars::Get( const string& name, UInt_t idx ) const
 {
   // Get the i-th value of the text variable with the given name.
   // Returns either the value or nullptr if not found.
 
-  if( name.empty() || idx < 0 )
+  if( name.empty() )
     return nullptr;
 
   auto it = fVars.find(name);
-  if( it == fVars.end() )
-    return nullptr;
-  if( (ssiz_t)idx >= it->second.size() )
+  if( it == fVars.end() || idx >= it->second.size() )
     return nullptr;
 
   return it->second[idx].c_str();
 }
 
 //_____________________________________________________________________________
-UInt_t Textvars::GetArray( const string& name, vector<string>& array )
+Textvars::StrVec_t Textvars::GetArray( const string& name ) const
 {
-  // Get the array of values for the text variable with the given name.
-  // Returns number of values found (size of array), or zero if not found.
+  // Get the value(s) for the text variable with the given name.
+  // If name is not found, the returned vector is empty.
+  //
+  // This function deliberately does not return a reference to the vector of
+  // strings in the map since such a reference could be easily invalidated
+  // whenever additional variables are defined.
 
-  array.clear();
+  static StrVec_t nullvec; // dummy empty vector
   if( name.empty() )
-    return 0;
+    return nullvec;
 
   auto it = fVars.find(name);
   if( it == fVars.end() )
-    return 0;
+    return nullvec;
 
-  array.swap( (*it).second );
-  return array.size();
+  return it->second;
 }
 
 //_____________________________________________________________________________
-vector<string> Textvars::GetArray( const string& name )
+Textvars::StrVec_t Textvars::GetNames() const
 {
-  // Get the values array for the text variable with the given name.
-  // If name is not found, the returned array has size zero.
+  // Return all defined names (keys in the translation map)
 
-  vector<string> the_array;
-  GetArray( name, the_array );
-  return the_array;
+  StrVec_t names;
+  names.reserve(fVars.size());
+  for( const auto& var: fVars )
+    names.push_back(var.first);
+
+  return names;
 }
 
 //_____________________________________________________________________________
@@ -224,7 +230,7 @@ UInt_t Textvars::GetNvalues( const string& name ) const
   if( it == fVars.end() )
     return 0;
 
-  return (*it).second.size();
+  return it->second.size();
 }
 
 //_____________________________________________________________________________
@@ -245,12 +251,23 @@ void Textvars::Print( Option_t* /*opt*/ ) const
 }
 
 //_____________________________________________________________________________
+Textvars::StrVec_t Textvars::Remove( const string& name )
+{
+  // Remove key 'name' and return it value(s), if any
+
+  auto vals = GetArray(name);
+  if( !vals.empty() )
+    fVars.erase(name);
+  return vals;
+}
+
+//_____________________________________________________________________________
 Int_t Textvars::Substitute( string& line ) const
 {
   // Substitute text variables in a single string.
   // If any multi-valued variables are encountered, treat it as an error
 
-  vector<string> lines( 1, line );
+  StrVec_t lines( 1, line );
   Int_t ret = Substitute( lines, false );
   if( ret )
     return ret;
@@ -260,7 +277,7 @@ Int_t Textvars::Substitute( string& line ) const
 }
 
 //_____________________________________________________________________________
-Int_t Textvars::Substitute( vector<string>& lines, bool do_multi ) const
+Int_t Textvars::Substitute( StrVec_t& lines, bool do_multi ) const
 {
   // Substitute text variables in the given array of strings.
   // Supports multi-valued text variables, where each instance is
@@ -274,7 +291,7 @@ Int_t Textvars::Substitute( vector<string>& lines, bool do_multi ) const
 
   bool good = true;
 
-  vector<string> newlines;
+  StrVec_t newlines;
   for( auto li = lines.begin(); li != lines.end() && good; ++li ) {
     const string& line = *li;
     ssiz_t ext = 0, pos = Index( line, ext/*, 0 */);
@@ -283,7 +300,7 @@ Int_t Textvars::Substitute( vector<string>& lines, bool do_multi ) const
       Textvars_t::const_iterator it;
       if( ext > 3 &&
 	  (it = fVars.find(line.substr(pos+2,ext-3))) != fVars.end() ) {
-	const vector<string>& repl = (*it).second;
+	const StrVec_t& repl = it->second;
 	assert( !repl.empty() );
 	if( !do_multi && repl.size() > 1 ) {
           ::Error(here, "multivalue variable %s = %s not supported in this "
