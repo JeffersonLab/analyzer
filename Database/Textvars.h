@@ -31,6 +31,7 @@ public:
   Int_t    AddVerbatim( const std::string& name, const std::string& value );
   void     Clear() { fVars.clear(); }
   void     Print( Option_t* opt="" ) const;
+  const std::map<std::string, std::vector<std::string>>& GetAllStringsMap() const { return fVars; }
   void     Remove( const std::string& name ) { fVars.erase(name); }
   UInt_t   Size() const { return fVars.size(); }
 
