@@ -25,6 +25,8 @@ std::vector<std::string> vsplit( const std::string& s );
 class Textvars {
 
 public:
+  using Textvars_t = std::map<std::string, std::vector<std::string>>;
+
   Textvars() = default;
   virtual ~Textvars() = default;
 
@@ -36,6 +38,7 @@ public:
   UInt_t   Size() const { return fVars.size(); }
 
   const char*               Get( const std::string& name, Int_t idx=0 ) const;
+  const Textvars_t&         GetAllStringsMap() const { return fVars; }
   std::vector<std::string>  GetArray( const std::string& name );
   UInt_t                    GetArray( const std::string& name,
 				      std::vector<std::string>& array );
@@ -50,8 +53,6 @@ public:
   }
 
 private:
-  typedef std::map< std::string, std::vector<std::string> > Textvars_t;
-
   Int_t Substitute( std::vector<std::string>& lines, bool do_multi ) const;
   
   Textvars_t fVars;
