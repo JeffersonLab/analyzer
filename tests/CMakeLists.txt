@@ -8,7 +8,7 @@ if(Catch2_VERSION VERSION_LESS 2)
 endif()
 
 # Sources and headers
-set(SRC ArrayRTTI_t.cxx Formula_t.cxx TestsSetup_t.cxx
+set(SRC ArrayRTTI_t.cxx Formula_t.cxx Textvars_t.cxx TestsSetup_t.cxx
   ArrayRTTI.cxx UnitTest.cxx)
 # string(REPLACE .cxx .h HDR "${SRC}")
 set(HDR ArrayRTTI.h UnitTest.h)
