@@ -98,7 +98,13 @@ void THaCodaData::staterr(const char* tried_to, Int_t status) const
     break;
 #endif
   default:
-    if( errno != 0 )
+    // Some EVIO calls (e.g. evRead) return errno directly on read errors.
+    if( status > 0 && status < 256 ) {
+      // Use strerror(status) directly; errno may have been cleared before the call.
+      cerr << "System I/O error on " << filename << ": "
+	   << strerror(status) << " (errno = " << status << ")" << endl;
+    }
+    else if( errno != 0 )
       perror(filename.Data());
     else
       cerr << "Unknown error " << hex << status << dec << endl;

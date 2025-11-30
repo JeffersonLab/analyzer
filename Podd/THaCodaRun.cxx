@@ -142,6 +142,13 @@ Int_t THaCodaRun::ReadEvent()
   // Read one event from CODA file.
 
   assert( fCodaData );
+
+  // If the CODA data object is missing or its source is already bad,
+  // treat this as a fatal read error at the run level.
+  if( !fCodaData || !fCodaData->isOpen() || !fCodaData->isGood() ) {
+    return THaRunBase::READ_FATAL;
+  }
+  
   return ReturnCode( fCodaData->codaRead() );
 }
 
