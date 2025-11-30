@@ -99,7 +99,7 @@ Int_t THaCodaRun::GetCodaVersion() // NOLINT(misc-no-recursion)
     }
     return GetDataVersion();
   }
-  assert(fCodaData);
+  if( !fCodaData ) return -1;
   return (fDataVersion = fCodaData->getCodaVersion());
 }
 
@@ -125,15 +125,13 @@ const UInt_t* THaCodaRun::GetEvBuffer() const
   // Return address of the event buffer allocated and filled
   // by fCodaData->codaRead()
 
-  assert( fCodaData );
-  return fCodaData->getEvBuffer();
+  return fCodaData ? fCodaData->getEvBuffer() : nullptr;
 }
 
 //_____________________________________________________________________________
 Bool_t THaCodaRun::IsOpen() const
 {
-  assert( fCodaData );
-  return fCodaData->isOpen();
+  return fCodaData && fCodaData->isOpen();
 }
 
 //_____________________________________________________________________________
@@ -141,7 +139,12 @@ Int_t THaCodaRun::ReadEvent()
 {
   // Read one event from CODA file.
 
-  assert( fCodaData );
+  // If the CODA data object is missing or its source is already bad,
+  // treat this as a fatal read error at the run level.
+  if( !fCodaData || !fCodaData->isOpen() || !fCodaData->isGood() ) {
+    return THaRunBase::READ_FATAL;
+  }
+
   return ReturnCode( fCodaData->codaRead() );
 }
 
