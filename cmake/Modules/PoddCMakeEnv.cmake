@@ -89,20 +89,31 @@ function(get_target_definitions TARGET DEFINES)
 endfunction(get_target_definitions)
 
 #----------------------------------------------------------------------------
-# Set project's CXX level if no "-std=xxx" flag given in CXX_FLAGS
-macro(set_cxx_std CXX_FLAGS)
-  string(REGEX MATCH "(^| +)-std=([^ ]*)\\+\\+(..)" std_flag "${CXX_FLAGS}")
+# Set project's CXX level to "-std=c++NN" given in cxx_flags (assumed to be set
+# by ROOT), provided it is at least min_cxx_std (set below) required for our code.
+# Fail if cxx_flags indicates a standard below min_cxx_std.
+macro(set_cxx_std cxx_flags)
+  set(min_cxx_std 20)
+  string(REGEX MATCH "(^| +)-std=([^ ]*)\\+\\+(..)" std_flag ${${cxx_flags}})
   if(CMAKE_MATCH_COUNT EQUAL 3)
-    if(${CMAKE_MATCH_3} LESS 17)
-      message(FATAL_ERROR "Found ROOT compiled for C++${CMAKE_MATCH_3}, but ${PROJECT_NAME} requires at least C++17")
+    if(${CMAKE_MATCH_3} GREATER_EQUAL ${min_cxx_std})
+      set(CMAKE_CXX_STANDARD ${CMAKE_MATCH_3})
+      # The -std= flag in cxx_flags is now redundant, so drop it.
+      # NB: Compile commands will still be given a second identical "-std=c++NN"
+      # flag from the imported INTERFACE_COMPILE_OPTIONS of the ROOT libraries.
+      # This is annoying but harmless; it should be the same exact flag.
+      string(REPLACE "${std_flag}" "" ${cxx_flags} ${${cxx_flags}})
+    else()
+      message(FATAL_ERROR "Found ROOT compiled for C++${CMAKE_MATCH_3},\
+ but ${PROJECT_NAME} requires at least C++${min_cxx_std}")
     endif()
-    set(CMAKE_CXX_STANDARD ${CMAKE_MATCH_3})
   else()
-    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_STANDARD ${min_cxx_std})
   endif()
   set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
   set(CMAKE_CXX_EXTENSIONS FALSE)
   unset(std_flag)
+  unset(min_cxx_std)
 endmacro(set_cxx_std)
 
 #----------------------------------------------------------------------------
@@ -134,7 +145,7 @@ macro(set_compiler_flags _suggested_flags)
   set(${PROJECT_NAME_UC}_CXX_FLAGS "${${PROJECT_NAME_UC}_CXX_FLAGS} ${_suggested_flags}")
   if(${PROJECT_NAME_UC}_CXX_FLAGS)
     remove_duplicates(${${PROJECT_NAME_UC}_CXX_FLAGS} ${PROJECT_NAME_UC}_CXX_FLAGS)
-    set_cxx_std(${${PROJECT_NAME_UC}_CXX_FLAGS})
+    set_cxx_std(${PROJECT_NAME_UC}_CXX_FLAGS)
   endif()
   string(STRIP "${${PROJECT_NAME_UC}_CXX_FLAGS}" ${PROJECT_NAME_UC}_CXX_FLAGS_LIST)
   separate_arguments(${PROJECT_NAME_UC}_CXX_FLAGS_LIST)
