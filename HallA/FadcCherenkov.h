@@ -31,7 +31,7 @@ protected:
 
   FADCData* fFADCData;  // Pointer to FADC readout data (owned by fDetectorData)
 
-  ClassDef(FadcCherenkov, 1)   // Cherenkov detector with FADC readout
+  ClassDefOverride(FadcCherenkov, 1)   // Cherenkov detector with FADC readout
 };
 
 ////////////////////////////////////////////////////////////////////////////////

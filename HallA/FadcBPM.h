@@ -24,7 +24,7 @@ protected:
   OptUInt_t LoadData( const THaEvData& evdata,
                       const DigitizerHitInfo_t& hitinfo ) override;
 
-  ClassDef(FadcBPM,0)   // Generic BPM class
+  ClassDefOverride(FadcBPM,0)   // Generic BPM class
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -92,12 +92,12 @@ public:
   THaTrack& operator=( const THaTrack& rhs ) = delete;
   THaTrack( THaTrack&& src ) = delete;
   THaTrack& operator=( THaTrack&& rhs ) = delete;
-  virtual ~THaTrack();
+  ~THaTrack() override;
 
   TObject*          Clone(const char* ="") const override;
 
   Int_t             AddCluster( THaCluster* c );
-  void              Clear( Option_t* opt="" );
+  void              Clear( Option_t* opt="" ) override;
   THaTrackingDetector* GetCreator()    const { return fCreator; }
   Int_t             GetNclusters()     const { return fNclusters; }
   Int_t             GetIndex()         const { return fIndex; }
@@ -162,7 +162,7 @@ public:
   bool              HasTarget()        const { return (fType&kHasTarget); }
   bool              HasVertex()        const { return (fType&kHasVertex); }
 
-  void              Print( Option_t* opt="" ) const;
+  void              Print( Option_t* opt="" ) const override;
 
   void              Set( Double_t x, Double_t y, Double_t theta, Double_t phi )
   { fX = x; fY = y; fTheta = theta; fPhi = phi; fType |= kHasFP; }

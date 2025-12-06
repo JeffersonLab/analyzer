@@ -16,11 +16,6 @@
 #include "THaDetMap.h"
 #include <string>
 
-// Silence rootcling warnings from ClassDef macros
-#ifdef __clang__
-#pragma clang diagnostic ignored "-Winconsistent-missing-override"
-#endif
-
 namespace Podd {
 
 //_____________________________________________________________________________
@@ -61,7 +56,7 @@ protected:
   Bool_t  fVarOK;   // Global variables are set up
   Bool_t  fHitDone; // StoreHit called for current hit
 
-  ClassDef(DetectorData, 1)  // Base class for detector raw data
+  ClassDefOverride(DetectorData, 1)  // Base class for detector raw data
 };
 
 //_____________________________________________________________________________
@@ -160,7 +155,7 @@ protected:
     const char* key_prefix = "",
     const char* comment_subst = "" ) override;
 
-  ClassDef(ADCData, 1)  // ADC raw data
+  ClassDefOverride(ADCData, 1)  // ADC raw data
 };
 
 //_____________________________________________________________________________
@@ -201,7 +196,7 @@ protected:
     const char* key_prefix = "",
     const char* comment_subst = "" ) override;
 
-  ClassDef(PMTData, 1)  // Photomultiplier tube raw data (ADC & TDC)
+  ClassDefOverride(PMTData, 1)  // Photomultiplier tube raw data (ADC & TDC)
 };
 
 } // namespace Podd

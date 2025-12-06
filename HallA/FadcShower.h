@@ -31,7 +31,7 @@ protected:
 
   FADCData* fFADCData;  // Pointer to FADC readout data (owned by fDetectorData)
 
-  ClassDef(FadcShower, 1)   // Shower detector with FADC readout
+  ClassDefOverride(FadcShower, 1)   // Shower detector with FADC readout
 };
 
 ////////////////////////////////////////////////////////////////////////////////

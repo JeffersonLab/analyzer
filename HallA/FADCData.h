@@ -97,7 +97,7 @@ protected:
     const char* key_prefix = "",
     const char* comment_subst = "" ) override;
 
-  ClassDef(FADCData,1)  // FADC raw data
+  ClassDefOverride(FADCData,1)  // FADC raw data
 };
 
 //_____________________________________________________________________________

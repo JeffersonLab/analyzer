@@ -21,7 +21,7 @@ public:
 
 protected:
 
-  ClassDef(THaTrackID,0)      // Track ID abstract base class
+  ClassDefOverride(THaTrackID,0)      // Track ID abstract base class
 };
 
 #endif

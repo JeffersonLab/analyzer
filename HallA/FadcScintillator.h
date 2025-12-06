@@ -33,7 +33,7 @@ protected:
   FADCData* fFADCDataL;  // FADC readout data of left-side PMTs
   FADCData* fFADCDataR;  // FADC readout data of right-side PMTs
 
-  ClassDef(FadcScintillator, 1)   // Generic scintillator class
+  ClassDefOverride(FadcScintillator, 1)   // Generic scintillator class
 };
 
 ////////////////////////////////////////////////////////////////////////////////
