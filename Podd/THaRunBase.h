@@ -81,12 +81,24 @@ public:
 		   kPrescales = BIT(3),
                    kDAQInfo   = BIT(4) };
 
-  // DAQ configuration strings (usually database file dumps) from user event
+  // DAQ configuration strings (usually database file dumps) from user events
   size_t               GetNDAQConfig() const;
   UInt_t               GetDAQConfigCrate( size_t i ) const;
   const std::string&   GetDAQConfigString( size_t i ) const;
-  UInt_t               GetDAQConfigTag( size_t i ) const { return GetDAQConfigCrate(i); }
   const std::string&   GetDAQConfigValue( size_t i, const std::string& key ) const;
+  const std::string&   GetDAQConfigValue( const std::string& key ) const {
+    return GetDAQConfigValue(0, key);
+  }
+
+  // For backward compatibility with analyzer 1.7 code
+  [[deprecated("Use GetNDAQConfig()")]]
+  size_t               GetNConfig() const { return GetNDAQConfig(); };
+  [[deprecated("Use GetDAQConfigString(index)")]]
+  const std::string&   GetDAQConfig( size_t i ) const { return GetDAQConfigString(i); }
+  [[deprecated("Use GetDAQConfigValue(key)")]]
+  const std::string&   GetDAQInfo( const std::string& key ) const { return GetDAQConfigValue(key); }
+  [[deprecated("Use GetDAQConfigCrate(index)")]]
+  UInt_t               GetDAQConfigTag( size_t i ) const { return GetDAQConfigCrate(i); }
 
   friend class DAQInfoExtra;    // For schema evolution from v6
 
