@@ -168,14 +168,14 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
 
   // Set up storage for basic detector data
   // Per-event data
-  fDetectorData.clear();
+  fChannelData.clear();
   for( int i = kRight; i <= kLeft; ++i ) {
     auto detdata = make_unique<PMTData>(GetPrefixName(), fTitle, nval);
     // Keep pointers to the elements around for convenient access
     PMTData*& pmtData = (i == kRight) ? fRightPMTs : fLeftPMTs;
     pmtData = detdata.get();
     assert(pmtData->GetSize() - nval == 0);
-    fDetectorData.emplace_back(std::move(detdata));
+    fChannelData.emplace_back(std::move(detdata));
   }
   fPadData.resize(nval);
   fHits.reserve(nval);
@@ -218,7 +218,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   if( err )
     return err;
 
-  // Copy calibration constants to the PMTData in fDetectorData
+  // Copy calibration constants to the PMTData in fChannelData
   for( UInt_t i = 0; i < nval; ++i ) {
     auto& calibR = fRightPMTs->GetCalib(i);
     auto& calibL = fLeftPMTs->GetCalib(i);
@@ -325,7 +325,7 @@ Int_t THaScintillator::DefineVariables( EMode mode )
     return ret;
 
   // Define general detector variables (track crossing coordinates etc.)
-  // Objects in fDetectorData whose variables are not yet set up will be set up
+  // Objects in fChannelData whose variables are not yet set up will be set up
   // as well. Our PMTData have already been initialized above & will be skipped.
   return THaNonTrackingDetector::DefineVariables(mode);
 }
@@ -352,7 +352,7 @@ void THaScintillator::Clear( Option_t* opt )
 //_____________________________________________________________________________
 Int_t THaScintillator::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
-  // Put decoded frontend data into fDetectorData.
+  // Put decoded frontend data into fChannelData.
   // Called from ThaDetectorBase::Decode().
   //
   // hitinfo: channel info (crate/slot/channel/hit/type)

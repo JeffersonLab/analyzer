@@ -66,7 +66,7 @@ Int_t FadcCherenkov::ReadDatabase( const TDatime& date )
   fFADCData = ret.first.get();
 
   // Move data object into the detector data array
-  fDetectorData.emplace_back(std::move(ret.first));
+  fChannelData.emplace_back(std::move(ret.first));
 
   return kOK;
 }
@@ -89,7 +89,7 @@ OptUInt_t FadcCherenkov::LoadData( const THaEvData& evdata,
 //_____________________________________________________________________________
 Int_t FadcCherenkov::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
-  // Put decoded frontend data into fDetectorData. Called from Decode().
+  // Put decoded frontend data into fChannekData. Called from Decode().
 
   // Call StoreHit for the FADC modules first to get updated pedestals
   fFADCData->StoreHit(hitinfo, data);
@@ -99,7 +99,7 @@ Int_t FadcCherenkov::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
   if( FDAT.fPedq == 0 )
     fPMTData->GetCalib(hitinfo).ped = FDAT.fPedestal;
 
-  // Now fill the PMTData in fDetectorData
+  // Now fill the PMTData in fChannelData
   return THaCherenkov::StoreHit(hitinfo, data);
 }
 

@@ -176,11 +176,11 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
 
   fBlockPos.clear(); fBlockPos.resize(nval);
   fClBlk.clear();    fClBlk.reserve(nclbl);
-  fDetectorData.clear();
+  fChannelData.clear();
   auto detdata =
     make_unique<ShowerADCData>(GetPrefixName(), fTitle, nval, fChanMap);
   fADCData = detdata.get();
-  fDetectorData.emplace_back(std::move(detdata));
+  fChannelData.emplace_back(std::move(detdata));
   fIsInit = true;
   assert( fADCData->GetSize() == nval );
 
@@ -250,7 +250,7 @@ Int_t THaShower::DefineVariables( EMode mode )
 {
   // Initialize global variables
 
-  // Set up standard variables, including the objects in fDetectorData
+  // Set up standard variables, including the objects in fChannelData
   Int_t ret = THaPidDetector::DefineVariables(mode);
   if( ret )
     return ret;
@@ -311,7 +311,7 @@ ShowerADCData::GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const
 //_____________________________________________________________________________
 Int_t THaShower::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
-  // Put decoded frontend data into fDetectorData. Used by Decode().
+  // Put decoded frontend data into fChannelData. Used by Decode().
   // hitinfo: channel info (crate/slot/channel/hit/type)
   // data:    data registered in this channel
 

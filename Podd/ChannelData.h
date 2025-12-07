@@ -1,13 +1,13 @@
 //////////////////////////////////////////////////////////////////////////
 //
-// Podd::DetectorData
+// Podd::ChannelData
 //
 // Generic detector data (ADCs and TDCs)
 //
 //////////////////////////////////////////////////////////////////////////
 
-#ifndef PODD_DETECTORDATA_H
-#define PODD_DETECTORDATA_H
+#ifndef PODD_CHANNELDATA_H
+#define PODD_CHANNELDATA_H
 
 #include "TNamed.h"
 #include "DataType.h"  // for Data_t
@@ -19,9 +19,9 @@
 namespace Podd {
 
 //_____________________________________________________________________________
-class DetectorData : public TNamed {
+class ChannelData : public TNamed {
 public:
-  DetectorData() = delete;
+  ChannelData() = delete;
 
   virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data ) = 0;
   virtual Int_t  GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const;
@@ -40,7 +40,7 @@ public:
 
 protected:
   // Only derived classes may construct
-  DetectorData( const char* name, const char* desc );
+  ChannelData( const char* name, const char* desc );
   // For exception message formatting
   static std::string msg( const DigitizerHitInfo_t& hitinfo, const char* txt );
   // Actual DefineVariables implementation, called from DefineVariables
@@ -56,7 +56,7 @@ protected:
   Bool_t  fVarOK;   // Global variables are set up
   Bool_t  fHitDone; // StoreHit called for current hit
 
-  ClassDefOverride(DetectorData, 1)  // Base class for detector raw data
+  ClassDefOverride(ChannelData, 1)  // Base class for detector raw data
 };
 
 //_____________________________________________________________________________
@@ -118,7 +118,7 @@ struct HitCount_t {
 };
 
 //_____________________________________________________________________________
-class ADCData : public DetectorData {
+class ADCData : public ChannelData {
 public:
   ADCData( const char* name, const char* desc, UInt_t nelem );
 
@@ -159,7 +159,7 @@ protected:
 };
 
 //_____________________________________________________________________________
-class PMTData : public DetectorData {
+class PMTData : public ChannelData {
 public:
   PMTData( const char* name, const char* desc, UInt_t nelem );
 
@@ -201,4 +201,4 @@ protected:
 
 } // namespace Podd
 
-#endif //PODD_DETECTORDATA_H
+#endif //PODD_CHANNELDATA_H

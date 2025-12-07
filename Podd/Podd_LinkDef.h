@@ -112,7 +112,7 @@
 #pragma link C++ class Podd::CodaRawDecoder+;
 #pragma link C++ class Podd::InterStageModule+;
 #pragma link C++ class Podd::TimeCorrectionModule+;
-#pragma link C++ class Podd::DetectorData+;
+#pragma link C++ class Podd::ChannelData+;
 #pragma link C++ class Podd::ADCData+;
 #pragma link C++ class Podd::PMTData+;
 #pragma link C++ class Podd::MultiFileRun+;

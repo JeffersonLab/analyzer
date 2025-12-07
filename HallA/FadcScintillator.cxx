@@ -62,7 +62,7 @@ Int_t FadcScintillator::ReadDatabase( const TDatime& date )
     FADCData*& fdat = (i == kRight) ? fFADCDataR : fFADCDataL;
     fdat = ret.first.get();
     assert(fdat->GetSize() - fNelem == 0);
-    fDetectorData.emplace_back(std::move(ret.first));
+    fChannelData.emplace_back(std::move(ret.first));
   }
 
   return kOK;
@@ -114,7 +114,7 @@ OptUInt_t FadcScintillator::LoadData( const THaEvData& evdata,
 Int_t
 FadcScintillator::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
-  // Put decoded frontend data into fDetectorData. Called from Decode().
+  // Put decoded frontend data into fChannelData. Called from Decode().
 
   static_assert(kRight == 0 || kLeft == 0, "kRight or kLeft must be 0");
   assert(fNviews == abs(kLeft - kRight) + 1);
@@ -132,7 +132,7 @@ FadcScintillator::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
     pmtData->GetCalib(hitinfo).ped = FDAT.fPedestal;
   }
 
-  // Now fill the PMTData in fDetectorData
+  // Now fill the PMTData in fChannelData
   return THaScintillator::StoreHit(hitinfo, data);
 }
 

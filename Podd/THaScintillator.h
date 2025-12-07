@@ -8,7 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaNonTrackingDetector.h"
-#include "DetectorData.h"
+#include "ChannelData.h"
 #include <vector>
 #include <set>
 

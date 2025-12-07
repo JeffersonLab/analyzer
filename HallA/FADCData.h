@@ -9,7 +9,7 @@
 #ifndef HALLA_FADCDATA_H
 #define HALLA_FADCDATA_H
 
-#include "DetectorData.h"
+#include "ChannelData.h"
 #include "DataType.h"  // for Data_t
 #include "OptionalType.h"
 #include "THaAnalysisObject.h"   // for enums (EMode etc.)
@@ -66,7 +66,7 @@ public:
 };
 
 //_____________________________________________________________________________
-class FADCData : public Podd::DetectorData {
+class FADCData : public Podd::ChannelData {
 public:
   FADCData( const char* name, const char* desc, Int_t nelem );
 

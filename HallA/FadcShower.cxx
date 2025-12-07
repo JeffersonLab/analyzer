@@ -66,7 +66,7 @@ Int_t FadcShower::ReadDatabase( const TDatime& date )
   fFADCData = ret.first.get();
 
   // Move data object into the detector data array
-  fDetectorData.emplace_back(std::move(ret.first));
+  fChannelData.emplace_back(std::move(ret.first));
 
   return kOK;
 }
@@ -89,7 +89,7 @@ OptUInt_t FadcShower::LoadData( const THaEvData& evdata,
 //_____________________________________________________________________________
 Int_t FadcShower::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
-  // Put decoded frontend data into fDetectorData. Called from Decode().
+  // Put decoded frontend data into fChannelData. Called from Decode().
 
   // Call StoreHit for the FADC modules first to get updated pedestals
   fFADCData->StoreHit(hitinfo, data);
@@ -97,7 +97,7 @@ Int_t FadcShower::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
   if( FDAT.fPedq == 0 )
     fADCData->GetCalib(hitinfo).ped = FDAT.fPedestal;
 
-  // Now fill the PMTData in fDetectorData
+  // Now fill the PMTData in fChannelData
   return THaShower::StoreHit(hitinfo, data);
 }
 

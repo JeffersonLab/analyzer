@@ -10,14 +10,14 @@
 #include "THaAnalysisObject.h"
 #include "THaDetMap.h"
 #include "TVector3.h"
-#include "DetectorData.h"
+#include "ChannelData.h"
 #include <vector>
 #include <memory>
 
 class THaDetectorBase : public THaAnalysisObject {
 public:
-  using VecDetData_t = std::vector<std::unique_ptr<Podd::DetectorData>>;
-  using DetMapPtr_t  = std::unique_ptr<THaDetMap>;
+  using VecChanData_t = std::vector<std::unique_ptr<Podd::ChannelData>>;
+  using DetMapPtr_t   = std::unique_ptr<THaDetMap>;
 
   virtual ~THaDetectorBase();
 
@@ -27,7 +27,7 @@ public:
   virtual Int_t    Decode( const THaEvData& );
   virtual void     Reset( Option_t* opt="" );
 
-  VecDetData_t&    GetDetectorData() { return fDetectorData; }
+  VecChanData_t&   GetChannelData()  { return fChannelData; }
   THaDetMap*       GetDetMap() const { return fDetMap.get(); }
   Int_t            GetNelem()  const { return fNelem; }
   Int_t            GetNviews() const { return fNviews; }
@@ -70,7 +70,7 @@ protected:
   TVector3      fZax;       // Normal to the detector plane
 
   // Generic per-event data (optional)
-  VecDetData_t  fDetectorData;
+  VecChanData_t  fChannelData;
 
   virtual void  DefineAxes( Double_t rotation_angle );
 

@@ -10,7 +10,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaPidDetector.h"
-#include "DetectorData.h"
+#include "ChannelData.h"
 
 class TClonesArray;
 

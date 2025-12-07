@@ -1,10 +1,10 @@
 //////////////////////////////////////////////////////////////////////////
 //
-// Podd::DetectorData
+// Podd::ChannelData
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "DetectorData.h"
+#include "ChannelData.h"
 #include "Decoder.h"
 #include "THaAnalysisObject.h" // For DefineVarsFromList
 
@@ -17,20 +17,20 @@ using Decoder::ChannelType;
 namespace Podd {
 
 //_____________________________________________________________________________
-DetectorData::DetectorData( const char* name, const char* desc )
+ChannelData::ChannelData( const char* name, const char* desc )
   : TNamed(name,desc), fVarOK(false), fHitDone(false)
 {
   // Base class constructor
 }
 
 //_____________________________________________________________________________
-void DetectorData::Clear( Option_t* )
+void ChannelData::Clear( Option_t* )
 {
   ClearHitDone();
 }
 
 //_____________________________________________________________________________
-Int_t DetectorData::GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const
+Int_t ChannelData::GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const
 {
   // Return the 'logical channel' for the hardware channel referenced by
   // 'hitinfo'. The logical channel is the user-facing channel number, the
@@ -44,17 +44,17 @@ Int_t DetectorData::GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const
 
   UInt_t nelem = GetSize();
   if( nelem == 0 )
-    throw logic_error(msg(hitinfo, "DetectorData: bad size. "
+    throw logic_error(msg(hitinfo, "ChannelData: bad size. "
                                    "Should never happen. Call expert."));
   return hitinfo.lchan % static_cast<Int_t>(nelem);
 }
 
 //_____________________________________________________________________________
-Int_t DetectorData::DefineVariables( THaAnalysisObject::EMode mode,
-                                     const char* key_prefix,
-                                     const char* comment_subst )
+Int_t ChannelData::DefineVariables( THaAnalysisObject::EMode mode,
+                                    const char* key_prefix,
+                                    const char* comment_subst )
 {
-  // Define variables for DetectorData and subclasses. The actual work is done
+  // Define variables for ChannelData and subclasses. The actual work is done
   // in the virtual function DefineVariablesImpl.
 
   if( mode == THaAnalysisObject::kDefine && fVarOK )
@@ -69,26 +69,26 @@ Int_t DetectorData::DefineVariables( THaAnalysisObject::EMode mode,
 }
 
 //_____________________________________________________________________________
-Int_t DetectorData::DefineVariablesImpl( THaAnalysisObject::EMode /*mode*/,
-                                         const char* /*key_prefix*/,
-                                         const char* /*comment_subst*/ )
+Int_t ChannelData::DefineVariablesImpl( THaAnalysisObject::EMode /*mode*/,
+                                        const char* /*key_prefix*/,
+                                        const char* /*comment_subst*/ )
 {
   // Define global variables for these detector data. This is the base class
   // version, which currently does not define anything. Derived classes will
-  // typically override this function. (DetectorData without variables would be
+  // typically override this function. (ChannelData without variables would be
   // rather pointless.)
 
   return THaAnalysisObject::kOK;
 }
 
 //_____________________________________________________________________________
-Int_t DetectorData::StdDefineVariables( const RVarDef* vars,
-                                        THaAnalysisObject::EMode mode,
-                                        const char* key_prefix,
-                                        const char* here,
-                                        const char* comment_subst )
+Int_t ChannelData::StdDefineVariables( const RVarDef* vars,
+                                       THaAnalysisObject::EMode mode,
+                                       const char* key_prefix,
+                                       const char* here,
+                                       const char* comment_subst )
 {
-  // Standard implementation of DefineVariables for DetectorData.
+  // Standard implementation of DefineVariables for ChannelData.
   // Avoids code duplication and ensures consistent behavior.
 
   TString prefix = fName + ".";
@@ -100,7 +100,7 @@ Int_t DetectorData::StdDefineVariables( const RVarDef* vars,
 }
 
 //_____________________________________________________________________________
-string DetectorData::msg( const DigitizerHitInfo_t& hitinfo, const char* txt )
+string ChannelData::msg( const DigitizerHitInfo_t& hitinfo, const char* txt )
 {
   // Format message string for exceptions
   ostringstream ostr;
@@ -114,7 +114,7 @@ string DetectorData::msg( const DigitizerHitInfo_t& hitinfo, const char* txt )
 
 //=============================================================================
 ADCData::ADCData( const char* name, const char* desc, UInt_t nelem )
-  : DetectorData(name, desc), fCalib(nelem), fADCs(nelem), fNHits(0)
+  : ChannelData(name, desc), fCalib(nelem), fADCs(nelem), fNHits(0)
 {
   // Constructor. Creates data structures for 'nelem' ADC channels, i.e.
   // each channel is assumed to have one ADC reading plus pedestal-corrected
@@ -126,7 +126,7 @@ ADCData::ADCData( const char* name, const char* desc, UInt_t nelem )
 void ADCData::Clear( Option_t* opt )
 {
   // Clear event-by-event data
-  DetectorData::Clear(opt);
+  ChannelData::Clear(opt);
 
   for( auto& adc : fADCs ) {
     adc.adc_clear();
@@ -206,7 +206,7 @@ Int_t ADCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
   const char* const here = "ADCData::DefineVariables";
 
   // Define variables of the base class, if any
-  Int_t ret = DetectorData::DefineVariablesImpl(mode, key_prefix, comment_subst);
+  Int_t ret = ChannelData::DefineVariablesImpl(mode, key_prefix, comment_subst);
   if( ret )
     return ret;
 
@@ -222,7 +222,7 @@ Int_t ADCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
 
 //=============================================================================
 PMTData::PMTData( const char* name, const char* desc, UInt_t nelem )
-  : DetectorData(name, desc), fCalib(nelem), fPMTs(nelem)
+  : ChannelData(name, desc), fCalib(nelem), fPMTs(nelem)
 {
   // Constructor. Creates data structures for 'nelem' ADC+TDC channels, i.e.
   // each channel is assumed to have one ADC and one TDC reading plus pedestal-
@@ -234,7 +234,7 @@ PMTData::PMTData( const char* name, const char* desc, UInt_t nelem )
 void PMTData::Clear( Option_t* opt )
 {
   // Clear event-by-event data
-  DetectorData::Clear(opt);
+  ChannelData::Clear(opt);
 
   for( auto& pmt : fPMTs ) {
     pmt.clear();
@@ -296,7 +296,7 @@ Int_t PMTData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
   const char* const here = "PMTData::DefineVariables";
 
   // Define variables of the base class, if any
-  Int_t ret = DetectorData::DefineVariablesImpl(mode, key_prefix, comment_subst);
+  Int_t ret = ChannelData::DefineVariablesImpl(mode, key_prefix, comment_subst);
   if( ret )
     return ret;
 
@@ -318,6 +318,6 @@ Int_t PMTData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
 
 } // namespace Podd
 
-ClassImp(Podd::DetectorData)
+ClassImp(Podd::ChannelData)
 ClassImp(Podd::PMTData)
 ClassImp(Podd::ADCData)

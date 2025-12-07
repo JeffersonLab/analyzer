@@ -29,7 +29,7 @@ protected:
   Int_t    DefineVariables( EMode mode = kDefine ) override;
   Int_t    ReadDatabase( const TDatime& date ) override;
 
-  FADCData* fFADCData;  // Pointer to FADC readout data (owned by fDetectorData)
+  FADCData* fFADCData;  // Pointer to FADC readout data (owned by fChannelData)
 
   ClassDefOverride(FadcCherenkov, 1)   // Cherenkov detector with FADC readout
 };

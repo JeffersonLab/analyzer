@@ -8,7 +8,7 @@ set(LIBNAME Podd)
 # Sources and headers (ls -w 96 -x *.cxx; macOS: COLUMNS=96 ls -x *.cxx)
 set(src
   BankData.cxx                 BdataLoc.cxx                 CodaRawDecoder.cxx
-  DAQInfoExtra.cxx             DecData.cxx                  DetectorData.cxx
+  DAQInfoExtra.cxx             DecData.cxx                  ChannelData.cxx
   FileInclude.cxx              FixedArrayVar.cxx            InterStageModule.cxx
   MethodVar.cxx                MultiFileRun.cxx             SeqCollectionMethodVar.cxx
   SeqCollectionVar.cxx         SimDecoder.cxx               THaAnalysisObject.cxx

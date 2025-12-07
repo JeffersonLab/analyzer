@@ -8,7 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaPidDetector.h"
-#include "DetectorData.h"
+#include "ChannelData.h"
 #include <vector>
 
 class TClonesArray;
@@ -75,7 +75,7 @@ protected:
   };
   std::vector<ClusterBlock> fClBlk; // Blocks of main cluster
 
-  ShowerADCData* fADCData; // Convenience pointer to ADC data in fDetectorData
+  ShowerADCData* fADCData; // Convenience pointer to ADC data in fChannelData
 
   virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
   virtual void   PrintDecodedData( const THaEvData& evdata ) const;

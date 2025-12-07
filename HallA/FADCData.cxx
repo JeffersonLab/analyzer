@@ -50,7 +50,7 @@ pair<unique_ptr<FADCData>,Int_t> MakeFADCData( const TDatime& date,
 
 //_____________________________________________________________________________
 FADCData::FADCData( const char* name, const char* desc, Int_t nelem )
-  : DetectorData(name, desc), fFADCData(nelem)
+  : ChannelData(name, desc), fFADCData(nelem)
 {
   // Constructor
 }
@@ -59,7 +59,7 @@ FADCData::FADCData( const char* name, const char* desc, Int_t nelem )
 void FADCData::Clear( Option_t* opt )
 {
   // Clear event-by-event data
-  DetectorData::Clear(opt);
+  ChannelData::Clear(opt);
 
   for( auto& fdat : fFADCData ) {
     fdat.clear();
@@ -233,7 +233,7 @@ Int_t FADCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
   const char* const here = "FADCData::DefineVariables";
 
   // Define variables of the base class, if any.
-  Int_t ret = DetectorData::DefineVariablesImpl(mode, key_prefix, comment_subst);
+  Int_t ret = ChannelData::DefineVariablesImpl(mode, key_prefix, comment_subst);
   if( ret )
     return ret;
 

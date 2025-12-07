@@ -58,22 +58,22 @@ THaDetectorBase::~THaDetectorBase()
 //_____________________________________________________________________________
 void THaDetectorBase::Clear( Option_t* opt )
 {
-  // Clear event-by-event data in fDetectorData objects
+  // Clear event-by-event data in fChannelData objects
   THaAnalysisObject::Clear(opt);
 
-  for( auto& detData : fDetectorData ) {
-    detData->Clear(opt);
+  for( auto& chanData : fChannelData ) {
+    chanData->Clear(opt);
   }
 }
 
 //_____________________________________________________________________________
 void THaDetectorBase::Reset( Option_t* opt )
 {
-  // Clear event-by-event data and calibration data in fDetectorData objects
+  // Clear event-by-event data and calibration data in fChannelData objects
   Clear(opt);
 
-  for( auto& detData : fDetectorData ) {
-    detData->Reset(opt);
+  for( auto& chanData : fChannelData ) {
+    chanData->Reset(opt);
   }
 }
 
@@ -340,15 +340,15 @@ void THaDetectorBase::DataLoadWarning( const DigitizerHitInfo_t& hitinfo,
 //_____________________________________________________________________________
 Int_t THaDetectorBase::DefineVariables( EMode mode )
 {
-  // Define variables. Calls DefineVariables for all objects in fDetectorData
+  // Define variables. Calls DefineVariables for all objects in fChannelData
 
   Int_t ret = THaAnalysisObject::DefineVariables(mode);
   if( ret )
     return ret;
 
-  for( auto& detData : fDetectorData )
-    if( (mode == kDefine) xor detData->IsSetup() )
-      detData->DefineVariables(mode);
+  for( auto& chanData : fChannelData )
+    if( (mode == kDefine) xor chanData->IsSetup() )
+      chanData->DefineVariables(mode);
 
   return kOK;
 }
@@ -356,14 +356,14 @@ Int_t THaDetectorBase::DefineVariables( EMode mode )
 //_____________________________________________________________________________
 Int_t THaDetectorBase::ReadDatabase( const TDatime& date )
 {
-  // Read database. Resets all objects in fDetectorData
+  // Read database. Resets all objects in fChannelData
 
   Int_t status = THaAnalysisObject::ReadDatabase(date);
   if( status != kOK )
     return status;
 
-  for( auto& detData : fDetectorData )
-    detData->Reset();
+  for( auto& chanData : fChannelData )
+    chanData->Reset();
 
   return kOK;
 }
@@ -371,13 +371,13 @@ Int_t THaDetectorBase::ReadDatabase( const TDatime& date )
 //_____________________________________________________________________________
 Int_t THaDetectorBase::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
-  // Put decoded frontend data into fDetectorData. Used by Decode().
+  // Put decoded frontend data into fChannelData. Used by Decode().
   // hitinfo: channel info (crate/slot/channel/hit/type)
   // data:    data registered in this channel
 
-  for( auto& detData : fDetectorData ) {
-    if( !detData->HitDone() )
-      detData->StoreHit(hitinfo, data);
+  for( auto& chanData : fChannelData ) {
+    if( !chanData->HitDone() )
+      chanData->StoreHit(hitinfo, data);
   }
 
   return 0;
@@ -406,10 +406,10 @@ Int_t THaDetectorBase::Decode( const THaEvData& evdata )
   //
   // The default LoadData and StoreData may be enough for simple detectors.
   // The default StoreData sends the data to the StoreData function of all
-  // 'detector data' objects that his detector has placed in fDetectorData.
+  // 'detector data' objects that his detector has placed in fChannelData.
   //
   // For debugging, each detector may define a PrintDecodedData function.
-  // The default version calls Print on all objects in fDetectorData.
+  // The default version calls Print on all objects in fChannelData.
 
   const char* const here = "Decode";
 
@@ -440,14 +440,14 @@ Int_t THaDetectorBase::Decode( const THaEvData& evdata )
       continue;
     }
 
-    // Store hit data (and derived quantities) in fDetectorData.
+    // Store hit data (and derived quantities) in fChannelData.
     // Multi-function modules can load additional data here.
     StoreHit(hitinfo, data.value());
 
     // Clear the hit-done flag which can be used in custom StoreHit methods
     // to reorder module processing
-    for( auto& detData : fDetectorData )
-      detData->ClearHitDone();
+    for( auto& chanData : fChannelData )
+      chanData->ClearHitDone();
 
     // Next active channel
     ++hitIter;

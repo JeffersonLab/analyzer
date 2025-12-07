@@ -262,8 +262,8 @@ Int_t UserDetector::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
   // single-hit hardware, i.e. only one hit per channel. If multiple hits per
   // channel need to be analyzed, the detector class needs to override Decode.
   //
-  // As an alternative to writing a StoreHit method, one can add DetectorData
-  // objects to the fDetectorData vector (which is provided in THaDetectorBase).
+  // As an alternative to writing a StoreHit method, one can add ChannelData
+  // objects to the fChannelData vector (which is provided in THaDetectorBase).
   // This would be done during initialization, typically in ReadDatabase.
 
   // Use the logical detector channel to index the data. The logical channel

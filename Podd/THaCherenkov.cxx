@@ -156,10 +156,10 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
     return err;
   }
 
-  fDetectorData.clear();
+  fChannelData.clear();
   auto detdata = make_unique<PMTData>(GetPrefixName(), fTitle, nval);
   fPMTData = detdata.get();
-  fDetectorData.emplace_back(std::move(detdata));
+  fChannelData.emplace_back(std::move(detdata));
   assert(fPMTData->GetSize() == nval);
 
   // Read calibration parameters
@@ -213,7 +213,7 @@ Int_t THaCherenkov::DefineVariables( EMode mode )
 {
   // Initialize global variables
 
-  // Set up standard variables, including objects in fDetectorData
+  // Set up standard variables, including objects in fChannelData
   Int_t ret = THaPidDetector::DefineVariables(mode);
   if( ret )
     return ret;
@@ -246,7 +246,7 @@ void THaCherenkov::Clear( Option_t* opt )
 //_____________________________________________________________________________
 Int_t THaCherenkov::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
-  // Put decoded frontend data into fDetectorData. Used by Decode().
+  // Put decoded frontend data into fChannelData. Used by Decode().
   // hitinfo: channel info (crate/slot/channel/hit/type)
   // data:    data registered in this channel
 
