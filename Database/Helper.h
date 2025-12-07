@@ -192,17 +192,37 @@ namespace Podd {
     return SINT((((v + (v >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24);
   }
 
-  //_____________________________________________________________________________
-  template <typename VectorElem>
-  void PrintArray( const std::vector<VectorElem>& arr )
+  //___________________________________________________________________________
+  template<typename Container>
+  void PrintArray( const char* name, const Container& c )
   {
-    if( arr.empty() ) {
+    std::cout << name << " = ";
+    if( c.empty() ) {
       std::cout << "(empty)";
     } else {
-      std::copy( arr.begin(), arr.end()-1,
-          std::ostream_iterator<VectorElem>(std::cout, ", ") );
-      std::cout << arr.back();
+      auto end1 = c.end(); --end1;
+      std::copy(c.begin(), end1,
+        std::ostream_iterator<typename Container::value_type>(std::cout, ", "));
+      std::cout << *c.rbegin();
     }
+    std::cout << std::endl;
+  }
+
+  //___________________________________________________________________________
+  // Helper function to print a single field of a structure in a container/range
+  template<typename Container, typename Proj>
+  void PrintArrayField( const char* name, const Container& c, Proj p )
+  {
+    size_t sz = c.size(), k = 0;
+    auto prnt = [sz, &k]( const auto& f ) {
+      std::cout << f;
+      if( ++k < sz ) std::cout << ", ";
+    };
+    std::cout << name << " = ";
+    if( c.empty() )
+      std::cout << "(empty)";
+    else
+      std::ranges::for_each(c, prnt, p);
     std::cout << std::endl;
   }
 
