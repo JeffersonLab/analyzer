@@ -47,7 +47,7 @@ if(NOT TARGET Podd::HallA)
     set(CMAKE_PREFIX_PATH "$ENV{ANALYZER}" "${CMAKE_PREFIX_PATH}")
   endif()
 
-  find_package(Podd 1.7 REQUIRED)
+  find_package(Podd 1.8 REQUIRED)
 endif()
 include(PoddCMakeEnv)
 

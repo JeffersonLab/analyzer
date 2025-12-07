@@ -1,22 +1,19 @@
 Hall A C++ Analyzer Software Development Kit
 ============================================
 
-This is the standard Software Development Kit (SDK) for
-[Hall A](http://hallaweb.jlab.org/) at [Jefferson Lab](http://www.jlab.org).
-This version is compatible with version 1.7 of the analyzer.
-
-21 Apr 2021
+06 Dec 2025
 
 Overview
 --------
 
-This package contains examples of user code for the Hall A analyzer.
-It is intended as a starting point for building your own library of custom,
-experiment-specific analysis modules.
+This is the Software Development Kit (SDK) for the Hall A analyzer
+version 1.8.
+It contains examples of user code intended as a starting point for
+building your own library of custom, experiment-specific analysis modules.
 
-The following examples are included for illustration
-purposes. They do not do particularly interesting work, but do show
-possibly useful programming techniques.
+Following is a list of the included example modules and support files.
+The modules do not do any particularly interesting work, but are designed to
+show possibly useful programming techniques.
 
     UserModule:           new Physics Module
     UserScintillator:     a THaScintillator extended by user code
@@ -42,20 +39,23 @@ possibly useful programming techniques.
 Prerequisites
 -------------
 
-The following packages must be installed to support this SDK
+The system requirements (platform, compiler) are the same as for the
+Hall A analyzer version 1.8. In short, Linux or macOS with a C++20 compiler.
 
-* Hall A analyzer version 1.7
-* ``ROOT`` version 6.
-* ``CMake`` 3.5 or higher. 3.13 or higher recommended.
+The following packages must be installed before using the SDK:
+
+* Analyzer version 1.8, installed in a central location.
+* ``ROOT`` version 6.04 or higher, compiled for C++20.
+* ``CMake`` 3.19 or higher.
 
 The ``$ANALYZER`` environment variable must be set and must point to the root
-directory of the analyzer installation
+directory of the analyzer installation.
 
 ```shell
 echo $ANALYZER
 ```
 
-Be sure that the ``root-config`` script is in your ``PATH``:
+Be sure that the ``root-config`` script is in your ``PATH``.
 
 ```shell
 which root-config
@@ -63,13 +63,10 @@ which root-config
 
 should print the location of the script.
 
-Practically all recent versions of Linux and macOS should work, using the default
-system compiler. The compiler must be same as used for building the analyzer.
-
 Compiling
 ---------
 
-CMake is supported as of analyzer 1.7. For the CMake scripts to work with the SDK,
+For the included CMake script to work with the SDK,
 the analyzer must have been built and installed with CMake as well so that certain
 configuration scripts have been generated.
 Be sure that ``$ANALYZER`` is set correctly to point to the analyzer
@@ -102,10 +99,8 @@ where, as usual, you can add the optional ``-j`` argument for a parallel build
 on ``N`` CPUs. Cleaning the build directory with the ``--clean-first`` option
 should rarely be necessary.
 
-In case of repeated build problems, try completely deleting and recreating the build 
-directory. This may be necessary, for example, when switching to a different analyzer
-installation, a different version of ROOT, a different ``git`` branch that contains
-additional or fewer source files, or similar major environment changes.
+In case of persistent epeated build problems, try completely deleting and
+recreating the build directory.
 
 Installation
 ------------
@@ -180,5 +175,4 @@ them for guidance anymore. They are not required for building a user library.
 Compatibility
 -------------
 
-The examples have been tested with C++ Analyzer 1.7. Earlier analyzer versions will
-not work. Later versions may work, but this is not guaranteed.
+The examples have been tested with C++ Analyzer 1.8.

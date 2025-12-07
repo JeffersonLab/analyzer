@@ -23,6 +23,7 @@
 #include "THaTrack.h"
 #include "TClonesArray.h"
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 
 using namespace std;
@@ -102,9 +103,7 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
   vector<Int_t> detmap;
 
   // Read the database. This may throw exceptions, so we put it in a try block.
-  Int_t err = 0;
-
-  // Automatically adjust the data type
+  Int_t err;
   try {
     // Automatically determine which data type constants correspond to Data_t.
     // This can be ignored/removed if the member variables are hardcoded as
@@ -117,14 +116,13 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
     // associated variable remains unchanged.
     const DBRequest request[] = {
       // Required items
-      { "detmap",    &detmap, kIntV },         // Detector map
-      { "nelem",     &nelem,  kInt,       0, false, -1}, // Number of elements (e.g. PMTs)
+      { .name="detmap",    .var=&detmap, .type=kIntV },                      // Detector map
+      { .name="nelem",     .var=&nelem,  .type=kInt,       .search=-1},      // Number of elements (e.g. PMTs)
       // Optional items
-      { "angle",     &angle,  kDouble,    0, true }, // Rotation angle about y (deg)
-      //== CAUTION: kDoubleV here must match the type of Data_t
-      { "pedestals", &fPed,   kDataTypeV, 0, true }, // Pedestals (optional)
-      { "gains",     &fGain,  kDataTypeV, 0, true }, // Gains (optional)
-      { nullptr }                                    // Last element must be nullptr
+      { .name="angle",     .var=&angle,  .type=kDouble,    .optional=true }, // Rotation angle about y (deg)
+      { .name="pedestals", .var=&fPed,   .type=kDataTypeV, .optional=true }, // Pedestals (optional)
+      { .name="gains",     .var=&fGain,  .type=kDataTypeV, .optional=true }, // Gains (optional)
+      { .name=nullptr }                                                      // Last element must be nullptr
     };
 
     // Read the requested values
@@ -139,12 +137,12 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
   }
   // Catch exceptions here so that we can close the file and clean up
   catch(...) {
-    fclose(file);
+    (void)fclose(file);
     throw; // Just rethrow the exception to exit, unless we have a better idea
   }
 
   // Normal end of reading the database
-  fclose(file);
+  (void)fclose(file);
   if( err != kOK )
     return err;
 
@@ -234,11 +232,11 @@ Int_t UserDetector::DefineVariables( EMode mode )
   // Define (or delete) global variables of this detector
 
   RVarDef vars[] = {
-    { "nhit",  "Number of hits",  "GetNhits()" },
-    { "chan",  "Channel number",  "fEventData.fChannel" },
-    { "adc",   "Raw ADC value",   "fEventData.fRawADC" },
-    { "adc_c", "Calibrated ADC",  "fEventData.fCalADC" },
-    { nullptr }
+    { .name="nhit",  .desc="Number of hits",  .def="GetNhits()" },
+    { .name="chan",  .desc="Channel number",  .def="fEventData.fChannel" },
+    { .name="adc",   .desc="Raw ADC value",   .def="fEventData.fRawADC" },
+    { .name="adc_c", .desc="Calibrated ADC",  .def="fEventData.fCalADC" },
+    { .name=nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }
@@ -311,22 +309,6 @@ Int_t UserDetector::FineProcess( TClonesArray& /* tracks */ )
 }
 
 //_____________________________________________________________________________
-// Helper macro to print a single field of a structure in a std::vector.
-#define PrintArrayField(txt,var,field)           \
-  cout << (txt) << " = ";                        \
-  {                                              \
-     if( (var).empty() )                         \
-       cout << "(empty)";                        \
-     else {                                      \
-       for( auto it = (var).begin();             \
-                 it != (var).end(); ++it ) {     \
-         cout << (*it).field;                    \
-         if( it+1 != (var).end() ) cout << ", "; \
-       }                                         \
-     }                                           \
-  } cout << endl;
-
-//_____________________________________________________________________________
 void UserDetector::Print( Option_t* opt ) const
 {
   // Print current configuration
@@ -336,12 +318,12 @@ void UserDetector::Print( Option_t* opt ) const
   THaDetector::Print(opt);
   cout << "detmap = "; fDetMap->Print();
   cout << "nelem = " << fNelem << endl;
-  cout << "pedestals = "; PrintArray( fPed );
-  cout << "gains = ";     PrintArray( fGain );
-  cout << "nhits = " << fEventData.size() << endl;
-  PrintArrayField("channel", fEventData, fChannel)
-  PrintArrayField("rawadc", fEventData, fRawADC)
-  PrintArrayField("coradc", fEventData, fCalADC)
+  PrintArray("pedestals", fPed);
+  PrintArray("gains", fGain);
+  cout << "nhits = " << GetNhits() << endl;
+  PrintArrayField("channel", fEventData, &EventData::fChannel);
+  PrintArrayField("rawadc", fEventData, &EventData::fRawADC);
+  PrintArrayField("coradc", fEventData, &EventData::fCalADC);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
