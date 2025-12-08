@@ -417,19 +417,19 @@ Int_t THaDetectorBase::Decode( const THaEvData& evdata )
   bool has_warning = false;
   Int_t nhits = 0;
 
-  auto hitIter = fDetMap->MakeIterator(evdata);
+  auto hitIter = fDetMap->MakeMultiHitIterator(evdata);
   while( hitIter ) {
     const auto& hitinfo = *hitIter;
-    if( hitinfo.nhit > 1 ) {
-      // Multiple hits in a channel (usually noise)
-      // For multifunction modules, assume "hit" is a data word index, so
-      // don't log anything but assume the user simply wants the first word.
-      if( hitinfo.modtype != Decoder::ChannelType::kMultiFunctionADC and
-          hitinfo.modtype != Decoder::ChannelType::kMultiFunctionTDC ) {
-        MultipleHitWarning(hitinfo, here);
-        has_warning = true;
-      }
-    }
+//    if( hitinfo.nhit > 1 ) {
+//      // Multiple hits in a channel (usually noise)
+//      // For multifunction modules, assume "hit" is a data word index, so
+//      // don't log anything but assume the user simply wants the first word.
+//      if( hitinfo.modtype != Decoder::ChannelType::kMultiFunctionADC and
+//          hitinfo.modtype != Decoder::ChannelType::kMultiFunctionTDC ) {
+//        MultipleHitWarning(hitinfo, here);
+//        has_warning = true;
+//      }
+//    }
 
     // Get the data for this hit
     auto data = LoadData(evdata, hitinfo);
