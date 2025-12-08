@@ -48,7 +48,7 @@ endif()
 
 string(REPLACE .cxx .h headers "${src}")
 list(APPEND headers THaGlobals.h)
-set(allheaders ${headers} DataType.h OptionalType.h)
+set(allheaders ${headers} DataType.h OptionalType.h MakeChanDat.h)
 
 #----------------------------------------------------------------------------
 # Generate ha_compiledata.h

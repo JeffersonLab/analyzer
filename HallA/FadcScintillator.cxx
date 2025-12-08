@@ -16,6 +16,7 @@
 #include <cstdlib>
 
 using namespace std;
+using namespace Podd;
 
 namespace HallA {
 
@@ -55,7 +56,7 @@ Int_t FadcScintillator::ReadDatabase( const TDatime& date )
     return err;
 
   for( int i = kRight; i <= kLeft; ++i ) {
-    auto ret = MakeFADCData(date, this);
+    auto ret = MakeChanDat<FADCData>(date, this);
     if( ret.second )
       return ret.second; // Database error
     // Keep pointers to the elements around for convenient access

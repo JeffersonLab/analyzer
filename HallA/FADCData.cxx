@@ -5,7 +5,6 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "FADCData.h"
-#include "THaDetectorBase.h"
 #include "Fadc250Module.h"
 #include "Decoder.h"
 #include <stdexcept>
@@ -14,39 +13,6 @@ using namespace std;
 using namespace Decoder;
 
 namespace HallA {
-
-//_____________________________________________________________________________
-pair<unique_ptr<FADCData>,Int_t> MakeFADCData( const TDatime& date,
-                                               THaDetectorBase* det )
-{
-  // Set up FADC data object and read configuration from the database.
-  // Return value:
-  //  ret.first:   unique_ptr to FADCData object
-  //  ret.second:  return value from ReadConfig (a ReadDatabase EStatus)
-
-  pair<unique_ptr<FADCData>, Int_t> ret(nullptr, THaAnalysisObject::kFileError);
-  if( !det )
-    return ret;
-
-  // Create new FADC data object
-  auto detdata =
-    make_unique<FADCData>(det->GetPrefixName(), det->GetTitle(), det->GetNelem());
-
-  // Initialize FADC configuration parameters, using the detector's database
-  FILE* file = det->OpenFile(date);
-  if( !file )
-    return ret;
-  Int_t err = detdata->ReadConfig(file, date, det->GetPrefix());
-  fclose(file);
-  if( err ) {
-    ret.second = err;
-    return ret;
-  }
-
-  ret.first = std::move(detdata);
-  ret.second = THaAnalysisObject::kOK;
-  return ret;
-}
 
 //_____________________________________________________________________________
 FADCData::FADCData( const char* name, const char* desc, Int_t nelem )
@@ -77,7 +43,8 @@ void FADCData::Reset( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-Int_t FADCData::ReadConfig( FILE* file, const TDatime& date, const char* prefix )
+Int_t
+FADCData::ReadConfig( FILE* file, const TDatime& date, const char* prefix )
 {
   // Load FADC configuration parameters (required) from database
 
@@ -256,3 +223,10 @@ Int_t FADCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
 } // namespace HallA
 
 ClassImp(HallA::FADCData)
+
+//_____________________________________________________________________________
+// Explicit instantiation
+#include "MakeChanDat.h"
+
+template std::pair<std::unique_ptr<HallA::FADCData>, Int_t>
+Podd::MakeChanDat<HallA::FADCData>(const TDatime&, THaDetectorBase* );

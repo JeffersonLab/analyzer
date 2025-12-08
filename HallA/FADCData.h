@@ -86,7 +86,7 @@ public:
   FADCData_t&     GetData( const DigitizerHitInfo_t& hitinfo )
   { return GetData(GetLogicalChannel(hitinfo)); }
 
-  Int_t ReadConfig( FILE* file, const TDatime& date, const char* prefix );
+  Int_t ReadConfig( FILE* file, const TDatime& date, const char* prefix ) override;
 
 protected:
   // Configuration for this module or group of modules

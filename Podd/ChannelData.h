@@ -15,6 +15,11 @@
 #include "VarDef.h"    // for RVarDef
 #include "THaDetMap.h"
 #include <string>
+#include <utility>
+#include <cstdio>      // for FILE
+
+class TDatime;
+class THaDetectorBase;
 
 namespace Podd {
 
@@ -29,13 +34,15 @@ public:
 
   void          Clear( Option_t* ="" ) override;
   virtual void  Reset( Option_t* ="" ) {};
+  virtual Int_t ReadConfig( FILE* file, const TDatime& date, const char* prefix );
   Int_t         DefineVariables(
     THaAnalysisObject::EMode mode = THaAnalysisObject::kDefine,
     const char* key_prefix = "",
     const char* comment_subst = "" );
 
-  Bool_t        HitDone() const { return fHitDone; }
-  Bool_t        IsSetup() const { return fVarOK; }
+  bool          HitDone() const { return fHitDone; }
+  bool          IsInit()  const { return fIsInit; }
+  bool          IsSetup() const { return fVarOK; }
   void          ClearHitDone()  { fHitDone = false; }
 
 protected:
@@ -53,8 +60,9 @@ protected:
                             const char* key_prefix, const char* here,
                             const char* comment_subst );
 
-  Bool_t  fVarOK;   // Global variables are set up
-  Bool_t  fHitDone; // StoreHit called for current hit
+  bool  fIsInit;  // ReadDatabase successfully done
+  bool  fVarOK;   // Global variables are set up
+  bool  fHitDone; // StoreHit called for current hit
 
   ClassDefOverride(ChannelData, 1)  // Base class for detector raw data
 };
@@ -198,6 +206,13 @@ protected:
 
   ClassDefOverride(PMTData, 1)  // Photomultiplier tube raw data (ADC & TDC)
 };
+
+//_____________________________________________________________________________
+// Create and initialize a ChannelData object to be used with detector 'det'.
+// Explicit instantiations provided in implementation files.
+template<class ChanDat>
+std::pair<std::unique_ptr<ChanDat>, Int_t>
+MakeChanDat( const TDatime& date, THaDetectorBase* det );
 
 } // namespace Podd
 

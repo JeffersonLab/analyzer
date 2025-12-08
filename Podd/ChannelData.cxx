@@ -18,7 +18,10 @@ namespace Podd {
 
 //_____________________________________________________________________________
 ChannelData::ChannelData( const char* name, const char* desc )
-  : TNamed(name,desc), fVarOK(false), fHitDone(false)
+  : TNamed(name,desc)
+  , fIsInit(false)
+  , fVarOK(false)
+  , fHitDone(false)
 {
   // Base class constructor
 }
@@ -47,6 +50,15 @@ Int_t ChannelData::GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const
     throw logic_error(msg(hitinfo, "ChannelData: bad size. "
                                    "Should never happen. Call expert."));
   return hitinfo.lchan % static_cast<Int_t>(nelem);
+}
+
+//_____________________________________________________________________________
+Int_t ChannelData::ReadConfig( FILE*, const TDatime&, const char* )
+{
+  // Default implementation of reading the database. Does nothing.
+
+  fIsInit = true;
+  return THaAnalysisObject::kOK;
 }
 
 //_____________________________________________________________________________
@@ -321,3 +333,14 @@ Int_t PMTData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
 ClassImp(Podd::ChannelData)
 ClassImp(Podd::PMTData)
 ClassImp(Podd::ADCData)
+
+//_____________________________________________________________________________
+// Explicit instantiations
+#include "MakeChanDat.h"
+
+template std::pair<std::unique_ptr<Podd::PMTData>, Int_t>
+Podd::MakeChanDat<Podd::PMTData>(const TDatime&, THaDetectorBase* );
+
+template std::pair<std::unique_ptr<Podd::ADCData>, Int_t>
+Podd::MakeChanDat<Podd::ADCData>(const TDatime&, THaDetectorBase* );
+

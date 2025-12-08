@@ -11,6 +11,7 @@
 #include "THaEvData.h"
 
 using namespace std;
+using namespace Podd;
 
 namespace HallA {
 
@@ -58,7 +59,7 @@ Int_t FadcCherenkov::ReadDatabase( const TDatime& date )
     return err;
 
   // Set up a new FADC object, initialized from the database
-  auto ret = MakeFADCData(date, this);
+  auto ret = MakeChanDat<FADCData>(date, this);
   if( ret.second )
     return ret.second;
 
