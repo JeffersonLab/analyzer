@@ -754,13 +754,27 @@ FILE* THaAnalysisObject::OpenRunDBFile( const TDatime& date )
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
-                                 const DBRequest* req, Int_t search ) const {
+                                 const DBRequest* req, Int_t search ) const
+{
   // Member function version of LoadDB, uses current object's fPrefix and
   // class name
 
   TString here(GetClassName());
   here.Append("::LoadDB");
-  return LoadDB(f, date, req, GetPrefix(), search, here.Data());
+  return LoadDatabase(f, date, req, GetPrefix(), search, here.Data());
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
+                                 const vector<DBRequest>& req,
+                                 Int_t search ) const
+{
+  // Member function version of LoadDB, uses current object's fPrefix and
+  // class name
+
+  TString here(GetClassName());
+  here.Append("::LoadDB");
+  return LoadDatabase(f, date, req, GetPrefix(), search, here.Data());
 }
 
 #ifdef WITH_DEBUG

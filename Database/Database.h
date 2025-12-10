@@ -52,6 +52,8 @@ Int_t    LoadDBmatrix( FILE* file, const TDatime& date, const char* key,
                        std::vector<std::vector<T>>& values, UInt_t ncols );
 Int_t    LoadDatabase( FILE* file, const TDatime& date, const DBRequest* request, const char* prefix,
                        Int_t search = 0, const char* here = "Podd::LoadDatabase" );
+Int_t    LoadDatabase( FILE* file, const TDatime& date, const std::vector<DBRequest>& request,
+                       const char* prefix, Int_t search = 0, const char* here = "Podd::LoadDatabase" );
 Int_t    SeekDBdate( FILE* file, const TDatime& date, Bool_t end_on_tag = false );
 Int_t    SeekDBconfig( FILE* file, const char* tag, const char* label = "config",
                        Bool_t end_on_tag = false );

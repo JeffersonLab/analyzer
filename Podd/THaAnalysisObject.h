@@ -78,6 +78,13 @@ public:
   {
     return Podd::LoadDatabase(file, date, request, prefix, search, here);
   }
+  static Int_t    LoadDB( FILE* file, const TDatime& date,
+                          const std::vector<DBRequest>& request,
+                          const char* prefix, Int_t search = 0,
+                          const char* here = "THaAnalysisObject::LoadDB" )
+  {
+    return Podd::LoadDatabase(file, date, request, prefix, search, here);
+  }
 
   // Geometry utility functions
   static  void    GeoToSph( Double_t  th_geo, Double_t  ph_geo,
@@ -145,6 +152,9 @@ protected:
   virtual const char*  ClassNameHere( const char* ) const;
           Int_t        LoadDB( FILE* f, const TDatime& date,
 			       const DBRequest* req, Int_t search = 0 ) const;
+          Int_t        LoadDB( FILE* f, const TDatime& date,
+			       const std::vector<DBRequest>& req,
+                               Int_t search = 0 ) const;
           void         MakePrefix( const char* basename );
   virtual void         MakePrefix();
   virtual Int_t        ReadDatabase( const TDatime& date );
@@ -153,6 +163,7 @@ protected:
 
 #ifdef WITH_DEBUG
   void DebugPrint( const DBRequest* list ) const;
+  void DebugPrint( const std::vector<DBRequest>& list ) const;
 
   template <typename T>  // available for Double_t, Float_t, UInt_t and Int_t
   static void WriteValue( T val, int p=0, int w=5 );

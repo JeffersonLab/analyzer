@@ -22,7 +22,6 @@
 #include <cctype>    // for isspace
 #include <cstring>
 #include <cstdlib>   // for strtod, strtol etc.
-#include <iterator>  // for std::distance
 #include <ctime>     // for struct tm
 #include <limits>
 #include <algorithm>
@@ -229,10 +228,12 @@ FILE* OpenDBFile( const char* name, const TDatime& date, const char* here,
 
   // Ensure input is sane
   openpath.clear();
-  if( !name || !*name )
-    return nullptr;
   if( !here )
     here = "";
+  if( !name || !*name ) {
+    ::Error(here, "no file name given");
+    return nullptr;
+  }
   if( !filemode )
     filemode = "r";
 
@@ -694,6 +695,7 @@ err:
   return found ? 0 : 1;
 }
 
+//_____________________________________________________________________________
 namespace {
 
 //_____________________________________________________________________________
@@ -988,7 +990,24 @@ Int_t LoadDatabase( FILE* f, const TDatime& date, const DBRequest* req,
                     const char* prefix, Int_t search, const char* here )
 {
   // Load a list of parameters from the database file 'f' according to
-  // the contents of the 'req' structure (see VarDef.h).
+  // the contents of the C-style array 'req' of requests (see VarDef.h).
+  if( !req ) {
+    ::Warning(::Here(here, prefix),
+              "Database request is NULL. Nothing loaded.");
+    return 0;
+  }
+  const auto* endp = req;
+  while( endp->name ) ++endp;
+  vector<DBRequest> vreq{req, endp};
+  return LoadDatabase(f, date, vreq, prefix, search, here);
+}
+
+//_____________________________________________________________________________
+Int_t LoadDatabase( FILE* f, const TDatime& date, const vector<DBRequest>& req,  // NOLINT(misc-no-recursion)
+                    const char* prefix, Int_t search, const char* here )
+{
+  // Load a list of parameters from the database file 'f' according to
+  // the list of requests 'req' (see VarDef.h).
 
   if( !f ) {
     ::Error(::Here(here, prefix),
@@ -996,178 +1015,170 @@ Int_t LoadDatabase( FILE* f, const TDatime& date, const DBRequest* req,
             "Make sure to check for success after opening DB file.");
     return -255;
   }
-  if( !req ) {
-    ::Warning(::Here(here, prefix),
-            "Database request is NULL. Nothing loaded.");
-    return 0;
-  }
   if( !prefix ) prefix = "";
   Int_t ret = 0;
   if( loaddb_depth++ == 0 )
     loaddb_prefix = prefix;
 
-  const DBRequest* item = req;
-  while( item->name ) {
-    if( item->var ) {
-      string keystr = prefix;
-      keystr.append(item->name);
-      UInt_t nelem = item->nelem;
-      const char* key = keystr.c_str();
-      switch( item->type ) {
+  for( Int_t idx = -1; const auto item : req ) {
+    ++idx;
+    if( !item.var )
+      continue;
+    string keystr = prefix;
+    keystr.append(item.name);
+    UInt_t nelem = item.nelem;
+    const char* key = keystr.c_str();
+    switch( item.type ) {
       case kDouble:
-        ret = load_and_assign<Double_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign<Double_t>(f, date, key, item.var, nelem);
         break;
       case kFloat:
-        ret = load_and_assign<Float_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign<Float_t>(f, date, key, item.var, nelem);
         break;
       case kLong:
-        ret = load_and_assign<Long64_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign<Long64_t>(f, date, key, item.var, nelem);
         break;
       case kULong:
-        ret = load_and_assign<ULong64_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign<ULong64_t>(f, date, key, item.var, nelem);
         break;
       case kInt:
-        ret = load_and_assign<Int_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign<Int_t>(f, date, key, item.var, nelem);
         break;
       case kUInt:
-        ret = load_and_assign<UInt_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign<UInt_t>(f, date, key, item.var, nelem);
         break;
       case kShort:
-        ret = load_and_assign<Short_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign<Short_t>(f, date, key, item.var, nelem);
         break;
       case kUShort:
-        ret = load_and_assign<UShort_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign<UShort_t>(f, date, key, item.var, nelem);
         break;
       case kChar:
-        ret = load_and_assign<Char_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign<Char_t>(f, date, key, item.var, nelem);
         break;
       case kByte:
-        ret = load_and_assign<Byte_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign<Byte_t>(f, date, key, item.var, nelem);
         break;
       case kString:
-        ret = LoadDBvalue(f, date, key, *((string*)item->var));
+        ret = LoadDBvalue(f, date, key, *((string*)item.var));
         break;
       case kTString:
-        ret = LoadDBvalue(f, date, key, *((TString*)item->var));
+        ret = LoadDBvalue(f, date, key, *((TString*)item.var));
         break;
       case kFloatV:
-        ret = load_and_assign_vector<Float_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign_vector<Float_t>(f, date, key, item.var, nelem);
         break;
       case kDoubleV:
-        ret = load_and_assign_vector<Double_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign_vector<Double_t>(f, date, key, item.var, nelem);
         break;
       case kIntV:
-        ret = load_and_assign_vector<Int_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign_vector<Int_t>(f, date, key, item.var, nelem);
         break;
       case kFloatM:
-        ret = load_and_assign_matrix<Float_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign_matrix<Float_t>(f, date, key, item.var, nelem);
         break;
       case kDoubleM:
-        ret = load_and_assign_matrix<Double_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign_matrix<Double_t>(f, date, key, item.var, nelem);
         break;
       case kIntM:
-        ret = load_and_assign_matrix<Int_t>(f, date, key, item->var, nelem);
+        ret = load_and_assign_matrix<Int_t>(f, date, key, item.var, nelem);
         break;
       default:
         ret = -2;
         break;
-      }
-
-      if( ret == 0 ) {  // Key found -> next item
-        goto nextitem;
-      } else if( ret > 0 ) {  // Key not found
-        // If searching specified, either for this key or globally, retry
-        // finding the key at the next level up along the name tree. Name
-        // tree levels are defined by dots (".") in the prefix. The top
-        // level is 1 (where prefix = "").
-        // Example: key = "nw", prefix = "L.vdc.u1", search = 1, then
-        // search for:  "L.vdc.u1.nw" -> "L.vdc.nw" -> "L.nw" -> "nw"
-        //
-        // Negative values of 'search' mean search up relative to the
-        // current level by at most abs(search) steps, or up to top level.
-        // Example: key = "nw", prefix = "L.vdc.u1", search = -1, then
-        // search for:  "L.vdc.u1.nw" -> "L.vdc.nw"
-
-        // per-item search level overrides global one
-        Int_t newsearch = (item->search != 0) ? item->search : search;
-        if( newsearch != 0 && *prefix ) {
-          string newprefix(prefix);
-          Int_t newlevel = ChopPrefix(newprefix) + 1;
-          if( newsearch < 0 || newlevel >= newsearch ) {
-            DBRequest newreq[2];
-            newreq[0] = *item;
-            memset(newreq + 1, 0, sizeof(DBRequest));
-            newreq->search = 0;
-            if( newsearch < 0 )
-              newsearch++;
-            ret = LoadDatabase(f, date, newreq, newprefix.c_str(), newsearch, here);
-            // If error, quit here. Error message printed at lowest level.
-            if( ret != 0 )
-              break;
-            goto nextitem;  // Key found and ok
-          }
-        }
-        if( item->optional )
-          ret = 0;
-        else {
-          if( item->descript ) {
-            ::Error(::Here(here, loaddb_prefix.c_str()),
-                    R"/(Required key "%s" (%s) missing in the database.)/",
-                    key, item->descript);
-          } else {
-            ::Error(::Here(here, loaddb_prefix.c_str()),
-                    R"(Required key "%s" missing in the database.)", key);
-          }
-          // For missing keys, the return code is the index into the request
-          // array + 1. In this way the caller knows which key is missing.
-          ret = 1 + static_cast<Int_t>(std::distance(req, item));
-          break;
-        }
-      } else if( ret == -1 ) {  // errno != 0
-        ::Error(::Here(here, loaddb_prefix.c_str()),
-                R"(Key "%s": File read error in %s )",
-                key, errtxt.c_str());
-      } else if( ret == -2 ) {  // Unsupported type
-        if( item->type >= kDouble && item->type <= kObject2P )
-          ::Error(::Here(here, loaddb_prefix.c_str()),
-                  R"(Key "%s": Reading of data type "%s" not implemented)",
-                  key, Vars::GetEnumName(item->type));
-        else
-          ::Error(::Here(here, loaddb_prefix.c_str()),
-                  R"/(Key "%s": Reading of data type "(#%d)" not implemented)/",
-                  key, item->type);
-        break;
-      } else if( ret == -128 ) {  // Line too long
-        ::Error(::Here(here, loaddb_prefix.c_str()),
-                R"(Key "%s": Text line too long. Fix the database!\n"%s...")",
-                key, errtxt.c_str());
-        break;
-      } else if( ret == -129 ) {  // Matrix ncols mismatch
-        ::Error(::Here(here, loaddb_prefix.c_str()),
-                R"(Key "%s": Number of matrix elements not evenly divisible)"
-                R"(by requested number of columns. Fix the database!\n"%s...")",
-                key, errtxt.c_str());
-        break;
-      } else if( ret == -130 ) {  // Vector/array size mismatch
-        ::Error(::Here(here, loaddb_prefix.c_str()),
-                R"(Key "%s": Incorrect number of array elements found. )"
-                "%u requested, %u found. Fix database.", key,
-                item->nelem, nelem);
-        break;
-      } else if( ret == -131 ) {  // Error converting string to numerical value
-        ::Error(::Here(here, loaddb_prefix.c_str()),
-                R"(Key "%s": Numerical conversion error: %s. )",
-                key, errtxt.c_str());
-        break;
-      } else {  // other ret < 0: unexpected zero pointer etc.
-        ::Error(::Here(here, loaddb_prefix.c_str()),
-                R"(Program error %d when trying to read database key "%s". )"
-                "CALL EXPERT!", ret, key);
-        break;
-      }
     }
-nextitem:
-    item++;
+
+    if( ret == 0 ) {  // Key found -> next item
+      continue;
+    } else if( ret > 0 ) {  // Key not found
+      // If searching specified, either for this key or globally, retry
+      // finding the key at the next level up along the name tree. Name
+      // tree levels are defined by dots (".") in the prefix. The top
+      // level is 1 (where prefix = "").
+      // Example: key = "nw", prefix = "L.vdc.u1", search = 1, then
+      // search for:  "L.vdc.u1.nw" -> "L.vdc.nw" -> "L.nw" -> "nw"
+      //
+      // Negative values of 'search' mean search up relative to the
+      // current level by at most abs(search) steps, or up to top level.
+      // Example: key = "nw", prefix = "L.vdc.u1", search = -1, then
+      // search for:  "L.vdc.u1.nw" -> "L.vdc.nw"
+
+      // per-item search level overrides global one
+      Int_t newsearch = (item.search != 0) ? item.search : search;
+      if( newsearch != 0 && *prefix ) {
+        string newprefix(prefix);
+        Int_t newlevel = ChopPrefix(newprefix) + 1;
+        if( newsearch < 0 || newlevel >= newsearch ) {
+          vector<DBRequest> newreq{item};
+          newreq[0].search = 0;
+          if( newsearch < 0 )
+            newsearch++;
+          ret = LoadDatabase(f, date, newreq, newprefix.c_str(),
+                             newsearch, here);
+          // If error, quit here. Error message printed at lowest level.
+          if( ret != 0 )
+            break;
+          continue;  // Key found and ok
+        }
+      }
+      if( item.optional )
+        ret = 0;
+      else {
+        if( item.descript ) {
+          ::Error(::Here(here, loaddb_prefix.c_str()),
+                  R"/(Required key "%s" (%s) missing in the database.)/",
+                  key, item.descript);
+        } else {
+          ::Error(::Here(here, loaddb_prefix.c_str()),
+                  R"(Required key "%s" missing in the database.)", key);
+        }
+        // For missing keys, the return code is the index into the request
+        // array + 1. In this way the caller knows which key is missing.
+        ret = 1 + idx;
+        break;
+      }
+    } else if( ret == -1 ) {  // errno != 0
+      ::Error(::Here(here, loaddb_prefix.c_str()),
+              R"(Key "%s": File read error in %s )",
+              key, errtxt.c_str());
+    } else if( ret == -2 ) {  // Unsupported type
+      if( item.type >= kDouble && item.type <= kObject2P )
+        ::Error(::Here(here, loaddb_prefix.c_str()),
+                R"(Key "%s": Reading of data type "%s" not implemented)",
+                key, Vars::GetEnumName(item.type));
+      else
+        ::Error(::Here(here, loaddb_prefix.c_str()),
+                R"/(Key "%s": Reading of data type "(#%d)" not implemented)/",
+                key, item.type);
+      break;
+    } else if( ret == -128 ) {  // Line too long
+      ::Error(::Here(here, loaddb_prefix.c_str()),
+              R"(Key "%s": Text line too long. Fix the database!\n"%s...")",
+              key, errtxt.c_str());
+      break;
+    } else if( ret == -129 ) {  // Matrix ncols mismatch
+      ::Error(::Here(here, loaddb_prefix.c_str()),
+              R"(Key "%s": Number of matrix elements not evenly divisible)"
+              R"(by requested number of columns. Fix the database!\n"%s...")",
+              key, errtxt.c_str());
+      break;
+    } else if( ret == -130 ) {  // Vector/array size mismatch
+      ::Error(::Here(here, loaddb_prefix.c_str()),
+              R"(Key "%s": Incorrect number of array elements found. )"
+              "%u requested, %u found. Fix database.", key,
+              item.nelem, nelem);
+      break;
+    } else if( ret == -131 ) {  // Error converting string to numerical value
+      ::Error(::Here(here, loaddb_prefix.c_str()),
+              R"(Key "%s": Numerical conversion error: %s. )",
+              key, errtxt.c_str());
+      break;
+    } else {  // other ret < 0: unexpected zero pointer etc.
+      ::Error(::Here(here, loaddb_prefix.c_str()),
+              R"(Program error %d when trying to read database key "%s". )"
+              "CALL EXPERT!", ret, key);
+      break;
+    }
   }
   if( --loaddb_depth == 0 )
     loaddb_prefix.clear();
