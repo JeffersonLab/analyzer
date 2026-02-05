@@ -373,30 +373,35 @@ Int_t IsDBkey( const string& line, const char* key, string& text )
   // 'text' is not changed unless a valid key is found.
   //
   // Note: By construction in ReadDBline, 'line' is not empty, any comments
-  // starting with '#' have been removed, and trailing whitespace has been
-  // trimmed. Also, all tabs have been converted to spaces.
+  // starting with '#' have been removed, and leading and trailing whitespace
+  // has been removed. Also, all tabs have been converted to spaces.
 
   // Search for "="
   const char* ln = line.c_str();
   const char* eq = strchr(ln, '=');
-  if( !eq ) return 0;
+  if( !eq )
+    return 0;
   // Disregard "==", "!=", "<=", ">="
-  if( (eq > ln && (*(eq-1) == '!' || *(eq-1) == '<' || *(eq-1) == '>')) || *(eq+1) == '=' )
+  if( (eq > ln && (*(eq-1) == '!' || *(eq-1) == '<' || *(eq-1) == '>')) ||
+      *(eq+1) == '=' )
     return 0;
   // Extract the key
-  while( *ln == ' ' || *ln == '\t' ) ++ln; // find_first_not_of(" \t")
-  assert(ln <= eq);
-  if( ln == eq ) return -1;
+  if( ln == eq )
+    return -1;
   const char* p = eq - 1;
   assert(p >= ln);
-  while( *p == ' ' || *p == '\t' ) --p; // find_last_not_of(" \t")
+  while( *p == ' ' ) --p; // find_last_not_of(" ")
   size_t keylen = p - ln + 1;
-  if( keylen != strlen(key) || strncmp(ln, key, keylen) != 0 ) return -1;
+  if( keylen != strlen(key) || strncmp(ln, key, keylen) != 0 )
+    return -1;
   // Key matches. Now extract the value, trimming leading whitespace.
   ln = eq + 1;
-  assert(!*ln || (*(ln + strlen(ln) - 1) != ' ' &&
-                  *(ln + strlen(ln) - 1) != '\t')); // Trailing space already trimmed
-  while( *ln == ' ' || *ln == '\t' ) ++ln;
+  // Here the C-string at ln must match either regex "^$" or "^.*[^ ]$",
+  // i.e. either the line ends or has text after the '='. Note that trailing
+  // whitespace has already been trimmed, so if there's text, the line ends
+  // with a non-space character.
+  assert(!*ln || *(ln + strlen(ln) - 1) != ' ');
+  while( *ln == ' ' ) ++ln;
   text = ln;
 
   return 1;
