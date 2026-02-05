@@ -302,7 +302,7 @@ Int_t DecData::GetConfigstr( FILE* file, const TDatime& date,
 {
   TString dbkey = loctype.fDBkey;
   dbkey.Prepend( GetPrefix() );
-  return LoadDBvalue( file, date, dbkey, configstr );
+  return LoadDBvalue( file, date, dbkey.Data(), configstr );
 }
 
 //_____________________________________________________________________________

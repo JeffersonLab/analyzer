@@ -578,7 +578,7 @@ Int_t THaAnalysisObject::ReadRunDatabase( const TDatime& date )
     if( !file ) return kFileError;
 
     TString name(fPrefix); name.Append("config");
-    Int_t ret = Podd::LoadDBvalue(file, date, name, fConfig );
+    Int_t ret = LoadDBvalue(file, date, name.Data(), fConfig );
     fclose(file);
 
     if( ret == -1 ) return kFileError;

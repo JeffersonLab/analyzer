@@ -42,13 +42,13 @@ Bool_t   DBDatesDiffer( const TDatime& a, const TDatime& b );
 
 // Access functions for reading key/value pairs from database files
 template<class T> // instantiations available for all supported types (see VarType.h)
-Int_t    LoadDBvalue( FILE* file, const TDatime& date, const char* key, T& value );
-Int_t    LoadDBvalue( FILE* file, const TDatime& date, const char* key, std::string& value );
-Int_t    LoadDBvalue( FILE* file, const TDatime& date, const char* key, TString& value );
+Int_t    LoadDBvalue( FILE* file, const TDatime& date, const std::string& key, T& value );
+Int_t    LoadDBvalue( FILE* file, const TDatime& date, const std::string& key, std::string& value );
+Int_t    LoadDBvalue( FILE* file, const TDatime& date, const std::string& key, TString& value );
 template <class T>
-Int_t    LoadDBarray( FILE* file, const TDatime& date, const char* key, std::vector<T>& values );
+Int_t    LoadDBarray( FILE* file, const TDatime& date, const std::string& key, std::vector<T>& values );
 template <class T>
-Int_t    LoadDBmatrix( FILE* file, const TDatime& date, const char* key,
+Int_t    LoadDBmatrix( FILE* file, const TDatime& date, const std::string& key,
                        std::vector<std::vector<T>>& values, UInt_t ncols );
 // Main database query functions
 struct LoadDBArgs {

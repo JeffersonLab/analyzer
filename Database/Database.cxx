@@ -348,7 +348,7 @@ Int_t IsDBdate( const string& line, Long64_t& date, bool warn = true )
 }
 
 //_____________________________________________________________________________
-Int_t IsDBkey( const string& line, const char* key, string& text )
+Int_t IsDBkey( const string& line, const string& key, string& text )
 {
   // Check if 'line' is of the form "key = value" and, if so, whether the key
   // equals 'key'. Keys are case-sensitive.
@@ -379,7 +379,7 @@ Int_t IsDBkey( const string& line, const char* key, string& text )
   assert(p >= ln);
   while( *p == ' ' ) --p; // find_last_not_of(" ")
   size_t keylen = p - ln + 1;
-  if( keylen != strlen(key) || strncmp(ln, key, keylen) != 0 )
+  if( keylen != key.length() || strncmp(ln, key.c_str(), keylen) != 0 )
     return -1;
   // Key matches. Now extract the value, trimming leading whitespace.
   ln = eq + 1;
@@ -614,7 +614,7 @@ Bool_t DBDatesDiffer( const TDatime& a, const TDatime& b )
 }
 
 //_____________________________________________________________________________
-Int_t LoadDBvalue( FILE* file, const TDatime& datime, const char* key,
+Int_t LoadDBvalue( FILE* file, const TDatime& datime, const string& key,
                    string& value )
 {
   // Load a data value tagged with 'key' from the database 'file'.
@@ -630,7 +630,7 @@ Int_t LoadDBvalue( FILE* file, const TDatime& datime, const char* key,
   //   -1: unexpected error (errno != 0)
   // -255: bad argument
 
-  if( !file || !key ) return -255;
+  if( !file || key.empty() ) return -255;
 
   static const string here("LoadDBvalue");
   constexpr Int_t bufsiz = 256;
@@ -652,7 +652,7 @@ Int_t LoadDBvalue( FILE* file, const TDatime& datime, const char* key,
 
   while( ReadDBline(file, bufp, bufsiz, dbline) != EOF ) {
     if( dbline.empty() ) continue;
-    // Replace text variables in this database line, if any. Multi-valued
+    // Replace text variables in this database line, if any. Multivalued
     // variables are supported here, although they are only sensible on the LHS
     lines.assign(1, dbline);
     if( gHaTextvars )
@@ -689,7 +689,7 @@ err:
 namespace {
 
 //_____________________________________________________________________________
-Int_t conversion_error( const char* key, const string& value )
+Int_t conversion_error( const string& key, const string& value )
 {
   errtxt = key;
   errtxt += " = \"" + value + "\"";
@@ -769,7 +769,7 @@ inline bool is_in_range( S val )
 } // namespace
 
 //_____________________________________________________________________________
-Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key,
+Int_t LoadDBvalue( FILE* file, const TDatime& date, const string& key,
                    TString& value )
 {
   // Locate key in database, convert the text found to TString and return
@@ -784,7 +784,7 @@ Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key,
 
 //_____________________________________________________________________________
 template<class T>
-Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key, T& value )
+Int_t LoadDBvalue( FILE* file, const TDatime& date, const string& key, T& value )
 {
   // Locate key in database, convert the text found to numerical type T,
   // and return result in 'value'.
@@ -810,7 +810,7 @@ Int_t LoadDBvalue( FILE* file, const TDatime& date, const char* key, T& value )
 
 //_____________________________________________________________________________
 template<class T>
-Int_t LoadDBarray( FILE* file, const TDatime& date, const char* key,
+Int_t LoadDBarray( FILE* file, const TDatime& date, const string& key,
                    vector<T>& values )
 {
   // Locate key in database, interpret the key as a whitespace-separated array
@@ -855,7 +855,7 @@ Int_t LoadDBarray( FILE* file, const TDatime& date, const char* key,
 
 //_____________________________________________________________________________
 template<class T>
-Int_t LoadDBmatrix( FILE* file, const TDatime& date, const char* key,
+Int_t LoadDBmatrix( FILE* file, const TDatime& date, const string& key,
                     vector<vector<T>>& values, UInt_t ncols )
 {
   // Read a matrix of values of type T into a vector of vectors.
@@ -888,7 +888,7 @@ namespace {
 //_____________________________________________________________________________
 template<typename T>
 inline
-Int_t load_and_assign( FILE* f, const TDatime& date, const char* key,
+Int_t load_and_assign( FILE* f, const TDatime& date, const string& key,
                        void* dest, UInt_t& nelem )
 {
   Int_t st;
@@ -915,7 +915,7 @@ Int_t load_and_assign( FILE* f, const TDatime& date, const char* key,
 //_____________________________________________________________________________
 template<typename T>
 inline
-Int_t load_and_assign_vector( FILE* f, const TDatime& date, const char* key,
+Int_t load_and_assign_vector( FILE* f, const TDatime& date, const string& key,
                               void* dest, UInt_t& nelem )
 {
   vector<T>& vec = *reinterpret_cast<vector<T>*>(dest);
@@ -930,12 +930,127 @@ Int_t load_and_assign_vector( FILE* f, const TDatime& date, const char* key,
 //_____________________________________________________________________________
 template<typename T>
 inline
-Int_t load_and_assign_matrix( FILE* f, const TDatime& date, const char* key,
+Int_t load_and_assign_matrix( FILE* f, const TDatime& date, const string& key,
                               void* dest, UInt_t nelem )
 {
   vector<vector<T>>& mat = *reinterpret_cast<vector<vector<T>>*>(dest);
   Int_t st = LoadDBmatrix(f, date, key, mat, nelem);
   return st;
+}
+
+//_____________________________________________________________________________
+vector<string> split_string( const string& str, const char delim )
+{
+  vector<string> items;
+  items.reserve(1);
+  size_t pos = 0, dpos = 0;
+  do {
+    dpos = str.find(delim, pos);
+    string item = str.substr( pos, dpos-pos );
+    if( !item.empty() )
+      items.push_back(item);
+    pos = dpos+1;
+  } while( dpos != string::npos );
+
+  return items;
+}
+
+//_____________________________________________________________________________
+void PrintLoadDBerror( Int_t ret, const DBRequest& item, UInt_t nelem,
+                       const string& name_prefix, const string& name,
+                       const char* here )
+{
+  // Report errors from LoadDatabase
+  if( ret == 0 ) return;
+  // A little extra work is necessary for key alternatives
+  auto names = split_string(name, ',');
+  string optkey = name_prefix + names[0];
+  const char* multi = names.size() > 1 ? " alternatives" : "";
+  for( size_t i = 1; i < names.size(); ++i ) {
+    optkey += "," + name_prefix + names[i];
+  }
+  const char* key = optkey.c_str();
+  if( ret > 0 ) {
+    if( item.descript ) {
+      ::Error(::Here(here, loaddb_prefix.c_str()),
+              R"/(Required key%s "%s" (%s) missing in the database.)/",
+              multi, key, item.descript);
+    } else {
+      ::Error(::Here(here, loaddb_prefix.c_str()),
+              R"(Required key%s "%s" missing in the database.)", multi, key);
+    }
+  } else if( ret == -1 ) {
+    // errno != 0
+    ::Error(::Here(here, loaddb_prefix.c_str()),
+            R"(Key%s "%s": File read error in %s )",
+            multi, key, errtxt.c_str());
+  } else if( ret == -2 ) {
+    // Unsupported type
+    if( item.type >= kDouble && item.type <= kObject2P )
+      ::Error(::Here(here, loaddb_prefix.c_str()),
+              R"(Key%s "%s": Reading of data type "%s" not implemented)",
+              multi, key, Vars::GetEnumName(item.type));
+    else
+      ::Error(::Here(here, loaddb_prefix.c_str()),
+              R"/(Key%s "%s": Reading of data type "(#%d)" not implemented)/",
+              multi, key, item.type);
+  } else if( ret == -129 ) {
+    // Matrix ncols mismatch
+    ::Error(::Here(here, loaddb_prefix.c_str()),
+            R"(Key%s "%s": Number of matrix elements not evenly divisible)"
+            R"(by requested number of columns. Fix the database!\n"%s...")",
+            multi, key, errtxt.c_str());
+  } else if( ret == -130 ) {
+    // Vector/array size mismatch
+    ::Error(::Here(here, loaddb_prefix.c_str()),
+            R"(Key%s "%s": Incorrect number of array elements found. )"
+            "%u requested, %u found. Fix database.", multi, key,
+            item.nelem, nelem);
+  } else if( ret == -131 ) {
+    // Error converting string to numerical value
+    ::Error(::Here(here, loaddb_prefix.c_str()),
+            R"(Key%s "%s": Numerical conversion error: %s. )",
+            multi, key, errtxt.c_str());
+  } else {
+    // other ret < 0: unexpected zero pointer etc.
+    ::Error(::Here(here, loaddb_prefix.c_str()),
+            R"(Program error %d when trying to read database key%s "%s". )"
+            "CALL EXPERT!", ret, multi, key);
+  }
+}
+
+//_____________________________________________________________________________
+Int_t KeySearch( const LoadDBArgs& args, const DBRequest& item, Int_t ret ) // NOLINT(*-no-recursion)
+{
+  // If searching specified, either for this key or globally, retry
+  // finding the key at the next level up along the name tree. Name
+  // tree levels are defined by dots (".") in the prefix. The top
+  // level is 1 (where prefix = "").
+  // Example: key = "nw", prefix = "L.vdc.u1", search = 1, then
+  // search for:  "L.vdc.u1.nw" -> "L.vdc.nw" -> "L.nw" -> "nw"
+  //
+  // Negative values of 'search' mean search up relative to the
+  // current level by at most abs(search) steps, or up to top level.
+  // Example: key = "nw", prefix = "L.vdc.u1", search = -1, then
+  // search for:  "L.vdc.u1.nw" -> "L.vdc.nw"
+
+  // per-item search level overrides global one
+  if( Int_t newsearch = (item.search != 0) ? item.search : args.search;
+        newsearch != 0 && args.prefix && *args.prefix ) {
+    string newprefix{args.prefix};
+    if( const Int_t newlevel = ChopPrefix(newprefix) + 1;
+          newsearch < 0 || newlevel >= newsearch ) {
+      LoadDBArgs newargs{args};
+      vector newreq{item};
+      if( newsearch < 0 )
+        newsearch++;
+      newargs.prefix = newprefix.c_str();
+      newargs.search = newsearch;
+      newreq[0].search = 0;
+      ret = LoadDatabase(newargs, newreq);
+    }
+  }
+  return ret;
 }
 
 } // namespace
@@ -980,186 +1095,121 @@ Int_t LoadDatabase( const LoadDBArgs& args, const vector<DBRequest>& req ) // NO
     return -255;
   }
   FILE* file = args.file;
-  const TDatime date = args.date;
+  const TDatime& date = args.date;
   const char* here = args.here;
-  string prefix{args.prefix ? args.prefix : ""};
+  const string prefix{args.prefix ? args.prefix : ""};
   Int_t ret = 0;
   if( loaddb_depth++ == 0 )
     loaddb_prefix = prefix;
 
   Int_t idx = -1;
-  for( const auto item : req ) {
+  for( const auto& item : req ) {
     ++idx;
-    if( !item.var )
+    if( !item.var || !item.name )
       continue;
-    string keystr{prefix};
-    if( args.key_prefix && *args.key_prefix ) {
-      keystr += args.key_prefix;
-      if( !keystr.ends_with('.') )
-        keystr += '.';
+
+    string name_prefix{prefix};
+    if( !prefix.empty() && !name_prefix.ends_with('.') )
+      name_prefix += '.';
+
+    string clean_name{item.name};
+    std::erase(clean_name, ' ');
+    if ( args.key_prefix && *args.key_prefix ) {
+        name_prefix += args.key_prefix;
     }
-    keystr += item.name;
+
     UInt_t nelem = item.nelem;
     void* dest = item.var;
-    const char* key = keystr.c_str();
-    switch( item.type ) {
-      case kDouble:
-        ret = load_and_assign<Double_t>(file, date, key, dest, nelem);
-        break;
-      case kFloat:
-        ret = load_and_assign<Float_t>(file, date, key, dest, nelem);
-        break;
-      case kLong:
-        ret = load_and_assign<Long64_t>(file, date, key, dest, nelem);
-        break;
-      case kULong:
-        ret = load_and_assign<ULong64_t>(file, date, key, dest, nelem);
-        break;
-      case kInt:
-        ret = load_and_assign<Int_t>(file, date, key, dest, nelem);
-        break;
-      case kUInt:
-        ret = load_and_assign<UInt_t>(file, date, key, dest, nelem);
-        break;
-      case kShort:
-        ret = load_and_assign<Short_t>(file, date, key, dest, nelem);
-        break;
-      case kUShort:
-        ret = load_and_assign<UShort_t>(file, date, key, dest, nelem);
-        break;
-      case kChar:
-        ret = load_and_assign<Char_t>(file, date, key, dest, nelem);
-        break;
-      case kByte:
-        ret = load_and_assign<Byte_t>(file, date, key, dest, nelem);
-        break;
-      case kString:
-        ret = LoadDBvalue(file, date, key, *static_cast<string*>(dest));
-        break;
-      case kTString:
-        ret = LoadDBvalue(file, date, key, *static_cast<TString*>(dest));
-        break;
-      case kFloatV:
-        ret = load_and_assign_vector<Float_t>(file, date, key, dest, nelem);
-        break;
-      case kDoubleV:
-        ret = load_and_assign_vector<Double_t>(file, date, key, dest, nelem);
-        break;
-      case kIntV:
-        ret = load_and_assign_vector<Int_t>(file, date, key, dest, nelem);
-        break;
-      case kFloatM:
-        ret = load_and_assign_matrix<Float_t>(file, date, key, dest, nelem);
-        break;
-      case kDoubleM:
-        ret = load_and_assign_matrix<Double_t>(file, date, key, dest, nelem);
-        break;
-      case kIntM:
-        ret = load_and_assign_matrix<Int_t>(file, date, key, dest, nelem);
-        break;
-      default:
-        ret = -2;
-        break;
-    }
-
-    if( ret == 0 ) {  // Key found -> next item
-      continue;
-    } else if( ret > 0 ) {  // Key not found
-      // If searching specified, either for this key or globally, retry
-      // finding the key at the next level up along the name tree. Name
-      // tree levels are defined by dots (".") in the prefix. The top
-      // level is 1 (where prefix = "").
-      // Example: key = "nw", prefix = "L.vdc.u1", search = 1, then
-      // search for:  "L.vdc.u1.nw" -> "L.vdc.nw" -> "L.nw" -> "nw"
-      //
-      // Negative values of 'search' mean search up relative to the
-      // current level by at most abs(search) steps, or up to top level.
-      // Example: key = "nw", prefix = "L.vdc.u1", search = -1, then
-      // search for:  "L.vdc.u1.nw" -> "L.vdc.nw"
-
-      // per-item search level overrides global one
-      if( Int_t newsearch = (item.search != 0) ? item.search : args.search;
-            newsearch != 0 && !prefix.empty() ) {
-        string newprefix{prefix};
-        if( const Int_t newlevel = ChopPrefix(newprefix) + 1;
-              newsearch < 0 || newlevel >= newsearch ) {
-          LoadDBArgs newargs{args};
-          if( newsearch < 0 )
-            newsearch++;
-          newargs.search = newsearch;
-          vector<DBRequest> newreq{item};
-          newreq[0].search = 0;
-          if( (ret = LoadDatabase(newargs, newreq)) != 0 )
-            // If error, quit here. Error message printed at lowest level.
-            break;
-          continue;  // Key found and ok
-        }
+    auto name_candidates = split_string(clean_name, ',');
+    for( const auto& name: name_candidates) {
+      //FIXME: nelem needs to be local in this loop
+      string key = name_prefix + name;
+      switch( item.type ) {
+        case kDouble:
+          ret = load_and_assign<Double_t>(file, date, key, dest, nelem);
+          break;
+        case kFloat:
+          ret = load_and_assign<Float_t>(file, date, key, dest, nelem);
+          break;
+        case kLong:
+          ret = load_and_assign<Long64_t>(file, date, key, dest, nelem);
+          break;
+        case kULong:
+          ret = load_and_assign<ULong64_t>(file, date, key, dest, nelem);
+          break;
+        case kInt:
+          ret = load_and_assign<Int_t>(file, date, key, dest, nelem);
+          break;
+        case kUInt:
+          ret = load_and_assign<UInt_t>(file, date, key, dest, nelem);
+          break;
+        case kShort:
+          ret = load_and_assign<Short_t>(file, date, key, dest, nelem);
+          break;
+        case kUShort:
+          ret = load_and_assign<UShort_t>(file, date, key, dest, nelem);
+          break;
+        case kChar:
+          ret = load_and_assign<Char_t>(file, date, key, dest, nelem);
+          break;
+        case kByte:
+          ret = load_and_assign<Byte_t>(file, date, key, dest, nelem);
+          break;
+        case kString:
+          ret = LoadDBvalue(file, date, key, *static_cast<string*>(dest));
+          break;
+        case kTString:
+          ret = LoadDBvalue(file, date, key, *static_cast<TString*>(dest));
+          break;
+        case kFloatV:
+          ret = load_and_assign_vector<Float_t>(file, date, key, dest, nelem);
+          break;
+        case kDoubleV:
+          ret = load_and_assign_vector<Double_t>(file, date, key, dest, nelem);
+          break;
+        case kIntV:
+          ret = load_and_assign_vector<Int_t>(file, date, key, dest, nelem);
+          break;
+        case kFloatM:
+          ret = load_and_assign_matrix<Float_t>(file, date, key, dest, nelem);
+          break;
+        case kDoubleM:
+          ret = load_and_assign_matrix<Double_t>(file, date, key, dest, nelem);
+          break;
+        case kIntM:
+          ret = load_and_assign_matrix<Int_t>(file, date, key, dest, nelem);
+          break;
+        default:
+          ret = -2;
+          break;
       }
+      if( ret <= 0 ) {
+        // Key found or non-recoverable error -> done with name_candidates
+        break;
+      }
+    } // for(name_candidates)
+
+    if( ret > 0 ) {
+      // Key not found -> try searching up the prefix hierarchy, if requested
+      ret = KeySearch(args, item, ret);
       if( item.optional )
         ret = 0;
-      else {
-        if( item.descript ) {
-          ::Error(::Here(here, loaddb_prefix.c_str()),
-                  R"/(Required key "%s" (%s) missing in the database.)/",
-                  key, item.descript);
-        } else {
-          ::Error(::Here(here, loaddb_prefix.c_str()),
-                  R"(Required key "%s" missing in the database.)", key);
-        }
-        break;
-      }
-    } else if( ret == -1 ) {  // errno != 0
-      ::Error(::Here(here, loaddb_prefix.c_str()),
-              R"(Key "%s": File read error in %s )",
-              key, errtxt.c_str());
-    } else if( ret == -2 ) {  // Unsupported type
-      if( item.type >= kDouble && item.type <= kObject2P )
-        ::Error(::Here(here, loaddb_prefix.c_str()),
-                R"(Key "%s": Reading of data type "%s" not implemented)",
-                key, Vars::GetEnumName(item.type));
-      else
-        ::Error(::Here(here, loaddb_prefix.c_str()),
-                R"/(Key "%s": Reading of data type "(#%d)" not implemented)/",
-                key, item.type);
-      break;
-    } else if( ret == -128 ) {  // Line too long
-      ::Error(::Here(here, loaddb_prefix.c_str()),
-              R"(Key "%s": Text line too long. Fix the database!\n"%s...")",
-              key, errtxt.c_str());
-      break;
-    } else if( ret == -129 ) {  // Matrix ncols mismatch
-      ::Error(::Here(here, loaddb_prefix.c_str()),
-              R"(Key "%s": Number of matrix elements not evenly divisible)"
-              R"(by requested number of columns. Fix the database!\n"%s...")",
-              key, errtxt.c_str());
-      break;
-    } else if( ret == -130 ) {  // Vector/array size mismatch
-      ::Error(::Here(here, loaddb_prefix.c_str()),
-              R"(Key "%s": Incorrect number of array elements found. )"
-              "%u requested, %u found. Fix database.", key,
-              item.nelem, nelem);
-      break;
-    } else if( ret == -131 ) {  // Error converting string to numerical value
-      ::Error(::Here(here, loaddb_prefix.c_str()),
-              R"(Key "%s": Numerical conversion error: %s. )",
-              key, errtxt.c_str());
-      break;
-    } else {  // other ret < 0: unexpected zero pointer etc.
-      ::Error(::Here(here, loaddb_prefix.c_str()),
-              R"(Program error %d when trying to read database key "%s". )"
-              "CALL EXPERT!", ret, key);
+    }
+    if( ret != 0 ) {
+      if( loaddb_depth == 1 )
+        PrintLoadDBerror(ret, item, nelem, name_prefix, clean_name, here);
       break;
     }
-  }
+  } // for(item)
+
   if( --loaddb_depth == 0 ) {
     loaddb_prefix.clear();
     if( ret > 0 ) {
-      // For missing keys, the return code is the index into the request
+      // For missing keys, the final return code is the index into the request
       // array + 1. In this way the caller knows which key is missing.
       ret = 1 + idx;
     }
   }
-
 
   return ret;
 }
@@ -1408,34 +1458,34 @@ Long64_t GetTZOffsetToLocal( UInt_t tloc )
 #ifdef __clang__
 // Clang appears to make implicitly instantiated template functions private
 // symbols when linking optimized code. Prevent this with explicit instantiations.
-template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, Double_t& );
-template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, Float_t& );
-template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, Long64_t& );
-template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, ULong64_t& );
-template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, Int_t& );
-template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, UInt_t& );
-template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, Short_t& );
-template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, UShort_t& );
-template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, Char_t& );
-template Int_t LoadDBvalue(FILE*, const TDatime&, const char*, Byte_t& );
+template Int_t LoadDBvalue( FILE*, const TDatime&, const string&, Double_t&  );
+template Int_t LoadDBvalue( FILE*, const TDatime&, const string&, Float_t&  );
+template Int_t LoadDBvalue( FILE*, const TDatime&, const string&, Long64_t&  );
+template Int_t LoadDBvalue( FILE*, const TDatime&, const string&, ULong64_t&  );
+template Int_t LoadDBvalue( FILE*, const TDatime&, const string&, Int_t&  );
+template Int_t LoadDBvalue( FILE*, const TDatime&, const string&, UInt_t&  );
+template Int_t LoadDBvalue( FILE*, const TDatime&, const string&, Short_t&  );
+template Int_t LoadDBvalue( FILE*, const TDatime&, const string&, UShort_t&  );
+template Int_t LoadDBvalue( FILE*, const TDatime&, const string&, Char_t&  );
+template Int_t LoadDBvalue( FILE*, const TDatime&, const string&, Byte_t&  );
 
-template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<Double_t>&);
-template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<Float_t>&);
-template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<Long64_t>&);
-template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<ULong64_t>&);
-template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<Int_t>&);
-template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<UInt_t>&);
-template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<Short_t>&);
-template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<UShort_t>&);
-template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<Char_t>&);
-template Int_t LoadDBarray( FILE*, const TDatime&, const char*, vector<Byte_t>&);
+template Int_t LoadDBarray( FILE*, const TDatime&, const string&, vector<Double_t>& );
+template Int_t LoadDBarray( FILE*, const TDatime&, const string&, vector<Float_t>& );
+template Int_t LoadDBarray( FILE*, const TDatime&, const string&, vector<Long64_t>& );
+template Int_t LoadDBarray( FILE*, const TDatime&, const string&, vector<ULong64_t>& );
+template Int_t LoadDBarray( FILE*, const TDatime&, const string&, vector<Int_t>& );
+template Int_t LoadDBarray( FILE*, const TDatime&, const string&, vector<UInt_t>& );
+template Int_t LoadDBarray( FILE*, const TDatime&, const string&, vector<Short_t>& );
+template Int_t LoadDBarray( FILE*, const TDatime&, const string&, vector<UShort_t>& );
+template Int_t LoadDBarray( FILE*, const TDatime&, const string&, vector<Char_t>& );
+template Int_t LoadDBarray( FILE*, const TDatime&, const string&, vector<Byte_t>& );
 
-template Int_t LoadDBmatrix( FILE*, const TDatime&, const char*,
-                             vector<vector<Double_t>>&, UInt_t);
-template Int_t LoadDBmatrix( FILE*, const TDatime&, const char*,
-                             vector<vector<Float_t>>&, UInt_t);
-template Int_t LoadDBmatrix( FILE*, const TDatime&, const char*,
-                             vector<vector<Int_t>>&, UInt_t);
+template Int_t LoadDBmatrix( FILE*, const TDatime&, const string&,
+                             vector<vector<Double_t>>&, UInt_t );
+template Int_t LoadDBmatrix( FILE*, const TDatime&, const string&,
+                             vector<vector<Float_t>>&, UInt_t );
+template Int_t LoadDBmatrix( FILE*, const TDatime&, const string&,
+                             vector<vector<Int_t>>&, UInt_t );
 #endif
 
 } // namespace Podd
