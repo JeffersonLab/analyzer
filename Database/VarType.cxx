@@ -131,7 +131,7 @@ const char* GetEnumName( VarType itype )
 {
   // Return enumeration variable name of the given VarType
 
-  assert( (size_t)itype < var_type_info.size() );
+  assert( itype < ssize(var_type_info) );
   assert( itype == var_type_info[itype].type );
   return var_type_info[itype].enum_name;
 }
@@ -141,7 +141,7 @@ const char* GetTypeName( VarType itype )
 {
   // Return C++ name of the given VarType
 
-  assert( (size_t)itype < var_type_info.size() );
+  assert( itype < ssize(var_type_info) );
   assert( itype == var_type_info[itype].type );
   return var_type_info[itype].cpp_name;
 }
@@ -152,7 +152,7 @@ size_t GetTypeSize( VarType itype )
   // Return size of the underlying (innermost) basic data type of each VarType.
   // Returns 0 for object types.
 
-  assert( (size_t)itype < var_type_info.size() );
+  assert( itype < ssize(var_type_info) );
   assert( itype == var_type_info[itype].type );
   return var_type_info[itype].size;
 }

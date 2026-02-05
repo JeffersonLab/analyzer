@@ -42,7 +42,7 @@ void PipeliningModule::Init( const char* configstr )
   Init();  // standard Init
 
   UInt_t debug = 0;
-  vector<ConfigStrReq> req = { { "debug", debug } };
+  vector<ConfigStrReq> req = { { .name = "debug", .data = debug } };
   ParseConfigStr(configstr, req);
 
   fDebug = static_cast<Int_t>(debug);
