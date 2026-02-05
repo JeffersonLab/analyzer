@@ -61,8 +61,8 @@ const char* Here( const char* method, const char* prefix )
       full_prefix.Chop();
     full_prefix.Prepend("(\"");
     full_prefix.Append("\")");
-    if( const char* scope;
-        method && *method && (scope = strstr(method, "::")) ) {
+    if( const char* scope; method && *method &&
+                           (scope = strstr(method, "::")) != nullptr ) {
       assert(scope >= method);
       auto pos = static_cast<Ssiz_t>(std::distance(method, scope));
       txt = method;
@@ -95,7 +95,7 @@ TString& GetObjArrayString( const TObjArray* array, Int_t i )
 //_____________________________________________________________________________
 namespace {
 
-inline fs::path FindDBDir( const char* here )
+fs::path FindDBDir( const char* here )
 {
   // Build search list of directories
   vector<string> dnames;
@@ -133,7 +133,7 @@ vector<string> GetDBFileList( const char* name, const TDatime& date,
   // Return the database file searchlist as a vector of strings.
   // The file names are relative to the current directory.
 
-  static const string defaultdir = "DEFAULT";
+  static constexpr string defaultdir = "DEFAULT";
 
   if( !name || !*name )
     return {};
@@ -157,11 +157,11 @@ vector<string> GetDBFileList( const char* name, const TDatime& date,
   bool have_defaultdir = false;
   for( const auto& direntry: fs::directory_iterator(dbdir) ) {
     if( !direntry.is_directory() ) continue;
-    string item = direntry.path().filename();
-    if( item.length() == 8 &&
-        item.find_first_not_of("0123456789") == string::npos )
+    if( string item = direntry.path().filename();
+          item.length() == 8 &&
+          item.find_first_not_of("0123456789") == string::npos ) {
       time_dirs.push_back(std::move(item));
-    else if( item == defaultdir )
+    } else if( item == defaultdir )
       have_defaultdir = true;
   }
 
@@ -185,8 +185,7 @@ vector<string> GetDBFileList( const char* name, const TDatime& date,
     filename = "db_" + filename;
   // If filename does not end with ".dat", make it so
   fs::path fname{std::move(filename)};
-  auto ext = fname.extension();
-  if( ext == "." )
+  if( auto ext = fname.extension(); ext == "." )
     fname.replace_extension(".dat");
   else if( ext != ".dat" )
     fname += ".dat";
@@ -286,10 +285,10 @@ Int_t IsDBdate( const string& line, Long64_t& date, bool warn = true )
   string ts = line.substr(lbrk+1,rbrk-lbrk-1);
 
   bool err = false;
-  struct tm tmc{};
+  tm tmc{};
   time_t ldate = 0;
-  const char* c = strptime(ts.c_str(), " %Y-%m-%d %H:%M:%S %z ", &tmc);
-  if( c && c == ts.c_str()+ts.size() ) {
+  if( const char* c = strptime(ts.c_str(), " %Y-%m-%d %H:%M:%S %z ", &tmc);
+        c && c == ts.c_str()+ts.size() ) {
 #ifdef __GLIBC__
     // With glibc, strptime does not apply the given time zone offset to the
     // result. It parses the offset and fills the gmtoff field, but does not
@@ -376,8 +375,9 @@ Int_t IsDBkey( const string& line, const char* key, string& text )
   const char* p = eq - 1;
   assert(p >= ln);
   while( *p == ' ' || *p == '\t' ) --p; // find_last_not_of(" \t")
-  size_t keylen = p - ln + 1;
-  if( keylen != strlen(key) || strncmp(ln, key, keylen) != 0 ) return -1;
+  if( size_t keylen = p - ln + 1;
+        keylen != strlen(key) || strncmp(ln, key, keylen) != 0 )
+    return -1;
   // Key matches. Now extract the value, trimming leading whitespace.
   ln = eq + 1;
   assert(!*ln || (*(ln + strlen(ln) - 1) != ' ' &&
@@ -389,15 +389,13 @@ Int_t IsDBkey( const string& line, const char* key, string& text )
 }
 
 //_____________________________________________________________________________
-inline Int_t ChopPrefix( string& s )
+Int_t ChopPrefix( string& s )
 {
   // Remove trailing level from prefix. Example "L.vdc." -> "L."
   // Return remaining number of dots, or zero if empty/invalid prefix
 
-  auto len = s.size();
-  if( len >= 2 ) {
-    auto pos = s.rfind('.', len - 2);
-    if( pos != string::npos ) {
+  if( auto len = s.size(); len >= 2 ) {
+    if( auto pos = s.rfind('.', len-2); pos != string::npos ) {
       s.erase(pos + 1);
       return static_cast<Int_t>(ranges::count(s, '.'));
     }
@@ -407,7 +405,7 @@ inline Int_t ChopPrefix( string& s )
 }
 
 //_____________________________________________________________________________
-inline bool IsTag( const char* buf )
+bool IsTag( const char* buf )
 {
   // Return true if the string in 'buf' matches regexp ".*\[.+\].*",
   // i.e. it is a database section marker.  Generic utility function.
@@ -453,7 +451,7 @@ Int_t GetLine( FILE* file, char* buf, Int_t bufsiz, string& line )
 }
 
 //_____________________________________________________________________________
-inline Bool_t IsAssignment( const string& str )
+Bool_t IsAssignment( const string& str )
 {
   // Check if 'str' has the form of an assignment (<text> = [optional text]).
   // Properly handles comparison operators '==', '!=', '<=', '>='
@@ -474,7 +472,7 @@ inline Bool_t IsAssignment( const string& str )
 }
 
 //_____________________________________________________________________________
-inline void prepare_line( string& linbuf, bool& comment, bool& continued,
+void prepare_line( string& linbuf, bool& comment, bool& continued,
                           bool& leading_space, bool& trailing_space )
 {
   // Search for comment or continuation character.
@@ -486,16 +484,14 @@ inline void prepare_line( string& linbuf, bool& comment, bool& continued,
     comment = true;
     linbuf.clear();
     return;
-  } else {
-    auto pos2 = linbuf.find('\\');
-    pos = std::min(pos, pos2);
-    if( pos != string::npos ) {
-      if( pos == pos2 )
-        continued = true;
-      else
-        comment = true;
-      linbuf.erase(pos);
-    }
+  }
+  if( const auto pos2 = linbuf.find('\\');
+        (pos = std::min(pos, pos2)) != string::npos ) {
+    if( pos == pos2 )
+      continued = true;
+    else
+      comment = true;
+    linbuf.erase(pos);
   }
   // Trim leading and trailing space
   if( !linbuf.empty() ) {
@@ -538,7 +534,7 @@ Int_t ReadDBline( FILE* file, char* buf, Int_t bufsiz, string& line )
           // Skip empty continuation lines and comments in the middle of a
           // continuation block
           continued || comment ) {
-        continue;
+        // continue;
       } else {
         // An empty line, except for a comment or continuation, ends continuation.
         // Since we have data here, and this line is blank and would later be
@@ -626,7 +622,7 @@ Int_t LoadDBvalue( FILE* file, const TDatime& datime, const char* key,
 
   if( !file || !key ) return -255;
 
-  static const string here("LoadDBvalue");
+  static constexpr string here("LoadDBvalue");
   constexpr Int_t bufsiz = 256;
   unique_ptr<char[]> buf{new char[bufsiz]};
   char* const bufp = buf.get();
@@ -742,7 +738,7 @@ bool is_in_range( S )
 template<typename T, typename S> requires (not is_same_v<T, S> and (
   (is_integral_v<T> and is_integral_v<S> ) or
   (is_floating_point_v<T> and is_floating_point_v<S>)))
-inline bool is_in_range( S val )
+bool is_in_range( S val )
 {
   bool ret = (val <= numeric_limits<T>::max());
   if( ret ) {
@@ -814,8 +810,7 @@ Int_t LoadDBarray( FILE* file, const TDatime& date, const char* key,
   static_assert(is_arithmetic_v<T>, "Value argument must be arithmetic");
 
   string text;
-  Int_t err = LoadDBvalue(file, date, key, text);
-  if( err )
+  if( Int_t err = LoadDBvalue(file, date, key, text) )
     return err;
   values.clear();
   // Determine number of elements to avoid resizing the vector multiple times
@@ -829,9 +824,9 @@ Int_t LoadDBarray( FILE* file, const TDatime& date, const char* key,
   }
   values.reserve(nelem);
   const char *p = text.c_str(), *endp = p + text.length();
-  char* end = nullptr;
   // Read the fields into the vector
   do {
+    char* end = nullptr;
     errno = 0;
     // Convert each value depending on the requested type
     auto dval = convert_string<T>(p, end);
@@ -855,8 +850,7 @@ Int_t LoadDBmatrix( FILE* file, const TDatime& date, const char* key,
   // The matrix is rectangular with ncols columns.
 
   vector<T> tmpval;
-  Int_t err = LoadDBarray(file, date, key, tmpval);
-  if( err ) {
+  if( Int_t err = LoadDBarray(file, date, key, tmpval) ) {
     return err;
   }
   if( (tmpval.size() % ncols) != 0 ) {
@@ -868,6 +862,7 @@ Int_t LoadDBmatrix( FILE* file, const TDatime& date, const char* key,
   typename vector<vector<T>>::size_type nrows = tmpval.size() / ncols, irow;
   for( irow = 0; irow < nrows; ++irow ) {
     vector<T> row;
+    row.reserve(ncols);
     for( typename vector<T>::size_type i = 0; i < ncols; ++i ) {
       row.push_back(tmpval.at(i + irow * ncols));
     }
@@ -880,7 +875,6 @@ namespace {
 
 //_____________________________________________________________________________
 template<typename T>
-inline
 Int_t load_and_assign( FILE* f, const TDatime& date, const char* key,
                        void* dest, UInt_t& nelem )
 {
@@ -907,11 +901,10 @@ Int_t load_and_assign( FILE* f, const TDatime& date, const char* key,
 
 //_____________________________________________________________________________
 template<typename T>
-inline
 Int_t load_and_assign_vector( FILE* f, const TDatime& date, const char* key,
                               void* dest, UInt_t& nelem )
 {
-  vector<T>& vec = *reinterpret_cast<vector<T>*>(dest);
+  vector<T>& vec = *static_cast<vector<T>*>(dest);
   Int_t st = LoadDBarray(f, date, key, vec);
   if( st == 0 && nelem > 0 && nelem != vec.size() ) {
     nelem = vec.size();
@@ -922,13 +915,11 @@ Int_t load_and_assign_vector( FILE* f, const TDatime& date, const char* key,
 
 //_____________________________________________________________________________
 template<typename T>
-inline
 Int_t load_and_assign_matrix( FILE* f, const TDatime& date, const char* key,
                               void* dest, UInt_t nelem )
 {
-  vector<vector<T>>& mat = *reinterpret_cast<vector<vector<T>>*>(dest);
-  Int_t st = LoadDBmatrix(f, date, key, mat, nelem);
-  return st;
+  vector<vector<T>>& mat = *static_cast<vector<vector<T>>*>(dest);
+  return LoadDBmatrix(f, date, key, mat, nelem);
 }
 
 } // namespace
@@ -1162,7 +1153,7 @@ Int_t SeekDBconfig( FILE* file, const char* tag, const char* label,
   off_t pos = ftello(file);
   if( pos != -1 ) {
     bool quit = false;
-    const int LEN = 256;
+    constexpr int LEN = 256;
     char buf[LEN];
     while( !errno && !quit && fgets(buf, LEN, file) ) {
       size_t len = strlen(buf);
@@ -1170,8 +1161,8 @@ Int_t SeekDBconfig( FILE* file, const char* tag, const char* label,
       if( buf[len - 1] == '\n' ) buf[len - 1] = 0;  //delete trailing newline
       string line{buf};
       std::erase(line, ' ');
-      auto lbrk = line.find(_label);
-      if( lbrk != string::npos && lbrk + llen < line.size() ) {
+      if( auto lbrk = line.find(_label);
+            lbrk != string::npos && lbrk + llen < line.size() ) {
         auto rbrk = line.find(']', lbrk + llen);
         if( rbrk == string::npos ) continue;
         if( line.substr(lbrk + llen, rbrk - lbrk - llen) == tag ) {
@@ -1221,8 +1212,8 @@ Int_t SeekDBdate( FILE* file, const TDatime& date, Bool_t end_on_tag )
   WithDefaultTZ(Long64_t ldate = date.Convert());
   Long64_t tagdate = 0, prevdate = 0;
 
-  const bool kNoWarn = false;
-  const int LEN = 256;
+  constexpr bool kNoWarn = false;
+  constexpr int LEN = 256;
   char buf[LEN];
 
   off_t foundpos = -1;
@@ -1274,7 +1265,7 @@ Int_t SeekDBdate( istream& istr, const TDatime& date, Bool_t end_on_tag )
 
   WithDefaultTZ(Long64_t ldate = date.Convert());
   Long64_t tagdate = 0, prevdate = 0;
-  const bool kNoWarn = false;
+  constexpr bool kNoWarn = false;
 
   string line;
   decltype(pos) foundpos{-1};

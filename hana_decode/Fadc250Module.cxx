@@ -50,16 +50,17 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "Fadc250Module.h"
-#include "THaSlotData.h"
-#include "TMath.h"
-
-#include <iostream>
-#include <iomanip>
-#include <numeric>
-#include <cassert>
-#include <stdexcept>
-#include <map>
-#include <sstream>
+#include "Module.h"       // for Module
+#include "THaSlotData.h"  // for THaSlotData
+#include "TString.h"      // for TString
+#include <cassert>        // for assert
+#include <fstream>        // for basic_ofstream
+#include <iostream>       // for basic_ostream, operator<<, char_traits, endl
+#include <map>            // for map, operator!=, operator==
+#include <numeric>        // for accumulate
+#include <sstream>        // for basic_ostringstream
+#include <stdexcept>      // for logic_error, overflow_error
+#include <string>         // for basic_string, string
 
 using namespace std;
 
@@ -182,8 +183,7 @@ void Fadc250Module::CheckDecoderStatus() const
 }
 
 //_____________________________________________________________________________
-UInt_t Fadc250Module::GetNumEvents( Decoder::EModuleType emode,
-                                    UInt_t chan ) const
+UInt_t Fadc250Module::GetNumEvents( EModuleType emode, UInt_t chan ) const
 {
   vsiz_t ret = 0;
   switch( emode ) {
@@ -219,8 +219,7 @@ UInt_t Fadc250Module::GetNumEvents( Decoder::EModuleType emode,
 }
 
 //_____________________________________________________________________________
-UInt_t Fadc250Module::GetData( Decoder::EModuleType emode, UInt_t chan,
-                               UInt_t ievent ) const
+UInt_t Fadc250Module::GetData( EModuleType emode, UInt_t chan, UInt_t ievent ) const
 {
   switch( emode ) {
     case kSampleADC:
@@ -626,7 +625,7 @@ UInt_t Fadc250Module::GetNumFadcEvents( UInt_t chan ) const
   // The rest for "modern" firmware
   if( mode == 1 )
     return 1;
-  else if(
+  if(
     (mode == 7 &&
      ((sz = fPulseData[chan].integral.size()) == fPulseData[chan].time.size()) &&
      (fPulseData[chan].pedestal.size() == sz) &&
@@ -657,14 +656,14 @@ UInt_t Fadc250Module::GetNumFadcEvents( UInt_t chan ) const
                   << chan << " = " << sz << endl;
 #endif
     return sz;
-  } else {
-    cout
-      << "ERROR:: Fadc250Module:: GetNumFadcEvents:: FADC not in acceptable mode or data vector sizes do not match for for slot = "
-      << fSlot << ", channel = " << chan << endl;
-    cout << "ERROR:: Fadc250Module:: GetNumFadcEvents:: FADC data potentially corrupt for event " << fadc_data.evt_num
-         << ", PROCEED WITH CAUTION!" << endl;
-    return kMaxUInt;
   }
+  cout << "ERROR:: Fadc250Module:: GetNumFadcEvents:: FADC not in acceptable "
+       << "mode or data vector sizes do not match for for slot = " << fSlot
+       << ", channel = " << chan << endl;
+  cout << "ERROR:: Fadc250Module:: GetNumFadcEvents:: FADC data potentially "
+       << "corrupt for event " << fadc_data.evt_num
+       << ", PROCEED WITH CAUTION!" << endl;
+  return kMaxUInt;
 }
 
 //_____________________________________________________________________________
@@ -681,20 +680,18 @@ UInt_t Fadc250Module::GetNumFadcSamples( UInt_t chan, UInt_t ievent ) const
     if( nsamples == 0 ) {
       //cout << "ERROR:: Fadc250Module:: GetNumFadcSamples:: data vector empty for slot = " << fSlot << ", channel = " << chan << endl;
       return kMaxUInt;
-    } else {
-#ifdef WITH_DEBUG
-      if( fDebugFile )
-        *fDebugFile << "Fadc250Module::GetNumFadcSamples channel "
-                    << chan << ", event " << ievent << " = "
-                    << fPulseData[chan].samples.size() << endl;
-#endif
-      return fPulseData[chan].samples.size();
     }
-  } else {
-    cout << "ERROR:: Fadc250Module:: GetNumFadcSamples:: FADC is not in Mode 1, 8, or 10 for slot = " << fSlot
-         << ", channel = " << chan << endl;
-    return kMaxUInt;
+#ifdef WITH_DEBUG
+    if( fDebugFile )
+      *fDebugFile << "Fadc250Module::GetNumFadcSamples channel "
+          << chan << ", event " << ievent << " = "
+          << fPulseData[chan].samples.size() << endl;
+#endif
+    return fPulseData[chan].samples.size();
   }
+  cout << "ERROR:: Fadc250Module:: GetNumFadcSamples:: FADC is not in Mode 1, "
+       << "8, or 10 for slot = " << fSlot << ", channel = " << chan << endl;
+  return kMaxUInt;
 }
 
 //_____________________________________________________________________________

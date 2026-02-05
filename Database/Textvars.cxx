@@ -109,7 +109,7 @@ vector<string> vsplit( const string& s )
 {
   // Utility function to split a string into whitespace-separated strings
   vector<string> tokens;
-  Podd::Tokenize(s, whtspc, tokens);
+  Tokenize(s, whtspc, tokens);
   return tokens;
 }
 
@@ -303,9 +303,9 @@ Int_t Textvars::Substitute( StrVec_t& lines, bool do_multi ) const
 	const StrVec_t& repl = it->second;
 	assert( !repl.empty() );
 	if( !do_multi && repl.size() > 1 ) {
-          ::Error(here, "multivalue variable %s = %s not supported in this "
-                        "context: \"%s\"", line.substr(pos, ext).c_str(),
-                  ValStr(repl).c_str(), line.c_str());
+          Error(here, "multivalue variable %s = %s not supported in this "
+                "context: \"%s\"", line.substr(pos, ext).c_str(),
+                ValStr(repl).c_str(), line.c_str());
 	  good = false;
 	}
 	if( good ) { // stop replacing once an error has been detected
@@ -321,8 +321,8 @@ Int_t Textvars::Substitute( StrVec_t& lines, bool do_multi ) const
           }
         }
       } else {
-        ::Error(here, "unknown text variable %s",
-                line.substr(pos, ext).c_str());
+        Error(here, "unknown text variable %s",
+              line.substr(pos, ext).c_str());
         good = false;
       }
     }
