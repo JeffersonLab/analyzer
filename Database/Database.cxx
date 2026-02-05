@@ -29,9 +29,7 @@
 #include <iostream>
 #include <filesystem>
 #include <stdexcept>
-#ifdef __cpp_lib_ranges
 #include <ranges>
-#endif
 
 namespace fs = std::filesystem;
 
@@ -171,16 +169,9 @@ vector<string> GetDBFileList( const char* name, const TDatime& date,
   // of the files contained in the directory.
   Int_t req_date = date.GetDate();
   string datedir;
-  sort(time_dirs.begin(), time_dirs.end());
-#ifdef __cpp_lib_ranges
+  ranges::sort(time_dirs);
   for( auto& time_dir: ranges::reverse_view(time_dirs) ) {
-#else
-  // Fallback for C++17 and compilers with incomplete C++20 support
-  for( auto it = time_dirs.rbegin(); it != time_dirs.rend(); ++it ) {
-    const auto& time_dir = *it;
-#endif
-    Int_t dir_date = stoi(time_dir);
-    if( req_date >= dir_date ) {
+    if( Int_t dir_date = stoi(time_dir); req_date >= dir_date ) {
       datedir = time_dir;
       break;
     }
@@ -189,11 +180,7 @@ vector<string> GetDBFileList( const char* name, const TDatime& date,
   // Construct the database file name. It is of the form db_<prefix>.dat.
   // Subdetectors use the same files as their parent detectors!
   // If filename does not start with "db_", make it so
-#ifdef __cpp_lib_starts_ends_with
   if( !filename.starts_with("db_") )
-#else
-  if( filename.find("db_") != 0 )
-#endif
     filename = "db_" + filename;
   // If filename does not end with ".dat", make it so
   fs::path fname{std::move(filename)};
@@ -418,9 +405,7 @@ inline Int_t ChopPrefix( string& s )
     auto pos = s.rfind('.', len - 2);
     if( pos != string::npos ) {
       s.erase(pos + 1);
-      auto ndot = std::count(s.begin(), s.end(), '.');
-      if( ndot <= kMaxInt )
-        return static_cast<Int_t>(ndot);
+      return static_cast<Int_t>(ranges::count(s, '.'));
     }
   }
   s.clear();
@@ -714,58 +699,36 @@ Int_t conversion_error( const char* key, const string& value )
 // The following is not terribly elegant, but allows us to call the most
 // efficient conversion function for a given type
 //_____________________________________________________________________________
-#ifdef __cpp_concepts
 template<typename T> requires (is_integral_v<T> and is_signed_v<T>)
-#else
-template<typename T,
-  enable_if_t<is_integral_v<T> && is_signed_v<T>, bool> = true>
-#endif
-inline long long int convert_string( const char* p, char*& end )
+long long int convert_string( const char* p, char*& end )
 {
   return strtoll(p, &end, 10);
 }
 
 //_____________________________________________________________________________
-#ifdef __cpp_concepts
 template<typename T> requires (is_integral_v<T> and is_unsigned_v<T>)
-#else
-template<typename T,
-  enable_if_t<is_integral_v<T> && is_unsigned_v<T>, bool> = true>
-#endif
-    inline unsigned long long int convert_string( const char* p, char*& end )
+unsigned long long int convert_string( const char* p, char*& end )
 {
   return strtoull(p, &end, 10);
 }
 
 //_____________________________________________________________________________
-#ifdef __cpp_concepts
 template<typename T> requires is_same_v<T, float>
-#else
-template<typename T, enable_if_t<is_same_v<T, float>, bool> = true>
-#endif
-inline T convert_string( const char* p, char*& end )
+T convert_string( const char* p, char*& end )
 {
   return strtof(p, &end);
 }
 
 //_____________________________________________________________________________
-#ifdef __cpp_concepts
 template<typename T> requires is_same_v<T, double>
-#else
-template<typename T, enable_if_t<is_same_v<T, double>, bool> = true>
-#endif
-inline T convert_string( const char* p, char*& end )
+T convert_string( const char* p, char*& end )
 {
   return strtod(p, &end);
 }
 
 //_____________________________________________________________________________
-#ifdef __cpp_concepts
 template<typename T> requires is_same_v<T, long double>
-#else
-template<typename T, enable_if_t<is_same_v<T, long double>, bool> = true>
-#endif
-inline T convert_string( const char* p, char*& end )
+T convert_string( const char* p, char*& end )
 {
   return strtold(p, &end);
 }
@@ -774,12 +737,8 @@ inline T convert_string( const char* p, char*& end )
 // Function to check if source value of type S will fit into target value
 // of type T. T and S must either both be integer or floating point types.
 // Trivial case of identical types.
-#ifdef __cpp_concepts
 template<typename T, typename S> requires is_same_v<T, S>
-#else
-template<typename T, typename S, enable_if_t<is_same_v<T, S>, bool> = true>
-#endif
-inline bool is_in_range( S )
+bool is_in_range( S )
 {
   return true;
 }
@@ -787,20 +746,11 @@ inline bool is_in_range( S )
 //_____________________________________________________________________________
 // Non-trivial case of different types.
 // Currently only used for like-signed integers.
-#ifdef __cpp_concepts
 template<typename T, typename S> requires (not is_same_v<T, S> and (
   (is_integral_v<T> and is_integral_v<S> ) or
   (is_floating_point_v<T> and is_floating_point_v<S>)))
 inline bool is_in_range( S val )
 {
-#else
-template<typename T, typename S, enable_if_t<not is_same_v<T, S>, bool> = true>
-inline bool is_in_range( S val )
-{
-  static_assert((is_integral_v<T> && is_integral_v<S>) ||
-                (is_floating_point_v<T> && is_floating_point_v<S>),
-                "Inconsistent types");
-#endif
   bool ret = (val <= numeric_limits<T>::max());
   if( ret ) {
     if( is_integral_v<T> ) {
@@ -1251,10 +1201,9 @@ Int_t SeekDBconfig( FILE* file, const char* tag, const char* label,
     while( !errno && !quit && fgets(buf, LEN, file) ) {
       size_t len = strlen(buf);
       if( len < 2 || buf[0] == '#' ) continue;      //skip comments
-      if( buf[len - 1] == '\n' ) buf[len - 1] = 0;     //delete trailing newline
-      char* cbuf = ::Compress(buf);
-      string line(cbuf);
-      delete[] cbuf;
+      if( buf[len - 1] == '\n' ) buf[len - 1] = 0;  //delete trailing newline
+      string line{buf};
+      std::erase(line, ' ');
       auto lbrk = line.find(_label);
       if( lbrk != string::npos && lbrk + llen < line.size() ) {
         auto rbrk = line.find(']', lbrk + llen);

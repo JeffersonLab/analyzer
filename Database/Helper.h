@@ -24,15 +24,10 @@
 
 namespace Podd {
 
-  //___________________________________________________________________________
+//___________________________________________________________________________
   // Cast unsigned to signed where unsigned is expected to be within signed range
-#ifdef __cpp_concepts
   template<typename T> requires (std::is_integral_v<T> and std::is_unsigned_v<T>)
-#else
-  template<typename T, std::enable_if_t
-    <std::is_integral_v<T> && std::is_unsigned_v<T>, bool> = true>
-#endif
-  static inline std::make_signed_t<T> SINT( T uint )
+  static std::make_signed_t<T> SINT( T uint )
   {
 #ifndef NDEBUG
     if( uint > static_cast<decltype(uint)>(
@@ -43,25 +38,16 @@ namespace Podd {
   }
 
   // Trivial case
-#ifdef __cpp_concepts
   template<typename T> requires (std::is_integral_v<T> and std::is_signed_v<T>)
-#else
-  template<typename T, std::enable_if_t
-    <std::is_integral_v<T> && std::is_signed_v<T>, bool> = true>
-#endif
-  static inline T SINT( T ival ) { return ival; }
+  static T SINT( T ival ) { return ival; }
 
   template<typename Container>
-#ifdef __cpp_lib_ssize
-  static inline auto SSIZE( const Container& c ) { return std::ssize(c); }
-#else
-  static inline auto SSIZE( const Container& c ) { return SINT(c.size()); }
-#endif
+  static auto SSIZE( const Container& c ) { return std::ssize(c); }
 
   //___________________________________________________________________________
-  template< typename VectorElem > inline void
-  NthCombination( UInt_t n, const std::vector<std::vector<VectorElem> >& vec,
-		  std::vector<VectorElem>& selected )
+  template< typename VectorElem >
+  void NthCombination( UInt_t n, const std::vector<std::vector<VectorElem>>& vec,
+                       std::vector<VectorElem>& selected )
   {
     // Get the n-th combination of the elements in "vec" and
     // put result in "selected". selected[k] is one of the
@@ -95,13 +81,16 @@ namespace Podd {
   }
 
   //___________________________________________________________________________
-  template< typename Container > struct SizeMul
+  template<typename Container>
+  struct SizeMul
   {
     // Function object to get the product of the sizes of the containers in a
     // container, ignoring empty ones
-    typedef typename Container::size_type csiz_t;
-    csiz_t operator() ( csiz_t val, const Container& c ) const
-    { return ( c.empty() ? val : val * c.size() ); }
+    typedef Container::size_type csiz_t;
+    csiz_t operator()( csiz_t val, const Container& c ) const
+    {
+      return (c.empty() ? val : val * c.size());
+    }
   };
 
   //___________________________________________________________________________
@@ -110,7 +99,7 @@ namespace Podd {
   class UniqueCombo {
     typedef std::vector<int> vint_t;
   public:
-    UniqueCombo( int N, int k ) : fN(N), fGood(true)
+    UniqueCombo( const int N, const int k ) : fN(N), fGood(true)
     { assert( 0<=k && k<=N ); for( int i=0; i<k; ++i ) fCurrent.push_back(i); }
     // Default copy and assignment are fine
 
@@ -122,7 +111,7 @@ namespace Podd {
 	fGood = recursive_plus( fCurrent.size()-1 );
       return *this;
     }
-    const UniqueCombo operator++(int)
+    UniqueCombo operator++(int)
     {
       UniqueCombo clone(*this); ++*this; return clone;
     }
@@ -134,11 +123,11 @@ namespace Podd {
     }
     bool operator!=( const UniqueCombo& rhs ) const { return !(*this==rhs); }
     explicit operator bool() const  { return fGood; }
-    bool operator!() const { return !((bool)*this); }
+    bool operator!() const { return !static_cast<bool>(*this); }
 
   private:
-    bool recursive_plus( vint_t::size_type pos ) { // NOLINT(misc-no-recursion)
-      if( fCurrent[pos] < fN+int(pos-fCurrent.size()) ) {
+    bool recursive_plus( const vint_t::size_type pos ) { // NOLINT(misc-no-recursion)
+      if( std::cmp_less(fCurrent[pos], fN+pos-fCurrent.size()) ) {
 	++fCurrent[pos];
 	return true;
       }
@@ -158,13 +147,13 @@ namespace Podd {
   //___________________________________________________________________________
   class DeleteObject {
   public:
-    template< typename T >
-    void operator() ( const T* ptr ) const { delete ptr; }
+    template<typename T>
+    void operator()( const T* ptr ) const { delete ptr; }
   };
 
   //___________________________________________________________________________
-  template< typename Container >
-  inline void DeleteContainer( Container& c )
+  template<typename Container>
+  void DeleteContainer( Container& c )
   {
     // Delete all elements of given container of pointers
     std::for_each( ALL(c), DeleteObject() );
@@ -172,8 +161,8 @@ namespace Podd {
   }
 
   //___________________________________________________________________________
-  template< typename ContainerOfContainers >
-  inline void DeleteContainerOfContainers( ContainerOfContainers& cc )
+  template<typename ContainerOfContainers>
+  void DeleteContainerOfContainers( ContainerOfContainers& cc )
   {
     // Delete all elements of given container of containers of pointers
     std::for_each( ALL(cc),
