@@ -992,8 +992,13 @@ Int_t LoadDatabase( const LoadDBArgs& args, const vector<DBRequest>& req ) // NO
     ++idx;
     if( !item.var )
       continue;
-    string keystr = prefix;
-    keystr.append(item.name);
+    string keystr{prefix};
+    if( args.key_prefix && *args.key_prefix ) {
+      keystr += args.key_prefix;
+      if( !keystr.ends_with('.') )
+        keystr += '.';
+    }
+    keystr += item.name;
     UInt_t nelem = item.nelem;
     void* dest = item.var;
     const char* key = keystr.c_str();
