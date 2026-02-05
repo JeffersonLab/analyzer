@@ -991,7 +991,7 @@ Int_t load_and_assign_matrix( FILE* f, const TDatime& date, const char* key,
 } // namespace
 
 //_____________________________________________________________________________
-Int_t LoadDatabase( FILE* f, const TDatime& date, const DBRequest* req,
+Int_t LoadDatabase( FILE* file, const TDatime& date, const DBRequest* req,
                     const char* prefix, Int_t search, const char* here )
 {
   // Load a list of parameters from the database file 'f' according to
@@ -1003,24 +1003,36 @@ Int_t LoadDatabase( FILE* f, const TDatime& date, const DBRequest* req,
   }
   const auto* endp = req;
   while( endp->name ) ++endp;
-  vector<DBRequest> vreq{req, endp};
-  return LoadDatabase(f, date, vreq, prefix, search, here);
+  const vector<DBRequest> vreq{req, endp};
+  return LoadDatabase(file, date, vreq, prefix, search, here);
 }
 
 //_____________________________________________________________________________
-Int_t LoadDatabase( FILE* f, const TDatime& date, const vector<DBRequest>& req,  // NOLINT(misc-no-recursion)
+Int_t LoadDatabase( FILE* file, const TDatime& date, const vector<DBRequest>& req,
                     const char* prefix, Int_t search, const char* here )
+{
+  return LoadDatabase({
+                        .file = file, .date = date, .prefix = prefix,
+                        .search = search, .here = here
+                      }, req);
+}
+
+//_____________________________________________________________________________
+Int_t LoadDatabase( const LoadDBArgs& args, const vector<DBRequest>& req ) // NOLINT(misc-no-recursion)
 {
   // Load a list of parameters from the database file 'f' according to
   // the list of requests 'req' (see VarDef.h).
 
-  if( !f ) {
-    ::Error(::Here(here, prefix),
+  if( !args.file ) {
+    ::Error(::Here(args.here, args.prefix),
             "Bad argument FILE* = NULL. Probably file not found. "
             "Make sure to check for success after opening DB file.");
     return -255;
   }
-  if( !prefix ) prefix = "";
+  FILE* file = args.file;
+  const TDatime date = args.date;
+  const char* here = args.here;
+  string prefix{args.prefix ? args.prefix : ""};
   Int_t ret = 0;
   if( loaddb_depth++ == 0 )
     loaddb_prefix = prefix;
@@ -1033,61 +1045,62 @@ Int_t LoadDatabase( FILE* f, const TDatime& date, const vector<DBRequest>& req, 
     string keystr = prefix;
     keystr.append(item.name);
     UInt_t nelem = item.nelem;
+    void* dest = item.var;
     const char* key = keystr.c_str();
     switch( item.type ) {
       case kDouble:
-        ret = load_and_assign<Double_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign<Double_t>(file, date, key, dest, nelem);
         break;
       case kFloat:
-        ret = load_and_assign<Float_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign<Float_t>(file, date, key, dest, nelem);
         break;
       case kLong:
-        ret = load_and_assign<Long64_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign<Long64_t>(file, date, key, dest, nelem);
         break;
       case kULong:
-        ret = load_and_assign<ULong64_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign<ULong64_t>(file, date, key, dest, nelem);
         break;
       case kInt:
-        ret = load_and_assign<Int_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign<Int_t>(file, date, key, dest, nelem);
         break;
       case kUInt:
-        ret = load_and_assign<UInt_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign<UInt_t>(file, date, key, dest, nelem);
         break;
       case kShort:
-        ret = load_and_assign<Short_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign<Short_t>(file, date, key, dest, nelem);
         break;
       case kUShort:
-        ret = load_and_assign<UShort_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign<UShort_t>(file, date, key, dest, nelem);
         break;
       case kChar:
-        ret = load_and_assign<Char_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign<Char_t>(file, date, key, dest, nelem);
         break;
       case kByte:
-        ret = load_and_assign<Byte_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign<Byte_t>(file, date, key, dest, nelem);
         break;
       case kString:
-        ret = LoadDBvalue(f, date, key, *((string*)item.var));
+        ret = LoadDBvalue(file, date, key, *static_cast<string*>(dest));
         break;
       case kTString:
-        ret = LoadDBvalue(f, date, key, *((TString*)item.var));
+        ret = LoadDBvalue(file, date, key, *static_cast<TString*>(dest));
         break;
       case kFloatV:
-        ret = load_and_assign_vector<Float_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign_vector<Float_t>(file, date, key, dest, nelem);
         break;
       case kDoubleV:
-        ret = load_and_assign_vector<Double_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign_vector<Double_t>(file, date, key, dest, nelem);
         break;
       case kIntV:
-        ret = load_and_assign_vector<Int_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign_vector<Int_t>(file, date, key, dest, nelem);
         break;
       case kFloatM:
-        ret = load_and_assign_matrix<Float_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign_matrix<Float_t>(file, date, key, dest, nelem);
         break;
       case kDoubleM:
-        ret = load_and_assign_matrix<Double_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign_matrix<Double_t>(file, date, key, dest, nelem);
         break;
       case kIntM:
-        ret = load_and_assign_matrix<Int_t>(f, date, key, item.var, nelem);
+        ret = load_and_assign_matrix<Int_t>(file, date, key, dest, nelem);
         break;
       default:
         ret = -2;
@@ -1110,19 +1123,19 @@ Int_t LoadDatabase( FILE* f, const TDatime& date, const vector<DBRequest>& req, 
       // search for:  "L.vdc.u1.nw" -> "L.vdc.nw"
 
       // per-item search level overrides global one
-      Int_t newsearch = (item.search != 0) ? item.search : search;
-      if( newsearch != 0 && *prefix ) {
-        string newprefix(prefix);
-        Int_t newlevel = ChopPrefix(newprefix) + 1;
-        if( newsearch < 0 || newlevel >= newsearch ) {
-          vector<DBRequest> newreq{item};
-          newreq[0].search = 0;
+      if( Int_t newsearch = (item.search != 0) ? item.search : args.search;
+            newsearch != 0 && !prefix.empty() ) {
+        string newprefix{prefix};
+        if( const Int_t newlevel = ChopPrefix(newprefix) + 1;
+              newsearch < 0 || newlevel >= newsearch ) {
+          LoadDBArgs newargs{args};
           if( newsearch < 0 )
             newsearch++;
-          ret = LoadDatabase(f, date, newreq, newprefix.c_str(),
-                             newsearch, here);
-          // If error, quit here. Error message printed at lowest level.
-          if( ret != 0 )
+          newargs.search = newsearch;
+          vector<DBRequest> newreq{item};
+          newreq[0].search = 0;
+          if( (ret = LoadDatabase(newargs, newreq)) != 0 )
+            // If error, quit here. Error message printed at lowest level.
             break;
           continue;  // Key found and ok
         }

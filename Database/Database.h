@@ -50,10 +50,22 @@ Int_t    LoadDBarray( FILE* file, const TDatime& date, const char* key, std::vec
 template <class T>
 Int_t    LoadDBmatrix( FILE* file, const TDatime& date, const char* key,
                        std::vector<std::vector<T>>& values, UInt_t ncols );
-Int_t    LoadDatabase( FILE* file, const TDatime& date, const DBRequest* request, const char* prefix,
+// Main database query functions
+struct LoadDBArgs {
+  FILE*        file        {nullptr};
+  TDatime      date;
+  const char*  prefix      {nullptr};
+  Int_t        search      {0};
+  const char*  here        {"Podd::LoadDatabase"};
+  const char*  key_prefix  {nullptr};
+};
+Int_t    LoadDatabase( const LoadDBArgs& args, const std::vector<DBRequest>& req );
+Int_t    LoadDatabase( FILE* file, const TDatime& date, const DBRequest* req, const char* prefix,
                        Int_t search = 0, const char* here = "Podd::LoadDatabase" );
-Int_t    LoadDatabase( FILE* file, const TDatime& date, const std::vector<DBRequest>& request,
+Int_t    LoadDatabase( FILE* file, const TDatime& date, const std::vector<DBRequest>& req,
                        const char* prefix, Int_t search = 0, const char* here = "Podd::LoadDatabase" );
+
+// Internal functions. Should not be used by user code.
 Int_t    SeekDBdate( FILE* file, const TDatime& date, Bool_t end_on_tag = false );
 Int_t    SeekDBconfig( FILE* file, const char* tag, const char* label = "config",
                        Bool_t end_on_tag = false );
