@@ -1025,7 +1025,8 @@ Int_t LoadDatabase( FILE* f, const TDatime& date, const vector<DBRequest>& req, 
   if( loaddb_depth++ == 0 )
     loaddb_prefix = prefix;
 
-  for( Int_t idx = -1; const auto item : req ) {
+  Int_t idx = -1;
+  for( const auto item : req ) {
     ++idx;
     if( !item.var )
       continue;
@@ -1137,9 +1138,6 @@ Int_t LoadDatabase( FILE* f, const TDatime& date, const vector<DBRequest>& req, 
           ::Error(::Here(here, loaddb_prefix.c_str()),
                   R"(Required key "%s" missing in the database.)", key);
         }
-        // For missing keys, the return code is the index into the request
-        // array + 1. In this way the caller knows which key is missing.
-        ret = 1 + idx;
         break;
       }
     } else if( ret == -1 ) {  // errno != 0
@@ -1185,8 +1183,15 @@ Int_t LoadDatabase( FILE* f, const TDatime& date, const vector<DBRequest>& req, 
       break;
     }
   }
-  if( --loaddb_depth == 0 )
+  if( --loaddb_depth == 0 ) {
     loaddb_prefix.clear();
+    if( ret > 0 ) {
+      // For missing keys, the return code is the index into the request
+      // array + 1. In this way the caller knows which key is missing.
+      ret = 1 + idx;
+    }
+  }
+
 
   return ret;
 }
