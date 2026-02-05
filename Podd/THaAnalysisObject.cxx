@@ -781,45 +781,56 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 //_____________________________________________________________________________
 void THaAnalysisObject::DebugPrint( const DBRequest* list ) const
 {
+  if( !list )
+    return;
+  const auto* endp = list;
+  while( endp->name ) ++endp;
+  const vector<DBRequest> vlist{list, endp};
+  DebugPrint(vlist);
+}
+
+//_____________________________________________________________________________
+void THaAnalysisObject::DebugPrint( const vector<DBRequest>& list ) const
+{
   // Print values of database parameters given in 'list'
 
-  if( !list )
+  if( list.empty() )
     return;
   cout << GetPrefixName() << " database parameters: " << endl;
   size_t maxw = 1;
   ios_base::fmtflags fmt = cout.flags();
-  for( const auto *it = list; it->name; ++it )
-    maxw = TMath::Max(maxw,strlen(it->name));
-  for( const auto *it = list; it->name; ++it ) {
-    cout << "  " << std::left << setw(static_cast<int>(maxw)) << it->name;
-    size_t maxc = it->nelem;
+  for( const auto& it: list)
+    maxw = TMath::Max(maxw,strlen(it.name));
+  for( const auto& it: list) {
+    cout << "  " << std::left << setw(static_cast<int>(maxw)) << it.name;
+    size_t maxc = it.nelem;
     if( maxc == 0 ) maxc = 1;
-    if( it->type == kDoubleV )
-      maxc = ((vector<Double_t>*)it->var)->size();
-    else if( it->type == kFloatV )
-      maxc = ((vector<Float_t>*)it->var)->size();
-    else if( it->type == kIntV )
-      maxc = ((vector<Int_t>*)it->var)->size();
+    if( it.type == kDoubleV )
+      maxc = ((vector<Double_t>*)it.var)->size();
+    else if( it.type == kFloatV )
+      maxc = ((vector<Float_t>*)it.var)->size();
+    else if( it.type == kIntV )
+      maxc = ((vector<Int_t>*)it.var)->size();
     for( size_t i=0; i<maxc; ++i ) {
       cout << "  ";
-      switch( it->type ) {
+      switch( it.type ) {
       case kDouble:
-	cout << ((Double_t*)it->var)[i];
+	cout << ((Double_t*)it.var)[i];
 	break;
       case kFloat:
-	cout << ((Float_t*)it->var)[i];
+	cout << ((Float_t*)it.var)[i];
 	break;
       case kInt:
-	cout << ((Int_t*)it->var)[i];
+	cout << ((Int_t*)it.var)[i];
 	break;
       case kIntV:
-        cout << ((vector<Int_t>*)it->var)->at(i);
+        cout << ((vector<Int_t>*)it.var)->at(i);
         break;
       case kFloatV:
-        cout << ((vector<Float_t>*)it->var)->at(i);
+        cout << ((vector<Float_t>*)it.var)->at(i);
         break;
       case kDoubleV:
-        cout << ((vector<Double_t>*)it->var)->at(i);
+        cout << ((vector<Double_t>*)it.var)->at(i);
         break;
       default:
 	break;
