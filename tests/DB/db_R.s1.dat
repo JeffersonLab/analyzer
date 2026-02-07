@@ -1,0 +1,34 @@
+--------[ 2016-02-05 00:00:00 -0500 ]
+
+R.s1.detmap =
+      1    21    38    43     1  1881
+      1    21    32    37     7  1881
+      1    23    40    45     1  1877
+      1    23    32    37     7  1877
+R.s1.npaddles = 6
+R.s1.position = 0  0  1.381
+R.s1.size = 0.88  0.18  0.005
+R.s1.L.off = -37.67  -8.63  0.56  -5.05  24.67  -21.7
+R.s1.R.off = -41.83  -14.6  -1.53  5.05  18.12  -34.5
+R.s1.L.ped = 502  476  547  499  656  678
+R.s1.R.ped = 696  677  565  547  506  555
+R.s1.L.gain = 0.44  0.423  0.44  0.507  0.43  0.447
+R.s1.R.gain = 0.443  0.396  0.452  0.502  0.512  0.383
+R.s1.avgres = 1e-10
+R.s1.atten = 0.7
+R.s1.Cn = 1.49859e+08
+R.s1.MIP = 1e+10
+R.s1.tdc.res = 5e-10
+R.s1.timewalk_params =
+   0  0  0  0  0  0
+   0  0  0  0  0  0
+R.s1.retiming_offsets = 0  0  0  0  0  0
+
+# Test data
+R.param1 = 137.67
+R.param2 = 423.07
+R.s1.altval = 1324   # Bad practice: Different values for altval and
+R.s1.extval = 1243   # extval alternatives
+R.s1.strval = Some text  here   # Test space preservation, too
+R.s1.converr = 11A5
+global = 4267

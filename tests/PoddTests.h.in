@@ -1,0 +1,11 @@
+//*-- Author :    Ole Hansen   06-Feb-26
+//
+// Configured definitions for Podd test suite
+
+#ifndef PODDTESTS_H
+#define PODDTESTS_H
+
+#define PODD_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
+#define PODD_TESTS_DBDIR "${CMAKE_CURRENT_SOURCE_DIR}/DB"
+
+#endif //PODDTESTS_H

@@ -12,6 +12,9 @@
 
 #include "THaGlobals.h"
 #include "THaVarList.h"
+#include "PoddTests.h"
+#include <cstdlib>
+#include <cstdio>
 
 class testRunListener : public Catch::EVENT_LISTENER_BASE {
 public:
@@ -20,6 +23,11 @@ public:
   void testRunStarting(Catch::TestRunInfo const&) override {
     delete gHaVars;
     gHaVars = new THaVarList;
+
+    if( setenv("DB_DIR", PODD_TESTS_DBDIR, 1) ) { // NOLINT(*-mt-unsafe)
+      perror("setenv DB_DIR");
+      exit(1);                                    // NOLINT(*-mt-unsafe)
+    }
   }
 
   void testRunEnded( Catch::TestRunStats const& ) override {
