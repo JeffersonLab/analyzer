@@ -79,8 +79,8 @@ void SkeletonModule::Init( const char* configstr )
   // If the configuration string contains more variables than 'req' or if
   // an unknown parameter name is found, a fatal initialization error occurs.
   // (This is to prevent silent misconfiguration because of typos and similar.)
-  vector<ConfigStrReq> req = { {"mode",   mode},
-                               {"buflen", fMaxBufLen} };
+  vector<ConfigStrReq> req = { {"mode"s,   mode},
+                               {"buflen"s, fMaxBufLen} };
 
   // The following call sets the variables referenced in 'req', provided there
   // is data for them in the configuration string.

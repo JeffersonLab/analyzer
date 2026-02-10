@@ -32,10 +32,6 @@ public:
   }
 };
 
-typedef map< const type_info*, VarType, ByTypeInfo > VarTypeMap_t;
-static VarTypeMap_t var_type_map;
-static TVirtualMutex* gVarTypeMapMutex = nullptr;
-
 //_____________________________________________________________________________
 // NB: Must match definition order in VarType.h
 class VarTypeInfo_t {
@@ -94,7 +90,13 @@ static const vector<VarTypeInfo_t> var_type_info = {
 };
 
 //_____________________________________________________________________________
-static VarTypeMap_t& GetVarTypeMap()
+namespace {
+typedef map< const type_info*, VarType, ByTypeInfo > VarTypeMap_t;
+VarTypeMap_t var_type_map;
+TVirtualMutex* gVarTypeMapMutex = nullptr;
+
+//_____________________________________________________________________________
+VarTypeMap_t& GetVarTypeMap()
 {
   // Get reference to type_info cache map. Initializes map on first use.
 
@@ -107,12 +109,13 @@ static VarTypeMap_t& GetVarTypeMap()
   }
   return var_type_map;
 }
+} // namespace
 
 //_____________________________________________________________________________
 VarType FindType( const type_info& tinfo )
 {
   VarTypeMap_t& type_map = GetVarTypeMap();
-  auto found = type_map.find( &tinfo );
+  const auto found = type_map.find( &tinfo );
 
   return ( found != type_map.end() ) ? found->second : kVarTypeEnd;
 }
@@ -129,7 +132,7 @@ void ClearCache()
 
 // Access function into var_type_info[] table above
 //_____________________________________________________________________________
-const char* GetEnumName( VarType itype )
+const char* GetEnumName( const VarType type )
 {
   // Return enumeration variable name of the given VarType
 
@@ -139,7 +142,7 @@ const char* GetEnumName( VarType itype )
 }
 
 //_____________________________________________________________________________
-const char* GetTypeName( VarType itype )
+const char* GetTypeName( const VarType type )
 {
   // Return C++ name of the given VarType
 
@@ -149,7 +152,7 @@ const char* GetTypeName( VarType itype )
 }
 
 //_____________________________________________________________________________
-size_t GetTypeSize( VarType itype )
+size_t GetTypeSize( const VarType type )
 {
   // Return size of the underlying (innermost) basic data type of each VarType.
   // Returns 0 for object types.

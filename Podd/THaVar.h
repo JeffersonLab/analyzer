@@ -76,7 +76,7 @@ public:
   Bool_t       IsVector()                       const { return fImpl->IsVector(); }
 
   // Overrides of TNamed methods
-  void         Print( Option_t* opt="FULL" ) const override { return fImpl->Print(opt); }
+  void         Print( Option_t* opt="FULL" ) const override { fImpl->Print(opt); }
   void         SetName( const char* name )   override { fImpl->SetName(name); }
   void         SetNameTitle( const char* name, const char* descript ) override
                                                       { fImpl->SetNameTitle(name,descript); }

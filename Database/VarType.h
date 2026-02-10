@@ -17,22 +17,24 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include <cstddef>   // for size_t
-#include <typeinfo>
+#include <cstdint>   // for int8_t
+#include <typeinfo>  // for type_info
 
 // NB: When updating this list, must also update var_type_info[] in VarType.cxx
-enum VarType { kDouble = 0, kVarTypeBegin = kDouble,
-	       kFloat, kLong, kULong, kInt, kUInt,
-	       kShort, kUShort, kChar, kUChar, kByte = kUChar,
-	       kObject, kTString, kString,
-	       kIntV, kUIntV, kFloatV, kDoubleV, kObjectV, kObjectPV,
-	       kIntM, kFloatM, kDoubleM,
-	       kDoubleP, kFloatP, kLongP, kULongP, kIntP, kUIntP,
-	       kShortP, kUShortP, kCharP, kUCharP, kByteP = kUCharP,
-	       kObjectP,
-	       kDouble2P, kFloat2P, kLong2P, kULong2P, kInt2P, kUInt2P,
-	       kShort2P, kUShort2P, kChar2P, kUChar2P, kByte2P = kUChar2P,
-	       kObject2P,
-	       kVarTypeEnd };
+enum VarType : std::int8_t {   // NOLINT(*-int09-c, *-enum-initial-value)
+  kDouble = 0, kVarTypeBegin = kDouble, kFloat, kLong, kULong,
+  kInt, kUInt, kShort, kUShort, kChar, kUChar, kByte = kUChar,
+  kObject, kTString, kString,
+  kIntV, kUIntV, kFloatV, kDoubleV, kObjectV, kObjectPV,
+  kIntM, kFloatM, kDoubleM,
+  kDoubleP, kFloatP, kLongP, kULongP, kIntP, kUIntP,
+  kShortP, kUShortP, kCharP, kUCharP, kByteP = kUCharP,
+  kObjectP,
+  kDouble2P, kFloat2P, kLong2P, kULong2P, kInt2P, kUInt2P,
+  kShort2P, kUShort2P, kChar2P, kUChar2P, kByte2P = kUChar2P,
+  kObject2P,
+  kVarTypeEnd
+};
 
 namespace Vars {
 // Access to detailed information about types defined above

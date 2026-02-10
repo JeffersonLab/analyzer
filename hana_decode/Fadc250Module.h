@@ -8,10 +8,12 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "PipeliningModule.h"
-#include <vector>
-#include <cstdint>
-#include <cstring>  // for memset
+#include "PipeliningModule.h"  // for PipeliningModule
+#include "Decoder.h"           // for EModuleType
+#include <cstdint>             // for uint32_t, uint64_t
+#include <cstring>             // for memset, size_t
+#include <vector>              // for vector
+namespace Decoder { class THaSlotData; }
 
 namespace Decoder {
 
