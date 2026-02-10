@@ -9,15 +9,18 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Rtypes.h"
-#include <vector>
-#include <cassert>
-#include <algorithm>
-#include <iterator>
-#include <type_traits>   // std::make_signed
-#include <iostream>
+#include "Rtypes.h"     // for UInt_t, Int_t
+#include <cstddef>      // for size_t
+#include <algorithm>    // for for_each, copy
+#include <cassert>      // for assert
+#include <iostream>     // for basic_ostream, operator<<, cout, char_traits
+#include <iterator>     // for ostream_iterator, ssize
+#include <stdexcept>    // for out_of_range
+#include <type_traits>  // for make_signed_t, is_integral_v, is_signed_v
+#include <vector>       // for vector, operator==
+#include <utility>      // for cmp_less
 #ifndef NDEBUG
-# include <limits>
+# include <limits>      // for numeric_limits
 #endif
 
 #define ALL( c ) (c).begin(), (c).end()

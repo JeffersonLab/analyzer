@@ -10,27 +10,28 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "Database.h"
-#include "TDatime.h"
-#include "TObjArray.h"
-#include "TObjString.h"
-#include "TString.h"
-#include "TError.h"
-#include "TSystem.h"
-
-#include <cassert>
-#include <cerrno>
-#include <cctype>    // for isspace
-#include <cstring>
-#include <cstdlib>   // for strtod, strtol etc.
-#include <iterator>  // for std::distance
-#include <ctime>     // for struct tm
-#include <limits>
-#include <algorithm>
-#include <type_traits>
-#include <iostream>
-#include <filesystem>
-#include <stdexcept>
-#include <ranges>
+#include "TDatime.h"     // for TDatime, operator!=, operator==, operator>=
+#include "TError.h"      // for Error, Warning, Info
+#include "TObjArray.h"   // for TObjArray
+#include "TObjString.h"  // for TObjString
+#include "TString.h"     // for TString, operator!=, operator==, operator+
+#include "TSystem.h"     // for TSystem, gSystem
+#include <algorithm>     // for min, __count, __sort, count, sort
+#include <cassert>       // for assert
+#include <cctype>        // for isspace
+#include <cerrno>        // for errno
+#include <cstdlib>       // for getenv, strtod, strtof, strtold, strtoll
+#include <cstring>       // for memcpy, strlen, strchr, strerror_r, strncmp
+#include <ctime>         // for tm, localtime_r, mktime, strptime, time_t
+#include <filesystem>    // for path, operator/, operator==, directory_iterator
+#include <iostream>      // for basic_istream, basic_ostream, operator<<, fpos
+#include <iterator>      // for distance
+#include <limits>        // for numeric_limits
+#include <memory>        // for unique_ptr
+#include <ranges>        // for reverse_view, ref_view
+#include <system_error>  // for error_code
+#include <type_traits>   // for is_integral_v, is_same_v, is_floating_point_v
+#include <utility>       // for move
 
 namespace fs = std::filesystem;
 

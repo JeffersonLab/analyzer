@@ -7,13 +7,15 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "VarType.h"
-#include "TObject.h"
-#include "TString.h"
-#include "TVirtualMutex.h"
-#include <typeinfo>
-#include <cassert>
-#include <vector>
-#include <map>
+#include "TObject.h"        // for TObject, Char_t, Double_t, Float_t, Int_t, Long64_t
+#include "TString.h"        // for TString
+#include "TVirtualMutex.h"  // for TVirtualMutex, R__LOCKGUARD2, TLockGuard
+#include <cassert>          // for assert
+#include <iterator>         // for ssize
+#include <map>              // for map, operator!=
+#include <string>           // for basic_string, string
+#include <typeinfo>         // for type_info
+#include <vector>           // for vector
 
 using namespace std;
 

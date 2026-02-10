@@ -12,8 +12,8 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "Rtypes.h"
-#include "VarType.h"
+#include "Rtypes.h"   // IWYU pragma: export
+#include "VarType.h"  // IWYU pragma: export
 
 struct VarDef {
   const char*      name;     // Variable name

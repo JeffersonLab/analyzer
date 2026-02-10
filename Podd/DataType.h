@@ -7,7 +7,7 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Rtypes.h"
+#include "Rtypes.h"        // IWYU pragma: export
 #include <type_traits>
 
 using Data_t = Double_t;   // Currently supported types: Float_t, Double_t
