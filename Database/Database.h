@@ -9,17 +9,18 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "VarDef.h"
-#include <cstdio>  // for FILE
-#include <vector>
-#include <string>
+#include "VarDef.h"   // for DBRequest (ptr only)  // IWYU pragma: export
+#include "TDatime.h"  // for TDatime
+#include "TString.h"  // for TString
+#include "TSystem.h"  // for TSystem, gSystem
+#include <cstdio>     // for FILE
+#include <iosfwd>     // for istream
+#include <string>     // for string
+#include <vector>     // for vector
+class TObjArray;
 
 // For backward compatibility with existing client code
-#include "Textvars.h"
-#include "TDatime.h"
-#include "TString.h"
-
-class TObjArray;
+#include "Textvars.h" // IWYU pragma: keep
 
 // Helper function for error messages
 const char* Here( const char* here, const char* prefix = nullptr );

@@ -19,13 +19,12 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "Textvars.h"
-#include "Helper.h"
-#include "TError.h"
-#include <utility>
-#include <cassert>
-#include <iostream>
-#include <iomanip>
-#include <cstring>
+#include "TError.h"  // for Error
+#include <cassert>   // for assert
+#include <cstring>   // for strchr, size_t
+#include <iomanip>   // for operator<<, setw
+#include <iostream>  // for basic_ostream, operator<<, cout, endl
+#include <utility>   // for pair, make_pair, move
 
 using namespace std;
 
