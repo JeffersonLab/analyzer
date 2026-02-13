@@ -16,16 +16,24 @@
 
 
 #ifdef HAVE_CATCH3
-# include <catch2/catch_test_macros.hpp>
-# include <catch2/generators/catch_generators.hpp>
-# include <catch2/matchers/catch_matchers_floating_point.hpp>
+# include <catch2/catch_test_macros.hpp>                       // for operator""_catch_sr, operator==, CHECK, StringRef, Section, SECTION, REQUIRE, FAIL, CHE...
+# include <catch2/generators/catch_generators.hpp>             // for GeneratorWrapper, generate, makeGenerators, GENERATE, IGenerator
+# include <catch2/matchers/catch_matchers.hpp>                 // for makeMatchExpr, REQUIRE_THAT, CHECK_THAT
+# include <catch2/matchers/catch_matchers_floating_point.hpp>  // for WithinRel
 #else
 # include <catch2/catch.hpp>
 #endif
 
-#include "ArrayRTTI.h"
-#include "THaVarList.h"
-#include "THaGlobals.h"   // gHaVars
+#include "ArrayRTTI.h"          // for ArrayRTTI
+#include "DataType.h"           // for Data_t
+#include "THaAnalysisObject.h"  // for THaAnalysisObject
+#include "THaGlobals.h"         // for gHaVars
+#include "THaVar.h"             // for THaVar
+#include "THaVarList.h"         // for THaVarList
+#include "TString.h"            // for TString, operator+, operator==, Int_t, Float_t, Double_t
+#include "VarDef.h"             // for VarType, RVarDef
+#include <type_traits>          // for is_same_v
+#include <vector>               // for vector
 
 using namespace std;
 
@@ -36,6 +44,13 @@ namespace {
 class RVarDefIterator : public Catch::Generators::IGenerator<RVarDef> {
   const RVarDef* defs_;
   static inline RVarDefIterator* me_;
+
+  bool next() override {
+    if( !defs_ )
+      return false;
+    return ((++defs_)->name != nullptr);
+  }
+
 public:
   explicit RVarDefIterator( const RVarDef* defs ) : defs_(defs) {
     me_ = this;
@@ -43,11 +58,6 @@ public:
 
   RVarDef const& get() const override {
     return *defs_;
-  }
-  bool next() override {
-    if( !defs_ )
-      return false;
-    return ((++defs_)->name != nullptr);
   }
   static size_t index() {
     // IGenerator does keep track of the element index, but the value is
@@ -73,9 +83,9 @@ auto vardefs( const RVarDef* defs ){
 TEST_CASE("Global Variables of Arrays", "[ArrayRTTI]") // NOLINT(*-function-cognitive-complexity)
 {
   using namespace Podd::Tests;
-  VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;
-  VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
-  VarType kDataTypeP = std::is_same_v<Data_t, Float_t> ? kFloatP : kDoubleP;
+  constexpr VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;  // NOLINT(*-simplify)
+  constexpr VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV; // NOLINT(*-simplify)
+  constexpr VarType kDataTypeP = std::is_same_v<Data_t, Float_t> ? kFloatP : kDoubleP; // NOLINT(*-simplify)
 
   const TString obj_name = "array_rtti";
   const TString obj_prefix = obj_name + ".";
@@ -121,6 +131,8 @@ TEST_CASE("Global Variables of Arrays", "[ArrayRTTI]") // NOLINT(*-function-cogn
           CHECK(var->IsVector());                // std::vector
           [[fallthrough]];
         case 6: // vararr
+        case 8: // objvect field x
+        case 9: // objvect field i
           CHECK(var->IsVarArray());              // variable array
           [[fallthrough]];
         case 0: // oned
@@ -157,6 +169,12 @@ TEST_CASE("Global Variables of Arrays", "[ArrayRTTI]") // NOLINT(*-function-cogn
           break;
         case 7: // vecarr
           CHECK(var->GetType() == kDataTypeV);   // std::vector of kDouble/kFloat
+          break;
+        case 8: // vec.x
+          CHECK(var->GetType() == kDouble);   //FIXME: should be kDoubleV?
+          break;
+        case 9: // vec.i
+          CHECK(var->GetType() == kInt);      //FIXME: should be kIntV?
           break;
         default:
           FAIL("Undefined variable index");
@@ -202,6 +220,13 @@ TEST_CASE("Global Variables of Arrays", "[ArrayRTTI]") // NOLINT(*-function-cogn
           CHECK(sz == ArrayRTTI::kVecSize);
           REQUIRE(dim);
           CHECK(dim[0] == ArrayRTTI::kVecSize);
+          break;
+        case 8:  // vec.x
+        case 9:  // vec.i
+          CHECK(ndim == 1);
+          CHECK(sz == ArrayRTTI::kVecObjSize);
+          REQUIRE(dim);
+          CHECK(dim[0] == ArrayRTTI::kVecObjSize);
           break;
         default:
           FAIL("Undefined variable index");
@@ -265,6 +290,20 @@ TEST_CASE("Global Variables of Arrays", "[ArrayRTTI]") // NOLINT(*-function-cogn
             REQUIRE_THAT(value, Catch::Matchers::WithinRel(expect));
           }
           break;
+        case 8: // vec.x
+          for( Int_t k = 0; k < sz; ++k ) {
+            Double_t expect = 11.1 + 3*k;
+            Double_t value = var->GetValue(k);
+            REQUIRE_THAT(value, Catch::Matchers::WithinRel(expect));
+          }
+          break;
+        case 9: // vec.i
+          for( Int_t k = 0; k < sz; ++k ) {
+            Int_t expect = 2*k + 1;
+            auto value = var->GetValueInt(k);
+            CHECK(value == expect);
+          }
+          break;
         default:
           FAIL("Undefined variable index");
           break;
@@ -273,7 +312,7 @@ TEST_CASE("Global Variables of Arrays", "[ArrayRTTI]") // NOLINT(*-function-cogn
   }
 
   SECTION("Resizing arrays") {
-    constexpr auto delta = 3;
+    constexpr size_t delta = 3;
     SECTION("C-array with separate size variable") {
       const auto* var = gHaVars->Find(prefix + "vararr");
       TestObj.fN -= delta;
@@ -287,6 +326,14 @@ TEST_CASE("Global Variables of Arrays", "[ArrayRTTI]") // NOLINT(*-function-cogn
       vec.resize(vec.size() + delta);
       CHECK(var->GetLen() == ArrayRTTI::kVecSize + delta);
       vec.resize(vec.size() - delta);
+    }
+
+    SECTION("std::vector of objects") {
+      const auto* var = gHaVars->Find(prefix + "vec.x");
+      std::vector<ArrayRTTI::MyStruct>& vec = TestObj.fVectorS;
+      vec.resize(vec.size() + 2*delta);
+      CHECK(var->GetLen() == ArrayRTTI::kVecObjSize + 2*delta);
+      vec.resize(vec.size() - 2*delta);
     }
   }
 }

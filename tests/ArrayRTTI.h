@@ -7,8 +7,9 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "UnitTest.h"
-#include <vector>
+#include "UnitTest.h"  // for UnitTest
+#include <vector>      // for vector
+struct RVarDef;
 
 namespace Podd::Tests {
 
@@ -18,9 +19,9 @@ public:
   ArrayRTTI() : fArray{}, f2D{}, fN{0}, fVarArr{nullptr} {}
   explicit ArrayRTTI( const char* name,
                       const char* description = "Array RTTI test" );
-  virtual ~ArrayRTTI();
+  ~ArrayRTTI() override;
 
-  virtual Int_t DefineVariables( EMode mode );
+  Int_t DefineVariables( EMode mode ) override; // NOLINT(*-override-with-different-visibility)
   static const RVarDef* GetRVarDef();
   static Int_t GetNvars();
 
@@ -30,6 +31,7 @@ public:
   static constexpr Int_t k2Drows  = 7;
   static constexpr Int_t kVarSize = 15;
   static constexpr Int_t kVecSize = 13;
+  static constexpr Int_t kVecObjSize = 17;
 
   // Test data
   Data_t              fArray[k1Dsize];       // One-dimensional fixed
@@ -38,12 +40,19 @@ public:
   Data_t*             fVarArr;               // [fN] variable-size
   std::vector<Data_t> fVectorD;              // std::vector array (1d, var size)
 
+  struct MyStruct {
+    Double_t x;
+    Int_t i;
+    UInt_t j;
+  };
+  std::vector<MyStruct> fVectorS;            // std::vector of custom struct
+
   ArrayRTTI( const ArrayRTTI& rhs ) = delete;
   ArrayRTTI( ArrayRTTI&& rhs ) = delete;
   ArrayRTTI& operator=( const ArrayRTTI& rhs ) = delete;
   ArrayRTTI& operator=( ArrayRTTI&& rhs ) = delete;
 
-  ClassDef(ArrayRTTI,1)   // Structure for testing variables defined on arrays
+  ClassDefOverride(ArrayRTTI,2)   // Structure for testing variables defined on arrays
 };
 
 } // namespace Podd::Tests

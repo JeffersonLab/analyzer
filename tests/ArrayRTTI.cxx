@@ -9,21 +9,25 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "ArrayRTTI.h"
+#include "VarDef.h"  // for RVarDef
+#include <iterator>  // for size
 
 using namespace std;
 
 // Variable definitions. The setup of these through DefineVariables (below)
 // is the functionality to be tested
 constexpr RVarDef vars[] = {
-  { "oned",   "1D array",    "fArray" },
-  { "elem0",  "fArray[0]",   "fArray[0]" },
-  { "elem1",  "fArray[1]",   "fArray[1]" },
-  { "twod",   "2D array",    "f2D" },
-  { "elem02", "f2D[0][2]",   "f2D[0][2]" },
-  { "elem30", "f2D[3][0]",   "f2D[3][0]" },
-  { "vararr", "Var size",    "fVarArr" },
-  { "vecarr", "std::vector", "fVectorD" },
-  { nullptr }
+  { .name = "oned",   .desc = "1D array",    .def = "fArray"     },
+  { .name = "elem0",  .desc = "fArray[0]",   .def = "fArray[0]"  },
+  { .name = "elem1",  .desc = "fArray[1]",   .def = "fArray[1]"  },
+  { .name = "twod",   .desc = "2D array",    .def = "f2D"        },
+  { .name = "elem02", .desc = "f2D[0][2]",   .def = "f2D[0][2]"  },
+  { .name = "elem30", .desc = "f2D[3][0]",   .def = "f2D[3][0]"  },
+  { .name = "vararr", .desc = "Var size",    .def = "fVarArr"    },
+  { .name = "vecarr", .desc = "std::vector", .def = "fVectorD"   },
+  { .name = "vec.x",  .desc = "vector[n].x", .def = "fVectorS.x" },
+  { .name = "vec.i",  .desc = "vector[n].i", .def = "fVectorS.i" },
+  { .name = nullptr }
 };
 
 namespace Podd::Tests {
@@ -57,6 +61,13 @@ ArrayRTTI::ArrayRTTI( const char* name, const char* description )
   fVectorD.reserve(kVecSize);
   for( Int_t i = 0; i < kVecSize; ++i )
     fVectorD.push_back(-11.652 + Data_t(2 * i));
+
+  fVectorS.reserve(kVecObjSize);
+  for( Int_t i = 0; i < kVecObjSize; ++i )
+    fVectorS.push_back({
+      .x = 11.1 + 3*i,
+      .i = 2*i + 1
+    });
 }
 
 //_____________________________________________________________________________
@@ -79,7 +90,7 @@ const RVarDef* ArrayRTTI::GetRVarDef()
 // Return number of variables that this object should define
 Int_t ArrayRTTI::GetNvars()
 {
-  constexpr Int_t sz = sizeof(vars) / sizeof(vars[0]) - 1;
+  constexpr Int_t sz = std::size(vars) - 1;
   return sz;
 }
 
@@ -87,7 +98,7 @@ Int_t ArrayRTTI::GetNvars()
 // Define/delete global variables. This is the functionality to be tested.
 Int_t ArrayRTTI::DefineVariables( EMode mode )
 {
-  return DefineVarsFromList(ArrayRTTI::GetRVarDef(), mode);
+  return DefineVarsFromList(GetRVarDef(), mode);
 }
 
 //_____________________________________________________________________________
