@@ -30,7 +30,7 @@ public:
 
 protected:
 
-  Podd::PMTData* fPMTData;   // PMT ADC & TDC calibration and per-event data
+  Podd::TDCData* fPMTData;   // PMT ADC & TDC calibration and per-event data
   Data_t         fASUM_p;    // Sum of ADC minus pedestal values of channels
   Data_t         fASUM_c;    // Sum of corrected ADC amplitudes of channels
 

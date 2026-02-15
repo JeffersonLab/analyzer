@@ -6,10 +6,12 @@
 
 #include "FADCData.h"
 #include "Fadc250Module.h"
+#include "THaDetectorBase.h"
 #include "Decoder.h"
 #include <stdexcept>
 
 using namespace std;
+using namespace Podd;
 using namespace Decoder;
 
 namespace HallA {
@@ -17,6 +19,13 @@ namespace HallA {
 //_____________________________________________________________________________
 FADCData::FADCData( const char* name, const char* desc, Int_t nelem )
   : ChannelData(name, desc), fFADCData(nelem)
+{
+  // Constructor
+}
+
+//_____________________________________________________________________________
+FADCData::FADCData( const THaDetectorBase* det )
+  : FADCData(det->GetPrefix(), det->GetTitle(), det->GetNelem())
 {
   // Constructor
 }
@@ -44,23 +53,23 @@ void FADCData::Reset( Option_t* opt )
 
 //_____________________________________________________________________________
 Int_t
-FADCData::ReadConfig( FILE* file, const TDatime& date, const char* prefix )
+FADCData::ReadConfig( THaDetectorBase* det, const TDatime& date, const char* key_prefix )
 {
   // Load FADC configuration parameters (required) from database
 
   VarType kDataType = std::is_same_v<Data_t, Float_t> ? kFloat : kDouble;
 
   fConfig.reset();  // Sets default TDC scale
-  DBRequest calib_request[] = {
+  vector<DBRequest> calib_request = {
     {"adc.NPED",   &fConfig.nped,     kInt},
     {"adc.NSA",    &fConfig.nsa,      kInt},
     {"adc.NSB",    &fConfig.nsb,      kInt},
     {"adc.Win",    &fConfig.win,      kInt},
     {"adc.TFlag",  &fConfig.tflag,    kInt},
     {"tdc.scale",  &fConfig.tdcscale, kDataType, 0, true},
-    {nullptr}
   };
-  return THaAnalysisObject::LoadDB(file, date, calib_request, prefix);
+  //return LoadDatabase(det, date, calib_request, prefix);
+  return kOK;
 }
 
 //_____________________________________________________________________________
@@ -200,20 +209,19 @@ Int_t FADCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
   const char* const here = "FADCData::DefineVariables";
 
   // Define variables of the base class, if any.
-  Int_t ret = ChannelData::DefineVariablesImpl(mode, key_prefix, comment_subst);
-  if( ret )
+  if( Int_t ret = ChannelData::DefineVariablesImpl(mode, key_prefix, comment_subst) )
     return ret;
 
   const RVarDef vars[] = {
-    { "peak",      "FADC ADC peak values %s",               "fFADCData.fPeak" },
-    { "t_fadc",    "FADC TDC values %s",                    "fFADCData.fT" },
-    { "tc_fadc",   "FADC Corrected times %s",               "fFADCData.fT_c" },
-    { "overflow",  "Overflow bit of FADC pulse %s",         "fFADCData.fOverflow" },
-    { "underflow", "Underflow bit of FADC pulse %s",        "fFADCData.fUnderflow" },
-    { "badped",    "Pedestal quality bit of FADC pulse %s", "fFADCData.fPedq" },
+    { .name="peak",      .desc="FADC ADC peak values %s",               .def="fFADCData.fPeak" },
+    { .name="t_fadc",    .desc="FADC TDC values %s",                    .def="fFADCData.fT" },
+    { .name="tc_fadc",   .desc="FADC Corrected times %s",               .def="fFADCData.fT_c" },
+    { .name="overflow",  .desc="Overflow bit of FADC pulse %s",         .def="fFADCData.fOverflow" },
+    { .name="underflow", .desc="Underflow bit of FADC pulse %s",        .def="fFADCData.fUnderflow" },
+    { .name="badped",    .desc="Pedestal quality bit of FADC pulse %s", .def="fFADCData.fPedq" },
 //TODO: support vector of vectors? Arrange differently?
 //    { "samples",   "FADC waveform data",                    "fFADCData.fSamples" },
-    { nullptr }
+    { .name=nullptr }
   };
   return StdDefineVariables(vars, mode, key_prefix, here, comment_subst);
 }
@@ -224,9 +232,3 @@ Int_t FADCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
 
 ClassImp(HallA::FADCData)
 
-//_____________________________________________________________________________
-// Explicit instantiation
-#include "MakeChanDat.h"
-
-template std::pair<std::unique_ptr<HallA::FADCData>, Int_t>
-Podd::MakeChanDat<HallA::FADCData>(const TDatime&, THaDetectorBase* );

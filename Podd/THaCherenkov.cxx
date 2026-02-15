@@ -157,7 +157,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   }
 
   fChannelData.clear();
-  auto detdata = make_unique<PMTData>(GetPrefixName(), fTitle, nval);
+  auto detdata = make_unique<TDCData>(GetPrefixName(), fTitle, nval);
   fPMTData = detdata.get();
   fChannelData.emplace_back(std::move(detdata));
   assert(fPMTData->GetSize() == nval);

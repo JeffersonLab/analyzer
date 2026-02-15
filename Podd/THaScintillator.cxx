@@ -172,9 +172,9 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // Per-event data
   fChannelData.clear();
   for( int i = kRight; i <= kLeft; ++i ) {
-    auto detdata = make_unique<PMTData>(GetPrefixName(), fTitle, nval);
+    auto detdata = make_unique<TDCData>(this);
     // Keep pointers to the elements around for convenient access
-    PMTData*& pmtData = (i == kRight) ? fRightPMTs : fLeftPMTs;
+    TDCData*& pmtData = (i == kRight) ? fRightPMTs : fLeftPMTs;
     pmtData = detdata.get();
     assert(pmtData->GetSize() == nval);
     fChannelData.emplace_back(std::move(detdata));
@@ -288,7 +288,7 @@ Int_t THaScintillator::DefineVariables( EMode mode )
   // Add variables for left- and right-side PMT raw data
   class VarDefInfo {
   public:
-    PMTData* pmtData;
+    TDCData* pmtData;
     const char* key_prefix;
     const char* comment_subst;
     Int_t DefineVariables( EMode mode ) const  // Convenience function
@@ -368,7 +368,7 @@ Int_t THaScintillator::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data 
   fHitIdx.emplace(side, pad);
 
   // Store data for either left or right PMTs, as determined by 'side'
-  Podd::PMTData* pmtData = (side == kRight) ? fRightPMTs : fLeftPMTs;
+  Podd::TDCData* pmtData = (side == kRight) ? fRightPMTs : fLeftPMTs;
   if( !pmtData->HitDone() )
     pmtData->StoreHit(hitinfo, data);
 

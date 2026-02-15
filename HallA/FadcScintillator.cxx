@@ -129,7 +129,7 @@ FadcScintillator::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
   // Retrieve pedestal, if available, and update the PMTData calibrations
   const auto& FDAT = fadcData->GetData(hitinfo);
   if( FDAT.fPedq == 0 ) {
-    Podd::PMTData*& pmtData = (side == kRight) ? fRightPMTs : fLeftPMTs;
+    Podd::TDCData*& pmtData = (side == kRight) ? fRightPMTs : fLeftPMTs;
     pmtData->GetCalib(hitinfo).ped = FDAT.fPedestal;
   }
 

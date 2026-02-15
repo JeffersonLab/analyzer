@@ -14,8 +14,6 @@
 #include "OptionalType.h"
 #include "THaAnalysisObject.h"   // for enums (EMode etc.)
 #include "THaDetMap.h"
-#include <memory>
-#include <utility>
 #include <vector>
 
 class TDatime;
@@ -69,6 +67,7 @@ public:
 class FADCData : public Podd::ChannelData {
 public:
   FADCData( const char* name, const char* desc, Int_t nelem );
+  explicit FADCData( const THaDetectorBase* det );
 
   static OptUInt_t LoadFADCData( const DigitizerHitInfo_t& hitinfo );
   Int_t StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data ) override;
@@ -86,7 +85,8 @@ public:
   FADCData_t&     GetData( const DigitizerHitInfo_t& hitinfo )
   { return GetData(GetLogicalChannel(hitinfo)); }
 
-  Int_t ReadConfig( FILE* file, const TDatime& date, const char* prefix ) override;
+  Int_t ReadConfig( THaDetectorBase* det, const TDatime& date,
+                    const char* key_prefix ) override;
 
 protected:
   // Configuration for this module or group of modules
@@ -95,20 +95,15 @@ protected:
   // Per-event data
   std::vector<FADCData_t>   fFADCData;  // FADC per-event readout data
 
-  Int_t DefineVariablesImpl(
-    THaAnalysisObject::EMode mode = THaAnalysisObject::kDefine,
-    const char* key_prefix = "",
-    const char* comment_subst = "" ) override;
+  Int_t DefineVariablesImpl( THaAnalysisObject::EMode mode = kDefine,
+                             const char* key_prefix = "",
+                             const char* comment_subst = "" ) override;
 
   ClassDefOverride(FADCData,2)  // FADC raw data
 };
 
 //_____________________________________________________________________________
-// Create and initialize an FADCData object to be used with detector 'det'
-std::pair<std::unique_ptr<FADCData>, Int_t>
-MakeFADCData( const TDatime& date, THaDetectorBase* det );
 
-//_____________________________________________________________________________
 } // namespace HallA
 
 #endif //HALLA_FADCDATA_H

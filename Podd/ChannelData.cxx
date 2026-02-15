@@ -1,3 +1,5 @@
+//*-- Author :    Ole Hansen   25-Mar-21
+//
 //////////////////////////////////////////////////////////////////////////
 //
 // Podd::ChannelData
@@ -5,11 +7,21 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "ChannelData.h"
-#include "Decoder.h"
-#include "THaAnalysisObject.h" // For DefineVarsFromList
-
-#include <stdexcept>
-#include <sstream>
+#include "DataType.h"           // for Data_t
+#include "Database.h"           // for DBRequest, LoadDatabase, VarType, RVarDef
+#include "Decoder.h"            // for ChannelType
+#include "TDatime.h"            // for TDatime
+#include "THaAnalysisObject.h"  // for THaAnalysisObject, enums (EMode etc.)
+#include "THaDetMap.h"          // for DigitizerHitInfo_t
+#include "THaDetectorBase.h"    // for THaDetectorBase
+#include "TString.h"            // for TString
+#include <cassert>              // for assert
+#include <cstdio>               // for fclose, FILE, size_t
+#include <sstream>              // for ostringstream etc.
+#include <stdexcept>            // for logic_error, invalid_argument
+#include <string>               // for basic_string, allocator, string
+#include <type_traits>          // for is_same_v
+#include <vector>               // for vector
 
 using namespace std;
 using Decoder::ChannelType;
@@ -47,18 +59,18 @@ Int_t ChannelData::GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const
 
   UInt_t nelem = GetSize();
   if( nelem == 0 )
-    throw logic_error(msg(hitinfo, "ChannelData: bad size. "
-                                   "Should never happen. Call expert."));
+    throw logic_error(msg(hitinfo,
+    "ChannelData: bad size. Should never happen. Call expert."));
   return hitinfo.lchan % static_cast<Int_t>(nelem);
 }
 
 //_____________________________________________________________________________
-Int_t ChannelData::ReadConfig( FILE*, const TDatime&, const char* )
+Int_t ChannelData::ReadConfig( THaDetectorBase*, const TDatime& , const char* )
 {
   // Default implementation of reading the database. Does nothing.
 
   fIsInit = true;
-  return THaAnalysisObject::kOK;
+  return kOK;
 }
 
 //_____________________________________________________________________________
@@ -69,15 +81,14 @@ Int_t ChannelData::DefineVariables( THaAnalysisObject::EMode mode,
   // Define variables for ChannelData and subclasses. The actual work is done
   // in the virtual function DefineVariablesImpl.
 
-  if( mode == THaAnalysisObject::kDefine && fVarOK )
-    return THaAnalysisObject::kOK;
+  if( mode == kDefine && fVarOK )
+    return kOK;
 
-  Int_t ret = DefineVariablesImpl(mode, key_prefix, comment_subst);
-  if( ret )
+  if( Int_t ret = DefineVariablesImpl(mode, key_prefix, comment_subst) )
     return ret;
 
-  fVarOK = (mode == THaAnalysisObject::kDefine);
-  return THaAnalysisObject::kOK;
+  fVarOK = (mode == kDefine);
+  return kOK;
 }
 
 //_____________________________________________________________________________
@@ -90,7 +101,7 @@ Int_t ChannelData::DefineVariablesImpl( THaAnalysisObject::EMode /*mode*/,
   // typically override this function. (ChannelData without variables would be
   // rather pointless.)
 
-  return THaAnalysisObject::kOK;
+  return kOK;
 }
 
 //_____________________________________________________________________________
@@ -103,11 +114,11 @@ Int_t ChannelData::StdDefineVariables( const RVarDef* vars,
   // Standard implementation of DefineVariables for ChannelData.
   // Avoids code duplication and ensures consistent behavior.
 
-  TString prefix = fName + ".";
+  TString prefix = fName;
   if( key_prefix && *key_prefix )
     prefix += key_prefix;
   return THaAnalysisObject::DefineVarsFromList(
-    vars, THaAnalysisObject::kRVarDef, mode, "", this, prefix.Data(),
+    vars, THaAnalysisObject::kRVarDef, mode, "", this, prefix,
     here, comment_subst);
 }
 
@@ -135,6 +146,12 @@ ADCData::ADCData( const char* name, const char* desc, UInt_t nelem )
 }
 
 //_____________________________________________________________________________
+ADCData::ADCData( const THaDetectorBase* det )
+  : ADCData(det->GetPrefix(), det->GetTitle(), det->GetNelem())
+{
+}
+
+//_____________________________________________________________________________
 void ADCData::Clear( Option_t* opt )
 {
   // Clear event-by-event data
@@ -144,6 +161,49 @@ void ADCData::Clear( Option_t* opt )
     adc.adc_clear();
   }
   fNHits = 0;
+}
+
+//_____________________________________________________________________________
+Int_t ADCData::ReadConfig( THaDetectorBase* det, const TDatime& date,
+                           const char* key_prefix )
+{
+  // Load ADC calibration constants from database
+
+//  VarType kDataType = std::is_same_v<Data_t, Float_t> ? kFloat : kDouble;
+  constexpr VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
+
+  FILE* file = det->OpenFile(date);
+  if( !file )
+    return kFileError;
+
+  // Set defaults
+  for( auto& c : fCalib )
+    c.adc_calib_reset();
+
+  const UInt_t nval = fCalib.size();
+  vector<Data_t> ped, gain, twalk;
+  ped.reserve(nval); gain.reserve(nval); twalk.reserve(nval);
+  const vector<DBRequest> calib_request = {
+    {
+      .name = "adc.pedestals,pedestals,ped", .var = &ped,
+      .type = kDataTypeV, .nelem = nval, .optional = true
+    },
+    {
+      .name = "adc.gains,gains,gain", .var = &gain,
+      .type = kDataTypeV, .nelem = nval, .optional = true
+    },
+    {
+      .name = "adc.twalk,timewalk_params", .var = &twalk,
+      .type = kDataTypeV, .nelem = nval, .optional = true
+    },
+  };
+  Int_t err = LoadDatabase({.file = file, .date = date,
+    .prefix = det->GetPrefix(), .key_prefix = key_prefix}, calib_request);
+  (void)fclose(file);
+  if( !err ) {
+    //TODO Save results to calib struct(s)
+  }
+  return err;
 }
 
 //_____________________________________________________________________________
@@ -158,17 +218,17 @@ void ADCData::Reset( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-static void StoreADC( ADCData_t& ADC, const ADCCalib_t& CALIB,
+static void StoreADC( ADCHit_t& ADC, const ADCCalib_t& CALIB,
                       const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   ADC.adc   = data;
   ADC.adc_p = ADC.adc - CALIB.ped;
   ADC.adc_c = ADC.adc_p * CALIB.gain;
-  ADC.nadc  = hitinfo.nhit;
+  //ADC.nhits  = hitinfo.nhit;
 }
 
 //_____________________________________________________________________________
-static void StoreTDC( TDCData_t& TDC, const TDCCalib_t& CALIB,
+static void StoreTDC( TDCHit_t& TDC, const TDCCalib_t& CALIB,
                       const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   TDC.tdc   = data;
@@ -179,7 +239,7 @@ static void StoreTDC( TDCData_t& TDC, const TDCCalib_t& CALIB,
     // time = (offset-data)*res, so reverse the sign.
     TDC.tdc_c *= -1.0;
   }
-  TDC.ntdc  = hitinfo.nhit;
+  //TDC.ntdc  = hitinfo.nhit;
 }
 
 //_____________________________________________________________________________
@@ -218,22 +278,21 @@ Int_t ADCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
   const char* const here = "ADCData::DefineVariables";
 
   // Define variables of the base class, if any
-  Int_t ret = ChannelData::DefineVariablesImpl(mode, key_prefix, comment_subst);
-  if( ret )
+  if( Int_t ret = ChannelData::DefineVariablesImpl(mode, key_prefix, comment_subst) )
     return ret;
 
   const RVarDef vars[] = {
-    { "nhit",  "Number of %s PMTs with ADC signal",     "fNHits"  },
-    { "a",     "Raw %s ADC amplitudes",                 "fADCs.adc"   },
-    { "a_p",   "Pedestal-subtracted %s ADC amplitudes", "fADCs.adc_p" },
-    { "a_c",   "Gain-corrected %s ADC amplitudes",      "fADCs.adc_c" },
-    { nullptr }
+    { .name = "nhit",  .desc = "Number of %s PMTs with ADC signal",     .def = "fNHits"  },
+    { .name = "a",     .desc = "Raw %s ADC amplitudes",                 .def = "fADCs.adc"   },
+    { .name = "a_p",   .desc = "Pedestal-subtracted %s ADC amplitudes", .def = "fADCs.adc_p" },
+    { .name = "a_c",   .desc = "Gain-corrected %s ADC amplitudes",      .def = "fADCs.adc_c" },
+    { .name = nullptr }
   };
   return StdDefineVariables(vars, mode, key_prefix, here, comment_subst);
 }
 
 //=============================================================================
-PMTData::PMTData( const char* name, const char* desc, UInt_t nelem )
+TDCData::TDCData( const char* name, const char* desc, UInt_t nelem )
   : ChannelData(name, desc), fCalib(nelem), fPMTs(nelem)
 {
   // Constructor. Creates data structures for 'nelem' ADC+TDC channels, i.e.
@@ -243,7 +302,13 @@ PMTData::PMTData( const char* name, const char* desc, UInt_t nelem )
 }
 
 //_____________________________________________________________________________
-void PMTData::Clear( Option_t* opt )
+TDCData::TDCData( const THaDetectorBase* det )
+  : TDCData(det->GetPrefixName(), det->GetTitle(), det->GetNelem())
+{
+}
+
+//_____________________________________________________________________________
+void TDCData::Clear( Option_t* opt )
 {
   // Clear event-by-event data
   ChannelData::Clear(opt);
@@ -255,7 +320,55 @@ void PMTData::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-void PMTData::Reset( Option_t* opt )
+//FIXME: support key prefix
+//FIXME: add alternative keys
+Int_t TDCData::ReadConfig( THaDetectorBase* det, const TDatime& date,
+                           const char* key_prefix )
+{
+  // Load ADC calibration constants from database
+
+//  VarType kDataType = std::is_same_v<Data_t, Float_t> ? kFloat : kDouble;
+  constexpr VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
+
+  FILE* file = det->OpenFile(date);
+  if( !file )
+    return kFileError;
+
+  // Set defaults
+  for( auto& c : fCalib ) {
+    c.adc_calib_reset();
+    c.tdc_calib_reset();
+  }
+
+  UInt_t nval = fCalib.size();
+  vector<Data_t> ped, gain, twalk;
+  ped.reserve(nval); gain.reserve(nval); twalk.reserve(nval);
+  const vector<DBRequest> calib_request = {
+    {
+      .name = "pedestals", .var = &ped,
+      .type = kDataTypeV, .nelem = nval, .optional = true
+    },
+    {
+      .name = "gains", .var = &gain,
+      .type = kDataTypeV, .nelem = nval, .optional = true
+    },
+    {
+      .name = "timewalk_params", .var = &twalk,
+      .type = kDataTypeV, .nelem = nval, .optional = true
+    },
+    {}
+  };
+  Int_t err = LoadDatabase({.file = file, .date = date,
+    .prefix = det->GetPrefix(), .key_prefix = key_prefix}, calib_request);
+  (void)fclose(file);
+  if( !err ) {
+
+  }
+  return err;
+}
+
+//_____________________________________________________________________________
+void TDCData::Reset( Option_t* opt )
 {
   // Clear event-by-event data and reset calibration values to defaults.
   Clear(opt);
@@ -266,7 +379,7 @@ void PMTData::Reset( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-Int_t PMTData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
+Int_t TDCData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   // Copy the raw and calibrated ADC/TDC data to the member variables.
   // This is the single-hit version of this function.
@@ -299,7 +412,7 @@ Int_t PMTData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 }
 
 //_____________________________________________________________________________
-Int_t PMTData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
+Int_t TDCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
                                     const char* key_prefix,
                                     const char* comment_subst )
 {
@@ -308,20 +421,19 @@ Int_t PMTData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
   const char* const here = "PMTData::DefineVariables";
 
   // Define variables of the base class, if any
-  Int_t ret = ChannelData::DefineVariablesImpl(mode, key_prefix, comment_subst);
-  if( ret )
+  if( Int_t ret = ChannelData::DefineVariablesImpl(mode, key_prefix, comment_subst) )
     return ret;
 
   const RVarDef vars[] = {
-    { "nthit",  "Number of %s PMTs with valid TDC",      "fNHits.tdc"  },
-    { "nahit",  "Number of %s PMTs with ADC signal",     "fNHits.adc"  },
-    { "nhits",  "Total number of %s TDC hits",           "fPMTs.ntdc"  },
-    { "t",      "Raw %s TDC times",                      "fPMTs.tdc"   },
-    { "t_c",    "Calibrated %s TDC times (s)",           "fPMTs.tdc_c" },
-    { "a",      "Raw %s ADC amplitudes",                 "fPMTs.adc"   },
-    { "a_p",    "Pedestal-subtracted %s ADC amplitudes", "fPMTs.adc_p" },
-    { "a_c",    "Gain-corrected %s ADC amplitudes",      "fPMTs.adc_c" },
-    { nullptr }
+    { .name = "nthit",  .desc = "Number of %s PMTs with valid TDC",       .def = "fNHits.tdc"  },
+    { .name = "nahit",  .desc = "Number of %s PMTs with ADC signal",      .def = "fNHits.adc"  },
+    { .name = "nhits",  .desc = "Total number of %s TDC hits",            .def = "fPMTs.ntdc"  },
+    { .name = "t",      .desc = "Raw %s TDC times",                       .def = "fPMTs.tdc"   },
+    { .name = "t_c",    .desc = "Calibrated %s TDC times (s)",            .def = "fPMTs.tdc_c" },
+    { .name = "a",      .desc = "Raw %s ADC amplitudes",                  .def = "fPMTs.adc"   },
+    { .name = "a_p",    .desc = "Pedestal-subtracted %s ADC amplitudes",  .def = "fPMTs.adc_p" },
+    { .name = "a_c",    .desc = "Gain-corrected %s ADC amplitudes",       .def = "fPMTs.adc_c" },
+    { .name = nullptr}
   };
   return StdDefineVariables(vars, mode, key_prefix, here, comment_subst);
 }
@@ -333,14 +445,3 @@ Int_t PMTData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
 ClassImp(Podd::ChannelData)
 ClassImp(Podd::PMTData)
 ClassImp(Podd::ADCData)
-
-//_____________________________________________________________________________
-// Explicit instantiations
-#include "MakeChanDat.h"
-
-template std::pair<std::unique_ptr<Podd::PMTData>, Int_t>
-Podd::MakeChanDat<Podd::PMTData>(const TDatime&, THaDetectorBase* );
-
-template std::pair<std::unique_ptr<Podd::ADCData>, Int_t>
-Podd::MakeChanDat<Podd::ADCData>(const TDatime&, THaDetectorBase* );
-

@@ -59,8 +59,8 @@ protected:
   Data_t    fResolution;  // average time resolution per PMT (s)
 
   // Per-event data
-  Podd::PMTData*         fRightPMTs;      // Raw PMT data (right side)
-  Podd::PMTData*         fLeftPMTs;       // Raw PMT data (left side)
+  Podd::TDCData*         fRightPMTs;      // Raw PMT data (right side)
+  Podd::TDCData*         fLeftPMTs;       // Raw PMT data (left side)
   std::set<Idx_t>        fHitIdx;         // Indices of PMTs with data
   std::vector<HitData_t> fHits;           // Calculated hit data, per hit
   // fPadData duplicates the info in fHits for direct access via paddle number
