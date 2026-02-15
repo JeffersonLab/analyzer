@@ -68,8 +68,8 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
 
   const char* const here = "ReadDatabase";
 
-  VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;
-  VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
+  constexpr VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;
+  constexpr VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
 
   // Read database
   Int_t err = THaPidDetector::ReadDatabase(date);
@@ -91,17 +91,16 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   Int_t ncols = 0, nrows = 0;
 
   // Read mapping/geometry/configuration parameters
-  DBRequest config_request[] = {
-    { "detmap",       &detmap,  kIntV },
-    { "chanmap",      &chanmap, kIntV,    0, true },
-    { "ncols",        &ncols,   kInt },
-    { "nrows",        &nrows,   kInt },
-    { "xy",           &xy,      kDoubleV, 2 },  // center pos of block 1
-    { "dxdy",         &dxy,     kDoubleV, 2 },  // dx and dy block spacings
-    { "emin",         &fEmin,   kDataType },
-    { nullptr }
+  const vector<DBRequest> config_request = {
+    { .name = "detmap",  .var = &detmap,  .type = kIntV },
+    { .name = "chanmap", .var = &chanmap, .type = kIntV,  .optional = true },
+    { .name = "ncols",   .var = &ncols,   .type = kInt },
+    { .name = "nrows",   .var = &nrows,   .type = kInt },
+    { .name = "xy",      .var = &xy,      .type = kDoubleV, .nelem = 2 },  // center pos of block 1
+    { .name = "dxdy",    .var = &dxy,     .type = kDoubleV, .nelem = 2 },  // dx and dy block spacings
+    { .name = "emin",    .var = &fEmin,   .type = kDataType },
   };
-  err = LoadDB( file, date, config_request, fPrefix );
+  err = LoadDatabase( file, date, config_request, fPrefix );
 
   // Sanity checks
   if( !err && (nrows <= 0 || ncols <= 0) ) {
@@ -201,12 +200,11 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   vector<Data_t> ped, gain;
   ped.assign(nval, 0.0);
   gain.assign(nval, 1.0);
-  DBRequest calib_request[] = {
-    { "pedestals",    &ped,   kDataTypeV, nval, true },
-    { "gains",        &gain,  kDataTypeV, nval, true },
-    { nullptr }
+  const vector<DBRequest> calib_request = {
+    { .name = "pedestals", .var = &ped,  .type = kDataTypeV, .nelem = nval, .optional = true },
+    { .name = "gains",     .var = &gain, .type = kDataTypeV, .nelem = nval, .optional = true },
   };
-  err = LoadDB( file, date, calib_request, fPrefix );
+  err = LoadDatabase( file, date, calib_request, fPrefix );
   fclose(file);
   if( err )
     return err;
@@ -226,17 +224,16 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   if ( fDebug > 2 ) {
     const auto N = static_cast<UInt_t>(fNelem);
     Double_t pos[3]; fOrigin.GetXYZ(pos);
-    DBRequest list[] = {
-      { "Number of blocks",       &fNelem,     kInt        },
-      { "Detector center",        pos,         kDouble, 3  },
-      { "Detector size",          fSize,       kDouble, 3  },
-      { "Channel map",            &chanmap,    kIntV       },
-      { "Position of block 1",    &xy,         kDoubleV    },
-      { "Block x/y spacings",     &dxy,        kDoubleV    },
-      { "Minimum cluster energy", &fEmin,      kDataType,  1  },
-      { "ADC pedestals",          &ped,        kDataTypeV,  N  },
-      { "ADC gains",              &gain,       kDataTypeV,  N  },
-      { nullptr }
+    const vector<DBRequest> list = {
+      { .name = "Number of blocks",       .var = &fNelem,  .type = kInt                   },
+      { .name = "Detector center",        .var = pos,                          .nelem = 3 },
+      { .name = "Detector size",          .var = fSize,    .type = kDouble,    .nelem = 3 },
+      { .name = "Channel map",            .var = &chanmap, .type = kIntV                  },
+      { .name = "Position of block 1",    .var = &xy,      .type = kDoubleV               },
+      { .name = "Block x/y spacings",     .var = &dxy,     .type = kDoubleV               },
+      { .name = "Minimum cluster energy", .var = &fEmin,   .type = kDataType,  .nelem = 1 },
+      { .name = "ADC pedestals",          .var = &ped,     .type = kDataTypeV, .nelem = N },
+      { .name = "ADC gains",              .var = &gain,    .type = kDataTypeV, .nelem = N },
     };
     DebugPrint( list );
   }
@@ -256,16 +253,16 @@ Int_t THaShower::DefineVariables( EMode mode )
     return ret;
 
   RVarDef vars[] = {
-    { "asum_p", "Sum of ped-subtracted ADCs",         "fAsum_p" },
-    { "asum_c", "Sum of calibrated ADCs",             "fAsum_c" },
-    { "nclust", "Number of clusters",                 "fNclust" },
-    { "e",      "Energy (MeV) of largest cluster",    "fE" },
-    { "x",      "x-position of largest cluster",      "fX" },
-    { "y",      "y-position of largest cluster",      "fY" },
-    { "mult",   "Multiplicity of largest cluster",    "GetMainClusterSize()" },
-    { "nblk",   "Numbers of blocks in main cluster",  "fClBlk.n" },
-    { "eblk",   "Energies of blocks in main cluster", "fClBlk.E" },
-    { nullptr }
+    { .name = "asum_p", .desc = "Sum of ped-subtracted ADCs",         .def = "fAsum_p" },
+    { .name = "asum_c", .desc = "Sum of calibrated ADCs",             .def = "fAsum_c" },
+    { .name = "nclust", .desc = "Number of clusters",                 .def = "fNclust" },
+    { .name = "e",      .desc = "Energy (MeV) of largest cluster",    .def = "fE" },
+    { .name = "x",      .desc = "x-position of largest cluster",      .def = "fX" },
+    { .name = "y",      .desc = "y-position of largest cluster",      .def = "fY" },
+    { .name = "mult",   .desc = "Multiplicity of largest cluster",    .def = "GetMainClusterSize()" },
+    { .name = "nblk",   .desc = "Numbers of blocks in main cluster",  .def = "fClBlk.n" },
+    { .name = "eblk",   .desc = "Energies of blocks in main cluster", .def = "fClBlk.E" },
+    { .name = nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }

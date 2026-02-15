@@ -17,6 +17,7 @@
 #include "TMath.h"
 
 #include <cstdlib>
+#include <cstdint>
 #include <cassert>
 #include <iostream>
 #include <iomanip>
@@ -52,8 +53,8 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 
   const char* const here = "ReadDatabase";
 
-  VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;
-  VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
+  constexpr VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;
+  constexpr VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
 
   // Read database
   Int_t err = THaPidDetector::ReadDatabase(date);
@@ -70,7 +71,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
     return err;
   }
 
-  enum { kModeUnset = -255, kCommonStop = 0, kCommonStart = 1 };
+  enum : std::int8_t { kModeUnset = -1, kCommonStop = 0, kCommonStart = 1 };
 
   vector<Int_t> detmap;
   Int_t nelem = 0;
@@ -78,14 +79,13 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   Data_t tdc2t = 5e-10;  // TDC resolution (s/channel)
 
   // Read configuration parameters
-  DBRequest config_request[] = {
-    { "detmap",       &detmap,   kIntV },
-    { "npmt",         &nelem,    kInt  },
-    { "tdc.res",      &tdc2t,    kDataType, 0, true }, // optional to support old DBs
-    { "tdc.cmnstart", &tdc_mode, kInt,      0, true },
-    { nullptr }
+  const vector<DBRequest> config_request = {
+    { .name = "detmap",       .var = &detmap,   .type = kIntV },
+    { .name = "npmt",         .var = &nelem,    .type = kInt  },
+    { .name = "tdc.res",      .var = &tdc2t,    .type = kDataType, .optional = true }, // optional to support old DBs
+    { .name = "tdc.cmnstart", .var = &tdc_mode, .type = kInt,      .optional = true },
   };
-  err = LoadDB( file, date, config_request, fPrefix );
+  err = LoadDatabase( file, date, config_request, fPrefix );
 
   // Sanity checks
   if( !err && nelem <= 0 ) {
@@ -164,13 +164,13 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 
   // Read calibration parameters
   vector<Data_t> off, ped, gain;
-  DBRequest calib_request[] = {
-    { "tdc.offsets",    &off,  kDataTypeV, nval, true },
-    { "adc.pedestals",  &ped,  kDataTypeV, nval, true },
-    { "adc.gains",      &gain, kDataTypeV, nval, true },
-    { nullptr }
+  off.reserve(nval), ped.reserve(nval), gain.reserve(nval);
+  const vector<DBRequest> calib_request = {
+    { .name = "tdc.offsets",   .var = &off,  .type = kDataTypeV, .nelem = nval, .optional = true },
+    { .name = "adc.pedestals", .var = &ped,  .type = kDataTypeV, .nelem = nval, .optional = true },
+    { .name = "adc.gains",     .var = &gain, .type = kDataTypeV, .nelem = nval, .optional = true },
   };
-  err = LoadDB( file, date, calib_request, fPrefix );
+  err = LoadDatabase( file, date, calib_request, fPrefix );
   fclose(file);
   if( err )
     return err;
@@ -191,14 +191,13 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   if ( fDebug > 2 ) {
     const auto N = static_cast<UInt_t>(fNelem);
     Double_t pos[3]; fOrigin.GetXYZ(pos);
-    DBRequest list[] = {
-      { "Number of mirrors", &fNelem, kInt       },
-      { "Detector position", pos,     kDouble, 3 },
-      { "Detector size",     fSize,   kDouble, 3 },
-      { "TDC offsets",       &off,    kDataTypeV,  N },
-      { "ADC pedestals",     &ped,    kDataTypeV,  N },
-      { "ADC gains",         &gain,   kDataTypeV,  N },
-      { nullptr }
+    const vector<DBRequest> list = {
+      { .name = "Number of mirrors", .var = &fNelem, .type = kInt                    },
+      { .name = "Detector position", .var = pos,                          .nelem = 3 },
+      { .name = "Detector size",     .var = fSize,                        .nelem = 3 },
+      { .name = "TDC offsets",       .var = &off,    .type = kDataTypeV,  .nelem = N },
+      { .name = "ADC pedestals",     .var = &ped,    .type = kDataTypeV,  .nelem = N },
+      { .name = "ADC gains",         .var = &gain,   .type = kDataTypeV,  .nelem = N },
     };
     DebugPrint( list );
   }
@@ -219,9 +218,9 @@ Int_t THaCherenkov::DefineVariables( EMode mode )
     return ret;
 
   RVarDef vars[] = {
-    {"asum_p", "Sum of ADC minus pedestal values",   "fASUM_p"},
-    {"asum_c", "Sum of corrected ADC amplitudes",    "fASUM_c"},
-    {nullptr}
+    { .name = "asum_p", .desc = "Sum of ADC minus pedestal values", .def = "fASUM_p" },
+    { .name = "asum_c", .desc = "Sum of corrected ADC amplitudes",  .def = "fASUM_c" },
+    { .name = nullptr }
   };
   return DefineVarsFromList(vars, mode);
 }

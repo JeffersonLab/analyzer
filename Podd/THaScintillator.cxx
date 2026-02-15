@@ -63,11 +63,12 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
 
   const char* const here = "ReadDatabase";
 
-  VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;
-  VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
+  constexpr VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;
+  constexpr VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
 
-  FILE* file = OpenFile( date );
-  if( !file ) return kFileError;
+  FILE* file = OpenFile(date);
+  if( !file )
+    return kFileError;
 
   // Read fOrigin and fSize (required!)
   Int_t err = ReadGeometry( file, date, true );
@@ -76,22 +77,22 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     return err;
   }
 
-  enum { kModeUnset = -255, kCommonStop = 0, kCommonStart = 1 };
+  enum : Char_t { kModeUnset = -1, kCommonStop = 0, kCommonStart = 1 };
 
   vector<Int_t> detmap;
   Int_t nelem = 0;
   Int_t tdc_mode = kModeUnset;
   Data_t tdc2t = 5e-10;  // TDC resolution (s/channel), for reference, required anyway
+  detmap.reserve(24);
 
   // Read configuration parameters
-  DBRequest config_request[] = {
-    { "detmap",       &detmap,   kIntV },
-    { "npaddles",     &nelem,    kInt  },
-    { "tdc.res",      &tdc2t,    kDataType },
-    { "tdc.cmnstart", &tdc_mode, kInt, 0, true },
-    { nullptr }
+  const vector<DBRequest> config_request = {
+    { .name = "detmap",       .var = &detmap,   .type = kIntV },
+    { .name = "npaddles",     .var = &nelem,    .type = kInt  },
+    { .name = "tdc.res",      .var = &tdc2t,    .type = kDataType },
+    { .name = "tdc.cmnstart", .var = &tdc_mode, .type = kInt, .optional = true },
   };
-  err = LoadDB( file, date, config_request, fPrefix );
+  err = LoadDatabase( file, date, config_request, fPrefix );
 
   // Sanity checks
   if( !err && nelem <= 0 ) {
@@ -109,20 +110,26 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
       fNelem = nelem;
   }
 
-  UInt_t flags = THaDetMap::kFillLogicalChannel | THaDetMap::kFillModel;
-  if( !err && FillDetMap(detmap, flags, here) <= 0 ) {
-    err = kInitError;  // Error already printed by FillDetMap
+  if( !err ) {
+    if( UInt_t flags = THaDetMap::kFillLogicalChannel | THaDetMap::kFillModel;
+        FillDetMap(detmap, flags, here) <= 0 ) {
+      err = kInitError;  // Error already printed by FillDetMap
+    }
   }
 
-  UInt_t nval = fNelem;
+  const UInt_t nval = fNelem;
   if( !err ) {
-    UInt_t tot_nchan = fDetMap->GetTotNumChan();
-    if( tot_nchan != 4 * nval ) {
+    if( UInt_t tot_nchan = fDetMap->GetTotNumChan(); tot_nchan != 4 * nval ) {
       Error(Here(here), "Number of detector map channels (%u) "
-                        "inconsistent with 4*number of paddles (%d)",
-            tot_nchan, 4*fNelem);
+                        "inconsistent with 4*number of paddles (%u)",
+            tot_nchan, 4 * nval);
       err = kInitError;
     }
+  }
+
+  if( err ) {
+    fclose(file);
+    return err;
   }
 
   // Deal with the TDC mode (common stop (default) vs. common start).
@@ -161,11 +168,6 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
       d->SetTDCMode(tdc_mode);
   }
 
-  if( err ) {
-    fclose(file);
-    return err;
-  }
-
   // Set up storage for basic detector data
   // Per-event data
   fChannelData.clear();
@@ -174,7 +176,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     // Keep pointers to the elements around for convenient access
     PMTData*& pmtData = (i == kRight) ? fRightPMTs : fLeftPMTs;
     pmtData = detdata.get();
-    assert(pmtData->GetSize() - nval == 0);
+    assert(pmtData->GetSize() == nval);
     fChannelData.emplace_back(std::move(detdata));
   }
   fPadData.resize(nval);
@@ -195,25 +197,24 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   Data_t adcmip = 1.e10;  // large number for offset, so reference is effectively disabled
 
   vector<Data_t> loff, roff, lped, rped, lgain, rgain, twalk;
-  DBRequest calib_request[] = {
-    { "L.off",            &loff,         kDataTypeV, nval,   true },
-    { "R.off",            &roff,         kDataTypeV, nval,   true },
-    { "L.ped",            &lped,         kDataTypeV, nval,   true },
-    { "R.ped",            &rped,         kDataTypeV, nval,   true },
-    { "L.gain",           &lgain,        kDataTypeV, nval,   true },
-    { "R.gain",           &rgain,        kDataTypeV, nval,   true },
-    { "Cn",               &fCn,          kDataType                },
-    { "MIP",              &adcmip,       kDataType,  0,      true },
+  const vector<DBRequest> calib_request = {
+    { .name = "L.off",            .var = &loff,         .type = kDataTypeV, .nelem = nval,   .optional = true },
+    { .name = "R.off",            .var = &roff,         .type = kDataTypeV, .nelem = nval,   .optional = true },
+    { .name = "L.ped",            .var = &lped,         .type = kDataTypeV, .nelem = nval,   .optional = true },
+    { .name = "R.ped",            .var = &rped,         .type = kDataTypeV, .nelem = nval,   .optional = true },
+    { .name = "L.gain",           .var = &lgain,        .type = kDataTypeV, .nelem = nval,   .optional = true },
+    { .name = "R.gain",           .var = &rgain,        .type = kDataTypeV, .nelem = nval,   .optional = true },
+    { .name = "Cn",               .var = &fCn,          .type = kDataType },
+    { .name = "MIP",              .var = &adcmip,       .type = kDataType,  .nelem = 0,      .optional = true },
     // timewalk coefficients for tw = coeff*(1./sqrt(ADC-Ped)-1./sqrt(ADCMip))
     // TODO: Perhaps the timewalk parameters should be split into L/R blocks?
     // Currently, these need to be 2*nelem numbers, first nelem for the RPMTs,
     // then another nelem for the LPMTs. Easy to mix up.
-    { "timewalk_params",  &twalk,        kDataTypeV, 2*nval, true },
-    { "avgres",           &fResolution,  kDataType,  0,      true },
-    { "atten",            &fAttenuation, kDataType,  0,      true },
-    { nullptr }
+    { .name = "timewalk_params",  .var = &twalk,        .type = kDataTypeV, .nelem = 2*nval, .optional = true },
+    { .name = "avgres",           .var = &fResolution,  .type = kDataType,  .nelem = 0,      .optional = true },
+    { .name = "atten",            .var = &fAttenuation, .type = kDataType,  .nelem = 0,      .optional = true },
   };
-  err = LoadDB( file, date, calib_request, fPrefix );
+  err = LoadDatabase( file, date, calib_request, fPrefix );
   fclose(file);
   if( err )
     return err;
@@ -253,24 +254,23 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   if ( fDebug > 2 ) {
     const auto N = static_cast<UInt_t>(fNelem);
     Double_t pos[3]; fOrigin.GetXYZ(pos);
-    DBRequest list[] = {
-      { "Number of paddles",    &fNelem,       kInt            },
-      { "Detector position",    pos,           kDouble,    3   },
-      { "Detector size",        fSize,         kDouble,    3   },
-      { "TDC offsets Left",     &loff,         kDataTypeV, N   },
-      { "TDC offsets Right",    &roff,         kDataTypeV, N   },
-      { "ADC pedestals Left",   &lped,         kDataTypeV, N   },
-      { "ADC pedestals Right",  &rped,         kDataTypeV, N   },
-      { "ADC gains Left",       &lgain,        kDataTypeV, N   },
-      { "ADC gains Right",      &rgain,        kDataTypeV, N   },
-      { "TDC resolution",       &tdc2t,        kDataType       },
-      { "TDC mode",             &tdc_mode,     kInt            },
-      { "Light propag. speed",  &fCn,          kDataType       },
-      { "ADC MIP",              &adcmip,       kDataType       },
-      { "Timewalk params",      &twalk,        kDataTypeV, 2*N },
-      { "Time resolution",      &fResolution,  kDataType       },
-      { "Attenuation",          &fAttenuation, kDataType       },
-      { nullptr }
+    const vector<DBRequest> list = {
+      { .name = "Number of paddles",    .var = &fNelem,       .type = kInt                     },
+      { .name = "Detector position",    .var = pos,                               .nelem = 3   },
+      { .name = "Detector size",        .var = fSize,                             .nelem = 3   },
+      { .name = "TDC offsets Left",     .var = &loff,         .type = kDataTypeV, .nelem = N   },
+      { .name = "TDC offsets Right",    .var = &roff,         .type = kDataTypeV, .nelem = N   },
+      { .name = "ADC pedestals Left",   .var = &lped,         .type = kDataTypeV, .nelem = N   },
+      { .name = "ADC pedestals Right",  .var = &rped,         .type = kDataTypeV, .nelem = N   },
+      { .name = "ADC gains Left",       .var = &lgain,        .type = kDataTypeV, .nelem = N   },
+      { .name = "ADC gains Right",      .var = &rgain,        .type = kDataTypeV, .nelem = N   },
+      { .name = "TDC resolution",       .var = &tdc2t,        .type = kDataType                },
+      { .name = "TDC mode",             .var = &tdc_mode,     .type = kInt                     },
+      { .name = "Light propag. speed",  .var = &fCn,          .type = kDataType                },
+      { .name = "ADC MIP",              .var = &adcmip,       .type = kDataType                },
+      { .name = "Timewalk params",      .var = &twalk,        .type = kDataTypeV, .nelem = 2*N },
+      { .name = "Time resolution",      .var = &fResolution,  .type = kDataType                },
+      { .name = "Attenuation",          .var = &fAttenuation, .type = kDataType                },
     };
     DebugPrint( list );
   }
@@ -304,24 +304,24 @@ Int_t THaScintillator::DefineVariables( EMode mode )
 
   // Define variables on the remaining event data
   RVarDef vars[] = {
-    { "nthit",  "Number of paddles with L&R TDCs",   "GetNHits()" },
-    { "t_pads", "Paddles with L&R coincidence TDCs", "fHits.pad" },
-    { "y_t",    "y-position from timing (m)",        "fPadData.yt" },
-    { "y_adc",  "y-position from amplitudes (m)",    "fPadData.ya" },
-    { "time",   "Time of hit at plane (s)",          "fPadData.time" },
-    { "dtime",  "Est. uncertainty of time (s)",      "fPadData.dtime" },
-    { "dedx",   "dEdX-like deposited in paddle",     "fPadData.ampl" },
-    { "hit.y_t","y-position from timing (m)",        "fHits.yt" },
-    { "hit.y_adc", "y-position from amplitudes (m)", "fHits.ya" },
-    { "hit.time",  "Time of hit at plane (s)",       "fHits.time" },
-    { "hit.dtime", "Est. uncertainty of time (s)",   "fHits.dtime" },
-    { "hit.dedx"  ,"dEdX-like deposited in paddle",  "fHits.ampl" },
-    { "trdx",   "track deviation in x-position (m)", "fTrackProj.THaTrackProj.fdX" },
-    { "trpad",  "paddle-hit associated with track",  "fTrackProj.THaTrackProj.fChannel" },
-    { nullptr }
+    { .name = "nthit",     .desc = "Number of paddles with L&R TDCs",   .def = "GetNHits()" },
+    { .name = "t_pads",    .desc = "Paddles with L&R coincidence TDCs", .def = "fHits.pad" },
+    { .name = "y_t",       .desc = "y-position from timing (m)",        .def = "fPadData.yt" },
+    { .name = "y_adc",     .desc = "y-position from amplitudes (m)",    .def = "fPadData.ya" },
+    { .name = "time",      .desc = "Time of hit at plane (s)",          .def = "fPadData.time" },
+    { .name = "dtime",     .desc = "Est. uncertainty of time (s)",      .def = "fPadData.dtime" },
+    { .name = "dedx",      .desc = "dEdX-like deposited in paddle",     .def = "fPadData.ampl" },
+    { .name = "hit.y_t",   .desc = "y-position from timing (m)",        .def = "fHits.yt" },
+    { .name = "hit.y_adc", .desc = "y-position from amplitudes (m)",    .def = "fHits.ya" },
+    { .name = "hit.time",  .desc = "Time of hit at plane (s)",          .def = "fHits.time" },
+    { .name = "hit.dtime", .desc = "Est. uncertainty of time (s)",      .def = "fHits.dtime" },
+    { .name = "hit.dedx",  .desc = "dEdX-like deposited in paddle",     .def = "fHits.ampl" },
+    { .name = "trdx",      .desc = "track deviation in x-position (m)", .def = "fTrackProj.THaTrackProj.fdX" },
+    { .name = "trpad",     .desc = "paddle-hit associated with track",  .def = "fTrackProj.THaTrackProj.fChannel" },
+    { .name = nullptr }
   };
-  Int_t ret = DefineVarsFromList( vars, mode );
-  if( ret )
+
+  if( Int_t ret = DefineVarsFromList(vars, mode) )
     return ret;
 
   // Define general detector variables (track crossing coordinates etc.)
@@ -454,8 +454,8 @@ Data_t THaScintillator::TimeWalkCorrection( Idx_t idx, Data_t adc )
   if ( adc <=0 || ref <= 0 || par == 0)
     return 0;
 
-  // Traditional correction according to
-  // J.S.Brown et al., NIM A221, 503 (1984); T.Dreyer et al., NIM A309, 184 (1991)
+  // Traditional correction according to W.Braunschweig et al., NIM 134, 261 (1976).
+  // See also J.S.Brown et al., NIM 221, 503 (1984); T.Dreyer et al., NIM A309, 184 (1991).
   // Assumes that for a MIP (peak ~2000 ADC channels) the correction is 0
   Data_t corr = par * ( 1./TMath::Sqrt(adc) - 1./TMath::Sqrt(ref) );
 
