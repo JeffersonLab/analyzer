@@ -116,9 +116,9 @@ struct ADCHit_t {
 
 // Calibration coefficients for a single logical channel
 struct TDCCalib_t {
-  void tdc_calib_reset() { off = cutlo = 0; cuthi = kMaxUInt; }
+  void tdc_calib_reset() { toff = cutlo = 0; cuthi = kMaxUInt; }
 //Data_t tdc2t  {5e-10};     // TDC scale (s/count) - provided by decoder module
-  UInt_t off    {0};         // TDC offset (counts)
+  UInt_t toff   {0};         // TDC offset (counts)
   UInt_t cutlo  {0};         // Time cut lower limit (counts)
   UInt_t cuthi  {kMaxUInt};  // Time cut upper limit (counts)
 };
@@ -136,6 +136,37 @@ struct TDCHit_t {
   Data_t tot    {kBig};      // Time-over-threshold (s)
 };
 
+// FADC per-channel data (pulse mode)
+
+// - dynamic pedestal per channel
+
+
+// Data for a single channel of a sampling ADC, used for waveform analysis.
+// Logical channel number = vector index
+struct SamplingData_t {
+  // gain -> ADCCalib
+  // ped (fallback) -> ADCCalib
+  Data_t thresh;  // Threshold
+  // chantomv -> decoder module
+  // tcal conversion factor > decoder module
+  Data_t peak_cal;   // Peak calibration TODO needed?
+  Data_t trigcal; // Trig_amp/FADC_amp TODO what is this and why do we need it?
+  // toff -> TDCCalib
+  UShort_t thresh_bin;
+  UShort_t nbin_ped; // Number of bins to consider for computing pedestal
+  Short_t NSB;  // nsamp before threshold bin to integrate (may be negative!)
+  Short_t NSA;  // nsamp after threshold bin to integrate
+
+  // timecut lo/hi -> TDCCalib
+  std::vector<UShort_t> samples;  // raw ADC samples (counts) (FADC: 12-bit)
+
+  // detected peak(s) (pulse(s)) -> ADCHit, TDCHit
+};
+// Put the following into ChannnelData for sampling ADC
+// - sampling interval
+// - conversion factor pC/count (tcal)
+
+// Statistics counters for a single channel or the entire detector system
 struct HitCount_t {
   void clear() { any = all = good = 0; }
   void reset() { clear(); sum_any = sum_all = sum_good = 0; }
