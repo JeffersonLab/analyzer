@@ -177,13 +177,13 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 
   for( UInt_t i = 0; i < nval; ++i ) {
     auto& calib = fPMTData->GetCalib(i);
-    calib.tdc2t  = tdc2t;
-    if( !off.empty() )
-      calib.off  = off[i];
-    if( !ped.empty() )
-      calib.ped  = ped[i];
-    if( !gain.empty() )
-      calib.gain = gain[i];
+    // calib.tdc2t  = tdc2t;
+    // if( !off.empty() )
+    //   calib.off  = off[i];
+    // if( !ped.empty() )
+    //   calib.ped  = ped[i];
+    // if( !gain.empty() )
+    //   calib.gain = gain[i];
   }
 
 #ifdef WITH_DEBUG
@@ -252,11 +252,11 @@ Int_t THaCherenkov::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
   THaPidDetector::StoreHit(hitinfo, data);
 
   // Add channels with signals to the amplitude sums
-  const auto& PMT = fPMTData->GetPMT(hitinfo);
-  if( PMT.adc_p > 0 )
-    fASUM_p += PMT.adc_p;             // Sum of ADC minus ped
-  if( PMT.adc_c > 0 )
-    fASUM_c += PMT.adc_c;             // Sum of ADC corrected
+  const auto& PMT = fPMTData->GetTDC(hitinfo);
+  // if( PMT.adc_p > 0 )
+  //   fASUM_p += PMT.adc_p;             // Sum of ADC minus ped
+  // if( PMT.adc_c > 0 )
+  //   fASUM_c += PMT.adc_c;             // Sum of ADC corrected
 
   return 0;
 }
@@ -303,11 +303,11 @@ void THaCherenkov::PrintDecodedData( const THaEvData& evdata ) const
     for (int c=0; c<ncol; c++) {
       int ind = c*fNelem/ncol+i;
       if (ind < fNelem) {
-        const auto& PMT = fPMTData->GetPMT(ind);
+        const auto& PMT = fPMTData->GetTDC(ind);
         cout << "  " << setw(3) << ind+1;
         cout << "  "; WriteValue(PMT.tdc);
-        cout << "  "; WriteValue(PMT.adc);
-        cout << "  "; WriteValue(PMT.adc_p);
+        // cout << "  "; WriteValue(PMT.adc);
+        // cout << "  "; WriteValue(PMT.adc_p);
         cout << "  ";
       } else {
         //	  cout << endl;

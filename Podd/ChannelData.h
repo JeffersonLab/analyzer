@@ -179,6 +179,7 @@ struct HitCount_t {
 };
 
 //_____________________________________________________________________________
+// Class representing a single "ADC"-type module with multiple readout channels
 class ADCData : public ChannelData {
 public:
   ADCData( const char* name, const char* desc, UInt_t nelem );
@@ -238,24 +239,24 @@ public:
   HitCount_t& GetHitCount()            { return fNHits; }
   UInt_t      GetSize() const override { return fCalib.size(); }
 #ifdef NDEBUG
-  PMTCalib_t& GetCalib( size_t i ) { return fCalib[i]; }
-  PMTData_t&  GetPMT( size_t i )   { return fPMTs[i]; }
+  TDCCalib_t& GetCalib( size_t i ) { return fCalib[i]; }
+  TDCHit_t&  GetTDC( size_t i )   { return fTDCs[i]; }
 #else
-  PMTCalib_t& GetCalib( size_t i ) { return fCalib.at(i); }
-  PMTData_t&  GetPMT( size_t i )   { return fPMTs.at(i); }
+  TDCCalib_t& GetCalib( size_t i ) { return fCalib.at(i); }
+  TDCHit_t&  GetTDC( size_t i )   { return fTDCs.at(i); }
 #endif
-  PMTCalib_t& GetCalib( const DigitizerHitInfo_t& hitinfo )
+  TDCCalib_t& GetCalib( const DigitizerHitInfo_t& hitinfo )
   { return GetCalib(GetLogicalChannel(hitinfo)); }
-  PMTData_t&  GetPMT( const DigitizerHitInfo_t& hitinfo )
-  { return GetPMT(GetLogicalChannel(hitinfo)); }
+  TDCHit_t&  GetTDC( const DigitizerHitInfo_t& hitinfo )
+  { return GetTDC(GetLogicalChannel(hitinfo)); }
 
 protected:
   // Calibration
-  std::vector<PMTCalib_t> fCalib;   // Calibration constants
+  std::vector<TDCCalib_t> fCalib;   // Calibration constants
 
   // Per-event data
-  std::vector<PMTData_t>  fPMTs;    // PMT data (ADCs & TDCs)
-  HitCount_t              fNHits;   // Number of ADCs/TDCs with signal
+  std::vector<TDCHit_t>  fTDCs;    // TDC data
+  HitCount_t              fNHits;   // Number channels with signal
 
   Int_t DefineVariablesImpl( THaAnalysisObject::EMode mode = kDefine,
                              const char* key_prefix = "",

@@ -223,28 +223,28 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   for( UInt_t i = 0; i < nval; ++i ) {
     auto& calibR = fRightPMTs->GetCalib(i);
     auto& calibL = fLeftPMTs->GetCalib(i);
-    calibR.tdc2t   = tdc2t;
-    if( !roff.empty() )
-      calibR.off   = roff[i];
-    if( !rped.empty() )
-      calibR.ped   = rped[i];
-    if( !rgain.empty() )
-      calibR.gain  = rgain[i];
-    calibR.mip     = adcmip;
-    calibL.tdc2t   = tdc2t;
-    if( !loff.empty() )
-      calibL.off   = loff[i];
-    if( !lped.empty() )
-      calibL.ped   = lped[i];
-    if( !lgain.empty() )
-      calibL.gain  = lgain[i];
-    calibR.mip     = adcmip;
-    if( !twalk.empty() ) {
-      calibR.twalk = twalk[i];
-      calibL.twalk = twalk[nval+i];
-    } else {
-      calibR.twalk = calibL.twalk = 0;
-    }
+    // calibR.tdc2t   = tdc2t;
+    // if( !roff.empty() )
+    //   calibR.off   = roff[i];
+    // if( !rped.empty() )
+    //   calibR.ped   = rped[i];
+    // if( !rgain.empty() )
+    //   calibR.gain  = rgain[i];
+    // calibR.mip     = adcmip;
+    // calibL.tdc2t   = tdc2t;
+    // if( !loff.empty() )
+    //   calibL.off   = loff[i];
+    // if( !lped.empty() )
+    //   calibL.ped   = lped[i];
+    // if( !lgain.empty() )
+    //   calibL.gain  = lgain[i];
+    // calibR.mip     = adcmip;
+    // if( !twalk.empty() ) {
+    //   calibR.twalk = twalk[i];
+    //   calibL.twalk = twalk[nval+i];
+    // } else {
+    //   calibR.twalk = calibL.twalk = 0;
+    // }
   }
   if( fResolution == kBig )
     fResolution = 3.*tdc2t; // guess at timing resolution
@@ -386,15 +386,15 @@ void THaScintillator::PrintDecodedData( const THaEvData& evdata ) const
   cout << "   paddle  Left(TDC    ADC   ADC_p)  Right(TDC    ADC   ADC_p)" << endl;
   cout << right;
   for( int i = 0; i < fNelem; i++ ) {
-    const auto& LPMT = fLeftPMTs->GetPMT(i);
-    const auto& RPMT = fRightPMTs->GetPMT(i);
+    const auto& LPMT = fLeftPMTs->GetTDC(i);
+    const auto& RPMT = fRightPMTs->GetTDC(i);
     cout << "     "      << setw(2) << i + 1;
-    cout << "        ";  WriteValue(LPMT.tdc);
-    cout << "  ";        WriteValue(LPMT.adc);
-    cout << "  ";        WriteValue(LPMT.adc_p);
-    cout << "        ";  WriteValue(RPMT.tdc);
-    cout << "  ";        WriteValue(RPMT.adc);
-    cout << "  ";        WriteValue(RPMT.adc_p);
+    // cout << "        ";  WriteValue(LPMT.tdc);
+    // cout << "  ";        WriteValue(LPMT.adc);
+    // cout << "  ";        WriteValue(LPMT.adc_p);
+    // cout << "        ";  WriteValue(RPMT.tdc);
+    // cout << "  ";        WriteValue(RPMT.adc);
+    // cout << "  ";        WriteValue(RPMT.adc_p);
     cout << endl;
   }
   cout << left;
@@ -413,8 +413,9 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
   ApplyCorrections();
   FindPaddleHits();
 
-  return static_cast<Int_t>(fRightPMTs->GetHitCount().tdc +
-                            fLeftPMTs->GetHitCount().tdc);
+  return 0;
+  // return static_cast<Int_t>(fRightPMTs->GetHitCount().tdc +
+  //                           fLeftPMTs->GetHitCount().tdc);
 }
 
 //_____________________________________________________________________________
@@ -428,10 +429,10 @@ Int_t THaScintillator::ApplyCorrections()
   for( const auto& idx : fHitIdx ) {
     ESide side = idx.first;
     Int_t pad = idx.second;
-    auto& PMT = (side == kRight) ? fRightPMTs->GetPMT(pad)
-                                 : fLeftPMTs->GetPMT(pad);
-    if( PMT.nadc > 0 && PMT.ntdc > 0 )
-      PMT.tdc_c -= TimeWalkCorrection(idx, PMT.adc_p);
+    auto& PMT = (side == kRight) ? fRightPMTs->GetTDC(pad)
+                                 : fLeftPMTs->GetTDC(pad);
+    // if( PMT.nadc > 0 && PMT.ntdc > 0 )
+    //   PMT.tdc_c -= TimeWalkCorrection(idx, PMT.adc_p);
   }
 
   return 0;
@@ -447,10 +448,10 @@ Data_t THaScintillator::TimeWalkCorrection( Idx_t idx, Data_t adc )
   ESide side = idx.first;
   Int_t pad  = idx.second;
 
-  const PMTCalib_t& calib = (side == kRight) ? fRightPMTs->GetCalib(pad)
+  const TDCCalib_t& calib = (side == kRight) ? fRightPMTs->GetCalib(pad)
                                              : fLeftPMTs->GetCalib(pad);
-  Data_t par = calib.twalk;
-  Data_t ref = calib.mip;
+  Data_t par = 0;//calib.twalk;
+  Data_t ref = 0;//calib.mip;
   if ( adc <=0 || ref <= 0 || par == 0)
     return 0;
 
@@ -481,10 +482,10 @@ Int_t THaScintillator::FindPaddleHits()
     const Int_t pad = idx.second;
     if( fHitIdx.find(make_pair(kLeft, pad)) != fHitIdx.end()) {
       // There are data from both PMTs of this paddle
-      const auto &RPMT = fRightPMTs->GetPMT(pad), &LPMT = fLeftPMTs->GetPMT(pad);
+      const auto &RPMT = fRightPMTs->GetTDC(pad), &LPMT = fLeftPMTs->GetTDC(pad);
 
       // Calculate mean time and rough transverse (y) position
-      if( RPMT.ntdc > 0 && LPMT.ntdc > 0 ) {
+      // if( RPMT.ntdc > 0 && LPMT.ntdc > 0 ) {
         Data_t time = 0.5 * (RPMT.tdc_c + LPMT.tdc_c) - fSize[1] / fCn;
         Data_t dtime = fResolution / sqrt2;
         Data_t yt = 0.5 * fCn * (RPMT.tdc_c - LPMT.tdc_c);
@@ -494,7 +495,7 @@ Int_t THaScintillator::FindPaddleHits()
         // Also save the hit data in the per-paddle array
         fPadData[pad] = fHits.back();
       }
-    }
+    // }
   }
 
   // Sort hits by mean time, earliest first
@@ -518,16 +519,16 @@ Int_t THaScintillator::CoarseProcess( TClonesArray& tracks )
     assert(side == kRight);
     const Int_t pad = idx.second;
     if( fHitIdx.find(make_pair(kLeft, pad)) != fHitIdx.end()) {
-      const auto &RPMT = fRightPMTs->GetPMT(pad), &LPMT = fLeftPMTs->GetPMT(pad);
+      const auto &RPMT = fRightPMTs->GetTDC(pad), &LPMT = fLeftPMTs->GetTDC(pad);
 
       // rough calculation of position from ADC reading
-      if( RPMT.nadc > 0 && RPMT.adc_c > 0 && LPMT.nadc > 0 && LPMT.adc_c > 0 ) {
+      // if( RPMT.nadc > 0 && RPMT.adc_c > 0 && LPMT.nadc > 0 && LPMT.adc_c > 0 ) {
         auto& thePad = fPadData[pad];
-        thePad.ya = TMath::Log(LPMT.adc_c / RPMT.adc_c) / (2. * fAttenuation);
-
-        // rough dE/dX-like quantity, not correcting for track angle
-        thePad.ampl = TMath::Sqrt(LPMT.adc_c * RPMT.adc_c *
-          TMath::Exp(fAttenuation * 2. * fSize[1])) / fSize[2];
+        // thePad.ya = TMath::Log(LPMT.adc_c / RPMT.adc_c) / (2. * fAttenuation);
+        //
+        // // rough dE/dX-like quantity, not correcting for track angle
+        // thePad.ampl = TMath::Sqrt(LPMT.adc_c * RPMT.adc_c *
+        //   TMath::Exp(fAttenuation * 2. * fSize[1])) / fSize[2];
 
         // Save these ADC-derived values to the entry in the hit array as well
         // (may not exist if TDCs didn't fire on both sides)
@@ -537,7 +538,7 @@ Int_t THaScintillator::CoarseProcess( TClonesArray& tracks )
           theHit->yt = thePad.yt;
           theHit->ampl = thePad.ampl;
         }
-      }
+      // }
     }
   }
 

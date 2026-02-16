@@ -97,8 +97,8 @@ Int_t FadcCherenkov::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 
   // Retrieve pedestal, if available, and update the PMTData calibrations
   const auto& FDAT = fFADCData->GetData(hitinfo);
-  if( FDAT.fPedq == 0 )
-    fPMTData->GetCalib(hitinfo).ped = FDAT.fPedestal;
+  // if( FDAT.fPedq == 0 )
+  //   fPMTData->GetCalib(hitinfo).ped = FDAT.fPedestal;
 
   // Now fill the PMTData in fChannelData
   return THaCherenkov::StoreHit(hitinfo, data);

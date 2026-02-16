@@ -157,9 +157,9 @@ void ADCData::Clear( Option_t* opt )
   // Clear event-by-event data
   ChannelData::Clear(opt);
 
-  for( auto& adc : fADCs ) {
-    adc.adc_clear();
-  }
+  // for( auto& adc : fADCs ) {
+  //   adc.adc_clear();
+  // }
   fNHits = 0;
 }
 
@@ -232,8 +232,8 @@ static void StoreTDC( TDCHit_t& TDC, const TDCCalib_t& CALIB,
                       const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   TDC.tdc   = data;
-  TDC.tdc_c = (TDC.tdc - CALIB.off) * CALIB.tdc2t;
-  assert(CALIB.tdc2t >= 0.0);  // else bug in ReadDatabase
+//  TDC.tdc_c = (TDC.tdc - CALIB.off) * CALIB.tdc2t;
+//  assert(CALIB.tdc2t >= 0.0);  // else bug in ReadDatabase
   if( hitinfo.type == ChannelType::kCommonStopTDC ) {
     // For common stop TDCs, time is negatively correlated to raw data
     // time = (offset-data)*res, so reverse the sign.
@@ -293,7 +293,7 @@ Int_t ADCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
 
 //=============================================================================
 TDCData::TDCData( const char* name, const char* desc, UInt_t nelem )
-  : ChannelData(name, desc), fCalib(nelem), fPMTs(nelem)
+  : ChannelData(name, desc), fCalib(nelem), fTDCs(nelem)
 {
   // Constructor. Creates data structures for 'nelem' ADC+TDC channels, i.e.
   // each channel is assumed to have one ADC and one TDC reading plus pedestal-
@@ -313,9 +313,9 @@ void TDCData::Clear( Option_t* opt )
   // Clear event-by-event data
   ChannelData::Clear(opt);
 
-  for( auto& pmt : fPMTs ) {
-    pmt.clear();
-  }
+  // for( auto& pmt : fTDCs ) {
+  //   pmt.clear();
+  // }
   fNHits.clear();
 }
 
@@ -336,7 +336,7 @@ Int_t TDCData::ReadConfig( THaDetectorBase* det, const TDatime& date,
 
   // Set defaults
   for( auto& c : fCalib ) {
-    c.adc_calib_reset();
+//    c.adc_calib_reset();
     c.tdc_calib_reset();
   }
 
@@ -373,9 +373,9 @@ void TDCData::Reset( Option_t* opt )
   // Clear event-by-event data and reset calibration values to defaults.
   Clear(opt);
 
-  for( auto& calib : fCalib ) {
-    calib.reset();
-  }
+  // for( auto& calib : fCalib ) {
+  //   calib.reset();
+  // }
 }
 
 //_____________________________________________________________________________
@@ -385,21 +385,21 @@ Int_t TDCData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
   // This is the single-hit version of this function.
 
   size_t k = GetLogicalChannel(hitinfo);
-  if( k >= fPMTs.size() )
+  if( k >= fTDCs.size() )
     throw
       std::invalid_argument(msg(hitinfo, "Logical channel number out of range"));
 
   switch( hitinfo.type ) {
     case ChannelType::kADC:
-      StoreADC(fPMTs[k], fCalib[k], hitinfo, data);
-      fNHits.adc++;
+//      StoreADC(fTDCs[k], fCalib[k], hitinfo, data);
+//      fNHits.adc++;
       fHitDone = true;
       break;
 
     case ChannelType::kCommonStopTDC:
     case ChannelType::kCommonStartTDC:
-      StoreTDC(fPMTs[k], fCalib[k], hitinfo, data);
-      fNHits.tdc++;
+      StoreTDC(fTDCs[k], fCalib[k], hitinfo, data);
+//      fNHits.tdc++;
       fHitDone = true;
       break;
 
