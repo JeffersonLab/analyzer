@@ -152,6 +152,7 @@ struct SamplingData_t {
   Data_t peak_cal;   // Peak calibration TODO needed?
   Data_t trigcal; // Trig_amp/FADC_amp TODO what is this and why do we need it?
   // toff -> TDCCalib
+  // The following are per-module parameters
   UShort_t thresh_bin;
   UShort_t nbin_ped; // Number of bins to consider for computing pedestal
   Short_t NSB;  // nsamp before threshold bin to integrate (may be negative!)
@@ -180,6 +181,14 @@ struct HitCount_t {
 
 //_____________________________________________________________________________
 // Class representing a single "ADC"-type module with multiple readout channels
+// Contains
+// - Per-module configuration parameters
+// - Per-channel calibration and configuration data
+// - Logical channel mapping
+//
+// One ChannelData object per module OR for all identical modules?
+// If per-module, how can it read the database?
+
 class ADCData : public ChannelData {
 public:
   ADCData( const char* name, const char* desc, UInt_t nelem );
