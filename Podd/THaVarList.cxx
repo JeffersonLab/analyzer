@@ -62,13 +62,14 @@
 #include <string>  // for TFunction::GetReturnTypeNormalizedName
 #include <cassert>
 #include <memory>
+#include <utility>
 
 ClassImp(THaVarList)
 
 using namespace std;
 
-static const Int_t kInitVarListCapacity = 100;
-static const Int_t kVarListRehashLevel  = 3;
+static constexpr Int_t kInitVarListCapacity = 100;
+static constexpr Int_t kVarListRehashLevel  = 3;
 
 //_____________________________________________________________________________
 THaVarList::THaVarList() : THashList(kInitVarListCapacity, kVarListRehashLevel)
@@ -77,7 +78,7 @@ THaVarList::THaVarList() : THashList(kInitVarListCapacity, kVarListRehashLevel)
 
   // THaVarList "owns" the variables put into it, i.e. if the list is deleted
   // so are the global variables in it.
-  SetOwner(true);
+  THashList::SetOwner(true);
 }
 
 //_____________________________________________________________________________
@@ -225,7 +226,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     // For std::vector<TSeqCollection*>, get the requested vector element
     if( objrtti.IsObjVector() ) {
       VecSC_t vec = *reinterpret_cast<VecSC_t*>(loc);
-      if( vecidx < 0 || vecidx >= (Int_t)vec.size() ) {
+      if( vecidx < 0 || std::cmp_greater_equal(vecidx,vec.size()) ) {
 	Warning( errloc, "Illegal index %d into std::vector %s. "
 		 "Current size = %d. Variable %s (%s) not defined.",
 		 vecidx, s[0].Data(), (Int_t)vec.size(), name.Data(),
@@ -474,9 +475,7 @@ Int_t THaVarList::DefineVariables( const VarDef* list, const char* prefix,
       Warning( errloc, "Variable %s: variable-size arrays must have size=0. "
 	       "Ignoring size.", name.Data() );
     } else if( fixed_array ) {
-      const int LEN = 32;
-      char dimstr[LEN];
-      snprintf( dimstr, LEN, "[%d]", item->size );
+      string dimstr{"[" + std::to_string(item->size) + "]"};
       name.Append(dimstr);
     }
 
@@ -569,16 +568,15 @@ Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
       desc.ReplaceAll("  "," ");
 
     // Process the variable definition
-    char* c = ::Compress( item->def );
-    TString def( c );
-    delete [] c;
-    if( def.IsNull() ) {
+    string def(item->def ? item->def : "");
+    std::erase(def, ' ');
+    if( def.empty() ) {
       Warning( errloc, "Invalid definition for variable %s (%s). "
 	       "Variable not defined.", name.Data(), desc.Data() );
       continue;
     }
     if( def_prefix && *def_prefix )
-      def.Prepend(def_prefix);
+      def.insert(0, def_prefix);
 
     THaVar* var = DefineByRTTI( name, desc, def, obj, cl, errloc );
 
