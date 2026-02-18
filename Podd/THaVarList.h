@@ -7,10 +7,11 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "THashList.h"
-#include "THaVar.h"
-#include "VarDef.h"
-#include <vector>
+#include "THashList.h"  // for THashList
+#include "THaVar.h"     // for THaVar (ptr only)  // IWYU pragma: keep
+#include "VarDef.h"     // for VarDef, RVarDef, etc.
+#include <vector>       // for vector
+class TString;
 
 class THaVarList : public THashList {
   
@@ -174,10 +175,25 @@ public:
 				 const TString& def, const void* obj,
 				 TClass* cl,
 				 const char* errloc = "DefineByRTTI" );
-  virtual Int_t    DefineVariables( const VarDef* list, 
+
+  struct DefineVariablesOpts {
+    const char* prefix        {""};
+    const char* caller        {""};
+    const char* def_prefix    {""};
+    const char* comment_subst {""};
+  };
+  virtual Int_t    DefineVariables( const std::vector<VarDef>& list,
+                                    DefineVariablesOpts opts );
+  virtual Int_t    DefineVariables( const std::vector<RVarDef>& list,
+                                    const TObject* obj,
+                                    DefineVariablesOpts opts );
+  // Legacy methods for backward compatibility
+          Int_t    DefineVariables( const VarDef* list,
 				    const char* prefix="",
-				    const char* caller="" );
-  virtual Int_t    DefineVariables( const RVarDef* list,
+				    const char* caller="",
+                                    const char* def_prefix = "",
+                                    const char* comment_subst = "");
+          Int_t    DefineVariables( const RVarDef* list,
                                     const TObject* obj,
                                     const char* prefix = "",
                                     const char* caller = "",

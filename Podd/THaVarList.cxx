@@ -49,24 +49,28 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaVarList.h"
-#include "THaVar.h"
-#include "THaRTTI.h"
-#include "THaArrayString.h"
-#include "TRegexp.h"
-#include "TString.h"
-#include "TClass.h"
-#include "TMethodCall.h"
-#include "TFunction.h"
-#include "TROOT.h"
-
-#include <string>  // for TFunction::GetReturnTypeNormalizedName
-#include <cassert>
-#include <memory>
-#include <utility>
+#include "TClass.h"          // for TClass
+#include "TCollection.h"     // for TIter
+#include "TFunction.h"       // for TFunction
+#include "THaArrayString.h"  // for THaArrayString
+#include "THaRTTI.h"         // for THaRTTI
+#include "THaVar.h"          // for THaVar
+#include "TMethodCall.h"     // for TMethodCall
+#include "TROOT.h"           // for TROOT, gROOT
+#include "TRegexp.h"         // for TRegexp
+#include "TSeqCollection.h"  // for TSeqCollection
+#include "TString.h"         // for TString, operator==, operator+, kNPOS, etc.
+#include "Helper.h"          // for Podd::MakeVectorFromList
+#include <cassert>           // for assert
+#include <memory>            // for unique_ptr, make_unique
+#include <string>            // for TFunction::GetReturnTypeNormalizedName
+#include <tuple>             // for get, tuple
+#include <utility>           // for move, cmp_greater_equal
 
 ClassImp(THaVarList)
 
 using namespace std;
+using Podd::MakeVectorFromList;
 
 static constexpr Int_t kInitVarListCapacity = 100;
 static constexpr Int_t kVarListRehashLevel  = 3;
@@ -344,7 +348,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
 
     // Attempt to get the real function return type
     VarType type = kVarTypeEnd;
-    string ntype = func->GetReturnTypeNormalizedName();
+    TString ntype = func->GetReturnTypeNormalizedName();
     if( ntype == "double" )
       type = kDouble;
     else if( (sizeof(int) == sizeof(Int_t) && ntype == "int") ||
@@ -382,7 +386,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
 
     if( type == kVarTypeEnd ) {
       Warning( errloc, "Unsupported return type \"%s\" for function %s. "
-	       "Variable %s not defined.", ntype.c_str(), s[ndot].Data(), name.Data() );
+	       "Variable %s not defined.", ntype.Data(), s[ndot].Data(), name.Data() );
       return nullptr;
     }
     if( (rtype == TMethodCall::kDouble && type != kDouble && type != kFloat) ||
@@ -416,11 +420,53 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
 }
 
 //-----------------------------------------------------------------------------
-Int_t THaVarList::DefineVariables( const VarDef* list, const char* prefix,
-				   const char* caller )
+namespace {
+TString CheckOpts( THaVarList::DefineVariablesOpts& opts )
 {
-  // Add all variables specified in 'list' to the list. 'list' is a C-style
-  // structure defined in VarDef.h and must be terminated with a nullptr name.
+  if( !opts.prefix ) opts.prefix = "";
+  if( !opts.caller ) opts.caller = "";
+  if( !opts.def_prefix ) opts.def_prefix = "";
+  if( !opts.comment_subst ) opts.comment_subst = "";
+
+  return {TString("DefineVariables [called from ") +
+          (*opts.caller ? opts.caller : "(global scope)") + "]"};
+}
+
+//-----------------------------------------------------------------------------
+template<class Def>
+tuple<TString,TString>
+MakeNameDesc( const Def& item, const THaVarList::DefineVariablesOpts& opts)
+{
+  // Assemble the name and description strings
+  TString name( item.name );
+  if( name.IsNull() )
+    return {name,name};
+  name.Prepend(opts.prefix);
+
+  TString desc;
+  if( item.desc && *item.desc ) {
+    desc = item.desc;
+    // Substitute "%s" in description string with 'comment_subst'
+    desc.ReplaceAll("%s", opts.comment_subst);
+  } else
+    desc = name;
+  // Trim string, collapse whitespace
+  desc.Remove(TString::EStripType::kLeading,' ')
+      .Remove(TString::EStripType::kTrailing,' ');
+  while( desc.Index("  ") != kNPOS )
+    desc.ReplaceAll("  "," ");
+
+  return {name,desc};
+}
+
+} // namespace
+
+//-----------------------------------------------------------------------------
+Int_t THaVarList::DefineVariables( const std::vector<VarDef>& list,
+                                   DefineVariablesOpts opts )
+{
+  // Add all variables specified in 'list' to the variable list. Elements in
+  // 'list' are a structure defined in VarDef.h.
   //
   // Allows definition of:
   //    scalars
@@ -439,67 +485,51 @@ Int_t THaVarList::DefineVariables( const VarDef* list, const char* prefix,
   // Output a warning if a name already exists.  Return values >0 indicate the
   // number of variables defined, <0 indicate errors (no variables defined).
 
-  TString errloc("DefineVariables [called from ");
-  if( !caller || !*caller ) {
-    caller = "(global scope)";
-  }
-  errloc.Append(caller);
-  errloc.Append("]");
+  auto errloc = CheckOpts(opts);
 
-  if( !list ) {
-    Error(errloc, "Empty input list. No variables registered.");
+  if( list.empty() ) {
+    Error(errloc, "No input list. No variables registered.");
     return -1;
   }
 
-  if( !prefix )
-    prefix = "";
-
-  const VarDef* item = list;
   Int_t ndef = 0;
-  TString name;
+  for( const auto& item : list ) {
 
-  while( item->name ) {
+    // Assemble the name and description strings
+    auto [name, description] = MakeNameDesc(item, opts);
+    if( name.IsNull() )
+      continue;
 
-    const char* description = item->desc;
-    if( !description || !*description )
-      description = item->name;
-
-    // Assemble the name string
-    name = prefix;
-    name.Append(item->name);
     // size>1 means fixed-size 1-d array
-    bool fixed_array = (item->size > 1);
-    bool var_array = (item->count != nullptr) ||
-      (item->type >= kIntV && item->type <= kDoubleV);
-    if( item->size>0 && var_array ) {
+    bool fixed_array = (item.size > 1);
+    bool var_array = (item.count != nullptr) ||
+      (item.type >= kIntV && item.type <= kDoubleV);
+    if( item.size > 0 && var_array ) {
       Warning( errloc, "Variable %s: variable-size arrays must have size=0. "
-	       "Ignoring size.", name.Data() );
+               "Ignoring size.", name.Data() );
     } else if( fixed_array ) {
-      string dimstr{"[" + std::to_string(item->size) + "]"};
+      TString dimstr{"["}; dimstr += item.size; dimstr += "]";
       name.Append(dimstr);
     }
 
     // Define this variable, using the indicated type
-
-    THaVar* var = DefineByType( name, description, item->loc,
-				static_cast<VarType>( item->type ),
-				item->count, errloc );
+    THaVar* var = DefineByType( name, description, item.loc,
+				static_cast<VarType>( item.type ),
+				item.count, errloc );
     if( var )
       ndef++;
-    item++;
   }
 
   return ndef;
 }
 
 //-----------------------------------------------------------------------------
-Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
-                                   const char* prefix, const char* caller,
-                                   const char* def_prefix,
-                                   const char* comment_subst )
+Int_t THaVarList::DefineVariables( const vector<RVarDef>& list,
+                                   const TObject* obj,
+                                   DefineVariablesOpts opts )
 {
-  // Add all variables specified in 'list' to the list. 'list' is a C-style
-  // structure defined in VarDef.h and must be terminated with a nullptr name.
+  // Add all variables specified in 'list' to the variable list. Elements in
+  // 'list' are a structure defined in VarDef.h.
   //
   // Allows definition of:
   //    scalars
@@ -516,14 +546,9 @@ Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
   // Output a warning if a name already exists.  Return values >0 indicate the
   // number of variables defined, <0 indicate errors (no variables defined).
 
-  TString errloc("DefineVariables [called from ");
-  if( !caller || !*caller) {
-    caller = "(global scope)";
-  }
-  errloc.Append(caller);
-  errloc.Append("]");
+  auto errloc = CheckOpts(opts);
 
-  if( !list ) {
+  if( list.empty() ) {
     Error(errloc, "No input list. No variables registered.");
     return -1;
   }
@@ -537,47 +562,30 @@ Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
   TClass* cl = obj->IsA();
   if( !cl ) {
     //Oops
-    Error( errloc, "Base object has no class?!? No variables registered.");
+    Error( errloc,
+           "Base object has no class?!? No variables registered.");
     return -3;
   }
 
-  const RVarDef* item;
   Int_t ndef = 0;
-  while( (item = list++) && item->name ) {
+  for( const auto& item: list ) {
 
     // Assemble the name and description strings
-    TString name( item->name );
+    auto [name, desc] = MakeNameDesc(item, opts);
     if( name.IsNull() )
       continue;
-    if( prefix )
-      name.Prepend(prefix);
-
-    TString desc;
-    if( item->desc && *item->desc ) {
-      desc = item->desc;
-      if( !comment_subst )
-        comment_subst = "";
-      // Substitute "%s" in description string with 'comment_subst'
-      desc.ReplaceAll("%s", comment_subst);
-    } else
-      desc = name;
-    // Trim string, collapse whitespace
-    desc.Remove(TString::EStripType::kLeading,' ')
-        .Remove(TString::EStripType::kTrailing,' ');
-    while( desc.Index("  ") != kNPOS )
-      desc.ReplaceAll("  "," ");
 
     // Process the variable definition
-    string def(item->def ? item->def : "");
-    std::erase(def, ' ');
-    if( def.empty() ) {
+    TString def{item.def};
+    def.ReplaceAll(" ","");  // Remove any blanks
+    if( def.IsNull() ) {
       Warning( errloc, "Invalid definition for variable %s (%s). "
 	       "Variable not defined.", name.Data(), desc.Data() );
       continue;
     }
-    if( def_prefix && *def_prefix )
-      def.insert(0, def_prefix);
+    def.Prepend(opts.def_prefix);
 
+    // Define this variable, using object reflection
     THaVar* var = DefineByRTTI( name, desc, def, obj, cl, errloc );
 
     if( var )
@@ -587,20 +595,43 @@ Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
   return ndef;
 }
 
+//-----------------------------------------------------------------------------
+Int_t THaVarList::DefineVariables( const VarDef* list,
+                                   const char* prefix, const char* caller,
+                                   const char* def_prefix,
+                                   const char* comment_subst )
+{
+  return DefineVariables(MakeVectorFromList(list), {
+                           .prefix = prefix, .caller = caller,
+                           .def_prefix = def_prefix,
+                           .comment_subst = comment_subst
+                         });
+}
+
+//-----------------------------------------------------------------------------
+Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
+                                   const char* prefix, const char* caller,
+                                   const char* def_prefix,
+                                   const char* comment_subst )
+{
+  return DefineVariables(MakeVectorFromList(list), obj, {
+                           .prefix = prefix, .caller = caller,
+                           .def_prefix = def_prefix,
+                           .comment_subst = comment_subst
+                         });
+}
+
 //_____________________________________________________________________________
 THaVar* THaVarList::Find( const char* name ) const
 {
   // Find a variable in the list.  If 'name' has array syntax ("var[3]"),
   // the search is performed for the array basename ("var").
 
-  if( !name )
-    return nullptr;
-  string s(name);
-  auto pos = s.find('[');
-  return dynamic_cast<THaVar*>(
-    (pos == string::npos) ? FindObject(name)
-                          : FindObject(s.erase(pos).c_str())
-  );
+  TString s(name);
+  auto pos = s.Index('[');
+  if( pos != kNPOS )
+    s.Remove(pos);
+  return dynamic_cast<THaVar*>(FindObject(s));
 }
 
 //_____________________________________________________________________________
@@ -649,6 +680,7 @@ Int_t THaVarList::RemoveRegexp( const char* expr, Bool_t wildcard )
   // is true, the more user-friendly wildcard format is used (see TRegexp).
   // Returns number of variables removed, or <0 if error.
 
+  if( !expr ) expr = "";
   TRegexp re( expr, wildcard );
   if( re.Status() ) return -1;
 

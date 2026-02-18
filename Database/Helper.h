@@ -218,6 +218,19 @@ namespace Podd {
     std::cout << std::endl;
   }
 
+  //___________________________________________________________________________
+  // Create a std::vector from a C-array of Item structures
+  template<class Item>
+  std::vector<Item> MakeVectorFromList( const Item* list)
+  {
+    if( const Item* item = list ) {
+      while( item->name ) ++item;
+      return {list, item};
+    }
+    return {};
+  }
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 } // end namespace Podd
