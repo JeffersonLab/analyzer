@@ -16,6 +16,7 @@
 #include "TObjString.h"  // for TObjString
 #include "TString.h"     // for TString, operator!=, operator==, operator+
 #include "TSystem.h"     // for TSystem, gSystem
+#include "Helper.h"      // for MakeVectorFromList
 #include <algorithm>     // for min, __count, __sort, count, sort
 #include <cassert>       // for assert
 #include <cctype>        // for isspace
@@ -41,6 +42,7 @@ namespace fs = std::filesystem;
 #endif
 
 using namespace std;
+using Podd::MakeVectorFromList;
 
 //_____________________________________________________________________________
 const char* Here( const char* method, const char* prefix )
@@ -1052,15 +1054,10 @@ Int_t LoadDatabase( FILE* file, const TDatime& date, const DBRequest* req,
 {
   // Load a list of parameters from the database file 'f' according to
   // the contents of the C-style array 'req' of requests (see VarDef.h).
-  if( !req ) {
-    ::Warning(::Here(here, prefix),
-              "Database request is NULL. Nothing loaded.");
-    return 0;
-  }
-  const auto* endp = req;
-  while( endp->name ) ++endp;
-  const vector<DBRequest> vreq{req, endp};
-  return LoadDatabase(file, date, vreq, prefix, search, here);
+  return LoadDatabase({
+                        .file = file, .date = date, .prefix = prefix,
+                        .search = search, .here = here
+                      }, MakeVectorFromList(req));
 }
 
 //_____________________________________________________________________________
@@ -1079,6 +1076,11 @@ Int_t LoadDatabase( const LoadDBArgs& args, const vector<DBRequest>& req ) // NO
   // Load a list of parameters from the database file 'f' according to
   // the list of requests 'req' (see VarDef.h).
 
+  if( req.empty() ) {
+    ::Warning(::Here(args.here, args.prefix),
+              "Database request is NULL. Nothing loaded.");
+    return 0;
+  }
   if( !args.file ) {
     ::Error(::Here(args.here, args.prefix),
             "Bad argument FILE* = NULL. Probably file not found. "
