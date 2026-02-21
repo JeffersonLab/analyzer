@@ -24,6 +24,7 @@
 #include "TVector3.h"
 #include "TSystem.h"
 #include "TString.h"
+#include "Helper.h"
 
 #include <cstring>
 #include <iostream>
@@ -847,12 +848,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 //_____________________________________________________________________________
 void THaAnalysisObject::DebugPrint( const DBRequest* list ) const
 {
-  if( !list )
-    return;
-  const auto* endp = list;
-  while( endp->name ) ++endp;
-  const vector<DBRequest> vlist{list, endp};
-  DebugPrint(vlist);
+  DebugPrint( MakeVectorFromList(list) );
 }
 
 //_____________________________________________________________________________
