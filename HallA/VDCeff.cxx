@@ -31,6 +31,7 @@
 #include <stdexcept>
 #include <memory>
 #include <cassert>
+#include <vector>
 
 using namespace std;
 using namespace Podd;
@@ -270,11 +271,10 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
 
   Int_t status = kOK;
   try {
-      const DBRequest request[] = {
-      { "vdcvars",    &configstr,   kTString },
-      { "cycle",      &fCycle,      kInt,     0, true },
-      { "maxocc",     &fMaxOcc,     kDouble,  0, true },
-      { nullptr }
+      const vector<DBRequest> request = {
+      { .name = "vdcvars",  .var = &configstr, .type = kTString },
+      { .name = "cycle",    .var = &fCycle,    .type = kInt,     .optional = true },
+      { .name = "maxocc",   .var = &fMaxOcc,   .type = kDouble,  .optional = true },
     };
     status = LoadDB( f, date, request );
   }

@@ -12,6 +12,9 @@
 #include "TMath.h"
 #include "TDatime.h"
 #include "VarDef.h"
+#include <vector>
+
+using namespace std;
 
 ClassImp(THaIdealBeam)
 
@@ -62,12 +65,11 @@ Int_t THaIdealBeam::ReadRunDatabase( const TDatime& date )
 
   Double_t x = 0.0, y = 0.0, th = 0.0, ph = 0.0;
 
-  const DBRequest req[] = {
-    { "x",     &x,  kDouble, 0, true },
-    { "y",     &y,  kDouble, 0, true },
-    { "theta", &th, kDouble, 0, true },
-    { "phi",   &ph, kDouble, 0, true },
-    { nullptr }
+  const vector<DBRequest> req = {
+    { .name = "x",     .var = &x,  .optional = true },
+    { .name = "y",     .var = &y,  .optional = true },
+    { .name = "theta", .var = &th, .optional = true },
+    { .name = "phi",   .var = &ph, .optional = true },
   };
   err = LoadDB( file, date, req );
   if( err )

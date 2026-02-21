@@ -72,9 +72,8 @@ Int_t THaHelicityDet::ReadDatabase( const TDatime& date )
     // No database file is fine since we only read an optional parameter here
     return kOK;
 
-  const  DBRequest request[] = {
-    { "helicity_sign", &fSign, kInt, 0, true, -2 },
-    { nullptr }
+  const vector<DBRequest> request = {
+    { .name = "helicity_sign", .var = &fSign, .type = kInt, .optional = true, .search = -2 },
   };
   Int_t err = LoadDB( file, date, request );
   fclose(file);

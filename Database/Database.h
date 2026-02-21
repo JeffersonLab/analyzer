@@ -61,6 +61,7 @@ struct LoadDBArgs {
   const char*  key_prefix  {nullptr};
 };
 Int_t    LoadDatabase( const LoadDBArgs& args, const std::vector<DBRequest>& req );
+[[deprecated("Use overload with vector<DBRequest>")]]
 Int_t    LoadDatabase( FILE* file, const TDatime& date, const DBRequest* req, const char* prefix,
                        Int_t search = 0, const char* here = "Podd::LoadDatabase" );
 Int_t    LoadDatabase( FILE* file, const TDatime& date, const std::vector<DBRequest>& req,

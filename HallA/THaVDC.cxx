@@ -279,12 +279,11 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   matrix_map["L"]   = MEdef_t( 4, &fLMatrixElems );
 
   string MEstring, TCmodule;
-  DBRequest request1[] = {
-    { "matrixelem",  &MEstring, kString },
-    { "time_cor",    &TCmodule, kString, 0, true },
-    { nullptr }
+  const vector<DBRequest> request1 = {
+    { .name = "matrixelem",  .var = &MEstring, .type = kString },
+    { .name = "time_cor",    .var = &TCmodule, .type = kString, .optional = true },
   };
-  err = LoadDB( file, date, request1, fPrefix );
+  err = LoadDB( file, date, request1 );
   if( err ) {
     fclose(file);
     return err;
@@ -354,24 +353,23 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 #endif
   string coord_type;
 
-  DBRequest request[] = {
-    { "max_matcherr",      &fErrorCutoff,      kDouble, 0, true },
-    { "num_iter",          &fNumIter,          kInt,    0, true },
-    { "coord_type",        &coord_type,        kString, 0, true },
-    { "disable_tracking",  &disable_tracking,  kInt,    0, true },
-    { "disable_finetrack", &disable_finetrack, kInt,    0, true },
-    { "only_fastest_hit",  &only_fastest_hit,  kInt,    0, true },
-    { "do_tdc_hardcut",    &do_tdc_hardcut,    kInt,    0, true },
-    { "do_tdc_softcut",    &do_tdc_softcut,    kInt,    0, true },
-    { "ignore_negdrift",   &ignore_negdrift,   kInt,    0, true },
+  const vector<DBRequest> request = {
+    { .name = "max_matcherr",      .var = &fErrorCutoff,      .type = kDouble, .optional = true },
+    { .name = "num_iter",          .var = &fNumIter,          .type = kInt,    .optional = true },
+    { .name = "coord_type",        .var = &coord_type,        .type = kString, .optional = true },
+    { .name = "disable_tracking",  .var = &disable_tracking,  .type = kInt,    .optional = true },
+    { .name = "disable_finetrack", .var = &disable_finetrack, .type = kInt,    .optional = true },
+    { .name = "only_fastest_hit",  .var = &only_fastest_hit,  .type = kInt,    .optional = true },
+    { .name = "do_tdc_hardcut",    .var = &do_tdc_hardcut,    .type = kInt,    .optional = true },
+    { .name = "do_tdc_softcut",    .var = &do_tdc_softcut,    .type = kInt,    .optional = true },
+    { .name = "ignore_negdrift",   .var = &ignore_negdrift,   .type = kInt,    .optional = true },
 #ifdef MCDATA
-    { "MCdata",            &mc_data,           kInt,    0, true },
+    { .name = "MCdata",            .var = &mc_data,           .type = kInt,    .optional = true },
 #endif
-    { nullptr }
   };
 
-  err = LoadDB( file, date, request, fPrefix );
-  fclose(file);
+  err = LoadDB( file, date, request );
+  (void)fclose(file);
   if( err )
     return err;
 
@@ -1175,10 +1173,9 @@ Int_t THaVDC::ReadGeometry( FILE* file, const TDatime& date, Bool_t )
   fOrigin.SetXYZ(0,0,0); // by definition
 
   vector<double> size;
-  DBRequest request[] = {
-    { "size", &size, kDoubleV, 0, true,
-      0, "\"size\" (detector size [m])" },
-    { nullptr }
+  const vector<DBRequest> request = {
+    { .name = "size", .var = &size, .type = kDoubleV, .optional = true,
+      .descript = "\"size\" (detector size [m])" },
   };
   Int_t err = LoadDB( file, date, request );
   if( err )

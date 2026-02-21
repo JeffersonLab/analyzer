@@ -169,9 +169,8 @@ Int_t TwoarmVDCTimeCorrection::ReadDatabase( const TDatime& date )
 
   // Read configuration parameters
   fIsInit = false;
-  DBRequest config_request[] = {
-    { "condition", &fCondExpr, kTString, 0, true },
-    { nullptr }
+  const vector<DBRequest> config_request = {
+    { .name="condition", .var=&fCondExpr, .type=kTString, .optional=true },
   };
   Int_t err = LoadDB( file, date, config_request );
   fclose(file);

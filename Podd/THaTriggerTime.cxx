@@ -127,15 +127,14 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
 
   // Read configuration parameters
   vector<Double_t> trigdef;
-  DBRequest config_request[] = {
-    { "tdc_res",  &fTDCRes },
-    { "trigdef",  &trigdef,   kDoubleV },
-    { "glob_off", &fGlOffset, kDouble, 0, true },
-    { "common_stop", &fCommonStop, kInt, 0, true },
-    { nullptr }
+  const vector<DBRequest> config_request = {
+    { .name = "tdc_res",     .var = &fTDCRes },
+    { .name = "trigdef",     .var = &trigdef,     .type = kDoubleV },
+    { .name = "glob_off",    .var = &fGlOffset,   .type = kDouble,  .optional = true },
+    { .name = "common_stop", .var = &fCommonStop, .type = kInt,     .optional = true },
   };
-  Int_t err = LoadDB( file, date, config_request, fPrefix );
-  fclose(file);
+  Int_t err = LoadDB( file, date, config_request );
+  (void)fclose(file);
   if( err )
     return err;
 

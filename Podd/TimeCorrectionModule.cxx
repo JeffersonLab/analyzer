@@ -75,9 +75,8 @@ Int_t TimeCorrectionModule::ReadDatabase( const TDatime& date )
 
   // Read configuration parameters
   fIsInit = false;
-  DBRequest config_request[] = {
-    { "glob_off", &fGlOffset, kDouble, 0, true },
-    { nullptr }
+  const vector<DBRequest> config_request = {
+    { .name = "glob_off", .var = &fGlOffset, .optional = true },
   };
   Int_t err = LoadDB( file, date, config_request );
   fclose(file);

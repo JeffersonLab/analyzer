@@ -104,9 +104,8 @@ Int_t UserScintillator::ReadDatabase( const TDatime& date )
   Int_t err = 0;
   try {
     // Set up an array of database requests. See VarDef.h for details.
-    const DBRequest request[] = {
-      { "stop", &stop, kInt, 1 },    // Common stop mode (1=yes)
-      { nullptr }                          // Last element must be nullptr
+    const vector<DBRequest> request = {
+      { .name = "stop", .var = &stop, .type = kInt },    // Common stop mode (1=yes)
     };
 
     // Read the requested values

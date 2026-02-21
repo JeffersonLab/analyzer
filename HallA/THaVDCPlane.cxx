@@ -137,33 +137,32 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   fMinTdiff = 3e-8;   // 30ns  -> ~20 deg track angle
   fMaxTdiff = 2.0e-7; // 200ns -> ~67 deg track angle
   fMaxThits = 6;      // current TDC setting is to record only the last 6 hits
-  DBRequest request[] = {
-    { "detmap",         &detmap,         kIntV },
-    { "nwires",         &fNelem,         kInt,     0, false, -1 },
-    { "wire.start",     &fWBeg,          kDouble },
-    { "wire.spacing",   &fWSpac,         kDouble,  0, false, -1 },
-    { "wire.angle",     &fWAngle,        kDouble },
-    { "wire.badlist",   &bad_wirelist,   kIntV,    0, true },
-    { "driftvel",       &fDriftVel,      kDouble,  0, false, -1 },
-    { "tdc.min",        &fMinTime,       kInt,     0, true, -1 },
-    { "tdc.max",        &fMaxTime,       kInt,     0, true, -1 },
-    { "tdc.hits"     ,  &fMaxThits,      kUInt,    0, true, -1 },
-    { "tdc.res",        &fTDCRes,        kDouble,  0, false, -1 },
-    { "tdc.offsets",    &tdc_offsets,    kFloatV },
-    { "ttd.converter",  &ttd_conv,       kTString, 0, true, -1 },
-    { "ttd.param",      &ttd_param,      kDoubleV, 0, false, -1 },
-    { "t0.res",         &fT0Resolution,  kDouble,  0, true, -1 },
-    { "clust.minsize",  &fMinClustSize,  kInt,     0, true, -1 },
-    { "clust.maxspan",  &fMaxClustSpan,  kInt,     0, true, -1 },
-    { "maxgap",         &fNMaxGap,       kInt,     0, true, -1 },
-    { "tdiff.min",      &fMinTdiff,      kDouble,  0, true, -1 },
-    { "tdiff.max",      &fMaxTdiff,      kDouble,  0, true, -1 },
-    { "description",    &fTitle,         kTString, 0, true },
-    { nullptr }
+  const vector<DBRequest> request = {
+    { .name = "detmap",         .var = &detmap,         .type = kIntV                                    },
+    { .name = "nwires",         .var = &fNelem,         .type = kInt,                       .search = -1 },
+    { .name = "wire.start",     .var = &fWBeg                                                            },
+    { .name = "wire.spacing",   .var = &fWSpac,                                             .search = -1 },
+    { .name = "wire.angle",     .var = &fWAngle                                                          },
+    { .name = "wire.badlist",   .var = &bad_wirelist,   .type = kIntV,    .optional = true               },
+    { .name = "driftvel",       .var = &fDriftVel,                                          .search = -1 },
+    { .name = "tdc.min",        .var = &fMinTime,       .type = kInt,     .optional = true, .search = -1 },
+    { .name = "tdc.max",        .var = &fMaxTime,       .type = kInt,     .optional = true, .search = -1 },
+    { .name = "tdc.hits",       .var = &fMaxThits,      .type = kUInt,    .optional = true, .search = -1 },
+    { .name = "tdc.res",        .var = &fTDCRes,                                            .search = -1 },
+    { .name = "tdc.offsets",    .var = &tdc_offsets,    .type = kFloatV                                  },
+    { .name = "ttd.converter",  .var = &ttd_conv,       .type = kTString, .optional = true, .search = -1 },
+    { .name = "ttd.param",      .var = &ttd_param,      .type = kDoubleV,                   .search = -1 },
+    { .name = "t0.res",         .var = &fT0Resolution,                    .optional = true, .search = -1 },
+    { .name = "clust.minsize",  .var = &fMinClustSize,  .type = kInt,     .optional = true, .search = -1 },
+    { .name = "clust.maxspan",  .var = &fMaxClustSpan,  .type = kInt,     .optional = true, .search = -1 },
+    { .name = "maxgap",         .var = &fNMaxGap,       .type = kInt,     .optional = true, .search = -1 },
+    { .name = "tdiff.min",      .var = &fMinTdiff,                        .optional = true, .search = -1 },
+    { .name = "tdiff.max",      .var = &fMaxTdiff,                        .optional = true, .search = -1 },
+    { .name = "description",    .var = &fTitle,         .type = kTString, .optional = true               },
   };
 
-  err = LoadDB(file, date, request, fPrefix);
-  fclose(file);
+  err = LoadDB(file, date, request);
+  (void)fclose(file);
   if( err )
     return err;
 
@@ -225,26 +224,25 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     Double_t org[3]; fOrigin.GetXYZ(org);
     Double_t pos[3]; fCenter.GetXYZ(pos);
     Double_t angle = fWAngle*TMath::RadToDeg();
-    DBRequest list[] = {
-      { "Number of wires",         &fNelem,     kInt       },
-      { "Detector origin",         org,         kDouble, 3 },
-      { "Detector pos VDC coord",  pos,         kDouble, 3 },
-      { "Detector size",           fSize,       kDouble, 3 },
-      { "Wire angle (deg)",        &angle                  },
-      { "Wire start pos (m)",      &fWBeg                  },
-      { "Wire spacing (m)",        &fWSpac                 },
-      { "TDC resolution (s/chan)", &fTDCRes                },
-      { "Drift Velocity (m/s) ",   &fDriftVel              },
-      { "Min TDC raw time",        &fMinTime,      kInt    },
-      { "Max TDC raw time",        &fMaxTime,      kInt    },
-      { "Min adj wire tdiff (s)",  &fMinTdiff              },
-      { "Max adj wire tdiff (s)",  &fMaxTdiff              },
-      { "Time-to-dist conv param", &ttd_param, kDoubleV    },
-      { "Max gap in cluster",      &fNMaxGap,      kInt    },
-      { "Min cluster size",        &fMinClustSize, kInt    },
-      { "Max cluster span",        &fMaxClustSpan, kInt    },
-      { "t0 resolution (s)",       &fT0Resolution          },
-      { nullptr }
+    const vector<DBRequest> list = {
+      { .name = "Number of wires",         .var = &fNelem,        .type = kInt     },
+      { .name = "Detector origin",         .var = org,            .nelem = 3       },
+      { .name = "Detector pos VDC coord",  .var = pos,            .nelem = 3       },
+      { .name = "Detector size",           .var = fSize,          .nelem = 3       },
+      { .name = "Wire angle (deg)",        .var = &angle                           },
+      { .name = "Wire start pos (m)",      .var = &fWBeg                           },
+      { .name = "Wire spacing (m)",        .var = &fWSpac                          },
+      { .name = "TDC resolution (s/chan)", .var = &fTDCRes                         },
+      { .name = "Drift Velocity (m/s) ",   .var = &fDriftVel                       },
+      { .name = "Min TDC raw time",        .var = &fMinTime,      .type = kInt     },
+      { .name = "Max TDC raw time",        .var = &fMaxTime,      .type = kInt     },
+      { .name = "Min adj wire tdiff (s)",  .var = &fMinTdiff                       },
+      { .name = "Max adj wire tdiff (s)",  .var = &fMaxTdiff                       },
+      { .name = "Time-to-dist conv param", .var = &ttd_param,     .type = kDoubleV },
+      { .name = "Max gap in cluster",      .var = &fNMaxGap,      .type = kInt     },
+      { .name = "Min cluster size",        .var = &fMinClustSize, .type = kInt     },
+      { .name = "Max cluster span",        .var = &fMaxClustSpan, .type = kInt     },
+      { .name = "t0 resolution (s)",       .var = &fT0Resolution                   },
     };
     DebugPrint( list );
   }
@@ -269,10 +267,9 @@ Int_t THaVDCPlane::ReadGeometry( FILE* file, const TDatime& date, Bool_t )
   const char* const here = "ReadGeometry";
 
   vector<Double_t> position, size;
-  DBRequest request[] = {
-    { "position", &position, kDoubleV, 0, false, 0, "\"position\" (detector position [m])" },
-    { "size",     &size,     kDoubleV, 0, true, 0, "\"size\" (detector size [m])" },
-    { nullptr }
+  const vector<DBRequest> request = {
+    { .name = "position", .var = &position, .type = kDoubleV, .descript="\"position\" (detector position [m])" },
+    { .name = "size",     .var = &size,     .type = kDoubleV, .optional=true, .descript="\"size\" (detector size [m])" },
   };
   Int_t err = LoadDB( file, date, request );
   if( err )

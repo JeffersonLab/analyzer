@@ -93,7 +93,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     { .name = "tdc.res",      .var = &tdc2t,    .type = kDataType },
     { .name = "tdc.cmnstart", .var = &tdc_mode, .type = kInt, .optional = true },
   };
-  err = LoadDatabase( file, date, config_request, fPrefix );
+  err = LoadDB( file, date, config_request );
 
   // Sanity checks
   if( !err && nelem <= 0 ) {
@@ -215,8 +215,8 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     { .name = "avgres",           .var = &fResolution,  .type = kDataType,  .nelem = 0,      .optional = true },
     { .name = "atten",            .var = &fAttenuation, .type = kDataType,  .nelem = 0,      .optional = true },
   };
-  err = LoadDatabase( file, date, calib_request, fPrefix );
-  fclose(file);
+  err = LoadDB( file, date, calib_request );
+  (void)fclose(file);
   if( err )
     return err;
 

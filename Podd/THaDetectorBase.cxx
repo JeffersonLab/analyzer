@@ -219,20 +219,14 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
   position.reserve( 3 ), size.reserve( 3 ), angles.reserve( 3 );
   Bool_t optional = !required;
   const vector<DBRequest> request = {
-    {
-      .name = "position", .var = &position, .type = kDoubleV,
-      .optional = optional, .descript = "\"position\" (detector position [m])"
-    },
-    {
-      .name = "size", .var = &size, .type = kDoubleV,
-      .optional = optional, .descript = "\"size\" (detector size [m])"
-    },
-    {
-      .name = "angle", .var = &angles, .type = kDoubleV,
-      .optional = true, .descript = "\"angle\" (detector angles(s) [deg]"
-    },
+    { .name = "position", .var = &position, .type = kDoubleV,
+      .optional = optional, .descript = "\"position\" (detector position [m])" },
+    { .name = "size", .var = &size, .type = kDoubleV,
+      .optional = optional, .descript = "\"size\" (detector size [m])"         },
+    { .name = "angle", .var = &angles, .type = kDoubleV,
+      .optional = true, .descript = "\"angle\" (detector angles(s) [deg]"      },
   };
-  Int_t err = Podd::LoadDatabase( file, date, request, fPrefix );
+  Int_t err = LoadDB( file, date, request );
   if( err )
     return kInitError;
 

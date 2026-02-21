@@ -17,6 +17,7 @@
 #include <iomanip>
 #include <utility>
 #include <cctype>  // for std::iscntrl
+#include <vector>
 
 using namespace std;
 
@@ -119,7 +120,7 @@ Int_t THaRunParameters::ReadDatabase( const TDatime& date )
   // Return 0 if success, <0 if file error, >0 if not all required data found.
 
 #define OPEN Podd::OpenDBFile
-#define LOAD THaAnalysisObject::LoadDB
+#define LOAD Podd::LoadDatabase
 
   FILE* f = OPEN("run", date, "THaRunParameters::ReadDatabase", "r", 1);
   if( !f ) 
@@ -127,12 +128,11 @@ Int_t THaRunParameters::ReadDatabase( const TDatime& date )
 
   Double_t E = kBig, M = 0.511e-3, Q = -1.0, dE = 0.0;
 
-  DBRequest request[] = {
-    { "ebeam",  &E },
-    { "mbeam",  &M,  kDouble, 0, true },
-    { "qbeam",  &Q,  kDouble, 0, true },
-    { "dEbeam", &dE, kDouble, 0, true },
-    { nullptr }
+  const vector<DBRequest> request = {
+    { .name = "ebeam",  .var = &E },
+    { .name = "mbeam",  .var = &M,  .optional = true },
+    { .name = "qbeam",  .var = &Q,  .optional = true },
+    { .name = "dEbeam", .var = &dE, .optional = true },
   };
   Int_t err = LOAD( f, date, request, "" );
   fclose(f);

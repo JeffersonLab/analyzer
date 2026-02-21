@@ -573,15 +573,14 @@ Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
   Double_t th = 0.0, ph = 0.0;
   Double_t off_x = 0.0, off_y = 0.0, off_z = 0.0;
 
-  const DBRequest req[] = {
-    { "theta",    &th                       },
-    { "phi",      &ph,        kDouble, 0, true },
-    { "pcentral", &fPcentral                },
-    { "colldist", &fCollDist, kDouble, 0, true },
-    { "off_x",    &off_x,     kDouble, 0, true },
-    { "off_y",    &off_y,     kDouble, 0, true },
-    { "off_z",    &off_z,     kDouble, 0, true },
-    { nullptr }
+  const vector<DBRequest> req = {
+    { .name = "theta",    .var = &th                          },
+    { .name = "phi",      .var = &ph,        .optional = true },
+    { .name = "pcentral", .var = &fPcentral                   },
+    { .name = "colldist", .var = &fCollDist, .optional = true },
+    { .name = "off_x",    .var = &off_x,     .optional = true },
+    { .name = "off_y",    .var = &off_y,     .optional = true },
+    { .name = "off_z",    .var = &off_z,     .optional = true },
   };
   err = LoadDB( file, date, req );
   fclose(file);

@@ -61,12 +61,11 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
 //  if( !err ) {
   memset(zpos, 0, sizeof(zpos));
   // Read configuration parameters
-  DBRequest config_request[] = {
-    {"detmap", &detmap, kIntV},
-    {"zpos",   zpos,    kDouble, NPOS, true},
-    {nullptr}
+  const vector<DBRequest> config_request = {
+    {.name = "detmap", .var = &detmap, .type = kIntV},
+    {.name = "zpos",   .var = zpos,    .nelem = NPOS, .optional = true},
   };
-  Int_t err = LoadDB(file, date, config_request, fPrefix);
+  Int_t err = LoadDB(file, date, config_request);
 //  }
 
   // Fill the detector map. It must specify NBPM(=2) channels for the x/y
@@ -105,16 +104,15 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
     memset( rped, 0, sizeof(rped) );
     memset( sped, 0, sizeof(sped) );
 
-    DBRequest calib_request[] = {
-      { "freqs",      freq,     kDouble, NBPM },
-      { "rast_peds",  rped,     kDouble, NBPM, true },
-      { "slope_peds", sped,     kDouble, NBPM, true },
-      { "raw2posA",   raw2posA, kDouble, NBPM*NPOS },
-      { "raw2posB",   raw2posB, kDouble, NBPM*NPOS },
-      { "raw2posT",   raw2posT, kDouble, NBPM*NPOS },
-      { nullptr }
+    const vector<DBRequest> calib_request = {
+      { .name = "freqs",      .var = freq,     .nelem = NBPM },
+      { .name = "rast_peds",  .var = rped,     .nelem = NBPM, .optional = true },
+      { .name = "slope_peds", .var = sped,     .nelem = NBPM, .optional = true },
+      { .name = "raw2posA",   .var = raw2posA, .nelem = NBPM*NPOS },
+      { .name = "raw2posB",   .var = raw2posB, .nelem = NBPM*NPOS },
+      { .name = "raw2posT",   .var = raw2posT, .nelem = NBPM*NPOS },
     };
-    err = LoadDB( file, date, calib_request, fPrefix );
+    err = LoadDB( file, date, calib_request );
   }
   fclose(file);
   if( err )

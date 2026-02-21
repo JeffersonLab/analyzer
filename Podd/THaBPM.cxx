@@ -55,11 +55,10 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
 
   if( !err ) {
     // Read configuration parameters
-    DBRequest config_request[] = {
-      { "detmap",    &detmap,  kIntV },
-      { nullptr }
+    const vector<DBRequest> config_request = {
+      { .name = "detmap",  .var = &detmap,  .type = kIntV },
     };
-    err = LoadDB( file, date, config_request, fPrefix );
+    err = LoadDB( file, date, config_request );
   }
 
   UInt_t flags = THaDetMap::kFillLogicalChannel | THaDetMap::kFillModel;
@@ -71,14 +70,13 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
     memset( pedestals, 0, sizeof(pedestals) );
     memset( rotations, 0, sizeof(rotations) );
     memset( offsets  , 0, sizeof( offsets ) );
-    DBRequest calib_request[] = {
-      { "calib_rot",   &fCalibRot },
-      { "pedestals",   pedestals, kDouble, NCHAN, true },
-      { "rotmatrix",   rotations, kDouble, NCHAN, true },
-      { "offsets"  ,   offsets,   kDouble, 2    , true },
-      { nullptr }
+    const vector<DBRequest> calib_request = {
+      { .name = "calib_rot",   .var = &fCalibRot },
+      { .name = "pedestals",   .var = pedestals, .nelem = NCHAN, .optional = true },
+      { .name = "rotmatrix",   .var = rotations, .nelem = NCHAN, .optional = true },
+      { .name = "offsets"  ,   .var = offsets,   .nelem = 2    , .optional = true },
     };
-    err = LoadDB( file, date, calib_request, fPrefix );
+    err = LoadDB( file, date, calib_request );
   }
   fclose(file);
   if( err )

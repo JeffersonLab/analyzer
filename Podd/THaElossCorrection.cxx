@@ -98,33 +98,30 @@ Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
   FILE* f = OpenRunDBFile( date );
   if( !f ) return kFileError;
 
-  DBRequest req[] = {
-    { "M",          &fM,          kDouble, 0, false, 0, "M (particle mass [GeV/c^2])" },
-    { "Z",          &fZ,          kInt,    0, true,  0, "Z (particle Z)" },
-    { "Z_med",      &fZmed,       kDouble, 0, false, 0, "Z_med (Z of medium)" },
-    { "A_med",      &fAmed,       kDouble, 0, false, 0, "A_med (A of medium)" },
-    { "density",    &fDensity,    kDouble, 0, false, 0, "density of medium [g/cm^3]" },
-    { "pathlength", &fPathlength, kDouble, 0, false, 0, "pathlength through medium [m]" },
-    { nullptr }
+  vector<DBRequest> req = {
+    { .name = "M",          .var = &fM,          .descript = "M (particle mass [GeV/c^2])" },
+    { .name = "Z",          .var = &fZ,          .type = kInt, .optional = true,
+                                                    .descript = "Z (particle Z)" },
+    { .name = "Z_med",      .var = &fZmed,       .descript = "Z_med (Z of medium)" },
+    { .name = "A_med",      .var = &fAmed,       .descript = "A_med (A of medium)" },
+    { .name = "density",    .var = &fDensity,    .descript = "density of medium [g/cm^3]" },
+    { .name = "pathlength", .var = &fPathlength, .descript = "pathlength through medium [m]" },
   };
   // Allow pathlength key to be absent in variable pathlength mode
   if( fExtPathMode ) {
-    int i = 0;
-    while( req[i].name ) {
-      if( TString(req[i].name) == "pathlength" ) {
-	req[i].optional = true;
-	break;
+    for( auto& item: req ) {
+      if( TString(item.name) == "pathlength" ) {
+        item.optional = true;
+        break;
       }
-      ++i;
     }
   }
 
   // Ignore database entries if parameter already set
-  DBRequest* item = req;
-  while( item->name ) {
-    if( *((double*)item->var) != 0.0 )
-      item->var = nullptr;
-    item++;
+  for( auto& item: req) {
+    if( (item.type == kDouble && *static_cast<Double_t*>(item.var) != 0.0) ||
+        (item.type == kInt    && *static_cast<Int_t*>(item.var)    != 0) )
+      item.var = nullptr;
   }
 
   // Try to read any unset parameters from the database

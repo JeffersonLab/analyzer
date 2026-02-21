@@ -72,17 +72,16 @@ Int_t THaADCHelicity::ReadDatabase( const TDatime& date )
   vector<Int_t> heldef, gatedef;
   fThreshold  = kDefaultThreshold;
   Int_t ignore_gate = -1, invert_gate = 0;
-  const  DBRequest request[] = {
-    { "helchan",      &heldef,       kIntV,   0, false, -2 },
-    { "gatechan",     &gatedef,      kIntV,   0, true,  -2 },
-    { "threshold",    &fThreshold,   kDouble, 0, true,  -2 },
-    { "ignore_gate",  &ignore_gate,  kInt,    0, true,  -2 },
-    { "invert_gate",  &invert_gate,  kInt,    0, true,  -2 },
-    { nullptr }
+  const vector<DBRequest> request = {
+    { .name = "helchan",      .var = &heldef,       .type = kIntV,   .optional = false, .search = -2 },
+    { .name = "gatechan",     .var = &gatedef,      .type = kIntV,   .optional = true,  .search = -2 },
+    { .name = "threshold",    .var = &fThreshold,   .type = kDouble, .optional = true,  .search = -2 },
+    { .name = "ignore_gate",  .var = &ignore_gate,  .type = kInt,    .optional = true,  .search = -2 },
+    { .name = "invert_gate",  .var = &invert_gate,  .type = kInt,    .optional = true,  .search = -2 },
   };
   // Database keys are prefixed with this detector's name, not apparatus.name
-  err = LoadDB( file, date, request, fPrefix );
-  fclose(file);
+  err = LoadDB( file, date, request );
+  (void)fclose(file);
   if( err )
     return kInitError;
 

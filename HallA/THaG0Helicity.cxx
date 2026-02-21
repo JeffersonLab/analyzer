@@ -142,12 +142,11 @@ Int_t THaG0Helicity::ReadDatabase( const TDatime& date )
   Double_t ttol    = kDefaultTtol;
   Int_t    missqrt = kDefaultMissQ;
 
-  DBRequest req[] = {
-    { "delay",    &delay,      kInt,    0, true, -2 },
-    { "tdavg",    &tdavg,      kDouble, 0, true, -2 },
-    { "ttol",     &ttol,       kDouble, 0, true, -2 },
-    { "missqrt",  &missqrt,    kInt,    0, true, -2 },
-    { nullptr }
+  const vector<DBRequest> req = {
+    { .name = "delay",   .var = &delay,   .type = kInt,    .optional = true, .search = -2 },
+    { .name = "tdavg",   .var = &tdavg,   .type = kDouble, .optional = true, .search = -2 },
+    { .name = "ttol",    .var = &ttol,    .type = kDouble, .optional = true, .search = -2 },
+    { .name = "missqrt", .var = &missqrt, .type = kInt,    .optional = true, .search = -2 },
   };
   st = LoadDB( file, date, req );
   fclose(file);

@@ -19,10 +19,12 @@
 #include "THaSpectrometer.h"
 #include "THaEvData.h"
 #include "VarDef.h"
+#include "Database.h"
 #include <cassert>
 #include <vector>
 
 using namespace std;
+using namespace Podd;
 
 // Reserve initial space for 10 tracks per spectrometer (can grow dynamically)
 const size_t NTR = 10;
@@ -145,14 +147,14 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
   for( int i=0; i<2 && !err; i++) {
     vector<Int_t> detmap;
     fTdcOff[i] = 0.0;
-    DBRequest request[] = {
-      { "detmap",      &detmap, kIntV },
-      { "tdc_res",     &fTdcRes[i] },
-      { "tdc_offset",  &fTdcOff[i], kDouble, 1 },
-      { nullptr }
+    const vector<DBRequest> request = {
+      { .name = "detmap",      .var = &detmap,     .type = kIntV },
+      { .name = "tdc_res",     .var = &fTdcRes[i] },
+      { .name = "tdc_offset",  .var = &fTdcOff[i], .nelem = 1 },
     };
     TString pref(fPrefix); pref.Append(fTdcLabels[i]); pref.Append(".");
-    err = LoadDB( file, date, request, pref );
+    err = LoadDatabase({.file = file, .date = date, .prefix = pref,
+                         .here = "THaCoincTime::ReadDatabase"}, request);
 
     if( !err ) {
       if( detmap.size() != 6 ) {

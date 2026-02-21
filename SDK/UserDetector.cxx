@@ -115,15 +115,14 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
     // Set up an array of database requests. See VarDef.h for details.
     // If an optional parameter is not found in the database, the value of its
     // associated variable remains unchanged.
-    const DBRequest request[] = {
-      // Required items
-      { .name="detmap",    .var=&detmap, .type=kIntV },                      // Detector map
-      { .name="nelem",     .var=&nelem,  .type=kInt,       .search=-1},      // Number of elements (e.g. PMTs)
+    const vector<DBRequest> request = {
+      // Required items. Type kDouble is the default and can be omitted.
+      { .name = "detmap",    .var = &detmap, .type = kIntV },                        // Detector map
+      { .name = "nelem",     .var = &nelem,  .type = kInt,       .search = -1     }, // Number of elements (e.g. PMTs)
       // Optional items
-      { .name="angle",     .var=&angle,  .type=kDouble,    .optional=true }, // Rotation angle about y (deg)
-      { .name="pedestals", .var=&fPed,   .type=kDataTypeV, .optional=true }, // Pedestals (optional)
-      { .name="gains",     .var=&fGain,  .type=kDataTypeV, .optional=true }, // Gains (optional)
-      { .name=nullptr }                                                      // Last element must be nullptr
+      { .name = "angle",     .var = &angle,/*.type = kDouble,*/  .optional = true }, // Rotation angle about y (deg)
+      { .name = "pedestals", .var = &fPed,   .type = kDataTypeV, .optional = true }, // Pedestals (optional)
+      { .name = "gains",     .var = &fGain,  .type = kDataTypeV, .optional = true }, // Gains (optional)
     };
 
     // Read the requested values

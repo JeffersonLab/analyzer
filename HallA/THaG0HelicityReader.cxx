@@ -11,8 +11,10 @@
 #include "TMath.h"
 #include "TError.h"
 #include "VarDef.h"
+#include "Database.h"
 #include "THaAnalysisObject.h"   // For LoadDB
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -72,16 +74,15 @@ Int_t THaG0HelicityReader::ReadDatabase( const char* dbfilename,
 
   Int_t invert_gate = 0;
   fROCinfo[kROC2].roc = fROCinfo[kROC3].roc = kMaxUInt;
-  DBRequest req[] = {
-    { "helroc",      &fROCinfo[kHel],  kInt, 3, false, -2 },
-    { "timeroc",     &fROCinfo[kTime], kInt, 3, false, -2 },
-    { "time2roc",    &fROCinfo[kROC2], kInt, 3, true,  -2 },
-    { "time3roc",    &fROCinfo[kROC3], kInt, 3, true,  -2 },
-    { "neg_g0_gate", &invert_gate,     kInt, 0, true, -2 },
-    { nullptr }
+  const vector<DBRequest> req = {
+    { .name = "helroc",      .var = &fROCinfo[kHel],  .type = kInt, .nelem = 3, .optional = false, .search = -2 },
+    { .name = "timeroc",     .var = &fROCinfo[kTime], .type = kInt, .nelem = 3, .optional = false, .search = -2 },
+    { .name = "time2roc",    .var = &fROCinfo[kROC2], .type = kInt, .nelem = 3, .optional = true,  .search = -2 },
+    { .name = "time3roc",    .var = &fROCinfo[kROC3], .type = kInt, .nelem = 3, .optional = true,  .search = -2 },
+    { .name = "neg_g0_gate", .var = &invert_gate,     .type = kInt, .nelem = 0, .optional = true,  .search = -2 },
   };
-  Int_t st = THaAnalysisObject::LoadDB( file, date, req, prefix );
-  fclose(file);
+  Int_t st = Podd::LoadDatabase( file, date, req, prefix );
+  (void)fclose(file);
   if( st )
     return THaAnalysisObject::kInitError;
 

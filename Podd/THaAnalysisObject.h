@@ -72,6 +72,7 @@ public:
   virtual void         Print( Option_t* opt="" ) const;
 
   // For backwards compatibility
+  [[deprecated("Use LoadDatabase")]]
   static Int_t    LoadDB( FILE* file, const TDatime& date,
                           const DBRequest* request, const char* prefix,
                           Int_t search = 0,
@@ -79,6 +80,7 @@ public:
   {
     return Podd::LoadDatabase(file, date, request, prefix, search, here);
   }
+  [[deprecated("Use LoadDatabase")]]
   static Int_t    LoadDB( FILE* file, const TDatime& date,
                           const std::vector<DBRequest>& request,
                           const char* prefix, Int_t search = 0,
@@ -167,6 +169,7 @@ protected:
 
   virtual const char*  Here( const char* ) const;
   virtual const char*  ClassNameHere( const char* ) const;
+          [[deprecated("Use overload with vector<DBRequest>")]]
           Int_t        LoadDB( FILE* f, const TDatime& date,
 			       const DBRequest* req, Int_t search = 0 ) const;
           Int_t        LoadDB( FILE* f, const TDatime& date,
@@ -179,6 +182,7 @@ protected:
           Int_t        RemoveVariables();
 
 #ifdef WITH_DEBUG
+  [[deprecated("Use overload with vector<DBRequest>")]]
   void DebugPrint( const DBRequest* list ) const;
   void DebugPrint( const std::vector<DBRequest>& list ) const;
 

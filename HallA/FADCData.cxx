@@ -58,19 +58,23 @@ FADCData::ReadConfig( THaDetectorBase* det, const TDatime& date, const char* key
 {
   // Load FADC configuration parameters (required) from database
 
-  VarType kDataType = std::is_same_v<Data_t, Float_t> ? kFloat : kDouble;
+  constexpr VarType kDataType = std::is_same_v<Data_t, Float_t> ? kFloat : kDouble;
+
+  FILE* file = det->OpenFile(date);
+  if( !file )
+    return kFileError;
 
   fConfig.reset();  // Sets default TDC scale
-  vector<DBRequest> calib_request = {
-    {"adc.NPED",   &fConfig.nped,     kInt},
-    {"adc.NSA",    &fConfig.nsa,      kInt},
-    {"adc.NSB",    &fConfig.nsb,      kInt},
-    {"adc.Win",    &fConfig.win,      kInt},
-    {"adc.TFlag",  &fConfig.tflag,    kInt},
-    {"tdc.scale",  &fConfig.tdcscale, kDataType, 0, true},
+  const vector<DBRequest> calib_request = {
+    { .name = "adc.NPED",   .var = &fConfig.nped,     .type = kInt},
+    { .name = "adc.NSA",    .var = &fConfig.nsa,      .type = kInt},
+    { .name = "adc.NSB",    .var = &fConfig.nsb,      .type = kInt},
+    { .name = "adc.Win",    .var = &fConfig.win,      .type = kInt},
+    { .name = "adc.TFlag",  .var = &fConfig.tflag,    .type = kInt},
+    { .name = "tdc.scale",  .var = &fConfig.tdcscale, .type = kDataType, .optional = true},
   };
-  //return LoadDatabase(det, date, calib_request, prefix);
-  return kOK;
+  return LoadDatabase({.file = file, .date = date,
+     .prefix = det->GetPrefix(), .key_prefix = key_prefix}, calib_request);
 }
 
 //_____________________________________________________________________________

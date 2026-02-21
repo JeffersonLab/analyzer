@@ -205,8 +205,8 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     { .name = "pedestals", .var = &ped,  .type = kDataTypeV, .nelem = nval, .optional = true },
     { .name = "gains",     .var = &gain, .type = kDataTypeV, .nelem = nval, .optional = true },
   };
-  err = LoadDatabase( file, date, calib_request, fPrefix );
-  fclose(file);
+  err = LoadDB( file, date, calib_request );
+  (void)fclose(file);
   if( err )
     return err;
 

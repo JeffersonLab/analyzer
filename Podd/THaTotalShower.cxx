@@ -169,12 +169,11 @@ Int_t THaTotalShower::ReadDatabase( const TDatime& date )
 
   // Read configuration parameters
   Double_t dxdy[2];
-  DBRequest request[] = {
-    { "max_dxdy",  dxdy, kDouble, 2 },
-    { nullptr }
+  const vector<DBRequest> request = {
+    { .name = "max_dxdy", .var = dxdy, .nelem = 2 },
   };
-  Int_t err = LoadDB( fi, date, request, fPrefix );
-  fclose(fi);
+  Int_t err = LoadDB( fi, date, request );
+  (void)fclose(fi);
   if( err )
     return err;
 

@@ -85,9 +85,8 @@ Int_t THaHelicity::ReadDatabase( const TDatime& date )
   FILE* file = OpenFile( date );
   if( !file ) return kFileError;
 
-  DBRequest req[] = {
-    { "verbose",       &fDebug,      kInt, 0, true, -2 },
-    { nullptr }
+  const vector<DBRequest> req = {
+    { .name = "verbose", .var = &fDebug, .type = kInt, .optional = true, .search = -2 },
   };
   st = LoadDB( file, date, req );
   fclose(file);
