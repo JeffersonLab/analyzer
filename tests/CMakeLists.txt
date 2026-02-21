@@ -18,16 +18,16 @@ set(HDR ArrayRTTI.h UnitTest.h)
 
 # All tests live in one large executable for now
 add_executable(Catch2Tests_t ${SRC} ${HDR} Catch2TestsDict.cxx)
-target_link_libraries(Catch2Tests_t PRIVATE Podd::HallA)
-target_include_directories(Catch2Tests_t PRIVATE
+target_link_libraries(Catch2Tests_t Podd::HallA)
+target_include_directories(Catch2Tests_t PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}")
 
 # Build/link executable as necessary for the Catch version we have
 if(Catch2_VERSION VERSION_GREATER_EQUAL 3)
-  target_link_libraries(Catch2Tests_t PRIVATE Catch2::Catch2WithMain)
-  target_compile_definitions(Catch2Tests_t PRIVATE "HAVE_CATCH3")
+  target_link_libraries(Catch2Tests_t Catch2::Catch2WithMain)
+  target_compile_definitions(Catch2Tests_t PUBLIC "HAVE_CATCH3")
 else()
-  target_link_libraries(Catch2Tests_t PRIVATE Catch2::Catch2)
+  target_link_libraries(Catch2Tests_t Catch2::Catch2)
 endif()
 
 # ROOT dictionary
