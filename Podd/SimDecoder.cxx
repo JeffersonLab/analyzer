@@ -11,6 +11,7 @@
 #include "THaGlobals.h"
 #include <iostream>
 #include <algorithm>
+#include <vector>
 
 using namespace std;
 
@@ -38,22 +39,21 @@ SimDecoder::SimDecoder() :
   // Register standard global variables for event header data
   // (It is up to the actual implementation of SimDecoder to fill these)
   if( gHaVars ) {
-    VarDef vars[] = {
-        { "runnum",    "Run number",     kInt,    0, &run_num },
-        { "runtype",   "CODA run type",  kInt,    0, &run_type },
-        { "runtime",   "CODA run time",  kLong,   0, &fRunTime },
-        { "evnum",     "Event number",   kULong,  0, &event_num },
-        { "evtyp",     "Event type",     kInt,    0, &event_type },
-        { "evlen",     "Event Length",   kInt,    0, &event_length },
-        { "evtime",    "Event time",     kULong,  0, &evt_time },
-        { nullptr }
+    const vector<VarDef> vars = {
+        { .name = "runnum",  .desc = "Run number",    .type = kInt,   .loc = &run_num      },
+        { .name = "runtype", .desc = "CODA run type", .type = kInt,   .loc = &run_type     },
+        { .name = "runtime", .desc = "CODA run time", .type = kLong,  .loc = &fRunTime     },
+        { .name = "evnum",   .desc = "Event number",  .type = kULong, .loc = &event_num    },
+        { .name = "evtyp",   .desc = "Event type",    .type = kInt,   .loc = &event_type   },
+        { .name = "evlen",   .desc = "Event Length",  .type = kInt,   .loc = &event_length },
+        { .name = "evtime",  .desc = "Event time",    .type = kULong, .loc = &evt_time     },
     };
     TString prefix("g");
     // Prevent global variable clash if there are several instances of us
     if( fInstance > 1 )
       prefix.Append(Form("%d",fInstance));
     prefix.Append(".");
-    gHaVars->DefineVariables( vars, prefix, here );
+    gHaVars->DefineVariables(vars, {.prefix = prefix, .caller = here});
   } else
     Warning(here,"No global variable list found. Variables not registered.");
 }
@@ -118,68 +118,67 @@ Int_t SimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
     return THaAnalysisObject::kOK;
   fIsSetup = ( mode == THaAnalysisObject::kDefine );
 
-  RVarDef vars[] = {
+  const vector<RVarDef> vars = {
     // Event info
-    { "weight",    "Event weight",        "fWeight" },
+    { .name = "weight",    .desc = "Event weight",        .def = "fWeight" },
     // Generated hit and track info. Just report the sizes of the arrays.
     // Anything beyond this requires the type of the actual hit and
     // track classes.
-    { "tr.n",      "Number of MC tracks", "GetNMCTracks()" },
-    { "hit.n",     "Number of MC hits",   "GetNMCHits()" },
+    { .name = "tr.n",      .desc = "Number of MC tracks", .def = "GetNMCTracks()" },
+    { .name = "hit.n",     .desc = "Number of MC hits",   .def = "GetNMCHits()" },
     // MCTrackPoints
-    { "pt.n",      "Number of MC track points",
-                                                        "GetNMCPoints()" },
-    { "pt.plane",  "Plane number",
-                                   "fMCPoints.Podd::MCTrackPoint.fPlane" },
-    { "pt.type",   "Plane type",
-                                    "fMCPoints.Podd::MCTrackPoint.fType" },
-    { "pt.status", "Reconstruction status",
-                                  "fMCPoints.Podd::MCTrackPoint.fStatus" },
-    { "pt.nfound", "# reconstructed hits found near this point",
-                                  "fMCPoints.Podd::MCTrackPoint.fNFound" },
-    { "pt.clustsz",  "Size of closest reconstructed cluster",
-                               "fMCPoints.Podd::MCTrackPoint.fClustSize" },
-    { "pt.time",   "Track arrival time [s]",
-                                  "fMCPoints.Podd::MCTrackPoint.fMCTime" },
-    { "pt.p",      "Track momentum [GeV]",
-                                      "fMCPoints.Podd::MCTrackPoint.P() "},
+    { .name = "pt.n",      .desc = "Number of MC track points",
+                                                        .def = "GetNMCPoints()" },
+    { .name = "pt.plane",  .desc = "Plane number",
+                                   .def = "fMCPoints.Podd::MCTrackPoint.fPlane" },
+    { .name = "pt.type",   .desc = "Plane type",
+                                    .def = "fMCPoints.Podd::MCTrackPoint.fType" },
+    { .name = "pt.status", .desc = "Reconstruction status",
+                                  .def = "fMCPoints.Podd::MCTrackPoint.fStatus" },
+    { .name = "pt.nfound", .desc = "# reconstructed hits found near this point",
+                                  .def = "fMCPoints.Podd::MCTrackPoint.fNFound" },
+    { .name = "pt.clustsz",  .desc = "Size of closest reconstructed cluster",
+                               .def = "fMCPoints.Podd::MCTrackPoint.fClustSize" },
+    { .name = "pt.time",   .desc = "Track arrival time [s]",
+                                  .def = "fMCPoints.Podd::MCTrackPoint.fMCTime" },
+    { .name = "pt.p",      .desc = "Track momentum [GeV]",
+                                      .def = "fMCPoints.Podd::MCTrackPoint.P() "},
     // MC point positions in Cartesian/TRANSPORT coordinates
-    { "pt.x",      "Track pos lab x [m]",
-                                      "fMCPoints.Podd::MCTrackPoint.X()" },
-    { "pt.y",      "Track pos lab y [m]",
-                                      "fMCPoints.Podd::MCTrackPoint.Y()" },
-    { "pt.th",     "Track dir tan(theta)",
-                                 "fMCPoints.Podd::MCTrackPoint.ThetaT()" },
-    { "pt.ph",     "Track dir tan(phi)",
-                                   "fMCPoints.Podd::MCTrackPoint.PhiT()" },
+    { .name = "pt.x",      .desc = "Track pos lab x [m]",
+                                      .def = "fMCPoints.Podd::MCTrackPoint.X()" },
+    { .name = "pt.y",      .desc = "Track pos lab y [m]",
+                                      .def = "fMCPoints.Podd::MCTrackPoint.Y()" },
+    { .name = "pt.th",     .desc = "Track dir tan(theta)",
+                                 .def = "fMCPoints.Podd::MCTrackPoint.ThetaT()" },
+    { .name = "pt.ph",     .desc = "Track dir tan(phi)",
+                                   .def = "fMCPoints.Podd::MCTrackPoint.PhiT()" },
     // MC point positions and directions in cylindrical/spherical coordinates
-    { "pt.r",      "Track pos lab r_trans [m]",
-                                      "fMCPoints.Podd::MCTrackPoint.R()" },
-    { "pt.theta",  "Track pos lab theta [rad]",
-                                  "fMCPoints.Podd::MCTrackPoint.Theta()" },
-    { "pt.phi",    "Track pos lab phi [rad]",
-                                    "fMCPoints.Podd::MCTrackPoint.Phi()" },
-    { "pt.thdir",  "Track dir theta [rad]",
-                               "fMCPoints.Podd::MCTrackPoint.ThetaDir()" },
-    { "pt.phdir",  "Track dir phi [rad]",
-                                 "fMCPoints.Podd::MCTrackPoint.PhiDir()" },
+    { .name = "pt.r",      .desc = "Track pos lab r_trans [m]",
+                                      .def = "fMCPoints.Podd::MCTrackPoint.R()" },
+    { .name = "pt.theta",  .desc = "Track pos lab theta [rad]",
+                                  .def = "fMCPoints.Podd::MCTrackPoint.Theta()" },
+    { .name = "pt.phi",    .desc = "Track pos lab phi [rad]",
+                                    .def = "fMCPoints.Podd::MCTrackPoint.Phi()" },
+    { .name = "pt.thdir",  .desc = "Track dir theta [rad]",
+                               .def = "fMCPoints.Podd::MCTrackPoint.ThetaDir()" },
+    { .name = "pt.phdir",  .desc = "Track dir phi [rad]",
+                                 .def = "fMCPoints.Podd::MCTrackPoint.PhiDir()" },
     // MC point analysis results
-    { "pt.deltaE", "Eloss wrt prev plane (GeV)",
-                                  "fMCPoints.Podd::MCTrackPoint.fDeltaE" },
-    { "pt.deflect","Deflection wrt prev plane (rad)",
-                                 "fMCPoints.Podd::MCTrackPoint.fDeflect" },
-    { "pt.tof",    "Time-of-flight from prev plane (s)",
-                                     "fMCPoints.Podd::MCTrackPoint.fToF" },
-    { "pt.hitres", "Hit residual (mm)",
-                                "fMCPoints.Podd::MCTrackPoint.fHitResid" },
-    { "pt.trkres", "Track residual (mm)",
-                              "fMCPoints.Podd::MCTrackPoint.fTrackResid" },
-    { nullptr }
+    { .name = "pt.deltaE", .desc = "Eloss wrt prev plane (GeV)",
+                                  .def = "fMCPoints.Podd::MCTrackPoint.fDeltaE" },
+    { .name = "pt.deflect",.desc = "Deflection wrt prev plane (rad)",
+                                 .def = "fMCPoints.Podd::MCTrackPoint.fDeflect" },
+    { .name = "pt.tof",    .desc = "Time-of-flight from prev plane (s)",
+                                     .def = "fMCPoints.Podd::MCTrackPoint.fToF" },
+    { .name = "pt.hitres", .desc = "Hit residual (mm)",
+                                .def = "fMCPoints.Podd::MCTrackPoint.fHitResid" },
+    { .name = "pt.trkres", .desc = "Track residual (mm)",
+                              .def = "fMCPoints.Podd::MCTrackPoint.fTrackResid" },
   };
 
   return THaAnalysisObject::
-    DefineVarsFromList( vars, THaAnalysisObject::kRVarDef,
-			mode, "", this, MC_PREFIX, here, "" );
+    DefineGlobalVariables(vars, mode, this,
+                          {.prefix = MC_PREFIX, .caller = here});
 }
 
 //_____________________________________________________________________________

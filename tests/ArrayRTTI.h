@@ -8,6 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "UnitTest.h"  // for UnitTest
+#include "DataType.h"  // for Int_t, Data_t, ClassDefOverride, Double_t, UInt_t
 #include <vector>      // for vector
 struct RVarDef;
 
@@ -22,7 +23,7 @@ public:
   ~ArrayRTTI() override;
 
   Int_t DefineVariables( EMode mode ) override; // NOLINT(*-override-with-different-visibility)
-  static const RVarDef* GetRVarDef();
+  static const std::vector<RVarDef>& GetRVarDef();
   static Int_t GetNvars();
 
   // Array sizes

@@ -13,6 +13,7 @@
 #include "VarDef.h"
 #include "TMath.h"
 #include <string>
+#include <vector>
 
 class THaEvData;
 class TClonesArray;
@@ -191,10 +192,9 @@ Int_t THaTotalShower::DefineVariables( EMode mode )
 
   // Register global variables
 
-  RVarDef vars[] = {
-    { "e",  "Energy (MeV) of largest cluster",    "fE" },
-    { "id", "ID of Psh&Sh coincidence (1==good)", "fID" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "e",  .desc = "Energy (MeV) of largest cluster",    .def = "fE" },
+    { .name = "id", .desc = "ID of Psh&Sh coincidence (1==good)", .def = "fID" },
   };
   return DefineVarsFromList( vars, mode );
 }

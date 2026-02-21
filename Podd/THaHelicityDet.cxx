@@ -10,6 +10,7 @@
 
 
 #include "THaHelicityDet.h"
+#include <vector>
 
 using namespace std;
 
@@ -33,9 +34,8 @@ Int_t THaHelicityDet::DefineVariables( EMode mode )
 {
   // Initialize global variables
 
-  const RVarDef var[] = {
-    { "helicity", "Beam helicity",  "fHelicity" },
-    { nullptr }
+  const vector<RVarDef> var = {
+    { .name = "helicity", .desc = "Beam helicity",  .def = "fHelicity" },
   };
   return DefineVarsFromList( var, mode );
 }

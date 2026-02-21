@@ -188,12 +188,14 @@ public:
                                     const TObject* obj,
                                     DefineVariablesOpts opts );
   // Legacy methods for backward compatibility
-          Int_t    DefineVariables( const VarDef* list,
+[[deprecated("Use overload with vector<VarDef>")]]
+  virtual Int_t    DefineVariables( const VarDef* list,
 				    const char* prefix="",
 				    const char* caller="",
                                     const char* def_prefix = "",
                                     const char* comment_subst = "");
-          Int_t    DefineVariables( const RVarDef* list,
+[[deprecated("Use overload with vector<RVarDef>")]]
+  virtual Int_t    DefineVariables( const RVarDef* list,
                                     const TObject* obj,
                                     const char* prefix = "",
                                     const char* caller = "",

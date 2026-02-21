@@ -10,6 +10,7 @@
 
 #include "TimeCorrectionModule.h"
 #include "THaAnalyzer.h"
+#include <vector>
 
 using namespace std;
 
@@ -49,9 +50,8 @@ Int_t TimeCorrectionModule::DefineVariables( THaAnalysisObject::EMode mode )
   if( ret )
     return ret;
 
-  RVarDef vars[] = {
-    { "evtime",  "Time offset for event", "fEvtTime" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "evtime",  .desc = "Time offset for event", .def = "fEvtTime" },
   };
 
   return DefineVarsFromList( vars, mode );

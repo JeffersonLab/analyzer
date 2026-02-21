@@ -102,17 +102,16 @@ Int_t THaBPM::DefineVariables( EMode mode )
   // Initialize global variables
 
   // Register variables in global list
-  RVarDef vars[] = {
-    { "rawcur.1", "current in antenna 1", "GetRawSignal0()"},
-    { "rawcur.2", "current in antenna 2", "GetRawSignal1()"},
-    { "rawcur.3", "current in antenna 3", "GetRawSignal2()"},
-    { "rawcur.4", "current in antenna 4", "GetRawSignal3()"},
-    { "x", "reconstructed x-position", "fPosition.fX"},
-    { "y", "reconstructed y-position", "fPosition.fY"},
-    { "z", "reconstructed z-position", "fPosition.fZ"},
-    { "rotpos1", "position in bpm system","GetRotPosX()"},
-    { "rotpos2", "position in bpm system","GetRotPosY()"},
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "rawcur.1", .desc = "current in antenna 1",     .def = "GetRawSignal0()"},
+    { .name = "rawcur.2", .desc = "current in antenna 2",     .def = "GetRawSignal1()"},
+    { .name = "rawcur.3", .desc = "current in antenna 3",     .def = "GetRawSignal2()"},
+    { .name = "rawcur.4", .desc = "current in antenna 4",     .def = "GetRawSignal3()"},
+    { .name = "x",        .desc = "reconstructed x-position", .def = "fPosition.fX"},
+    { .name = "y",        .desc = "reconstructed y-position", .def = "fPosition.fY"},
+    { .name = "z",        .desc = "reconstructed z-position", .def = "fPosition.fZ"},
+    { .name = "rotpos1",  .desc = "position in bpm system",   .def = "GetRotPosX()"},
+    { .name = "rotpos2",  .desc = "position in bpm system",   .def = "GetRotPosY()"},
   };
 
   return DefineVarsFromList( vars, mode );

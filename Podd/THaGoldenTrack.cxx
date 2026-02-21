@@ -14,6 +14,9 @@
 #include "THaTrack.h"
 #include "TClonesArray.h"
 #include "VarDef.h"
+#include <vector>
+
+using namespace std;
 
 ClassImp(THaGoldenTrack)
 
@@ -66,27 +69,25 @@ Int_t THaGoldenTrack::DefineVariables( EMode mode )
 
   const char* var_prefix = "fTrkIfo.";
 
-  const RVarDef var1[] = {
-    { "x",        "Target x coordinate",            "fX"},
-    { "y",        "Target y coordinate",            "fY"},
-    { "th",       "Tangent of target theta angle",  "fTheta"},
-    { "ph",       "Tangent of target phi angle",    "fPhi"},    
-    { "dp",       "Target delta",                   "fDp"},
-    { "p",        "Lab momentum x (GeV)",           "fP"},
-    { "px",       "Lab momentum x (GeV)",           "GetPx()"},
-    { "py",       "Lab momentum y (GeV)",           "GetPy()"},
-    { "pz",       "Lab momentum z (GeV)",           "GetPz()"},
-    { "ok",       "Data valid status flag (1=ok)",  "fOK" },
-    { nullptr }
+  const vector<RVarDef> var1= {
+    { .name = "x",   .desc = "Target x coordinate",            .def = "fX"},
+    { .name = "y",   .desc = "Target y coordinate",            .def = "fY"},
+    { .name = "th",  .desc = "Tangent of target theta angle",  .def = "fTheta"},
+    { .name = "ph",  .desc = "Tangent of target phi angle",    .def = "fPhi"},
+    { .name = "dp",  .desc = "Target delta",                   .def = "fDp"},
+    { .name = "p",   .desc = "Lab momentum x (GeV)",           .def = "fP"},
+    { .name = "px",  .desc = "Lab momentum x (GeV)",           .def = "GetPx()"},
+    { .name = "py",  .desc = "Lab momentum y (GeV)",           .def = "GetPy()"},
+    { .name = "pz",  .desc = "Lab momentum z (GeV)",           .def = "GetPz()"},
+    { .name = "ok",  .desc = "Data valid status flag (1=ok)",  .def = "fOK" },
   };
   Int_t ret = DefineVarsFromList( var1, mode, var_prefix );
   if( ret )
     return ret;
 
-  const RVarDef var2[] = {
-    { "index",    "Index of Golden Track",         "fIndex" },
-    { "beta", "Beta of Golden Track",          "fGoldBeta" },
-    { nullptr }
+  const vector<RVarDef> var2 = {
+    { .name = "index", .desc = "Index of Golden Track", .def = "fIndex" },
+    { .name = "beta",  .desc = "Beta of Golden Track",  .def = "fGoldBeta" },
   };
   return DefineVarsFromList( var2, mode );
 }

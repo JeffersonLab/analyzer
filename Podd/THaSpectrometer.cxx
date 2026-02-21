@@ -24,6 +24,7 @@
 #include "TList.h"
 #include "TMath.h"
 #include "VarDef.h"
+#include <vector>
 
 #ifdef WITH_DEBUG
 #include <iostream>
@@ -215,41 +216,40 @@ Int_t THaSpectrometer::DefineVariables( EMode mode )
   // Define/delete standard variables for a spectrometer (tracks etc.)
   // Can be overridden or extended by derived (actual) apparatuses
 
-  RVarDef vars[] = {
-    { "tr.n",    "Number of tracks",             "GetNTracks()" },
-    { "tr.x",    "Track x coordinate (m)",       "fTracks.THaTrack.fX" },
-    { "tr.y",    "Track x coordinate (m)",       "fTracks.THaTrack.fY" },
-    { "tr.th",   "Tangent of track theta angle", "fTracks.THaTrack.fTheta" },
-    { "tr.ph",   "Tangent of track phi angle",   "fTracks.THaTrack.fPhi" },
-    { "tr.p",    "Track momentum (GeV)",         "fTracks.THaTrack.fP" },
-    { "tr.flag", "Track status flag",            "fTracks.THaTrack.fFlag" },
-    { "tr.chi2", "Track's chi2 from hits",       "fTracks.THaTrack.fChi2" },
-    { "tr.ndof", "Track's NDoF",                 "fTracks.THaTrack.fNDoF" },
-    { "tr.d_x",  "Detector x coordinate (m)",    "fTracks.THaTrack.fDX" },
-    { "tr.d_y",  "Detector y coordinate (m)",    "fTracks.THaTrack.fDY" },
-    { "tr.d_th", "Detector tangent of theta",    "fTracks.THaTrack.fDTheta" },
-    { "tr.d_ph", "Detector tangent of phi",      "fTracks.THaTrack.fDPhi" },
-    { "tr.r_x",  "Rotated x coordinate (m)",     "fTracks.THaTrack.fRX" },
-    { "tr.r_y",  "Rotated y coordinate (m)",     "fTracks.THaTrack.fRY" },
-    { "tr.r_th", "Rotated tangent of theta",     "fTracks.THaTrack.fRTheta" },
-    { "tr.r_ph", "Rotated tangent of phi",       "fTracks.THaTrack.fRPhi" },
-    { "tr.tg_y", "Target y coordinate",          "fTracks.THaTrack.fTY"},
-    { "tr.tg_th", "Tangent of target theta angle", "fTracks.THaTrack.fTTheta"},
-    { "tr.tg_ph", "Tangent of target phi angle",   "fTracks.THaTrack.fTPhi"},    
-    { "tr.tg_dp", "Target delta",                "fTracks.THaTrack.fDp"},
-    { "tr.px",    "Lab momentum x (GeV)",        "fTracks.THaTrack.GetLabPx()"},
-    { "tr.py",    "Lab momentum y (GeV)",        "fTracks.THaTrack.GetLabPy()"},
-    { "tr.pz",    "Lab momentum z (GeV)",        "fTracks.THaTrack.GetLabPz()"},
-    { "tr.vx",    "Vertex x (m)",                "fTracks.THaTrack.GetVertexX()"},
-    { "tr.vy",    "Vertex y (m)",                "fTracks.THaTrack.GetVertexY()"},
-    { "tr.vz",    "Vertex z (m)",                "fTracks.THaTrack.GetVertexZ()"},
-    { "tr.pathl", "Pathlength from tg to fp (m)","fTracks.THaTrack.GetPathLen()"},
-    { "tr.time",  "Time of track@Ref Plane (s)", "fTracks.THaTrack.GetTime()"},
-    { "tr.dtime", "uncer of time (s)",           "fTracks.THaTrack.GetdTime()"},
-    { "tr.beta",  "Beta of track",               "fTracks.THaTrack.GetBeta()"},
-    { "tr.dbeta", "uncertainty of beta",         "fTracks.THaTrack.GetdBeta()"},
-    { "status",   "Bits of completed analysis stages", "fStagesDone" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "tr.n",     .desc = "Number of tracks",             .def = "GetNTracks()"                  },
+    { .name = "tr.x",     .desc = "Track x coordinate (m)",       .def = "fTracks.THaTrack.fX"           },
+    { .name = "tr.y",     .desc = "Track x coordinate (m)",       .def = "fTracks.THaTrack.fY"           },
+    { .name = "tr.th",    .desc = "Tangent of track theta angle", .def = "fTracks.THaTrack.fTheta"       },
+    { .name = "tr.ph",    .desc = "Tangent of track phi angle",   .def = "fTracks.THaTrack.fPhi"         },
+    { .name = "tr.p",     .desc = "Track momentum (GeV)",         .def = "fTracks.THaTrack.fP"           },
+    { .name = "tr.flag",  .desc = "Track status flag",            .def = "fTracks.THaTrack.fFlag"        },
+    { .name = "tr.chi2",  .desc = "Track's chi2 from hits",       .def = "fTracks.THaTrack.fChi2"        },
+    { .name = "tr.ndof",  .desc = "Track's NDoF",                 .def = "fTracks.THaTrack.fNDoF"        },
+    { .name = "tr.d_x",   .desc = "Detector x coordinate (m)",    .def = "fTracks.THaTrack.fDX"          },
+    { .name = "tr.d_y",   .desc = "Detector y coordinate (m)",    .def = "fTracks.THaTrack.fDY"          },
+    { .name = "tr.d_th",  .desc = "Detector tangent of theta",    .def = "fTracks.THaTrack.fDTheta"      },
+    { .name = "tr.d_ph",  .desc = "Detector tangent of phi",      .def = "fTracks.THaTrack.fDPhi"        },
+    { .name = "tr.r_x",   .desc = "Rotated x coordinate (m)",     .def = "fTracks.THaTrack.fRX"          },
+    { .name = "tr.r_y",   .desc = "Rotated y coordinate (m)",     .def = "fTracks.THaTrack.fRY"          },
+    { .name = "tr.r_th",  .desc = "Rotated tangent of theta",     .def = "fTracks.THaTrack.fRTheta"      },
+    { .name = "tr.r_ph",  .desc = "Rotated tangent of phi",       .def = "fTracks.THaTrack.fRPhi"        },
+    { .name = "tr.tg_y",  .desc = "Target y coordinate",          .def = "fTracks.THaTrack.fTY"          },
+    { .name = "tr.tg_th", .desc = "Tangent of target theta angle",.def = "fTracks.THaTrack.fTTheta"      },
+    { .name = "tr.tg_ph", .desc = "Tangent of target phi angle",  .def = "fTracks.THaTrack.fTPhi"        },
+    { .name = "tr.tg_dp", .desc = "Target delta",                 .def = "fTracks.THaTrack.fDp"          },
+    { .name = "tr.px",    .desc = "Lab momentum x (GeV)",         .def = "fTracks.THaTrack.GetLabPx()"   },
+    { .name = "tr.py",    .desc = "Lab momentum y (GeV)",         .def = "fTracks.THaTrack.GetLabPy()"   },
+    { .name = "tr.pz",    .desc = "Lab momentum z (GeV)",         .def = "fTracks.THaTrack.GetLabPz()"   },
+    { .name = "tr.vx",    .desc = "Vertex x (m)",                 .def = "fTracks.THaTrack.GetVertexX()" },
+    { .name = "tr.vy",    .desc = "Vertex y (m)",                 .def = "fTracks.THaTrack.GetVertexY()" },
+    { .name = "tr.vz",    .desc = "Vertex z (m)",                 .def = "fTracks.THaTrack.GetVertexZ()" },
+    { .name = "tr.pathl", .desc = "Pathlength from tg to fp (m)", .def = "fTracks.THaTrack.GetPathLen()" },
+    { .name = "tr.time",  .desc = "Time of track@Ref Plane (s)",  .def = "fTracks.THaTrack.GetTime()"    },
+    { .name = "tr.dtime", .desc = "uncer of time (s)",            .def = "fTracks.THaTrack.GetdTime()"   },
+    { .name = "tr.beta",  .desc = "Beta of track",                .def = "fTracks.THaTrack.GetBeta()"    },
+    { .name = "tr.dbeta", .desc = "uncertainty of beta",          .def = "fTracks.THaTrack.GetdBeta()"   },
+    { .name = "status",   .desc = "Completed analysis stages",    .def = "fStagesDone"                   },
   };
 
   return DefineVarsFromList( vars, mode );

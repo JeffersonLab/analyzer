@@ -73,7 +73,8 @@ protected:
                                      const char* key_prefix = "",
                                      const char* comment_subst = "" );
   // Standard DefineVariables implementation
-  Int_t StdDefineVariables( const RVarDef* vars, THaAnalysisObject::EMode mode,
+  Int_t StdDefineVariables( const std::vector<RVarDef>& vars,
+                            THaAnalysisObject::EMode mode,
                             const char* key_prefix, const char* here,
                             const char* comment_subst );
 

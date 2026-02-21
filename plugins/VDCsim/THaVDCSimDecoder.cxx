@@ -12,6 +12,7 @@
 #include "THaVDCSim.h"
 #include "THaBenchmark.h"
 #include "VarDef.h"
+#include <vector>
 
 using namespace std;
 
@@ -40,34 +41,29 @@ Int_t THaVDCSimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
     return THaAnalysisObject::kOK;
   fIsSetup = ( mode == THaAnalysisObject::kDefine );
 
-  RVarDef vars[] = {
-    { "tr.n",    "Number of tracks",             "GetNTracks()" },
-    { "tr.x",    "Track x coordinate (m)",       "fTracks.TX()" },
-    { "tr.y",    "Track x coordinate (m)",       "fTracks.TY()" },
-    { "tr.th",   "Tangent of track theta angle", "fTracks.TTheta()" },
-    { "tr.ph",   "Tangent of track phi angle",   "fTracks.TPhi()" },
-    { "tr.p",    "Track momentum (GeV)",         "fTracks.P()" },
-    { "tr.type", "Track type",                   "fTracks.type" },
-    { "tr.layer","Layer of track origin",        "fTracks.layer" },
-    { "tr.no",   "Track number",                 "fTracks.track_num" },
-    { "tr.t0",   "Track time offset",            "fTracks.timeOffset" },
-    { "vdc.u1.pos",  "U1 crossing point (m)",    "fTracks.U1Pos()" },
-    { "vdc.v1.pos",  "V1 crossing point (m)",    "fTracks.V1Pos()" },
-    { "vdc.u2.pos",  "U2 crossing point (m)",    "fTracks.U2Pos()" },
-    { "vdc.v2.pos",  "V2 crossing point (m)",    "fTracks.V2Pos()" },
-    { "vdc.u1.slope","U1 track slope",           "fTracks.U1Slope()" },
-    { "vdc.v1.slope","V1 track slope",           "fTracks.V1Slope()" },
-    { "vdc.u2.slope","U2 track slope",           "fTracks.U2Slope()" },
-    { "vdc.v2.slope","V2 track slope",           "fTracks.V2Slope()" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "tr.n",         .desc = "Number of tracks",             .def = "GetNTracks()"       },
+    { .name = "tr.x",         .desc = "Track x coordinate (m)",       .def = "fTracks.TX()"       },
+    { .name = "tr.y",         .desc = "Track x coordinate (m)",       .def = "fTracks.TY()"       },
+    { .name = "tr.th",        .desc = "Tangent of track theta angle", .def = "fTracks.TTheta()"   },
+    { .name = "tr.ph",        .desc = "Tangent of track phi angle",   .def = "fTracks.TPhi()"     },
+    { .name = "tr.p",         .desc = "Track momentum (GeV)",         .def = "fTracks.P()"        },
+    { .name = "tr.type",      .desc = "Track type",                   .def = "fTracks.type"       },
+    { .name = "tr.layer",     .desc = "Layer of track origin",        .def = "fTracks.layer"      },
+    { .name = "tr.no",        .desc = "Track number",                 .def = "fTracks.track_num"  },
+    { .name = "tr.t0",        .desc = "Track time offset",            .def = "fTracks.timeOffset" },
+    { .name = "vdc.u1.pos",   .desc = "U1 crossing point (m)",        .def = "fTracks.U1Pos()"    },
+    { .name = "vdc.v1.pos",   .desc = "V1 crossing point (m)",        .def = "fTracks.V1Pos()"    },
+    { .name = "vdc.u2.pos",   .desc = "U2 crossing point (m)",        .def = "fTracks.U2Pos()"    },
+    { .name = "vdc.v2.pos",   .desc = "V2 crossing point (m)",        .def = "fTracks.V2Pos()"    },
+    { .name = "vdc.u1.slope", .desc = "U1 track slope",               .def = "fTracks.U1Slope()"  },
+    { .name = "vdc.v1.slope", .desc = "V1 track slope",               .def = "fTracks.V1Slope()"  },
+    { .name = "vdc.u2.slope", .desc = "U2 track slope",               .def = "fTracks.U2Slope()"  },
+    { .name = "vdc.v2.slope", .desc = "V2 track slope",               .def = "fTracks.V2Slope()"  },
   };
 
-  Int_t ret =
-    THaAnalysisObject::DefineVarsFromList( vars,
-					   THaAnalysisObject::kRVarDef,
-					   mode, "", this, MC_PREFIX, here );
-
-  return ret;
+  return THaAnalysisObject::DefineGlobalVariables(vars, mode, this,
+      {.prefix = MC_PREFIX, .caller = here});
 }
 
 //-----------------------------------------------------------------------------

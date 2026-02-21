@@ -187,10 +187,9 @@ Int_t THaTriggerTime::DefineVariables( EMode mode )
 {
   // Define/delete event-by-event global variables
 
-  RVarDef vars[] = {
-    { "evtype",  "Earliest trg-bit for the event", "fEvtType" },
-    { "trgtimes","Times for each trg-type",        "fTrgTimes" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "evtype",  .desc = "Earliest trg-bit for the event", .def = "fEvtType" },
+    { .name = "trgtimes",.desc = "Times for each trg-type",        .def = "fTrgTimes" },
   };
 
   return DefineVarsFromList( vars, mode );

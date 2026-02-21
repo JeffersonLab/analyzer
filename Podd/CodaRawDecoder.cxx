@@ -13,6 +13,7 @@
 #include "THaAnalysisObject.h"
 #include "THaVarList.h"
 #include "THaGlobals.h"
+#include <vector>
 
 using namespace std;
 
@@ -25,26 +26,25 @@ CodaRawDecoder::CodaRawDecoder()
 
   // Register standard global variables for event header data
   if( gHaVars ) {
-    VarDef vars[] = {
-        { "runnum",    "Run number",     kUInt,   0, &run_num },
-        { "runtype",   "CODA run type",  kUInt,   0, &run_type },
-        { "runtime",   "Run start time (Unix)", kLong, 0, &fRunTime },
-        { "evnum",     "Event number",   kULong,  0, &event_num },
-        { "evtyp",     "Event type",     kUInt,   0, &event_type },
-        { "evlen",     "Event length",   kUInt,   0, &event_length },
-        { "evtime",    "Event time",     kULong,  0, &evt_time },
-        { "datatype",  "Data type",      kUInt,   0, &data_type },
-        { "trigbits",  "Trigger bits",   kUInt,   0, &trigger_bits },
-        { "tsevtyp",   "TS event type",  kUInt,   0, &tsEvType },
-        { "rawevnum",  "Raw event number", kULong,0, &raw_event_num },
-        { nullptr }
+    const vector<VarDef> vars = {
+      { .name = "runnum",   .desc = "Run number",       .type = kUInt,  .loc = &run_num       },
+      { .name = "runtype",  .desc = "CODA run type",    .type = kUInt,  .loc = &run_type      },
+      { .name = "runtime",  .desc = "Run start time (Unix)", .type = kLong,  .loc = &fRunTime },
+      { .name = "evnum",    .desc = "Event number",     .type = kULong, .loc = &event_num     },
+      { .name = "evtyp",    .desc = "Event type",       .type = kUInt,  .loc = &event_type    },
+      { .name = "evlen",    .desc = "Event length",     .type = kUInt,  .loc = &event_length  },
+      { .name = "evtime",   .desc = "Event time",       .type = kULong, .loc = &evt_time      },
+      { .name = "datatype", .desc = "Data type",        .type = kUInt,  .loc = &data_type     },
+      { .name = "trigbits", .desc = "Trigger bits",     .type = kUInt,  .loc = &trigger_bits  },
+      { .name = "tsevtyp",  .desc = "TS event type",    .type = kUInt,  .loc = &tsEvType      },
+      { .name = "rawevnum", .desc = "Raw event number", .type = kULong, .loc = &raw_event_num }
     };
     TString prefix("g");
     // Prevent global variable clash if there are several instances of us
     if( fInstance > 1 )
       prefix.Append(Form("%d",fInstance));
     prefix.Append(".");
-    gHaVars->DefineVariables( vars, prefix, here );
+    gHaVars->DefineVariables(vars, {.prefix = prefix, .caller = here});
   } else
     Warning(here,"No global variable list found. Variables not registered.");
 }

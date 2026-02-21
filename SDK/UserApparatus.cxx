@@ -40,6 +40,7 @@
 #include "UserDetector.h"
 #include "VarDef.h"
 #include "TList.h"
+#include <vector>
 
 using namespace std;
 
@@ -90,9 +91,8 @@ Int_t UserApparatus::DefineVariables( EMode mode )
   // Define/delete the global variables for this apparatus.
   // Typically, these are results computed in Reconstruct().
 
-  RVarDef vars[] = {
-    { "ntot", "Total number of hits", "fNtotal" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "ntot", .desc = "Total number of hits", .def = "fNtotal" },
   };
   return DefineVarsFromList( vars, mode );
 }

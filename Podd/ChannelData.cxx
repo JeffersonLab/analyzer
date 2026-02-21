@@ -105,7 +105,7 @@ Int_t ChannelData::DefineVariablesImpl( THaAnalysisObject::EMode /*mode*/,
 }
 
 //_____________________________________________________________________________
-Int_t ChannelData::StdDefineVariables( const RVarDef* vars,
+Int_t ChannelData::StdDefineVariables( const vector<RVarDef>& vars,
                                        THaAnalysisObject::EMode mode,
                                        const char* key_prefix,
                                        const char* here,
@@ -115,11 +115,14 @@ Int_t ChannelData::StdDefineVariables( const RVarDef* vars,
   // Avoids code duplication and ensures consistent behavior.
 
   TString prefix = fName;
-  if( key_prefix && *key_prefix )
+  if( key_prefix && *key_prefix ) {
     prefix += key_prefix;
-  return THaAnalysisObject::DefineVarsFromList(
-    vars, THaAnalysisObject::kRVarDef, mode, "", this, prefix,
-    here, comment_subst);
+    if( !prefix.EndsWith(".") )
+      prefix += '.';
+  }
+  return THaAnalysisObject::DefineGlobalVariables(
+    vars, mode, this, {.prefix = prefix, .caller = here,
+      .def_prefix = "", .comment_subst = comment_subst});
 }
 
 //_____________________________________________________________________________
@@ -281,12 +284,11 @@ Int_t ADCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
   if( Int_t ret = ChannelData::DefineVariablesImpl(mode, key_prefix, comment_subst) )
     return ret;
 
-  const RVarDef vars[] = {
+  const vector<RVarDef> vars = {
     { .name = "nhit",  .desc = "Number of %s PMTs with ADC signal",     .def = "fNHits"  },
     { .name = "a",     .desc = "Raw %s ADC amplitudes",                 .def = "fADCs.adc"   },
     { .name = "a_p",   .desc = "Pedestal-subtracted %s ADC amplitudes", .def = "fADCs.adc_p" },
     { .name = "a_c",   .desc = "Gain-corrected %s ADC amplitudes",      .def = "fADCs.adc_c" },
-    { .name = nullptr }
   };
   return StdDefineVariables(vars, mode, key_prefix, here, comment_subst);
 }
@@ -424,7 +426,7 @@ Int_t TDCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
   if( Int_t ret = ChannelData::DefineVariablesImpl(mode, key_prefix, comment_subst) )
     return ret;
 
-  const RVarDef vars[] = {
+  const vector<RVarDef> vars = {
     { .name = "nthit",  .desc = "Number of %s PMTs with valid TDC",       .def = "fNHits.tdc"  },
     { .name = "nahit",  .desc = "Number of %s PMTs with ADC signal",      .def = "fNHits.adc"  },
     { .name = "nhits",  .desc = "Total number of %s TDC hits",            .def = "fPMTs.ntdc"  },
@@ -433,7 +435,6 @@ Int_t TDCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
     { .name = "a",      .desc = "Raw %s ADC amplitudes",                  .def = "fPMTs.adc"   },
     { .name = "a_p",    .desc = "Pedestal-subtracted %s ADC amplitudes",  .def = "fPMTs.adc_p" },
     { .name = "a_c",    .desc = "Gain-corrected %s ADC amplitudes",       .def = "fPMTs.adc_c" },
-    { .name = nullptr}
   };
   return StdDefineVariables(vars, mode, key_prefix, here, comment_subst);
 }

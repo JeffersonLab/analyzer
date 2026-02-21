@@ -13,6 +13,7 @@
 #include "VarDef.h"
 #include "VarType.h"
 #include <iostream>
+#include <vector>
 
 // Default tolerance for floating-point equality comparisons of z_med
 static const Double_t eps = 0.1;
@@ -79,12 +80,11 @@ Int_t THaElossCorrection::DefineVariables( EMode mode )
   // Define/delete global variables.
 
   // Locally computed data
-  const RVarDef var[] = {
-    { "eloss", "Calculated energy loss correction (GeV)", "fEloss" },
-    { "pathl", "Pathlength thru medium for this event",   "fPathlength" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "eloss", .desc = "Calculated energy loss correction (GeV)", .def = "fEloss" },
+    { .name = "pathl", .desc = "Pathlength thru medium for this event",   .def = "fPathlength" },
   };
-  return DefineVarsFromList( var, mode );
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________

@@ -9,6 +9,7 @@
 #include "THaEvData.h"
 #include "VarDef.h"
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -50,17 +51,16 @@ Int_t THaHelicity::DefineVariables( EMode mode )
     return ret;
 
   // Define variables for the G0 in-time mode
-  const RVarDef var[] = {
-    { "qrt",       "QRT from ROC",                 "fQrt" },
-    { "gate",      "Helicity Gate from ROC",       "fGate" },
-    { "pread",     "Present G0 reading",           "fPresentReading" },
-    { "timestamp", "Timestamp from ROC",           "fTimestamp" },
-    { "validtime", "Timestamp is valid",           "fValidTime" },
-    { "g0_hel",    "G0 helicity reading",          "fG0_Hel" },
-    { "goodhel",   "ADC and G0 helicities agree",  "fGoodHel" },
-    { "goodhel2",  "ADC and G0 helicities agree unless one unknown", 
-                                                  "fGoodHel2" },
-    { nullptr }
+  const vector<RVarDef> var = {
+    { .name = "qrt",       .desc = "QRT from ROC",                 .def = "fQrt" },
+    { .name = "gate",      .desc = "Helicity Gate from ROC",       .def = "fGate" },
+    { .name = "pread",     .desc = "Present G0 reading",           .def = "fPresentReading" },
+    { .name = "timestamp", .desc = "Timestamp from ROC",           .def = "fTimestamp" },
+    { .name = "validtime", .desc = "Timestamp is valid",           .def = "fValidTime" },
+    { .name = "g0_hel",    .desc = "G0 helicity reading",          .def = "fG0_Hel" },
+    { .name = "goodhel",   .desc = "ADC and G0 helicities agree",  .def = "fGoodHel" },
+    { .name = "goodhel2",  .desc = "ADC and G0 helicities agree unless one unknown",
+                                                                      .def = "fGoodHel2" },
   };
   return DefineVarsFromList( var, mode );
 }

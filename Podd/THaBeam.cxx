@@ -14,6 +14,9 @@
 #include "THaRunBase.h"
 #include "THaRunParameters.h"
 #include "THaGlobals.h"
+#include <vector>
+
+using namespace std;
 
 //_____________________________________________________________________________
 THaBeam::THaBeam( const char* name, const char* desc ) : 
@@ -63,14 +66,13 @@ Int_t THaBeam::DefineVariables( EMode mode )
 {
   // Initialize global variables and lookup table for decoder
 
-  RVarDef vars[] = {
-    { "x",     "reconstructed x-position at nom. interaction point", "fPosition.fX" },
-    { "y",     "reconstructed y-position at nom. interaction point", "fPosition.fY" },
-    { "z",     "reconstructed z-position at nom. interaction point", "fPosition.fZ" },
-    { "dir.x", "reconstructed x-component of beam direction",        "fDirection.fX" },
-    { "dir.y", "reconstructed y-component of beam direction",        "fDirection.fY" },
-    { "dir.z", "reconstructed z-component of beam direction",        "fDirection.fZ" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "x",     .desc = "reconstructed x-position at nom. interaction point", .def = "fPosition.fX" },
+    { .name = "y",     .desc = "reconstructed y-position at nom. interaction point", .def = "fPosition.fY" },
+    { .name = "z",     .desc = "reconstructed z-position at nom. interaction point", .def = "fPosition.fZ" },
+    { .name = "dir.x", .desc = "reconstructed x-component of beam direction",        .def = "fDirection.fX" },
+    { .name = "dir.y", .desc = "reconstructed y-component of beam direction",        .def = "fDirection.fY" },
+    { .name = "dir.z", .desc = "reconstructed z-component of beam direction",        .def = "fDirection.fZ" },
   };
 
   Int_t ret = DefineVarsFromList(vars, mode);

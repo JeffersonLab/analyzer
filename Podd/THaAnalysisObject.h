@@ -12,6 +12,7 @@
 #include "Database.h"
 #include "DataType.h"
 #include "OptionalType.h"
+#include "THaVarList.h"
 
 #include <vector>
 #include <string>
@@ -100,6 +101,16 @@ public:
 					 Double_t& length,
 					 TVector3& intersect );
 
+  static Int_t    DefineGlobalVariables( const std::vector<VarDef>& list,
+                     EMode mode, const THaVarList::DefineVariablesOpts& opts,
+                     THaVarList* lst = nullptr );
+  static Int_t    DefineGlobalVariables( const std::vector<RVarDef>& list,
+                     EMode mode, const TObject* obj,
+                     const THaVarList::DefineVariablesOpts& opts,
+                     THaVarList* lst = nullptr);
+
+  // Legacy method for backward compatibility
+  [[deprecated("Use DefineGllobalVariables()")]]
   static Int_t    DefineVarsFromList( const void* list,
                                       EType type, EMode mode,
                                       const char* def_prefix,
@@ -130,16 +141,22 @@ protected:
 
   TObject*        fExtra;     // Additional member data (for binary compat.)
 
+  using DefOpts = THaVarList::DefineVariablesOpts;
+
   virtual Int_t        DefineVariables( EMode mode = kDefine );
+          Int_t        DefineVarsFromList( const std::vector<VarDef>& list,
+                          EMode mode = kDefine, DefOpts opts = {} ) const;
+          Int_t        DefineVarsFromList( const std::vector<RVarDef>& list,
+                          EMode mode = kDefine, DefOpts opts = {} ) const;
+  // Legacy methods for backward compatibility
+          [[deprecated("Use overload with vector<VarDef>")]]
           Int_t        DefineVarsFromList( const VarDef* list,
                                            EMode mode = kDefine,
                                            const char* def_prefix = "",
                                            const char* comment_subst = "" ) const;
-          Int_t        DefineVarsFromList( const RVarDef* list, EMode mode,
+          [[deprecated("Use overload with vector<RVarDef>")]]
+          Int_t        DefineVarsFromList( const RVarDef* list, EMode mode = kDefine,
                                            const char* def_prefix = "",
-                                           const char* comment_subst = "" ) const;
-          Int_t        DefineVarsFromList( const void* list, EType type,
-                                           EMode mode, const char* def_prefix = "",
                                            const char* comment_subst = "" ) const;
 
   virtual void         DoError( int level, const char* location,

@@ -82,6 +82,7 @@
 #include <cstdio>
 #include <cassert>
 #include <memory>
+#include <vector>
 
 using namespace std;
 
@@ -152,10 +153,9 @@ Int_t DecData::DefineVariables( EMode mode )
   if( retval != kOK )
     return retval;
 
-  RVarDef vars[] = {
-    { "evtype",     "CODA event type",             "evtype" },
-    { "evtypebits", "event type bit pattern",      "evtypebits" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "evtype",     .desc = "CODA event type",        .def = "evtype" },
+    { .name = "evtypebits", .desc = "event type bit pattern", .def = "evtypebits" },
   };
   return DefineVarsFromList( vars, mode );
 }

@@ -182,11 +182,115 @@ Int_t THaAnalysisObject::DefineVariables( EMode /* mode */ )
 }
 
 //_____________________________________________________________________________
+// Convenience functions for DefineVarsFromList methods
+namespace {
+Int_t NoListWarning( THaAnalysisObject::EMode mode,
+                     const THaVarList::DefineVariablesOpts& opts )
+{
+  using THaAnalysisObject::kDefine;
+  using THaAnalysisObject::kInitError, THaAnalysisObject::kOK;
+
+  const char* action =
+      mode == kDefine ? "defined" : "deleted (this is safe when exiting)";
+  ::Warning(::Here(opts.caller, opts.prefix),
+            "No global variable list found. No variables %s.", action);
+  return mode == kDefine ? kInitError : kOK;
+}
+
+//_____________________________________________________________________________
+template<typename Item>
+Int_t RemoveVarsInList( THaVarList* lst, const vector<Item>& list,
+                        const char* prefix )
+{
+  Int_t nelem = 0;
+  for( const auto& item: list ) {
+    TString name{prefix};
+    name += item.name;
+    nelem += lst->RemoveName(name);
+  }
+  return nelem;
+}
+} // namespace
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::DefineGlobalVariables( const std::vector<VarDef>& list,
+  EMode mode, const DefOpts& opts, THaVarList* lst )
+{
+  if( !lst && !(lst = gHaVars) )
+    return NoListWarning(mode, opts);
+
+  switch( mode ) {
+    case kDefine:
+      lst->DefineVariables(list, opts);
+      break;
+    case kDelete:
+      RemoveVarsInList(lst, list, opts.prefix);
+      break;
+  }
+  return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::DefineGlobalVariables( const std::vector<RVarDef>& list,
+  EMode mode, const TObject* obj, const DefOpts& opts, THaVarList* lst )
+{
+  if( !lst && !(lst = gHaVars) )
+    return NoListWarning(mode, opts);
+
+  switch( mode ) {
+    case kDefine:
+      lst->DefineVariables(list, obj, opts);
+      break;
+    case kDelete:
+      RemoveVarsInList(lst, list, opts.prefix);
+      break;
+  }
+  return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::DefineVarsFromList(
+  const std::vector<VarDef>& list, EMode mode, DefOpts opts ) const
+{
+  if( !opts.prefix || !*opts.prefix )
+    opts.prefix = fPrefix;
+  TString here(GetClassName());
+  if( opts.caller && *opts.caller ) {
+    here.Append("::");
+    here.Append(opts.caller);
+  } else
+    here.Append("::DefineVarsFromList");
+
+  return DefineGlobalVariables(list, mode, opts, gHaVars);
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::DefineVarsFromList(
+  const std::vector<RVarDef>& list, EMode mode, DefOpts opts ) const
+{
+  if( !opts.prefix || !*opts.prefix )
+    opts.prefix = fPrefix;
+  TString here(GetClassName());
+  if( opts.caller && *opts.caller ) {
+    here.Append("::");
+    here.Append(opts.caller);
+  } else
+    here.Append("::DefineVarsFromList");
+
+  return DefineGlobalVariables(list, mode, this, opts, gHaVars);
+}
+
+//_____________________________________________________________________________
 Int_t THaAnalysisObject::DefineVarsFromList( const VarDef* list, EMode mode,
                                              const char* def_prefix,
                                              const char* comment_subst ) const
 {
-  return DefineVarsFromList(list, kVarDef, mode, def_prefix, comment_subst);
+  TString here(GetClassName());
+  here.Append("::DefineVarsFromList");
+  return DefineGlobalVariables(
+    MakeVectorFromList(list), mode,
+    { .prefix = fPrefix, .caller = here, .def_prefix = def_prefix,
+      .comment_subst = comment_subst }, gHaVars);
 }
 
 //_____________________________________________________________________________
@@ -194,22 +298,12 @@ Int_t THaAnalysisObject::DefineVarsFromList( const RVarDef* list, EMode mode,
                                              const char* def_prefix,
                                              const char* comment_subst ) const
 {
-  return DefineVarsFromList(list, kRVarDef, mode, def_prefix, comment_subst);
-}
-
-//_____________________________________________________________________________
-Int_t THaAnalysisObject::DefineVarsFromList( const void* list, EType type,
-                                             EMode mode, const char* def_prefix,
-                                             const char* comment_subst ) const
-{
-  // Add/delete variables defined in 'list' to/from the list of global
-  // variables, using prefix of the current apparatus.
-  // Internal function that can be called during initialization.
-
   TString here(GetClassName());
   here.Append("::DefineVarsFromList");
-  return DefineVarsFromList(list, type, mode, def_prefix, this,
-                            fPrefix, here.Data(), comment_subst);
+  return DefineGlobalVariables(
+    MakeVectorFromList(list), mode, this,
+    { .prefix = fPrefix, .caller = here, .def_prefix = def_prefix,
+      .comment_subst = comment_subst }, gHaVars);
 }
 
 //_____________________________________________________________________________
@@ -224,46 +318,18 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
   // Actual implementation of the variable definition utility function.
   // Static function that can be used by classes other than THaAnalysisObjects
 
-  if( !gHaVars ) {
-    TString action;
-    if( mode == kDefine )
-      action = "defined";
-    else if( mode == kDelete )
-      action = "deleted (this is safe when exiting)";
-    ::Warning( ::Here(here,prefix), "No global variable list found. "
-	       "No variables %s.",  action.Data() );
-    return (mode==kDefine ? kInitError : kOK);
+  THaVarList::DefineVariablesOpts opts{
+    .prefix = prefix, .caller = here,
+    .def_prefix = def_prefix, .comment_subst = comment_subst
+  };
+  switch( type ) {
+    case kVarDef:
+      return DefineGlobalVariables(
+        MakeVectorFromList(static_cast<const VarDef*>(list)), mode, opts);
+    case kRVarDef:
+      return DefineGlobalVariables(
+        MakeVectorFromList(static_cast<const RVarDef*>(list)), mode, obj, opts);
   }
-
-  if( mode == kDefine ) {
-    if( type == kVarDef )
-      gHaVars->DefineVariables( static_cast<const VarDef*>(list),
-				prefix, ::Here(here,prefix) );
-    else if( type == kRVarDef )
-      gHaVars->DefineVariables(static_cast<const RVarDef*>(list), obj,
-                               prefix, ::Here(here, prefix), def_prefix,
-                               comment_subst);
-  }
-  else if( mode == kDelete ) {
-    if( type == kVarDef ) {
-      const auto *item = static_cast<const VarDef*>(list);
-      while( item && item->name ) {
-	TString name(prefix);
-	name.Append( item->name );
-	gHaVars->RemoveName( name );
-	++item;
-      }
-    } else if( type == kRVarDef ) {
-      const auto *item = static_cast<const RVarDef*>(list);
-      while( item && item->name ) {
-	TString name(prefix);
-	name.Append( item->name );
-	gHaVars->RemoveName( name );
-	++item;
-      }
-    }
-  }
-
   return kOK;
 }
 

@@ -19,6 +19,7 @@
 #include "THaGlobals.h"
 #include "VarDef.h"
 #include "TMath.h"
+#include <vector>
 
 using namespace std;
 using namespace Podd;
@@ -103,21 +104,20 @@ Int_t THaPrimaryKine::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
-  RVarDef vars[] = {
-    { "Q2",      "4-momentum transfer squared (GeV^2)",     "fQ2" },
-    { "omega",   "Energy transfer (GeV)",                   "fOmega" },
-    { "W2",      "Invariant mass of recoil system (GeV^2)", "fW2" }, 
-    { "x_bj",    "Bjorken x",                               "fXbj" },
-    { "angle",   "Scattering angle (rad)",                  "fScatAngle" },
-    { "epsilon", "Virtual photon polarization factor",      "fEpsilon" },
-    { "q3m",     "Magnitude of 3-momentum transfer",        "fQ3mag" },
-    { "th_q",    "Theta of 3-momentum vector (rad)",        "fThetaQ" },
-    { "ph_q",    "Phi of 3-momentum vector (rad)",          "fPhiQ" },
-    { "nu",      "Energy transfer (GeV)",                   "fOmega" },
-    { "q_x",     "x-cmp of Photon vector in the lab",       "fQ.X()" },
-    { "q_y",     "y-cmp of Photon vector in the lab",       "fQ.Y()" },
-    { "q_z",     "z-cmp of Photon vector in the lab",       "fQ.Z()" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "Q2",      .desc = "4-momentum transfer squared (GeV^2)",     .def = "fQ2" },
+    { .name = "omega",   .desc = "Energy transfer (GeV)",                   .def = "fOmega" },
+    { .name = "W2",      .desc = "Invariant mass of recoil system (GeV^2)", .def = "fW2" },
+    { .name = "x_bj",    .desc = "Bjorken x",                               .def = "fXbj" },
+    { .name = "angle",   .desc = "Scattering angle (rad)",                  .def = "fScatAngle" },
+    { .name = "epsilon", .desc = "Virtual photon polarization factor",      .def = "fEpsilon" },
+    { .name = "q3m",     .desc = "Magnitude of 3-momentum transfer",        .def = "fQ3mag" },
+    { .name = "th_q",    .desc = "Theta of 3-momentum vector (rad)",        .def = "fThetaQ" },
+    { .name = "ph_q",    .desc = "Phi of 3-momentum vector (rad)",          .def = "fPhiQ" },
+    { .name = "nu",      .desc = "Energy transfer (GeV)",                   .def = "fOmega" },
+    { .name = "q_x",     .desc = "x-cmp of Photon vector in the lab",       .def = "fQ.X()" },
+    { .name = "q_y",     .desc = "y-cmp of Photon vector in the lab",       .def = "fQ.Y()" },
+    { .name = "q_z",     .desc = "z-cmp of Photon vector in the lab",       .def = "fQ.Z()" },
   };
   return DefineVarsFromList( vars, mode );
 }

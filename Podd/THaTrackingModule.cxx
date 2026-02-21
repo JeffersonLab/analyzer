@@ -11,6 +11,7 @@
 
 #include "THaTrackingModule.h"
 #include "VarDef.h"
+#include <vector>
 
 using namespace std;
 
@@ -29,22 +30,21 @@ void THaTrackingModule::TrkIfoClear()
 }
 
 //_____________________________________________________________________________
-const RVarDef* THaTrackingModule::GetRVarDef()
+const vector<RVarDef> THaTrackingModule::GetRVarDef()
 {
   // Return definition block of global variables for the fTrkIfo object
 
-  static const RVarDef vars[] = {
-    { "x",        "Target x coordinate",            "fTrkIfo.fX"},
-    { "y",        "Target y coordinate",            "fTrkIfo.fY"},
-    { "th",       "Tangent of target theta angle",  "fTrkIfo.fTheta"},
-    { "ph",       "Tangent of target phi angle",    "fTrkIfo.fPhi"},    
-    { "dp",       "Target delta",                   "fTrkIfo.fDp"},
-    { "p",        "Lab momentum (GeV)",             "fTrkIfo.fP"},
-    { "px",       "Lab momentum x (GeV)",           "fTrkIfo.GetPx()"},
-    { "py",       "Lab momentum y (GeV)",           "fTrkIfo.GetPy()"},
-    { "pz",       "Lab momentum z (GeV)",           "fTrkIfo.GetPz()"},
-    { "ok",       "Data valid status flag (1=ok)",  "fTrkIfo.fOK"},
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "x",        .desc = "Target x coordinate",            .def = "fTrkIfo.fX"      },
+    { .name = "y",        .desc = "Target y coordinate",            .def = "fTrkIfo.fY"      },
+    { .name = "th",       .desc = "Tangent of target theta angle",  .def = "fTrkIfo.fTheta"  },
+    { .name = "ph",       .desc = "Tangent of target phi angle",    .def = "fTrkIfo.fPhi"    },
+    { .name = "dp",       .desc = "Target delta",                   .def = "fTrkIfo.fDp"     },
+    { .name = "p",        .desc = "Lab momentum (GeV)",             .def = "fTrkIfo.fP"      },
+    { .name = "px",       .desc = "Lab momentum x (GeV)",           .def = "fTrkIfo.GetPx()" },
+    { .name = "py",       .desc = "Lab momentum y (GeV)",           .def = "fTrkIfo.GetPy()" },
+    { .name = "pz",       .desc = "Lab momentum z (GeV)",           .def = "fTrkIfo.GetPz()" },
+    { .name = "ok",       .desc = "Data valid status flag (1=ok)",  .def = "fTrkIfo.fOK"     },
   };
 
   return vars;

@@ -16,6 +16,7 @@
 #include "TH1F.h"
 #include "TMath.h"
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -77,21 +78,20 @@ Int_t THaQWEAKHelicity::DefineVariables( EMode mode )
   if( ret )
     return ret;
 
-  const RVarDef var[] = {
-    { "qrt",      "actual qrt for TIR event",        "fQrt" },
-    { "hel",      "actual helicity for TIR event",   "fHelicity" },
-    { "tsettle",  "TSettle for TIR event",           "fTSettle"},
-    { "U3plus",   "U3 plus",                         "fRingU3plus"},
-    { "U3minus",  "U3 minus",                        "fRingU3minus"},
-    { "T3plus",   "T3 plus",                         "fRingT3plus"},
-    { "T3minus",  "T3 minus",                        "fRingT3minus"},
-    { "T5plus",   "T5 plus",                         "fRingT5plus"},
-    { "T5minus",  "T5 minus",                        "fRingT5minus"},
-    { "T10plus",  "T10 plus",                        "fRingT10plus"},
-    { "T10minus", "T10 minus",                       "fRingT10minus"},
-    { "Timeminus","Time minus",                      "fRingTimeminus"},
-    { "Timeplus", "Time plus",                       "fRingTimeplus"},
-    { nullptr }
+  const vector<RVarDef> var = {
+    { .name = "qrt",      .desc = "actual qrt for TIR event",      .def = "fQrt" },
+    { .name = "hel",      .desc = "actual helicity for TIR event", .def = "fHelicity" },
+    { .name = "tsettle",  .desc = "TSettle for TIR event",         .def = "fTSettle"},
+    { .name = "U3plus",   .desc = "U3 plus",                       .def = "fRingU3plus"},
+    { .name = "U3minus",  .desc = "U3 minus",                      .def = "fRingU3minus"},
+    { .name = "T3plus",   .desc = "T3 plus",                       .def = "fRingT3plus"},
+    { .name = "T3minus",  .desc = "T3 minus",                      .def = "fRingT3minus"},
+    { .name = "T5plus",   .desc = "T5 plus",                       .def = "fRingT5plus"},
+    { .name = "T5minus",  .desc = "T5 minus",                      .def = "fRingT5minus"},
+    { .name = "T10plus",  .desc = "T10 plus",                      .def = "fRingT10plus"},
+    { .name = "T10minus", .desc = "T10 minus",                     .def = "fRingT10minus"},
+    { .name = "Timeminus",.desc = "Time minus",                    .def = "fRingTimeminus"},
+    { .name = "Timeplus", .desc = "Time plus",                     .def = "fRingTimeplus"},
   };
   //  cout << "now actually defining stuff, prefix = " << fPrefix << endl;
   return DefineVarsFromList( var, mode );

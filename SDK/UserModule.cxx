@@ -22,6 +22,7 @@
 #include "UserModule.h"
 #include "THaTrackingModule.h"
 #include "VarDef.h"
+#include <vector>
 
 using namespace std;
 using namespace Podd;
@@ -61,10 +62,9 @@ Int_t UserModule::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
-  RVarDef vars[] = {
-    { "A",  "Result A", "fResultA" },
-    { "B",  "Result B", "fResultB" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "A",  .desc = "Result A", .def = "fResultA" },
+    { .name = "B",  .desc = "Result B", .def = "fResultB" },
   };
   return DefineVarsFromList( vars, mode );
 }

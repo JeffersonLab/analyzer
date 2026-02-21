@@ -34,6 +34,7 @@
 #include "TClonesArray.h"
 #include "TClass.h"
 #include "TMath.h"
+#include <vector>
 
 using namespace std;
 
@@ -66,11 +67,10 @@ Int_t UserScintillator::DefineVariables( EMode mode )
   if( ret )
     return ret;
 
-  RVarDef vars[] = {
-    { "padnum", "Paddle number",                                 "fPaddle" },
-    { "ytrk",   "Transverse pos'n at scint plane from track (m)","fYtrk" },
-    { "ytdc",   "Transverse pos'n at scint plane from TDCs (m)", "fYtdc" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "padnum", .desc = "Paddle number",                                  .def = "fPaddle" },
+    { .name = "ytrk",   .desc = "Transverse pos'n at scint plane from track (m)", .def = "fYtrk"   },
+    { .name = "ytdc",   .desc = "Transverse pos'n at scint plane from TDCs (m)",  .def = "fYtdc"   },
   };
   return DefineVarsFromList( vars, mode );
 }

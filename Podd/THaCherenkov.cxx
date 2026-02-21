@@ -21,6 +21,7 @@
 #include <cassert>
 #include <iostream>
 #include <iomanip>
+#include <vector>
 
 using namespace std;
 using namespace Podd;
@@ -217,10 +218,9 @@ Int_t THaCherenkov::DefineVariables( EMode mode )
   if( ret )
     return ret;
 
-  RVarDef vars[] = {
+  const vector<RVarDef> vars = {
     { .name = "asum_p", .desc = "Sum of ADC minus pedestal values", .def = "fASUM_p" },
     { .name = "asum_c", .desc = "Sum of corrected ADC amplitudes",  .def = "fASUM_c" },
-    { .name = nullptr }
   };
   return DefineVarsFromList(vars, mode);
 }

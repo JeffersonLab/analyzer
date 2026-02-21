@@ -35,6 +35,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <vector>
 
 using namespace std;
 using namespace VDC;
@@ -461,9 +462,8 @@ Int_t THaVDC::DefineVariables( EMode mode )
 
   // Register variables in global list
 
-  RVarDef vars[] = {
-    { "time_cor", "Trigger time offset (s)", "GetTimeCorrectionUnchecked()" },
-    { nullptr }
+  vector<RVarDef> vars = {
+    { .name = "time_cor", .desc = "Trigger time offset (s)", .def = "GetTimeCorrectionUnchecked()" },
   };
   return DefineVarsFromList( vars, mode );
 }

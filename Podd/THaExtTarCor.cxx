@@ -47,6 +47,7 @@
 #include "TMath.h"
 #include "TVector3.h"
 #include "VarDef.h"
+#include <vector>
 
 using namespace std;
 using namespace Podd;
@@ -118,17 +119,15 @@ Int_t THaExtTarCor::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
-  Int_t ret = DefineVarsFromList(THaTrackingModule::GetRVarDef(), mode);
-  if( ret )
+  if( Int_t ret = DefineVarsFromList(GetRVarDef(), mode) )
     return ret;
 
-  const RVarDef var2[] = {
-    { "delta_p",  "Size of momentum correction",    "fDeltaP" },
-    { "delta_dp", "Size of delta correction",       "fDeltaDp" },
-    { "delta_th", "Size of theta correction (rad)", "fDeltaTh" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "delta_p",  .desc = "Size of momentum correction",    .def = "fDeltaP" },
+    { .name = "delta_dp", .desc = "Size of delta correction",       .def = "fDeltaDp" },
+    { .name = "delta_th", .desc = "Size of theta correction (rad)", .def = "fDeltaTh" },
   };
-  return DefineVarsFromList( var2, mode );
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________

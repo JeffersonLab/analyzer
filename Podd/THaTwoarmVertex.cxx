@@ -63,7 +63,7 @@ Int_t THaTwoarmVertex::DefineVariables( EMode mode )
 {
   // Define/delete global variables for this module
 
-  return DefineVarsFromList( THaVertexModule::GetRVarDef(), mode );
+  return DefineVarsFromList( GetRVarDef(), mode );
 }
 
 //_____________________________________________________________________________

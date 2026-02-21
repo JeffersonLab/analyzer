@@ -19,7 +19,7 @@ public:
   THaBeamInfo*  GetBeamInfo()  { return &fBeamIfo; }
 
   void BeamIfoClear() { fBeamIfo.Clear(); }
-  static const RVarDef* GetRVarDef();
+  static const std::vector<RVarDef> GetRVarDef();
 
 protected:
 

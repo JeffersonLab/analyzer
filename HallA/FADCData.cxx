@@ -9,6 +9,7 @@
 #include "THaDetectorBase.h"
 #include "Decoder.h"
 #include <stdexcept>
+#include <vector>
 
 using namespace std;
 using namespace Podd;
@@ -212,16 +213,15 @@ Int_t FADCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
   if( Int_t ret = ChannelData::DefineVariablesImpl(mode, key_prefix, comment_subst) )
     return ret;
 
-  const RVarDef vars[] = {
-    { .name="peak",      .desc="FADC ADC peak values %s",               .def="fFADCData.fPeak" },
-    { .name="t_fadc",    .desc="FADC TDC values %s",                    .def="fFADCData.fT" },
-    { .name="tc_fadc",   .desc="FADC Corrected times %s",               .def="fFADCData.fT_c" },
-    { .name="overflow",  .desc="Overflow bit of FADC pulse %s",         .def="fFADCData.fOverflow" },
-    { .name="underflow", .desc="Underflow bit of FADC pulse %s",        .def="fFADCData.fUnderflow" },
-    { .name="badped",    .desc="Pedestal quality bit of FADC pulse %s", .def="fFADCData.fPedq" },
+  const vector<RVarDef> vars = {
+    { .name = "peak",      .desc = "FADC ADC peak values %s",               .def = "fFADCData.fPeak"      },
+    { .name = "t_fadc",    .desc = "FADC TDC values %s",                    .def = "fFADCData.fT"         },
+    { .name = "tc_fadc",   .desc = "FADC Corrected times %s",               .def = "fFADCData.fT_c"       },
+    { .name = "overflow",  .desc = "Overflow bit of FADC pulse %s",         .def = "fFADCData.fOverflow"  },
+    { .name = "underflow", .desc = "Underflow bit of FADC pulse %s",        .def = "fFADCData.fUnderflow" },
+    { .name = "badped",    .desc = "Pedestal quality bit of FADC pulse %s", .def = "fFADCData.fPedq"      },
 //TODO: support vector of vectors? Arrange differently?
 //    { "samples",   "FADC waveform data",                    "fFADCData.fSamples" },
-    { .name=nullptr }
   };
   return StdDefineVariables(vars, mode, key_prefix, here, comment_subst);
 }

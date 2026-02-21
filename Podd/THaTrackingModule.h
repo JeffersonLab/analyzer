@@ -22,7 +22,7 @@ public:
   THaTrack*      GetTrack()     { return fTrk; }
 
   void TrkIfoClear();
-  static const RVarDef* GetRVarDef();
+  static const std::vector<RVarDef> GetRVarDef();
 
 protected:
 

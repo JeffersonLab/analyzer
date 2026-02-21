@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TVector3.h"
+#include <vector>
 
 struct RVarDef;
 
@@ -21,7 +22,8 @@ public:
   virtual const TVector3&   GetVertexError() const { return fVertexError; }
   virtual       Bool_t      HasVertex()      const { return fVertexOK; }
   virtual       void        VertexClear();
-  static  const RVarDef*    GetRVarDef();
+
+  static const std::vector<RVarDef> GetRVarDef();
 
 protected:
 

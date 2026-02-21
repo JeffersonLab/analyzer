@@ -114,7 +114,7 @@ Int_t THaTrackEloss::DefineVariables( EMode mode )
   if( ret )
     return ret;
 
-  return DefineVarsFromList( THaTrackingModule::GetRVarDef(), mode );
+  return DefineVarsFromList( GetRVarDef(), mode );
 }
 
 //_____________________________________________________________________________

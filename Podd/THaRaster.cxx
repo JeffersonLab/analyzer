@@ -12,6 +12,7 @@
 
 #include "THaRaster.h"
 #include "TMath.h"
+#include <vector>
 
 using namespace std;
 
@@ -154,26 +155,24 @@ Int_t THaRaster::DefineVariables( EMode mode )
 
   // Register variables in global list
   
-  RVarDef vars[] = {
-    { "rawcur.x", "current in horizontal raster", "GetRawPosX()" },
-    { "rawcur.y", "current in vertical raster", "GetRawPosY()"},
-    { "rawslope.x", "derivative of current in horizontal raster", "GetRawSlopeX()" },
-    { "rawslope.y", "derivative of current in vertical raster", "GetRawSlopeY()"},
-    { "bpma.x", "reconstructed x-position at 1st bpm", "GetPosBPMAX()"},
-    { "bpma.y", "reconstructed y-position at 1st bpm", "GetPosBPMAY()"},
-    { "bpma.z", "reconstructed z-position at 1st bpm", "GetPosBPMAZ()"},
-    { "bpmb.x", "reconstructed x-position at 2nd bpm", "GetPosBPMBX()"},
-    { "bpmb.y", "reconstructed y-position at 2nd bpm", "GetPosBPMBY()"},
-    { "bpmb.z", "reconstructed z-position at 2nd bpm", "GetPosBPMBZ()"},
-    { "target.x", "reconstructed x-position at nom. interaction point", "GetPosTarX()"},
-    { "target.y", "reconstructed y-position at nom. interaction point", "GetPosTarY()"},
-    { "target.z", "reconstructed z-position at nom. interaction point", "GetPosTarZ()"},
-    { "target.dir.x", "reconstructed x-component of beam direction", "fDirection.fX"},
-    { "target.dir.y", "reconstructed y-component of beam direction", "fDirection.fY"},
-    { "target.dir.z", "reconstructed z-component of beam direction", "fDirection.fZ"},
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "rawcur.x",     .desc = "current in horizontal raster",                       .def = "GetRawPosX()"   },
+    { .name = "rawcur.y",     .desc = "current in vertical raster",                         .def = "GetRawPosY()"   },
+    { .name = "rawslope.x",   .desc = "derivative of current in horizontal raster",         .def = "GetRawSlopeX()" },
+    { .name = "rawslope.y",   .desc = "derivative of current in vertical raster",           .def = "GetRawSlopeY()" },
+    { .name = "bpma.x",       .desc = "reconstructed x-position at 1st bpm",                .def = "GetPosBPMAX()"  },
+    { .name = "bpma.y",       .desc = "reconstructed y-position at 1st bpm",                .def = "GetPosBPMAY()"  },
+    { .name = "bpma.z",       .desc = "reconstructed z-position at 1st bpm",                .def = "GetPosBPMAZ()"  },
+    { .name = "bpmb.x",       .desc = "reconstructed x-position at 2nd bpm",                .def = "GetPosBPMBX()"  },
+    { .name = "bpmb.y",       .desc = "reconstructed y-position at 2nd bpm",                .def = "GetPosBPMBY()"  },
+    { .name = "bpmb.z",       .desc = "reconstructed z-position at 2nd bpm",                .def = "GetPosBPMBZ()"  },
+    { .name = "target.x",     .desc = "reconstructed x-position at nom. interaction point", .def = "GetPosTarX()"   },
+    { .name = "target.y",     .desc = "reconstructed y-position at nom. interaction point", .def = "GetPosTarY()"   },
+    { .name = "target.z",     .desc = "reconstructed z-position at nom. interaction point", .def = "GetPosTarZ()"   },
+    { .name = "target.dir.x", .desc = "reconstructed x-component of beam direction",        .def = "fDirection.fX"  },
+    { .name = "target.dir.y", .desc = "reconstructed y-component of beam direction",        .def = "fDirection.fY"  },
+    { .name = "target.dir.z", .desc = "reconstructed z-component of beam direction",        .def = "fDirection.fZ"  },
   };
-    
   return DefineVarsFromList( vars, mode );
 }
 

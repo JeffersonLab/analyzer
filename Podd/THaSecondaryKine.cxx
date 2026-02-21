@@ -26,6 +26,7 @@
 #include "TVector3.h"
 #include "TMath.h"
 #include "TRotation.h"
+#include <vector>
 
 using namespace std;
 using namespace Podd;
@@ -79,43 +80,43 @@ Int_t THaSecondaryKine::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
-  RVarDef vars[] = {
-    { "th_xq",    "Polar angle of detected particle with q (rad)",
-                  "fTheta_xq" },
-    { "ph_xq",    "Azimuth of detected particle with scattering plane (rad)",
-                  "fPhi_xq" },
-    { "th_bq",    "Polar angle of recoil system with q (rad)", "fTheta_bq" },
-    { "ph_bq",    "Azimuth of recoil system with scattering plane (rad)",
-                  "fPhi_bq" },
-    { "xangle",   "Angle of detected particle with scattered electron (rad)",
-                  "fXangle" },
-    { "pmiss",    "Missing momentum magnitude (GeV), nuclear physics "
-                  "definition (-pB)", "fPmiss" },
-    { "pmiss_x",  "x-component of p_miss wrt q (GeV)", "fPmiss_x" },
-    { "pmiss_y",  "y-component of p_miss wrt q (GeV)", "fPmiss_y" },
-    { "pmiss_z",  "z-component of p_miss, along q (GeV)", "fPmiss_z" },
-    { "emiss",    "Missing energy (GeV), nuclear physics definition "
-                  "omega-Tx-Tb", "fEmiss" },
-    { "Mrecoil",  "Invariant mass of recoil system (GeV)", "fMrecoil" },
-    { "Erecoil",  "Total energy of recoil system (GeV)", "fErecoil" },
-    { "Prec_x",   "x-component of recoil system in lab (GeV/c)", "fB.X()" },
-    { "Prec_y",   "y-component of recoil system in lab (GeV/c)", "fB.Y()" },
-    { "Prec_z",   "z-component of recoil system in lab (GeV/c)", "fB.Z()" },
-    { "tx",       "Kinetic energy of detected particle (GeV)", "fTX" },
-    { "tb",       "Kinetic energy of recoil system (GeV)", "fTB" },
-    { "px_cm",    "Magnitude of X momentum in CM system (GeV)", "fPX_cm" },
-    { "thx_cm",   "Polar angle of X in CM system wrt q (rad)", "fTheta_x_cm" },
-    { "phx_cm",   "Azimuth of X in CM system wrt q (rad)", "fPhi_x_cm" },
-    { "thb_cm",   "Polar angle of recoil systm in CM wrt q (rad)",
-                  "fTheta_b_cm" },
-    { "phb_cm",   "Azimuth of recoil system in CM wrt q (rad)", "fPhi_b_cm" },
-    { "tx_cm",    "Kinetic energy of X in CM (GeV)", "fTX_cm" },
-    { "tb_cm",    "Kinetic energy of B in CM (GeV)", "fTB_cm" },
-    { "t_tot_cm", "Total CM kinetic energy", "fTtot_cm" },
-    { "MandelS",  "Mandelstam s for secondary vertex (GeV^2)", "fMandelS" },
-    { "MandelT",  "Mandelstam t for secondary vertex (GeV^2)", "fMandelT" },
-    { "MandelU",  "Mandelstam u for secondary vertex (GeV^2)", "fMandelU" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "th_xq",    .desc = "Polar angle of detected particle with q (rad)",
+                                                                                    .def = "fTheta_xq"   },
+    { .name = "ph_xq",    .desc = "Azimuth of detected particle with scattering plane (rad)",
+                                                                                    .def = "fPhi_xq"     },
+    { .name = "th_bq",    .desc = "Polar angle of recoil system with q (rad)",
+                                                                                    .def = "fTheta_bq"   },
+    { .name = "ph_bq",    .desc = "Azimuth of recoil system with scattering plane (rad)",
+                                                                                    .def = "fPhi_bq"     },
+    { .name = "xangle",   .desc = "Angle of detected particle with scattered electron (rad)",
+                                                                                    .def = "fXangle"     },
+    { .name = "pmiss",    .desc = "Missing momentum magnitude (GeV), nuclear physics definition (-pB)",
+                                                                                    .def = "fPmiss"      },
+    { .name = "pmiss_x",  .desc = "x-component of p_miss wrt q (GeV)",           .def = "fPmiss_x"       },
+    { .name = "pmiss_y",  .desc = "y-component of p_miss wrt q (GeV)",           .def = "fPmiss_y"       },
+    { .name = "pmiss_z",  .desc = "z-component of p_miss, along q (GeV)",        .def = "fPmiss_z"       },
+    { .name = "emiss",    .desc = "Missing energy (GeV), nuclear physics definition omega-Tx-Tb",
+                                                                                    .def = "fEmiss"      },
+    { .name = "Mrecoil",  .desc = "Invariant mass of recoil system (GeV)",       .def = "fMrecoil"       },
+    { .name = "Erecoil",  .desc = "Total energy of recoil system (GeV)",         .def = "fErecoil"       },
+    { .name = "Prec_x",   .desc = "x-component of recoil system in lab (GeV/c)", .def = "fB.X()"         },
+    { .name = "Prec_y",   .desc = "y-component of recoil system in lab (GeV/c)", .def = "fB.Y()"         },
+    { .name = "Prec_z",   .desc = "z-component of recoil system in lab (GeV/c)", .def = "fB.Z()"         },
+    { .name = "tx",       .desc = "Kinetic energy of detected particle (GeV)",   .def = "fTX"            },
+    { .name = "tb",       .desc = "Kinetic energy of recoil system (GeV)",       .def = "fTB"            },
+    { .name = "px_cm",    .desc = "Magnitude of X momentum in CM system (GeV)",  .def = "fPX_cm"         },
+    { .name = "thx_cm",   .desc = "Polar angle of X in CM system wrt q (rad)",   .def = "fTheta_x_cm"    },
+    { .name = "phx_cm",   .desc = "Azimuth of X in CM system wrt q (rad)",       .def = "fPhi_x_cm"      },
+    { .name = "thb_cm",   .desc = "Polar angle of recoil systm in CM wrt q (rad)",
+                                                                                    .def = "fTheta_b_cm" },
+    { .name = "phb_cm",   .desc = "Azimuth of recoil system in CM wrt q (rad)",  .def = "fPhi_b_cm"      },
+    { .name = "tx_cm",    .desc = "Kinetic energy of X in CM (GeV)",             .def = "fTX_cm"         },
+    { .name = "tb_cm",    .desc = "Kinetic energy of B in CM (GeV)",             .def = "fTB_cm"         },
+    { .name = "t_tot_cm", .desc = "Total CM kinetic energy",                     .def = "fTtot_cm"       },
+    { .name = "MandelS",  .desc = "Mandelstam s for secondary vertex (GeV^2)",   .def = "fMandelS"       },
+    { .name = "MandelT",  .desc = "Mandelstam t for secondary vertex (GeV^2)",   .def = "fMandelT"       },
+    { .name = "MandelU",  .desc = "Mandelstam u for secondary vertex (GeV^2)",   .def = "fMandelU"       },
   };
   return DefineVarsFromList( vars, mode );
 }

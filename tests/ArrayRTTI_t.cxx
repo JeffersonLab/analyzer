@@ -34,41 +34,46 @@
 #include "VarDef.h"             // for VarType, RVarDef
 #include <type_traits>          // for is_same_v
 #include <vector>               // for vector
+#include <iterator>             // for distance
 
 using namespace std;
 
 namespace {
 
 //_____________________________________________________________________________
-// Helper class for cycling through RVarDef structs using Catch's GENERATE()
-class RVarDefIterator : public Catch::Generators::IGenerator<RVarDef> {
-  const RVarDef* defs_;
-  static inline RVarDefIterator* me_;
+// Helper class for cycling through elements of a container using Catch's
+// GENERATE() while giving access to the current index into the vector.
+// Caution: This only works if there's exactly one object of this type.
+template<class Container>
+class ContainerIterator
+  : public Catch::Generators::IGenerator<typename Container::value_type> {
+  const Container& container_;
+  Container::const_iterator cur_;
+  // Global pointer to this object
+  static inline ContainerIterator* me_;
 
   bool next() override {
-    if( !defs_ )
-      return false;
-    return ((++defs_)->name != nullptr);
+    return cur_ != container_.end() && ++cur_ != container_.end();
   }
 
 public:
-  explicit RVarDefIterator( const RVarDef* defs ) : defs_(defs) {
-    me_ = this;
+  explicit ContainerIterator( const Container& c )
+    : container_(c), cur_{c.cbegin()} { me_ = this; }
+
+  Container::value_type const& get() const override {
+    return *cur_;
   }
 
-  RVarDef const& get() const override {
-    return *defs_;
-  }
-  static size_t index() {
-    // IGenerator does keep track of the element index, but the value is
-    // hard to access. This won't work with nested GENERATE()s!
-    return me_ ? me_->currentElementIndex() : -1;
+  // Global function to retrieve current index
+  static std::size_t index() {
+    return std::distance(me_->container_.cbegin(), me_->cur_);
   };
 };
 
-auto vardefs( const RVarDef* defs ){
-  return Catch::Generators::GeneratorWrapper<RVarDef>(
-    Catch::Detail::make_unique<RVarDefIterator>(defs)
+template<class Container>
+auto from_container( const Container& c ){
+  return Catch::Generators::GeneratorWrapper<typename Container::value_type>(
+    Catch::Detail::make_unique<ContainerIterator<Container>>(c)
   );
 }
 
@@ -117,13 +122,13 @@ TEST_CASE("Global Variables of Arrays", "[ArrayRTTI]") // NOLINT(*-function-cogn
   }
 
   SECTION("Properties of Variables") {
-    auto item = GENERATE(vardefs(ArrayRTTI::GetRVarDef()));
+    const auto& item = GENERATE(from_container(ArrayRTTI::GetRVarDef()));
     TString name = item.name;
     TString varname = prefix + name;
     const auto* var = gHaVars->Find(varname);
     REQUIRE(var);
 
-    auto i = RVarDefIterator::index();           // index of current variable
+    auto i = ContainerIterator<vector<RVarDef>>::index();  // index of current variable
 
     SECTION("Scaler or array") {
       switch( i ) {

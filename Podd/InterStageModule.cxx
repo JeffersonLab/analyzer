@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "InterStageModule.h"
+#include <vector>
 
 namespace Podd {
 
@@ -50,9 +51,8 @@ Int_t InterStageModule::DefineVariables( THaAnalysisObject::EMode mode )
 {
   // Define/delete global variables for this module
 
-  static const RVarDef vars[] = {
-    { "good", "Data valid (1=ok)", "fDataValid" },
-    { nullptr }
+  const std::vector<RVarDef> vars = {
+    { .name = "good", .desc = "Data valid (1=ok)", .def = "fDataValid" },
   };
 
   return DefineVarsFromList( vars, mode );

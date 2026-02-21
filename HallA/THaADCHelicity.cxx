@@ -47,11 +47,10 @@ Int_t THaADCHelicity::DefineVariables( EMode mode )
   if( ret )
     return ret;
 
-  const RVarDef var[] = {
-    { "adc",       "Helicity ADC raw data",  "fADC_hdata" },
-    { "gate_adc",  "Gate ADC raw data",      "fADC_Gate" },
-    { "adc_hel",   "Beam helicity from ADC", "fADC_Hel" },
-    { nullptr }
+  const vector<RVarDef> var = {
+    { .name = "adc",       .desc = "Helicity ADC raw data",  .def = "fADC_hdata" },
+    { .name = "gate_adc",  .desc = "Gate ADC raw data",      .def = "fADC_Gate" },
+    { .name = "adc_hel",   .desc = "Beam helicity from ADC", .def = "fADC_Hel" },
   };
   return DefineVarsFromList( var, mode );
 }

@@ -16,6 +16,9 @@
 #include "THaTrack.h"
 #include "THaTrackProj.h"
 #include <cassert>
+#include <vector>
+
+using namespace std;
 
 //______________________________________________________________________________
 THaNonTrackingDetector::THaNonTrackingDetector( const char* name,
@@ -63,12 +66,11 @@ Int_t THaNonTrackingDetector::DefineVariables( EMode mode )
     return ret;
 
   // Define analysis variables on our data members
-  RVarDef vars[] = {
-    { "trn",    "Number of tracks for hits",         "GetNTracks()" },
-    { "trx",    "x-position of track in det plane",  "fTrackProj.THaTrackProj.fX" },
-    { "try",    "y-position of track in det plane",  "fTrackProj.THaTrackProj.fY" },
-    { "trpath", "TRCS pathlen of track to det plane","fTrackProj.THaTrackProj.fPathl" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "trn",    .desc = "Number of tracks for hits",         .def = "GetNTracks()" },
+    { .name = "trx",    .desc = "x-position of track in det plane",  .def = "fTrackProj.THaTrackProj.fX" },
+    { .name = "try",    .desc = "y-position of track in det plane",  .def = "fTrackProj.THaTrackProj.fY" },
+    { .name = "trpath", .desc = "TRCS pathlen of track to det plane",.def = "fTrackProj.THaTrackProj.fPathl" },
   };
   return DefineVarsFromList( vars, mode );
 }

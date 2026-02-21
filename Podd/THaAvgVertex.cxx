@@ -54,7 +54,7 @@ Int_t THaAvgVertex::DefineVariables( EMode mode )
   // Define/delete standard variables for a spectrometer (tracks etc.)
   // Can be overridden or extended by derived (actual) apparatuses
 
-  return DefineVarsFromList( THaVertexModule::GetRVarDef(), mode );
+  return DefineVarsFromList( GetRVarDef(), mode );
 }
 
 //_____________________________________________________________________________

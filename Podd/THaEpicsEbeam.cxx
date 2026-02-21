@@ -13,6 +13,9 @@
 #include "VarDef.h"
 #include "THaEvData.h"
 #include "TMath.h"
+#include <vector>
+
+using namespace std;
 
 //_____________________________________________________________________________
 THaEpicsEbeam::THaEpicsEbeam( const char* name, const char* description,
@@ -65,9 +68,8 @@ Int_t THaEpicsEbeam::DefineVariables( EMode mode )
 {
   // Initialize global variables
 
-  RVarDef vars[] = {
-    { "ecorr", "Beam energy correction (output-input) (GeV)", "fEcorr" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "ecorr", .desc = "Beam energy correction (output-input) (GeV)", .def = "fEcorr" },
   };
   return DefineVarsFromList( vars, mode );
 }

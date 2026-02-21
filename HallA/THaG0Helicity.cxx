@@ -17,6 +17,7 @@
 #include "TMath.h"
 #include <iostream>
 #include <cmath>
+#include <vector>
 
 using namespace std;
 
@@ -101,17 +102,16 @@ Int_t THaG0Helicity::DefineVariables( EMode mode )
   if( ret )
     return ret;
 
-  const RVarDef var[] = {
-    { "qrt",       "qrt from ROC",                 "fQrt" },
-    { "nqrt",      "number of qrts seen",          "fNqrt" },
-    { "quad",      "quad (1, 2, or 4)",            "fQuad" },
-    { "tdiff",     "time since quad start",        "fTdiff" },
-    { "gate",      "Helicity Gate from ROC",       "fGate" },
-    { "pread",     "Present helicity reading",     "fPresentReading" },
-    { "timestamp", "Timestamp from ROC",           "fTimestamp" },
-    { "validtime", "validtime flag",               "fValidTime" },
-    { "validHel",  "validHel flag",                "fValidHel" },
-    { nullptr }
+  const vector<RVarDef> var = {
+    { .name = "qrt",       .desc = "qrt from ROC",              .def = "fQrt"            },
+    { .name = "nqrt",      .desc = "number of qrts seen",       .def = "fNqrt"           },
+    { .name = "quad",      .desc = "quad (1, 2, or 4)",         .def = "fQuad"           },
+    { .name = "tdiff",     .desc = "time since quad start",     .def = "fTdiff"          },
+    { .name = "gate",      .desc = "Helicity Gate from ROC",    .def = "fGate"           },
+    { .name = "pread",     .desc = "Present helicity reading",  .def = "fPresentReading" },
+    { .name = "timestamp", .desc = "Timestamp from ROC",        .def = "fTimestamp"      },
+    { .name = "validtime", .desc = "validtime flag",            .def = "fValidTime"      },
+    { .name = "validHel",  .desc = "validHel flag",             .def = "fValidHel"       },
   };
   return DefineVarsFromList( var, mode );
 }

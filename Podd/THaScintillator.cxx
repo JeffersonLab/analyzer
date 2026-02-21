@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include <memory>
+#include <vector>
 
 using namespace std;
 using namespace Podd;
@@ -303,7 +304,7 @@ Int_t THaScintillator::DefineVariables( EMode mode )
       return ret;
 
   // Define variables on the remaining event data
-  RVarDef vars[] = {
+  const vector<RVarDef> vars = {
     { .name = "nthit",     .desc = "Number of paddles with L&R TDCs",   .def = "GetNHits()" },
     { .name = "t_pads",    .desc = "Paddles with L&R coincidence TDCs", .def = "fHits.pad" },
     { .name = "y_t",       .desc = "y-position from timing (m)",        .def = "fPadData.yt" },

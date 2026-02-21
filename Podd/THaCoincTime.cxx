@@ -20,6 +20,7 @@
 #include "THaEvData.h"
 #include "VarDef.h"
 #include <cassert>
+#include <vector>
 
 using namespace std;
 
@@ -79,18 +80,17 @@ Int_t THaCoincTime::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
   
-  RVarDef vars[] = {
-    { "d_trig","Measured TDC start+delay of spec 2 (1), by spec 1 (2)", "fdTdc" },
-    { "ntr1",  "Number of tracks in first spec.",  "GetNTr1()" },
-    { "ntr2",  "Number of tracks in first spec.",  "GetNTr2()" },
-    { "vx_t1", "Time of track from spec1 at target vertex", "fVxTime1" },
-    { "vx_t2", "Time of track from spec2 at target vertex", "fVxTime2" },
-    { "ncomb", "Number of track combinations considered",   "GetNTimes()" },
-    { "ct_2by1", "Coinc. times of tracks, d_trig from spec 1", "fTimeCombos.fDiffT2by1" },
-    { "ct_1by2", "Coinc. times of tracks, d_trig from spec 2", "fTimeCombos.fDiffT1by2" },
-    { "trind1",  "Track indices for spec1 match entries in ct_*", "fTimeCombos.fTrInd1" },
-    { "trind2",  "Track indices for spec2 match entries in ct_*", "fTimeCombos.fTrInd2" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "d_trig",  .desc = "Measured TDC start+delay of spec 2 (1), by spec 1 (2)", .def = "fdTdc" },
+    { .name = "ntr1",    .desc = "Number of tracks in first spec.",               .def = "GetNTr1()" },
+    { .name = "ntr2",    .desc = "Number of tracks in first spec.",               .def = "GetNTr2()" },
+    { .name = "vx_t1",   .desc = "Time of track from spec1 at target vertex",     .def = "fVxTime1" },
+    { .name = "vx_t2",   .desc = "Time of track from spec2 at target vertex",     .def = "fVxTime2" },
+    { .name = "ncomb",   .desc = "Number of track combinations considered",       .def = "GetNTimes()" },
+    { .name = "ct_2by1", .desc = "Coinc. times of tracks, d_trig from spec 1",    .def = "fTimeCombos.fDiffT2by1" },
+    { .name = "ct_1by2", .desc = "Coinc. times of tracks, d_trig from spec 2",    .def = "fTimeCombos.fDiffT1by2" },
+    { .name = "trind1",  .desc = "Track indices for spec1 match entries in ct_*", .def = "fTimeCombos.fTrInd1" },
+    { .name = "trind2",  .desc = "Track indices for spec2 match entries in ct_*", .def = "fTimeCombos.fTrInd2" },
   };
   return DefineVarsFromList( vars, mode );
 }

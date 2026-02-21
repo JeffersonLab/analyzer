@@ -25,6 +25,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
 using namespace std;
 using namespace Podd;
@@ -231,12 +232,11 @@ Int_t UserDetector::DefineVariables( EMode mode )
 {
   // Define (or delete) global variables of this detector
 
-  RVarDef vars[] = {
-    { .name="nhit",  .desc="Number of hits",  .def="GetNhits()" },
-    { .name="chan",  .desc="Channel number",  .def="fEventData.fChannel" },
-    { .name="adc",   .desc="Raw ADC value",   .def="fEventData.fRawADC" },
-    { .name="adc_c", .desc="Calibrated ADC",  .def="fEventData.fCalADC" },
-    { .name=nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "nhit",  .desc = "Number of hits",  .def = "GetNhits()"          },
+    { .name = "chan",  .desc = "Channel number",  .def = "fEventData.fChannel" },
+    { .name = "adc",   .desc = "Raw ADC value",   .def = "fEventData.fRawADC"  },
+    { .name = "adc_c", .desc = "Calibrated ADC",  .def = "fEventData.fCalADC"  },
   };
   return DefineVarsFromList( vars, mode );
 }

@@ -14,6 +14,7 @@
 #include "THaGlobals.h"
 #include "VarDef.h"
 #include "TMath.h"
+#include <vector>
 
 using namespace std;
 
@@ -65,11 +66,10 @@ Int_t THaPhotoReaction::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
-  RVarDef vars[] = {
-    { "EGamma",   "Real Brem. Photon Energy (GeV)", "fEGamma"},
-    { "angle",    "Scattering Angle (rad)",         "fScatAngle"},
-    { "angle_cm", "Scattering Angle(rad) in CM",    "fScatAngleCM"},
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "EGamma",   .desc = "Real Brem. Photon Energy (GeV)", .def = "fEGamma"},
+    { .name = "angle",    .desc = "Scattering Angle (rad)",         .def = "fScatAngle"},
+    { .name = "angle_cm", .desc = "Scattering Angle(rad) in CM",    .def = "fScatAngleCM"},
   };
   return DefineVarsFromList( vars, mode );
 }

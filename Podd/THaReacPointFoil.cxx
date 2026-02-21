@@ -50,7 +50,7 @@ Int_t THaReacPointFoil::DefineVariables( EMode mode )
 {
   // Define/delete analysis variables
 
-  return DefineVarsFromList( THaVertexModule::GetRVarDef(), mode );
+  return DefineVarsFromList( GetRVarDef(), mode );
 }
 
 //_____________________________________________________________________________

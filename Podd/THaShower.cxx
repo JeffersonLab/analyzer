@@ -24,6 +24,7 @@
 #include <iomanip>
 #include <cassert>
 #include <iterator>
+#include <vector>
 
 using namespace std;
 using namespace Podd;
@@ -252,7 +253,7 @@ Int_t THaShower::DefineVariables( EMode mode )
   if( ret )
     return ret;
 
-  RVarDef vars[] = {
+  const vector<RVarDef> vars = {
     { .name = "asum_p", .desc = "Sum of ped-subtracted ADCs",         .def = "fAsum_p" },
     { .name = "asum_c", .desc = "Sum of calibrated ADCs",             .def = "fAsum_c" },
     { .name = "nclust", .desc = "Number of clusters",                 .def = "fNclust" },

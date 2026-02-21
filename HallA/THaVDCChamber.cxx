@@ -20,6 +20,9 @@
 #include "THaVDCPoint.h"
 #include "THaVDCCluster.h"
 #include "TMath.h"
+#include <vector>
+
+using namespace std;
 
 //_____________________________________________________________________________
 THaVDCChamber::THaVDCChamber( const char* name, const char* description,
@@ -107,17 +110,16 @@ Int_t THaVDCChamber::DefineVariables( EMode mode )
   if( ret )
     return ret;
 
-  RVarDef vars[] = {
-    { "npt",       "Number of space points", "GetNPoints()" },
-    { "pt.x",      "Point center x (m)",     "fPoints.THaVDCPoint.X()" },
-    { "pt.y",      "Point center y (m)",     "fPoints.THaVDCPoint.Y()" },
-    { "pt.z",      "Point center z (m)",     "fPoints.THaVDCPoint.Z()" },
-    { "pt.d_x",    "Point VDC x (m)",        "fPoints.THaVDCPoint.fX" },
-    { "pt.d_y",    "Point VDC y (m)",        "fPoints.THaVDCPoint.fY" },
-    { "pt.d_th",   "Point VDC tan(theta)",   "fPoints.THaVDCPoint.fTheta" },
-    { "pt.d_ph",   "Point VDC tan(phi)",     "fPoints.THaVDCPoint.fPhi" },
-    { "pt.paired", "Point is paired",        "fPoints.THaVDCPoint.HasPartner()" },
-    { nullptr }
+  const vector<RVarDef> vars = {
+    { .name = "npt",       .desc = "Number of space points", .def = "GetNPoints()" },
+    { .name = "pt.x",      .desc = "Point center x (m)",     .def = "fPoints.THaVDCPoint.X()" },
+    { .name = "pt.y",      .desc = "Point center y (m)",     .def = "fPoints.THaVDCPoint.Y()" },
+    { .name = "pt.z",      .desc = "Point center z (m)",     .def = "fPoints.THaVDCPoint.Z()" },
+    { .name = "pt.d_x",    .desc = "Point VDC x (m)",        .def = "fPoints.THaVDCPoint.fX" },
+    { .name = "pt.d_y",    .desc = "Point VDC y (m)",        .def = "fPoints.THaVDCPoint.fY" },
+    { .name = "pt.d_th",   .desc = "Point VDC tan(theta)",   .def = "fPoints.THaVDCPoint.fTheta" },
+    { .name = "pt.d_ph",   .desc = "Point VDC tan(phi)",     .def = "fPoints.THaVDCPoint.fPhi" },
+    { .name = "pt.paired", .desc = "Point is paired",        .def = "fPoints.THaVDCPoint.HasPartner()" },
   };
   return DefineVarsFromList( vars, mode );
 }
