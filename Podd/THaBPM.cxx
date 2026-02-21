@@ -19,7 +19,7 @@
 #include <stdexcept>
 #include <cassert>
 
-static const Int_t NCHAN = 4;
+constexpr Int_t NCHAN = 4;
 
 using namespace std;
 

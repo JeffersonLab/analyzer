@@ -16,7 +16,7 @@
 #include <vector>
 
 // Default tolerance for floating-point equality comparisons of z_med
-static const Double_t eps = 0.1;
+constexpr Double_t eps = 0.1;
 
 using namespace std;
 

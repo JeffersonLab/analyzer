@@ -33,6 +33,7 @@
 #include <system_error>  // for error_code
 #include <type_traits>   // for is_integral_v, is_same_v, is_floating_point_v
 #include <utility>       // for move
+#include <string_view>
 
 namespace fs = std::filesystem;
 
@@ -136,7 +137,7 @@ vector<string> GetDBFileList( const char* name, const TDatime& date,
   // Return the database file searchlist as a vector of strings.
   // The file names are relative to the current directory.
 
-  static constexpr string defaultdir = "DEFAULT";
+  constexpr string_view defaultdir{"DEFAULT"};
 
   if( !name || !*name )
     return {};
@@ -631,7 +632,7 @@ Int_t LoadDBvalue( FILE* file, const TDatime& datime, const string& key,
 
   if( !file || key.empty() ) return -255;
 
-  static constexpr string here("LoadDBvalue");
+  static const string here{"LoadDBvalue"};
   constexpr Int_t bufsiz = 256;
   unique_ptr<char[]> buf{new char[bufsiz]};
   char* const bufp = buf.get();

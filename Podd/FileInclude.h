@@ -12,11 +12,12 @@
 
 #include "Rtypes.h"
 #include <string>
+#include <string_view>
 
 namespace Podd {
 
-  extern const std::string kIncTag;
-  extern const std::string kWhiteSpace;
+  inline constexpr std::string_view kIncTag     = "#include";
+  inline constexpr std::string_view kWhiteSpace = " \t";
 
   Int_t GetIncludeFileName( const std::string& line, std::string& incfile );
   Int_t CheckIncludeFilePath( std::string& incfile );

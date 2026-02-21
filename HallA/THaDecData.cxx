@@ -82,7 +82,7 @@ static Int_t ReadOldFormatDB( FILE* file, map<TString,TString>& configstr_map )
   // Old-style "crate" objects are all assumed to be multihit channels, even
   // though they usually are not.
 
-  const Int_t bufsiz = 256;
+  constexpr Int_t bufsiz = 256;
   char* buf = new char[bufsiz];
   string dbline;
   const int nkeys = 3;

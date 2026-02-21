@@ -41,6 +41,8 @@
 #include <sstream>
 #include <utility>
 #include <vector>
+#include <string>
+#include <string_view>
 
 #include "THaBenchmark.h"
 #include <stdexcept>
@@ -50,8 +52,8 @@ using namespace std;
 using namespace THaString;
 using namespace Podd;
 
-static const char comment('#');
-const Int_t kNocut = -1;
+constexpr char comment('#');
+constexpr Int_t kNocut = -1;
 
 //_____________________________________________________________________________
 class THaEpicsKey {
@@ -883,8 +885,8 @@ string THaOutput::StripBracket(const string& var) const
 // If the string contains "[anything]", we strip
 // it away.  In practice this should not be fatal
 // because your variable will still show up in the tree.
-  static const string open_brack("[");
-  static const string close_brack("]");
+  constexpr string_view open_brack("[");
+  constexpr string_view close_brack("]");
   string result;
   auto pos1 = var.find(open_brack,0);
   auto pos2 = var.find(close_brack,0);
@@ -958,9 +960,9 @@ string THaOutput::CleanEpicsName( const string& input )
   // that confuse TTree::Draw().
   // Replace all 'badchar' with 'goodchar'
 
-  static const char badchar[]=":+-*/=";
-  static const string goodchar = "_";
-  int numbad = sizeof(badchar)/sizeof(char) - 1;
+  constexpr char badchar[]=":+-*/=";
+  constexpr string_view goodchar = "_";
+  constexpr int numbad = sizeof(badchar)/sizeof(char) - 1;
 
   string output = input;
 

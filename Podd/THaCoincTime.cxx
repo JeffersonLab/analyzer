@@ -27,7 +27,7 @@ using namespace std;
 using namespace Podd;
 
 // Reserve initial space for 10 tracks per spectrometer (can grow dynamically)
-const size_t NTR = 10;
+constexpr size_t NTR = 10;
 
 //_____________________________________________________________________________
 THaCoincTime::THaCoincTime( const char* name,

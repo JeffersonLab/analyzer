@@ -694,7 +694,7 @@ THaHelicityDet::EHelicity THaG0Helicity::RanBit( int which )
   // Return value:                                                
   //        helicity (-1 or +1).
 
-  const int MASK = BIT(0)+BIT(2)+BIT(3)+BIT(23);
+  constexpr int MASK = BIT(0)+BIT(2)+BIT(3)+BIT(23);
 
   if (which == 0) {
      if( TESTBIT(fIseed_earlier,23) ) {    

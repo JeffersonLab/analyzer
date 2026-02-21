@@ -86,8 +86,8 @@
 
 using namespace std;
 
-static const Int_t kInitHashCapacity = 100;
-static const Int_t kRehashLevel = 3;
+constexpr Int_t kInitHashCapacity = 100;
+constexpr Int_t kRehashLevel = 3;
 
 namespace Podd {
 
@@ -260,7 +260,7 @@ static Int_t CheckDBVersion( FILE* file )
 
   const TString identifier("Version:");
 
-  const size_t bufsiz = 82;
+  constexpr size_t bufsiz = 82;
   char* buf = new char[bufsiz];
   rewind(file);
   const char* s = fgets(buf,bufsiz,file);

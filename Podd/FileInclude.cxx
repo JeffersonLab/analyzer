@@ -18,13 +18,12 @@
 #include <vector>
 #include <cassert>
 #include <memory>  // for unique_ptr
+#include <string>
+#include <string_view>
 
 using namespace std;
 
 namespace Podd {
-
-const string kIncTag     = "#include";
-const string kWhiteSpace = " \t";
 
 //_____________________________________________________________________________
 Int_t GetIncludeFileName( const string& line, string& incfile )

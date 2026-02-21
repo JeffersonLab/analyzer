@@ -32,7 +32,7 @@ using namespace Podd;
 
 // Example of a hardcoded parameter (arbitrary value, see ReadDatabase).
 // Generally not recommended. The day will come when someone needs more than this.
-static const int MAXCHAN = 100;
+constexpr int MAXCHAN = 100;
 
 // Constructors should initialize all basic-type member variables to safe
 // default values. In particular, all pointers should be either zeroed or
@@ -218,7 +218,7 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
   // Use the rotation angle to set the axes vectors
   // (required for display functions, for instance)
   // See THaDetectorBase::DefineAxes for details.
-  const Double_t degrad = TMath::Pi()/180.0;
+  constexpr Double_t degrad = TMath::Pi()/180.0;
   DefineAxes(angle*degrad);
 
   fIsInit = true;
@@ -273,7 +273,7 @@ Int_t UserDetector::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
   Int_t chan = hitinfo.lchan;
 
   // Check if 'chan' is in range here as a bugcheck of the detector map logic.
-  // Like asserts, such bug checks may be skipped for better performance when
+  // Like asserts, such bug ªchecks may be skipped for better performance when
   // compiling production code with -DNDEBUG. Or you may keep them for more
   // safety, especially when some value depends on unpredictable input data.
 #ifndef NDEBUG

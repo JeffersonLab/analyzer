@@ -768,7 +768,7 @@ void THaAnalysisObject::GeoToSph( Double_t  th_geo, Double_t  ph_geo,
   // th_geo and ph_geo can be anything.
   // th_sph is in [0,pi], ph_sph in [-pi,pi].
 
-  static const Double_t twopi = 2.0*TMath::Pi();
+  constexpr Double_t twopi = 2.0*TMath::Pi();
   Double_t ct = cos(th_geo), cp = cos(ph_geo);
   Double_t tmp = ct*cp;
   th_sph = acos( tmp );
@@ -787,7 +787,7 @@ void THaAnalysisObject::SphToGeo( Double_t  th_sph, Double_t  ph_sph,
   // [0,pi] is not really meaningful.
   // th_geo is in [-pi,pi] and ph_sph in [-pi/2,pi/2]
 
-  static const Double_t twopi = 2.0*TMath::Pi();
+  constexpr Double_t twopi = 2.0*TMath::Pi();
   Double_t ct = cos(th_sph), st = sin(th_sph), cp = cos(ph_sph);
   if( fabs(ct) > 1e-6 ) {
     th_geo = atan( st/ct*cp );

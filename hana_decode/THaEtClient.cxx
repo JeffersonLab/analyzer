@@ -39,9 +39,9 @@
 
 using namespace std;
 
-static const int FAST = 25;
-static const int SMALL_TIMEOUT = 10;
-static const int BIG_TIMEOUT = 20;
+constexpr int FAST = 25;
+constexpr int SMALL_TIMEOUT = 10;
+constexpr int BIG_TIMEOUT = 20;
 
 namespace Decoder {
 

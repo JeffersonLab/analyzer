@@ -19,7 +19,7 @@
 using namespace VDC;
 using namespace std;
 
-static const Int_t kDefaultNHit = 16;
+constexpr Int_t kDefaultNHit = 16;
 
 //_____________________________________________________________________________
 THaVDCCluster::THaVDCCluster( THaVDCPlane* owner )
@@ -286,7 +286,7 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
     fCoord.emplace_back(x, y, w);
   }
 
-  const Int_t nSignCombos = 2; //Number of different sign combinations
+  constexpr Int_t nSignCombos = 2; //Number of different sign combinations
   for (int i = 0; i < nSignCombos; i++) {
     Double_t sumX  = 0.0;   //Positions
 //    Double_t sumXW = 0.0;

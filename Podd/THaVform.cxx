@@ -536,7 +536,7 @@ string THaVform::StripPrefix(const char* expr)
 
 // If the variable is like "L.s1.lt[I]" strip the [I]
 // from the end since it is implicit
-  const string eye = "[I]";
+  constexpr string eye = "[I]";
   string stemp = result;
   auto pos1 = result.find(ToUpper(eye),0);
   auto pos2 = result.find(ToLower(eye),0);
@@ -743,13 +743,13 @@ Int_t THaVform::DefinedGlobalVariable( TString& name )
 //_____________________________________________________________________________
 void THaVform::GetForm(Int_t size)
 {
-  const string open_brack="[";
-  const string close_brack="]";
+  constexpr string_view open_brack="[";
+  constexpr string_view close_brack="]";
 
   for (int idx = 0; idx < size; ++idx) {
     string acopy = fStitle;
     string aline = acopy;
-    const int LEN = 16;
+    constexpr int LEN = 16;
     char num[LEN];
     snprintf(num,LEN,"%d",idx);
     for( const auto& sb : fSarray ) {

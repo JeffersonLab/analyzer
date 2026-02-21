@@ -95,9 +95,9 @@ Int_t BankData::ReadDatabase( const TDatime& date )
 
   RemoveVariables();
 
-  const int LEN = 200;
+  constexpr int LEN = 200;
   char cbuf[LEN];
-  const char comment = '#';
+  constexpr char comment = '#';
 
   while( fgets(cbuf, LEN, fi) ) {
     if( fDebug )

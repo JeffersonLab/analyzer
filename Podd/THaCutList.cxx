@@ -34,9 +34,6 @@
 using namespace std;
 using namespace Podd;
 
-const char* const THaCutList::kDefaultBlockName = "Default";
-const char* const THaCutList::kDefaultCutFile   = "default.cuts";
-
 //_____________________________________________________________________________
 void THaHashList::PrintOpt( Option_t* opt ) const
 {
@@ -314,8 +311,8 @@ Int_t THaCutList::Load( const char* filename )
   // which no cuts were defined.
   //
 
-  static const char* const here   = "THaCutList::Load";
-  static const char* const whtspc = " \t";
+  constexpr const char* const here   = "THaCutList::Load";
+  constexpr const char* const whtspc = " \t";
 
   if( !filename || !*filename || strspn(filename," ") == strlen(filename) ) {
     Error( here, "invalid file name, no cuts loaded" );

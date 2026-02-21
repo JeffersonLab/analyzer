@@ -31,8 +31,8 @@ public:
 class THaCutList {
 
 public:
-  static const char* const kDefaultBlockName;
-  static const char* const kDefaultCutFile;
+  static constexpr const char* kDefaultBlockName = "Default";
+  static constexpr const char* kDefaultCutFile   = "default.cuts";
 
   enum EWarnMode { kWarn, kNoWarn };
 

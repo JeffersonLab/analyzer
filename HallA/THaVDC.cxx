@@ -915,7 +915,7 @@ void THaVDC::CalcTargetCoords( THaTrack* track )
 {
   // calculates target coordinates from focal plane coordinates
 
-  const Int_t kNUM_PRECOMP_POW = 10;
+  constexpr Int_t kNUM_PRECOMP_POW = 10;
 
   // first select the coords to use
   Double_t x_fp, y_fp, th_fp, ph_fp;
@@ -1037,7 +1037,7 @@ Double_t THaVDC::CalcTarget2FPLen(const vector<THaMatrixElement>& matrix,
 //_____________________________________________________________________________
 void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
 {
-  const static Double_t v = 3.0e-8;   // for now, assume that everything travels at c
+  constexpr Double_t v = 3.0e-8;   // for now, assume that everything travels at c
 
   // get scintillator planes
   auto* s1 = static_cast<THaScintillator*>( GetApparatus()->GetDetector("s1") );

@@ -95,7 +95,7 @@ public:
 
 protected:
 
-  static const Int_t kInitTrackMultiplicity = 5;
+  static constexpr Int_t kInitTrackMultiplicity = 5;
 
   TClonesArray*   fTracks;                //Tracks 
   TClonesArray*   fTrackPID;              //PID info for the tracks

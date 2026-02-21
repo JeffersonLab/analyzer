@@ -25,13 +25,14 @@
 #include <iomanip>   // for operator<<, setw
 #include <iostream>  // for basic_ostream, operator<<, cout, endl
 #include <utility>   // for pair, make_pair, move
+#include <string_view>
 
 using namespace std;
 
 using ssiz_t = string::size_type;
 using vssiz_t = vector<string>::size_type;
 
-static const string whtspc = " \t\n\v\f\r";
+constexpr string_view whtspc{" \t\n\v\f\r"};
 
 // Text variable definitions. To be assigned by main program.
 Podd::Textvars* gHaTextvars = nullptr;
@@ -122,7 +123,7 @@ Int_t Textvars::Add( const string& name, const string& value )
   if( name.empty() )
     return 0;
 
-  static const string delim(",");
+  constexpr string_view delim(",");
   StrVec_t tokens;
   Tokenize( value, delim, tokens );
   if( tokens.empty() )

@@ -23,8 +23,8 @@
 #include <memory>
 
 // The ET memory file will have this prefix.  The suffix is $SESSION.
-static const char* const ETMEM_PREFIX = "/tmp/et_sys_";
-static constexpr int32_t ET_CHUNK_SIZE = 50;
+constexpr const char* const ETMEM_PREFIX = "/tmp/et_sys_";
+constexpr int32_t ET_CHUNK_SIZE = 50;
 
 namespace Decoder {
 

@@ -18,8 +18,8 @@
 using namespace std;
 
 // Assume ep by default
-static const Double_t electron_mass = 0.511e-3;
-static const Double_t Mp = 0.938272;
+constexpr Double_t electron_mass = 0.511e-3;
+constexpr Double_t Mp = 0.938272;
 
 //_____________________________________________________________________________
 THaSAProtonEP::THaSAProtonEP( const char* name, const char* description,

@@ -61,7 +61,7 @@ Int_t THaIdealBeam::ReadRunDatabase( const TDatime& date )
   FILE* file = OpenRunDBFile( date );
   if( !file ) return kFileError;
 
-  static const Double_t degrad = TMath::Pi()/180.0;
+  constexpr Double_t degrad = TMath::Pi()/180.0;
 
   Double_t x = 0.0, y = 0.0, th = 0.0, ph = 0.0;
 

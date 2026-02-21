@@ -19,7 +19,7 @@
 using namespace std;
 
 //FIXME: Assume deuterium target for now
-static const Double_t target_mass = 1.87561; 
+constexpr Double_t target_mass = 1.87561;
 
 //_____________________________________________________________________________
 THaPhotoReaction::THaPhotoReaction( const char* name, const char* description,
@@ -114,8 +114,8 @@ THaAnalysisObject::EStatus THaPhotoReaction::Init( const TDatime& run_time )
 //_____________________________________________________________________________
 Int_t THaPhotoReaction::Process( const THaEvData& )
 {
-  const Double_t Mn = 0.939565;
-  const Double_t Mp = 0.938272;
+  constexpr Double_t Mn = 0.939565;
+  constexpr Double_t Mp = 0.938272;
  
   // This Procedure calculates the energy of the (REAL)
   // photon from the detected proton momentum 

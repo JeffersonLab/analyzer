@@ -97,7 +97,7 @@ Int_t THaArrayString::Parse( const char* string )
   //
   // Returns 0 if ok, or EStatus error code otherwise (see header).
 
-  static const size_t MAXLEN = 255;
+  constexpr size_t MAXLEN = 255;
   bool changed = false, dyn = false;
   char *str = nullptr, *s, *t;
   const char *cs;

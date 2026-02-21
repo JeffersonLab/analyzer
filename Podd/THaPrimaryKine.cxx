@@ -181,7 +181,7 @@ Int_t THaPrimaryKine::Process( const THaEvData& )
   fA.SetXYZM( 0.0, 0.0, 0.0, fMA );         // Assume target at rest
 
   // proton mass (for x_bj)
-  const Double_t Mp = 0.938;
+  constexpr Double_t Mp = 0.938;
 
   // Standard electron kinematics
   fQ         = fP0 - fP1;

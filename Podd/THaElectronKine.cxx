@@ -13,7 +13,7 @@
 
 ClassImp(THaElectronKine)
 
-static const Double_t electron_mass = 0.511e-3;
+constexpr Double_t electron_mass = 0.511e-3;
 
 //_____________________________________________________________________________
 THaElectronKine::THaElectronKine( const char* name, const char* description,

@@ -19,7 +19,7 @@
 
 using namespace std;
 
-static const Double_t kDefaultThreshold = 4000.0;
+constexpr Double_t kDefaultThreshold = 4000.0;
 
 //____________________________________________________________________
 THaADCHelicity::THaADCHelicity( const char* name, const char* description,

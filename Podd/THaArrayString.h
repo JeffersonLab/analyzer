@@ -42,7 +42,7 @@ public:
   EStatus         Status()  const { return fStatus; }
 
 protected:
-  static inline constexpr Int_t kMaxA = sizeof(void*)/sizeof(Int_t);
+  static constexpr Int_t kMaxA = sizeof(void*)/sizeof(Int_t);
 
   TString  fName;            //Variable name
   Int_t    fNdim;            //Number of array dimensions (0=scalar)

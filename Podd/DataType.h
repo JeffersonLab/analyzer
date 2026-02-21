@@ -12,7 +12,7 @@
 
 using Data_t = Double_t;   // Currently supported types: Float_t, Double_t
 
-const Data_t kBig  = 1.e38; // default junk value
+constexpr Data_t kBig = 1.e38; // default junk value
 
 static_assert( std::is_same_v<Data_t, Float_t> ||
                std::is_same_v<Data_t, Double_t>,

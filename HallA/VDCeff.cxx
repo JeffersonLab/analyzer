@@ -36,8 +36,8 @@
 using namespace std;
 using namespace Podd;
 
-const TString nhit_suffix( "nhit" );
-const TString eff_suffix(  "eff" );
+constexpr const char* nhit_suffix( "nhit" );
+constexpr const char* eff_suffix(  "eff" );
 
 //_____________________________________________________________________________
 namespace {
@@ -257,9 +257,9 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
 {
   // Read database. Gets the VDC variables containing wire spectra.
 
-  const char* const here = "ReadDatabase";
-  const char* const separators = ", \t";
-  const Int_t NPAR = 3;
+  constexpr const char* here = "ReadDatabase";
+  constexpr const char* separators = ", \t";
+  constexpr Int_t NPAR = 3;
 
   FILE* f = OpenFile( date );
   if( !f ) return kFileError;
