@@ -233,7 +233,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   for( int i = 0; i < fNelem; i++ ) {
     auto* wire = new((*fWires)[i])
       THaVDCWire(i, fWBeg + i * fWSpac, tdc_offsets[i], fTTDConv);
-    if( bad_wires.find(i) != bad_wires.end() )
+    if( bad_wires.contains(i) )
       wire->SetFlag(1);
   }
 

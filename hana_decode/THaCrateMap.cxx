@@ -34,6 +34,7 @@
 #include <memory>   // for unique_ptr
 #include <algorithm> // for std::find, std::sort
 #include <array>
+#include <utility>
 
 // This is a well-known problem with strerror_r
 #if defined(__linux__) && (defined(_GNU_SOURCE) || !(_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE > 600))
@@ -244,7 +245,7 @@ Int_t THaCrateMap::readFile( FILE* fi, string& text )
       unique_ptr<char[]> fbuf{new char[size]};
       auto* const buf = &fbuf[0];
       size_t nread = fread(buf, sizeof(char), size, fi);
-      if( nread == static_cast<size_t>(size) ) {
+      if( std::cmp_equal(nread ,size) ) {
         text.reserve(nread);
         text.assign(buf, buf+nread);
         ret = CM_OK;

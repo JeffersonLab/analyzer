@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cstring>
 #include <vector>
+#include <utility>
 
 using namespace std;
 
@@ -182,7 +183,7 @@ THaCut::EvalMode THaCut::ParsePrefix( TString& expr )
   EvalMode mode = kModeErr;
   for( const auto& def : mode_defs ) {
     if( expr.BeginsWith(def.prefix) &&
-	static_cast<Ssiz_t>(strlen(def.prefix)) == colon ) {
+        std::cmp_equal(strlen(def.prefix), colon) ) {
       expr.Remove(0, colon + 1);
       mode = def.mode;
       break;

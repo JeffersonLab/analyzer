@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <memory>
 #include <cassert>
+#include <utility>
 
 using namespace std;
 using namespace Decoder;
@@ -484,11 +485,11 @@ string THaDetMap::Iterator::msg( const char* txt ) const
 
 #define CRATE_SLOT( x ) (x).crate, (x).slot
 namespace {
-inline bool LOOPDONE( Int_t i, UInt_t n ) {
-  return i < 0 or static_cast<UInt_t>(i) >= n;
+bool LOOPDONE( Int_t i, UInt_t n ) {
+  return i < 0 or std::cmp_greater_equal(i, n);
 }
-inline bool NO_NEXT( Int_t& i, UInt_t n ) {
-  return i >= static_cast<Int_t>(n) or ++i >= static_cast<Int_t>(n);
+bool NO_NEXT( Int_t& i, UInt_t n ) {
+  return std::cmp_greater_equal(i, n) or std::cmp_greater_equal(++i, n);
 }
 }
 

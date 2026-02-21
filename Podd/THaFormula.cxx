@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <numeric>
 #include <vector>
+#include <utility>
 
 using namespace std;
 
@@ -267,7 +268,7 @@ char* THaFormula::DefinedString( Int_t i )
   // Get pointer to the i-th string variable. If the variable is not
   // a string, return pointer to an empty string.
 
-  assert( i>=0 && i<(Int_t)fVarDef.size() );
+  assert(i>=0 && std::cmp_less(i,fVarDef.size()));
   const FVarDef_t& def = fVarDef[i];
   if( def.type == kString ) {
     const auto* pvar = static_cast<const THaVar*>( def.obj );
@@ -296,7 +297,7 @@ Double_t THaFormula::DefinedValue( Int_t i ) // NOLINT(misc-no-recursion)
   // THcFormula is used.
   //
 
-  assert( i>=0 && i<(Int_t)fVarDef.size() );
+  assert( i>=0 && std::cmp_less(i,fVarDef.size()) );
 
   if( IsInvalid() )
     return 1.0;
@@ -381,10 +382,10 @@ Double_t THaFormula::DefinedValue( Int_t i ) // NOLINT(misc-no-recursion)
 	y = TMath::RMS( ndata, values.data() );
 	break;
       case kMax:
-	y = *max_element( ALL(values) );
+	y = *ranges::max_element( values );
 	break;
       case kMin:
-	y = *min_element( ALL(values) );
+	y = *ranges::min_element( values );
 	break;
       case kGeoMean:
 	y = TMath::GeomMean( ndata, values.data() );

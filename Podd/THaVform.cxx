@@ -21,6 +21,8 @@
 
 #include <iostream>
 #include <cassert>
+#include <utility>
+#include <string_view>
 
 using namespace std;
 using namespace THaString;
@@ -417,9 +419,11 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
     cout << "Truncating at " << fgVFORM_HUGE << endl;
     fhi = fgVFORM_HUGE;
   }
-  if (fhi > (long)fVectSform.size()) GetForm(fhi);
+  if( std::cmp_greater(fhi, fVectSform.size()) )
+    GetForm(fhi);
   // and if the above line doesn't repair fhi...
-  if (fhi > (long)fVectSform.size()) return 0;
+  if( std::cmp_greater(fhi, fVectSform.size()) )
+    return 0;
 
   if (fPrefix == kNoPrefix) {
 
@@ -474,7 +478,8 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
     string sform;
     for (Int_t i = 0; i < fhi; ++i) {
       sform += fVectSform[i];
-      if (i < (long)fVectSform.size()-1) sform += soper;
+      if( std::cmp_less(i, fVectSform.size() - 1) )
+        sform += soper;
     }
 
     string cname(GetName());

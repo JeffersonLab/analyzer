@@ -686,8 +686,7 @@ Int_t THaOutput::LoadFile( const char* filename )
 
   while (getline(odef,sline)) {
     // #include
-    if( sline.substr(0,kIncTag.length()) == kIncTag &&
-	sline.length() > kIncTag.length() ) {
+    if( sline.starts_with(kIncTag) && sline.length() > kIncTag.length() ) {
       string incfilename;
       if( GetIncludeFileName(sline,incfilename) != 0 ) {
 	ostringstream ostr;

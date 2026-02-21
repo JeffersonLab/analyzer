@@ -96,7 +96,7 @@ MultiFileRun::MultiFileRun( const char* filenamePattern,
 
   // Expand environment variables and leading "~" in file name pattern
   auto expand_name = [this]( string& f) { ExpandFileName(f); };
-  for_each(ALL(fFileList), expand_name);
+  ranges::for_each(fFileList, expand_name);
 
   ResetBit(kResolvingWildcard);
 }
@@ -130,8 +130,8 @@ MultiFileRun::MultiFileRun( vector<string> pathList, vector<string> fileList,
 
   // Expand environment variables and leading "~" in file paths
   auto expand_name = [this]( string& f) { ExpandFileName(f); };
-  for_each(ALL(fFileList), expand_name);
-  for_each(ALL(fPathList), expand_name);
+  ranges::for_each(fFileList, expand_name);
+  ranges::for_each(fPathList, expand_name);
 
   CheckWarnAbsFilename();
 
@@ -383,7 +383,7 @@ Int_t MultiFileRun::AddFile( const TString& file, const TString& dir )
       && (seg == -1 || seg >= fFirstSegment)
       && (str == -1 || str >= fFirstStream) ) {
     TString path = (dir != ".") ? JoinPath(dir, file) : file;
-    auto it = find_if(ALL(fStreams), [str]( const StreamInfo& ifo ) {
+    auto it = ranges::find_if(fStreams, [str]( const StreamInfo& ifo ) {
       return ifo.fID == str;
     });
     if( it == fStreams.end() ) {
@@ -391,7 +391,7 @@ Int_t MultiFileRun::AddFile( const TString& file, const TString& dir )
       it = std::prev(fStreams.end());
     }
     auto& files = it->fFiles;
-    auto jt = find_if(ALL(files), [seg]( const FileInfo& fi ) {
+    auto jt = ranges::find_if(files, [seg]( const FileInfo& fi ) {
       return fi.fSegment == seg;
     });
     if( jt == files.end() )
@@ -450,7 +450,7 @@ static vector<TString> SplitPath( const TString& path )
     dirn = GetDirName(dirn);
   }
   vs.emplace_back(dirn);  // top directory
-  reverse(ALL(vs));
+  ranges::reverse(vs);
   return vs;
 }
 
@@ -700,7 +700,7 @@ void MultiFileRun::AssembleFilePaths( vector<path_t>& candidates,
                        gSystem->BaseName(fullpath)};
       // Disregard exact duplicates, however they may have gotten here.
       // Wildcards may still lead to duplicates; those will be caught later.
-      if( std::find(ALL(candidates), cand_path) == candidates.end() )
+      if( ranges::find(candidates, cand_path) == candidates.end() )
         candidates.emplace_back(std::move(cand_path));
     }
   }
@@ -740,7 +740,7 @@ Int_t MultiFileRun::BuildInputList()
   // Cache for non-wildcard names already found
   set<TString> files_found;
   for( const auto& path: candidates ) {
-    if( files_found.find(path.second) != files_found.end() )
+    if( files_found.contains(path.second) )
       // Skip already-found non-wildcard files names. This avoids "duplicate
       // segment" warnings in case several search paths lead to the same file.
       continue;
@@ -1057,8 +1057,8 @@ void MultiFileRun::PrintFileInfo() const
     cout << "File name";
     if( fFileList.size() > 1 )
       cout << "s";
-    if( any_of(ALL(fFileList),
-               [this]( const string& f ) { return HasWildcards(f); }) )
+    if( ranges::any_of(fFileList,
+          [this]( const string& f ) { return HasWildcards(f); }) )
       cout << (fNameIsRegexp ? " (regexp): " : " (wildcards): ");
     else
       cout << ": ";
@@ -1139,7 +1139,7 @@ bool MultiFileRun::SetFileList( vector<std::string> filelist )
     return true;
   auto expand_name = [this]( string& f) { ExpandFileName(f); };
   try {
-    for_each(ALL(filelist), expand_name);
+    ranges::for_each(filelist, expand_name);
   }
   catch( std::invalid_argument& e ) {
     cerr << e.what() << endl;
@@ -1159,7 +1159,7 @@ bool MultiFileRun::SetPathList( vector<std::string> pathlist )
     return true;
   auto expand_name = [this]( string& f) { ExpandFileName(f); };
   try {
-    for_each(ALL(pathlist), expand_name);
+    ranges::for_each(pathlist, expand_name);
   }
   catch( std::invalid_argument& e ) {
     cerr << e.what() << endl;

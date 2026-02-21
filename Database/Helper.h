@@ -32,11 +32,9 @@ namespace Podd {
   template<typename T> requires (std::is_integral_v<T> and std::is_unsigned_v<T>)
   std::make_signed_t<T> SINT( T uint )
   {
-#ifndef NDEBUG
-    if( uint > static_cast<decltype(uint)>(
-                 std::numeric_limits<std::make_signed_t<T>>::max()))
+    if( std::cmp_greater(uint,
+      std::numeric_limits<std::make_signed_t<T>>::max()) ) [[unlikely]]
       throw std::out_of_range("Unsigned integer out of signed integer range");
-#endif
     return static_cast<std::make_signed_t<T>>(uint);
   }
 

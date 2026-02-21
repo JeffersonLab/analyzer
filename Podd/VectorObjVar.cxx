@@ -13,6 +13,7 @@
 #include "TError.h"
 #include <cassert>
 #include <vector>
+#include <utility>
 
 #define kInvalid     THaVar::kInvalid
 #define kInvalidInt  THaVar::kInvalidInt
@@ -50,8 +51,8 @@ Int_t VectorObjVar::GetLen() const
   if( !pvec )
     return kInvalidInt;
 
-  VecType::size_type n = pvec->size();
-  if( n > static_cast<VecType::size_type>(kMaxInt) )
+  auto n = pvec->size();
+  if( std::cmp_greater(n, kMaxInt) )
     return kInvalidInt;
   auto len = static_cast<Int_t>(n);
 #ifndef STDVECTOR_SIZE_INDEPENDENT_OF_TYPE

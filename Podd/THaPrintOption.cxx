@@ -62,7 +62,7 @@ Bool_t THaPrintOption::Contains( const string& token ) const
 {
   // Test if option contains the given token 'tok'
 
-  return any_of(ALL(fTokens), [&token]( const string& tok ) {
+  return ranges::any_of(fTokens, [&token]( const string& tok ) {
     return tok == token;
   });
 }
@@ -109,17 +109,17 @@ void THaPrintOption::Print() const
 //_____________________________________________________________________________
 void THaPrintOption::ToLower()
 {
-  transform(ALL(fString), fString.begin(), ::tolower);
+  ranges::transform(fString, fString.begin(), ::tolower);
   for( auto& tok: fTokens )
-    transform(ALL(tok), tok.begin(), ::tolower);
+    ranges::transform(tok, tok.begin(), ::tolower);
 }
 
 //_____________________________________________________________________________
 void THaPrintOption::ToUpper()
 {
-  transform(ALL(fString), fString.begin(), ::toupper);
+  ranges::transform(fString, fString.begin(), ::toupper);
   for( auto& tok: fTokens )
-    transform(ALL(tok), tok.begin(), ::toupper);
+    ranges::transform(tok, tok.begin(), ::toupper);
 }
 
 //_____________________________________________________________________________

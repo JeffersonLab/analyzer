@@ -30,8 +30,7 @@ Int_t GetIncludeFileName( const string& line, string& incfile )
 {
   // Extract file name from #include statement
 
-  if( line.substr(0,kIncTag.length()) != kIncTag ||
-      line.length() <= kIncTag.length() )
+  if( !line.starts_with(kIncTag) || line.length() <= kIncTag.length() )
     return -1; // Not an #include statement (should never happen)
   string::size_type pos = line.find_first_not_of(kWhiteSpace,kIncTag.length()+1);
   if( pos == string::npos || (line[pos] != '<' && line[pos] != '\"') )

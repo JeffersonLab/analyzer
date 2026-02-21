@@ -24,6 +24,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <utility>
 
 class THaDetMap {
 
@@ -183,8 +184,8 @@ public:
 
     // Status
     explicit virtual operator bool() const {
-      return (fIMod >= 0 and fIMod < static_cast<Int_t>(fNMod) and
-              fIChan >= 0 and fIChan < static_cast<Int_t>(fNChan));
+      return fIMod >= 0 and std::cmp_less(fIMod, fNMod) and
+             fIChan >= 0 and std::cmp_less(fIChan, fNChan);
     }
     bool operator!() const { return !static_cast<bool>(*this); }
 
@@ -247,8 +248,8 @@ public:
                       bool do_init = true );
     MultiHitIterator() = delete;
     explicit virtual operator bool() const {
-      return (Iterator::operator bool() and fIHit >= 0 and
-              fIHit < static_cast<Int_t>(fHitInfo.nhit));
+      return Iterator::operator bool() and fIHit >= 0 and
+             std::cmp_less(fIHit, fHitInfo.nhit);
     }
     using IncrOp<MultiHitIterator>::operator++;
     virtual void incr();
