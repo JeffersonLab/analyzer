@@ -241,7 +241,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // Read fOrigin and fSize (currently unused)
   Int_t err = ReadGeometry( file, date );
   if( err ) {
-    fclose(file);
+    (void)fclose(file);
     return err;
   }
 
@@ -285,18 +285,18 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   };
   err = LoadDB( file, date, request1 );
   if( err ) {
-    fclose(file);
+    (void)fclose(file);
     return err;
   }
   if( MEstring.empty() ) {
     Error( Here(here), "No matrix elements defined. Set \"maxtrixelem\" in database." );
-    fclose(file);
+    (void)fclose(file);
     return kInitError;
   }
   // Parse the matrix elements
   err = ParseMatrixElements( MEstring, matrix_map, fPrefix );
   if( err ) {
-    fclose(file);
+    (void)fclose(file);
     return err;
   }
   MEstring.clear();
@@ -316,7 +316,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
     err = kInitError;
   }
   if( err ) {
-    fclose(file);
+    (void)fclose(file);
     return err;
   }
 

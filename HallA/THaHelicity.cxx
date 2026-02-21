@@ -88,7 +88,7 @@ Int_t THaHelicity::ReadDatabase( const TDatime& date )
     { .name = "verbose", .var = &fDebug, .type = kInt, .optional = true, .search = -2 },
   };
   st = LoadDB( file, date, req );
-  fclose(file);
+  (void)fclose(file);
   if( st )
     return kInitError;
 

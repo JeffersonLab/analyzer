@@ -115,12 +115,12 @@ Int_t UserScintillator::ReadDatabase( const TDatime& date )
   }
   // Catch exceptions here so that we can close the file and clean up
   catch(...) {
-    fclose(file);
+    (void)fclose(file);
     throw;
   }
 
   // Normal end of reading the database
-  fclose(file);
+  (void)fclose(file);
   if( err != kOK )
     return err;
 

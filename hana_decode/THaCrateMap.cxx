@@ -273,10 +273,10 @@ int THaCrateMap::init( FILE* fi, const char* fname )
   if( readFile(fi, db) != CM_OK || ferror(fi) ) {
     ::Error( here, "Error reading crate map database file %s: %s",
         fname, StrError().c_str() );
-    fclose(fi);
+    (void)fclose(fi);
     return CM_ERR;
   }
-  fclose(fi);
+  (void)fclose(fi);
 
   // Parse the crate map definition
   return init(db);
@@ -356,10 +356,10 @@ Int_t THaCrateMap::loadConfig( string& line, string& cfgstr )
       if( readFile(fi, cfgstr) != CM_OK ) {
         ::Error(here, "Error reading decoder module database file "
                       "\"db_%s.dat\": %s", fname.c_str(), StrError().c_str());
-        fclose(fi);
+        (void)fclose(fi);
         return CM_ERR;
       }
-      fclose(fi);
+      (void)fclose(fi);
       line.erase(pos2);
     }
     Podd::Trim(cfgstr);

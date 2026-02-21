@@ -180,7 +180,7 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
       }
     }
   }
-  fclose(file);
+  (void)fclose(file);
   if( err )
     return err;
 

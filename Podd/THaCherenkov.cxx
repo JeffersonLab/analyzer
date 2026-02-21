@@ -68,7 +68,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   // Read fOrigin and fSize (required!)
   err = ReadGeometry( file, date, true );
   if( err ) {
-    fclose(file);
+    (void)fclose(file);
     return err;
   }
 
@@ -153,7 +153,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   }
 
   if( err ) {
-    fclose(file);
+    (void)fclose(file);
     return err;
   }
 

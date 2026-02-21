@@ -582,7 +582,7 @@ Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
     { .name = "off_z",    .var = &off_z,     .optional = true },
   };
   err = LoadDB( file, date, req );
-  fclose(file);
+  (void)fclose(file);
   if( err )
     return kInitError;
 

@@ -82,6 +82,6 @@ Int_t THaIdealBeam::ReadRunDatabase( const TDatime& date )
   fDirection.SetXYZ( tt, tp, 1.0 );
   fDirection *= 1.0/TMath::Sqrt( 1.0+tt*tt+tp*tp );
   
-  fclose(file);
+  (void)fclose(file);
   return kOK;
 }

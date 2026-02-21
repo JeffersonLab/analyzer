@@ -159,7 +159,7 @@ Int_t UserModule::ReadRunDatabase( const TDatime& date )
   if( st ) 
     fParameter = 0.0; //not really necessary since already zero
   
-  fclose(f);
+  (void)fclose(f);
   return kOK;
 }
   

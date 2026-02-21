@@ -173,7 +173,7 @@ Int_t TwoarmVDCTimeCorrection::ReadDatabase( const TDatime& date )
     { .name="condition", .var=&fCondExpr, .type=kTString, .optional=true },
   };
   Int_t err = LoadDB( file, date, config_request );
-  fclose(file);
+  (void)fclose(file);
   if( err )
     return err;
 

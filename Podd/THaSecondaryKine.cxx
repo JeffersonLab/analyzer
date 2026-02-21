@@ -316,7 +316,7 @@ Int_t THaSecondaryKine::ReadRunDatabase( const TDatime& date )
       LoadDBvalue( f, date, tag.Data(), fMX );
     if( fMX <= 0.0 ) fMX = 0.938;
   }
-  fclose(f);
+  (void)fclose(f);
   return 0;
 }
   

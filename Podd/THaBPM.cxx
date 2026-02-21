@@ -82,7 +82,7 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
     };
     err = LoadDB( file, date, calib_request );
   }
-  fclose(file);
+  (void)fclose(file);
   if( err )
     return err;
 

@@ -279,10 +279,10 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
     status = LoadDB( f, date, request );
   }
   catch(...) {
-    fclose(f);
+    (void)fclose(f);
     throw;
   }
-  fclose(f);
+  (void)fclose(f);
   if( status != kOK ) {
     return status;
   }

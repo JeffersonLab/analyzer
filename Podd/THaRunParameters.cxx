@@ -135,7 +135,7 @@ Int_t THaRunParameters::ReadDatabase( const TDatime& date )
     { .name = "dEbeam", .var = &dE, .optional = true },
   };
   Int_t err = LOAD( f, date, request, "" );
-  fclose(f);
+  (void)fclose(f);
   if( err )
     return err;
 

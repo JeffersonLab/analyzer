@@ -429,7 +429,7 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
     }
   }
 
-  fclose(fi); // NOLINT(cert-err33-c)  // read-only file, should always succeed
+  (void)fclose(fi); // read-only file, should always succeed
   return kOK;
 }
 

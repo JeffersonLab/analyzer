@@ -239,7 +239,7 @@ Int_t THaPrimaryKine::ReadRunDatabase( const TDatime& date )
     if( fMA <= 0.0 ) fMA = 0.938;
   }
   
-  fclose(f);
+  (void)fclose(f);
   return 0;
 }
   

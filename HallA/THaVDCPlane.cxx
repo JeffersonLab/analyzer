@@ -135,7 +135,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   // Read fCenter and fSize
   Int_t err = ReadGeometry(file, date);
   if( err ) {
-    fclose(file);
+    (void)fclose(file);
     return err;
   }
 

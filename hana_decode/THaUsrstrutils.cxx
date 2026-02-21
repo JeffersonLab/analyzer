@@ -206,7 +206,7 @@ void THaUsrstrutils::string_from_file(const char *ffile_name)
     cout << "configstr =  " << configstr << endl;
 #endif
   }
-  fclose(fd);
+  (void)fclose(fd);
 }
 
 }

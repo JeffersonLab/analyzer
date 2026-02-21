@@ -646,7 +646,7 @@ Int_t THaAnalysisObject::ReadRunDatabase( const TDatime& date )
 
     TString name(fPrefix); name.Append("config");
     Int_t ret = LoadDBvalue(file, date, name.Data(), fConfig );
-    fclose(file);
+    (void) fclose(file);
 
     if( ret == -1 ) return kFileError;
     if( ret < 0 )   return kInitError;

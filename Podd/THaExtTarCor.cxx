@@ -214,7 +214,7 @@ Int_t THaExtTarCor::ReadRunDatabase( const TDatime& date )
 	    "Using default.", fDeltaCorr );
     fDeltaCorr = DEL_COR;
   }	    
-  fclose(f);
+  (void)fclose(f);
   return kOK;
 }
   

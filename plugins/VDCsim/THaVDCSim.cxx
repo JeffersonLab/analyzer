@@ -147,7 +147,7 @@ Int_t THaVDCSimConditions::ReadDatabase(Double_t* timeOffsets)
       timeOffsets[start+i] = tdc_offsets[i];
   }
 
-  fclose(file);
+  (void)fclose(file);
   return err;
 }
 

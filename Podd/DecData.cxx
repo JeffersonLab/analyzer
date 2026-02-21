@@ -355,7 +355,7 @@ Int_t DecData::ReadDatabase( const TDatime& date )
     err = DefineLocType( loctype, configstr, re_init );
   }
 
-  fclose(file);
+  (void)fclose(file);
   if( err )
     return kInitError;
 

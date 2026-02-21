@@ -160,7 +160,7 @@ Int_t BankData::ReadDatabase( const TDatime& date )
 
   fStatus = kOK;
 
-  fclose(fi); // NOLINT(cert-err33-c)  // read-only file, should always succeed
+  (void)fclose(fi); // read-only file, should always succeed
   return fStatus;
 }
 

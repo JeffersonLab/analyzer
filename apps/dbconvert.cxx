@@ -2316,7 +2316,7 @@ int ExtractKeys( Detector* det, const multiset <Filenames_t>& filenames )
     }
 
   next:
-    fclose(fi);
+    (void)fclose(fi);
   } // end for st = filenames
 
   return 0;

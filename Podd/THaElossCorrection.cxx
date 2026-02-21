@@ -136,7 +136,7 @@ Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
 
   // Try to read any unset parameters from the database
   err = LoadDB( f, date, req );
-  fclose(f);
+  (void)fclose(f);
   if( err )
     return kInitError;
 
