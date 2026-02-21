@@ -152,7 +152,7 @@ void THaVDCCluster::ConvertTimeToDist()
 }
 
 //_____________________________________________________________________________
-chi2_t THaVDCCluster::CalcDist()
+chi2_t THaVDCCluster::CalcDist() const
 {
   // Calculate and store the distance of the global track to the wires.
   // We can then inspect the quality of the fits.
@@ -186,7 +186,7 @@ chi2_t THaVDCCluster::CalcDist()
 }
 
 //_____________________________________________________________________________
-void THaVDCCluster::CalcLocalDist()
+void THaVDCCluster::CalcLocalDist() const
 {
   //FIXME: clean this up - duplicate of chi2 calculation
   // Calculate and store the distance of the local fitted track to the wires.

@@ -51,7 +51,7 @@ public:
   virtual void   FitTrack( EMode mode = kSimple );
   virtual void   ClearFit();
   virtual void   CalcChisquare(Double_t& chi2, Int_t& nhits) const;
-  VDC::chi2_t    CalcDist();    // calculate global track to wire distances
+  VDC::chi2_t    CalcDist() const;    // calculate global track to wire distances
 
   // TObject functions redefined
   virtual void   Clear( Option_t* opt="" );
@@ -116,7 +116,7 @@ protected:
   // Workspace for fitting routines
   VDC::Vcoord_t  fCoord;             // coordinates to be fit
 
-  void   CalcLocalDist();     // calculate the local track to wire distances
+  void   CalcLocalDist() const;      // calculate the local track to wire distances
 
   void   FitSimpleTrack( Bool_t weighted = false );
   //void   FitNLTrack();        // Non-linear 3-parameter fit

@@ -358,11 +358,11 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-void VDCeff::WriteHist()
+void VDCeff::WriteHist() const
 {
   // Write all defined histograms
 
-  for( auto& thePlane : fVDCvar ) {
+  for( const auto& thePlane : fVDCvar ) {
     if( thePlane.hist_nhit )
       thePlane.hist_nhit->Write();
     if( thePlane.hist_eff )

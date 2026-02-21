@@ -158,8 +158,8 @@ protected:
 
   virtual Int_t ConstructTracks( TClonesArray* tracks = nullptr, Int_t flag = 0 );
 
-  void CorrectTimeOfFlight(TClonesArray& tracks);
-  void FindBadTracks(TClonesArray &tracks);
+  void CorrectTimeOfFlight( const TClonesArray& tracks);
+  void FindBadTracks(TClonesArray &tracks) const;
 
   virtual Int_t ReadDatabase( const TDatime& date );
   virtual Int_t ReadGeometry( FILE* file, const TDatime& date,

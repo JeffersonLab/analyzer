@@ -1173,7 +1173,7 @@ Int_t THaOutput::BuildBlock(const string& blockn)
   // would save all variables from the left spectrometer.
 
 
-  TRegexp re(blockn.c_str(),true);
+  const TRegexp re(blockn.c_str(),true);
   TIter next(gHaVars);
 
   Int_t nvars=0;

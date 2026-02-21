@@ -319,7 +319,8 @@ Int_t THaVDCPlane::ReadGeometry( FILE* file, const TDatime& date, Bool_t )
 
 //_____________________________________________________________________________
 Int_t THaVDCPlane::ReadDatabaseErrcheck( const vector<Float_t>& tdc_offsets,
-                                         const char* here ) {
+                                         const char* here ) const
+{
   // Sanity checks
   if( fNelem <= 0 ) {
     Error(Here(here), "Invalid number of wires: %d", fNelem);
@@ -377,7 +378,7 @@ Int_t THaVDCPlane::ReadDatabaseErrcheck( const vector<Float_t>& tdc_offsets,
 //_____________________________________________________________________________
 Int_t THaVDCPlane::ReadGeometryErrcheck( const vector<Double_t>& position,
                                          const vector<Double_t>& size,
-                                         const char* const here )
+                                         const char* const here ) const
 {
   if( position.size() != 3 ) {
     Error( Here(here), "Incorrect number of values = %u for "
@@ -678,7 +679,7 @@ Int_t THaVDCPlane::ApplyTimeCorrection()
 //_____________________________________________________________________________
 class TimeCut {
 public:
-  TimeCut( THaVDC* vdc, THaVDCPlane* _plane )
+  TimeCut( const THaVDC* vdc, THaVDCPlane* _plane )
     : hard_cut(false), soft_cut(false), maxdist(0.0), plane(_plane)
   {
     assert(vdc);
@@ -688,14 +689,13 @@ public:
       soft_cut = vdc->TestBit(THaVDC::kSoftTDCcut);
     }
     if( soft_cut ) {
-      const auto* chamber = dynamic_cast<THaVDCChamber*>(plane->GetParent());
-      if( chamber )
+      if( const auto* chamber = dynamic_cast<THaVDCChamber*>(plane->GetParent()) )
         maxdist = 0.5 * chamber->GetSpacing();
       if( maxdist == 0.0 )
         soft_cut = false;
     }
   }
-  bool operator() ( const THaVDCHit* hit )
+  bool operator() ( const THaVDCHit* hit ) const
   {
     // Only keep hits whose drift times are within sanity cuts
     if( hard_cut ) {

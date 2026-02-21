@@ -1035,7 +1035,7 @@ Double_t THaVDC::CalcTarget2FPLen(const vector<THaMatrixElement>& matrix,
 }
 
 //_____________________________________________________________________________
-void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
+void THaVDC::CorrectTimeOfFlight( const TClonesArray& tracks )
 {
   constexpr Double_t v = 3.0e-8;   // for now, assume that everything travels at c
 
@@ -1084,7 +1084,7 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
 }
 
 //_____________________________________________________________________________
-void THaVDC::FindBadTracks(TClonesArray& tracks)
+void THaVDC::FindBadTracks(TClonesArray& tracks) const
 {
   // Flag tracks that don't intercept S2 scintillator as bad
 

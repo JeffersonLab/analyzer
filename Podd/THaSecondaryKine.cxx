@@ -171,7 +171,7 @@ Int_t THaSecondaryKine::Process( const THaEvData& )
   if( !IsOK() ) return -1;
 
   // Tracking information from the secondary spectrometer
-  THaTrackInfo* trkifo = fSpectro->GetTrackInfo();
+  const THaTrackInfo* trkifo = fSpectro->GetTrackInfo();
   if( !trkifo || !trkifo->IsOK() ) return 1;
 
   // Require valid input data
@@ -187,7 +187,7 @@ Int_t THaSecondaryKine::Process( const THaEvData& )
   const TLorentzVector* pA1 = fPrimary->GetA1(); // Final target
   const TLorentzVector* pQ  = fPrimary->GetQ();  // Momentum xfer
   const TLorentzVector* pP1 = fPrimary->GetP1(); // Final electron
-  Double_t omega      = fPrimary->GetOmega(); // Energy xfer
+  const Double_t omega      = fPrimary->GetOmega(); // Energy xfer
 
   // 4-momentum of undetected recoil system B
   fB = *pA1 - fX;

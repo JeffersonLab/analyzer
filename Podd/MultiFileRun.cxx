@@ -1228,7 +1228,7 @@ Bool_t MultiFileRun::FindSegmentNumber()
 }
 
 //_____________________________________________________________________________
-bool MultiFileRun::CheckWarnAbsFilename()
+bool MultiFileRun::CheckWarnAbsFilename() const
 {
   bool found = false;
   for( const auto& file: fFileList ) {
@@ -1399,12 +1399,12 @@ Int_t MultiFileRun::StreamInfo::Open()
 }
 
 //_____________________________________________________________________________
-Int_t MultiFileRun::StreamInfo::OpenCurrent()
+Int_t MultiFileRun::StreamInfo::OpenCurrent() const
 {
   assert(fCodaData);
   if( fCodaData->isOpen() )
     fCodaData->codaClose();
-  auto& fn = fFiles[fFileIndex].fPath;
+  const auto& fn = fFiles[fFileIndex].fPath;
   return fCodaData->codaOpen(fn.c_str());
 }
 

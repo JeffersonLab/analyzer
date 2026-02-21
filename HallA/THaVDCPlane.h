@@ -142,10 +142,10 @@ protected:
 
 private:
   Int_t ReadDatabaseErrcheck( const std::vector<Float_t>& tdc_offsets,
-                              const char* here );
+                              const char* here ) const;
   Int_t ReadGeometryErrcheck( const std::vector<Double_t>& position,
                               const std::vector<Double_t>& size,
-                              const char* here );
+                              const char* here ) const;
   Int_t CreateTTDConv( const char* classname,
                        const std::vector<Double_t>& ttd_param,
                        const char* here );

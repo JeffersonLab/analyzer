@@ -97,7 +97,7 @@ Int_t THaQWEAKHelicity::DefineVariables( EMode mode )
 }
 //_____________________________________________________________________________
 
-void THaQWEAKHelicity::PrintEvent( ULong64_t evtnum )
+void THaQWEAKHelicity::PrintEvent( ULong64_t evtnum ) const
 {
 
   cout<<" ++++++ THaQWEAKHelicity::Print ++++++\n";
@@ -523,7 +523,7 @@ THaQWEAKHelicity::SetHelicity( UInt_t polarity, UInt_t phase )
 }
 
 //_____________________________________________________________________________
-UInt_t THaQWEAKHelicity::RanBit30( UInt_t& ranseed )
+UInt_t THaQWEAKHelicity::RanBit30( UInt_t& ranseed ) const
 {
 
   bool bit7    = (ranseed & 0x00000040) != 0;

@@ -90,7 +90,7 @@ Int_t THaNonTrackingDetector::GetNTracks() const
 }
 
 //_____________________________________________________________________________
-Int_t THaNonTrackingDetector::CalcTrackProj( TClonesArray& tracks )
+Int_t THaNonTrackingDetector::CalcTrackProj( const TClonesArray& tracks )
 {
   // Calculate projections of all given tracks onto detector reference plane.
   //

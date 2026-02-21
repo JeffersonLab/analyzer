@@ -45,8 +45,8 @@ protected:
   void      LoadHelicity();
   void      QuadHelicity(Int_t cond=0);
   EHelicity RanBit(Int_t i);
-  UInt_t    GetSeed();
-  Bool_t    CompHel();
+  UInt_t    GetSeed() const;
+  Bool_t    CompHel() const;
 
   enum { kNbits = 24 };
 

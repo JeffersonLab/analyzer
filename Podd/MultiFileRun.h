@@ -192,7 +192,7 @@ public:
     ULong64_t fEvNum;        //! Number of most recent physics event
     Bool_t fActive;          //! Stream has not yet reached EOF
   private:
-    Int_t OpenCurrent();
+    Int_t OpenCurrent() const;
     Int_t FetchEventNumber();
     ClassDefNV(StreamInfo, 1)  // CODA stream descriptor for MultiFileRun
   } __attribute__((aligned(64)));
@@ -226,7 +226,7 @@ protected:
   virtual TString  FindInitInfoFile( const TString& fname );
   virtual TString  GetInitInfoFileName( TString fname );
 
-  bool  CheckWarnAbsFilename();
+  bool  CheckWarnAbsFilename() const;
   void  ClearStreams();
   void  ExpandFileName( std::string& str ) const;
   bool  HasWildcards( const TString& str ) const;

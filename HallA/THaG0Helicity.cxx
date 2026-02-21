@@ -717,7 +717,7 @@ THaHelicityDet::EHelicity THaG0Helicity::RanBit( int which )
 
 
 //_____________________________________________________________________________
-UInt_t THaG0Helicity::GetSeed()
+UInt_t THaG0Helicity::GetSeed() const
 {
   int seedbits[kNbits];
   UInt_t ranseed = 0;
@@ -734,7 +734,7 @@ UInt_t THaG0Helicity::GetSeed()
 }
 
 //_____________________________________________________________________________
-Bool_t THaG0Helicity::CompHel()
+Bool_t THaG0Helicity::CompHel() const
 {
   // Compare the present reading to the predicted reading.
   // The raw data are 0's and 1's which compare to predictions of

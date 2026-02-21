@@ -80,7 +80,7 @@ protected:
 
   Int_t ReadDatabase( const TDatime& date ) override;
 
-  void WriteHist();
+  void WriteHist() const;
 
   ClassDefOverride(VDCeff,0)   // VDC hit efficiency physics module
 };

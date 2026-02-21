@@ -161,7 +161,7 @@ public:
      bool     withTimeStamp()   const { return (tag & 1) != 0; }
      bool     withRunInfo()     const { return (tag & 2) != 0; }
      bool     withTriggerBits() const { return (tsrocLen > 2*blksize);}
-     uint64_t GetEvTS( size_t i ) {
+     uint64_t GetEvTS( size_t i ) const {
        uint64_t ts{0};
        if( evTS && i < blksize )
          memcpy(&ts, evTS + 2 * i, sizeof(ts));
