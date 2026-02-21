@@ -86,7 +86,7 @@ ssiz_t Index( const string& s, ssiz_t& ext /*, ssiz_t start*/ )
 namespace Podd {
 
 //_____________________________________________________________________________
-void Tokenize( const string& s, const string& delim, vector<string>& tokens )
+void Tokenize( string_view s, string_view delim, vector<string>& tokens )
 {
   // Tokenize string 's' on delimiter(s) in 'delim'. Put results in 'tokens'.
 
@@ -98,7 +98,7 @@ void Tokenize( const string& s, const string& delim, vector<string>& tokens )
   auto pos   = s.find_first_of(delim, start);
 
   while( start != string::npos ) {
-    tokens.push_back( s.substr(start,pos-start));
+    tokens.emplace_back(s, start,pos-start);
     start = s.find_first_not_of(delim,pos);
     pos = s.find_first_of(delim,start);
   }

@@ -26,7 +26,7 @@ using namespace std;
 namespace Podd {
 
 //_____________________________________________________________________________
-Int_t GetIncludeFileName( const string& line, string& incfile )
+Int_t GetIncludeFileName( string_view line, string& incfile )
 {
   // Extract file name from #include statement
 

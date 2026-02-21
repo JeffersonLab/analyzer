@@ -12,11 +12,12 @@
 #include <map>          // for map
 #include <string>       // for basic_string, string, operator<=>
 #include <vector>       // for vector
+#include <string_view>
 
 namespace Podd {
 
 // Generic string utility functions
-void  Tokenize( const std::string& s, const std::string& delim,
+void  Tokenize( std::string_view s, std::string_view delim,
                 std::vector<std::string>& tokens );
 void  Trim( std::string& str );
 std::vector<std::string> vsplit( const std::string& s );

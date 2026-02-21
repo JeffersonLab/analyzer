@@ -19,7 +19,7 @@ namespace Podd {
   inline constexpr std::string_view kIncTag     = "#include";
   inline constexpr std::string_view kWhiteSpace = " \t";
 
-  Int_t GetIncludeFileName( const std::string& line, std::string& incfile );
+  Int_t GetIncludeFileName( std::string_view line, std::string& incfile );
   Int_t CheckIncludeFilePath( std::string& incfile );
 
 }
