@@ -34,7 +34,10 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaArrayString::THaArrayString( const THaArrayString& rhs )
-  : fName(rhs.fName), fNdim(rhs.fNdim), fLen(rhs.fLen), fStatus(rhs.fStatus)
+  : fName(rhs.fName)
+  , fNdim(rhs.fNdim)
+  , fLen(rhs.fLen)
+  , fStatus(rhs.fStatus)
 {
   // Copy constructor
 

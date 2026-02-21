@@ -180,8 +180,7 @@ THaAnalysisObject::EStatus THaSpectrometer::Init( const TDatime& run_time )
 
   ListInit();
 
-  EStatus ret = THaApparatus::Init(run_time);
-  if( ret )
+  if( EStatus ret = THaApparatus::Init(run_time) )
     return ret;
 
   if( IsPID() )

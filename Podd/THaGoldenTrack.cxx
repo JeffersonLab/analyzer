@@ -22,9 +22,13 @@ ClassImp(THaGoldenTrack)
 
 //_____________________________________________________________________________
 THaGoldenTrack::THaGoldenTrack( const char* name, const char* description,
-				const char* spectro ) :
-  THaPhysicsModule(name,description), fIndex(-1), fGoldBeta(kBig),
-  fTrack(nullptr), fSpectroName(spectro), fSpectro(nullptr)
+                                const char* spectro )
+  : THaPhysicsModule(name, description)
+  , fIndex(-1)
+  , fGoldBeta(kBig)
+  , fTrack(nullptr)
+  , fSpectroName(spectro)
+  , fSpectro(nullptr)
 {
   // Normal constructor.
 
@@ -81,8 +85,7 @@ Int_t THaGoldenTrack::DefineVariables( EMode mode )
     { .name = "pz",  .desc = "Lab momentum z (GeV)",           .def = "GetPz()"},
     { .name = "ok",  .desc = "Data valid status flag (1=ok)",  .def = "fOK" },
   };
-  Int_t ret = DefineVarsFromList( var1, mode, var_prefix );
-  if( ret )
+  if( Int_t ret = DefineVarsFromList(var1, mode, {.prefix = var_prefix}) )
     return ret;
 
   const vector<RVarDef> var2 = {

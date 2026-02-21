@@ -61,8 +61,7 @@ Int_t THaNonTrackingDetector::DefineVariables( EMode mode )
 {
   // Define global analysis variables
 
-  Int_t ret = THaSpectrometerDetector::DefineVariables(mode);
-  if( ret )
+  if( Int_t ret = THaSpectrometerDetector::DefineVariables(mode) )
     return ret;
 
   // Define analysis variables on our data members

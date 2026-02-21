@@ -112,8 +112,7 @@ Int_t THaBeamEloss::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
-  Int_t ret = THaElossCorrection::DefineVariables( mode );
-  if( ret )
+  if( Int_t ret = THaElossCorrection::DefineVariables( mode ) )
     return ret;
 
   // Define the variables for the beam info subobject

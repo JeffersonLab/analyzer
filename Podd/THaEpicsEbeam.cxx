@@ -19,11 +19,15 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaEpicsEbeam::THaEpicsEbeam( const char* name, const char* description,
-			      const char* beam, const char* epics_var,
-			      Double_t scale_factor ) : 
-  THaPhysicsModule( name,description ), fEcorr(0.0), fEpicsIsMomentum(false),
-  fScaleFactor(scale_factor), fBeamName(beam), fEpicsVar(epics_var), 
-  fBeamModule(nullptr)
+                              const char* beam, const char* epics_var,
+                              Double_t scale_factor )
+  : THaPhysicsModule(name, description)
+  , fEcorr(0.0)
+  , fEpicsIsMomentum(false)
+  , fScaleFactor(scale_factor)
+  , fBeamName(beam)
+  , fEpicsVar(epics_var)
+  , fBeamModule(nullptr)
 {
   // Constructor.
 }

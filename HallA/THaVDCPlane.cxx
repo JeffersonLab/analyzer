@@ -46,20 +46,38 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaVDCPlane::THaVDCPlane( const char* name, const char* description,
-                          THaDetectorBase* parent ) :
-  THaSubDetector(name, description, parent),
-  // Since TCloneArrays can resize, the size here is fairly unimportant
-  fWires{new TClonesArray("THaVDCWire", 368)},
-  fHits{new TClonesArray("THaVDCHit", 20)},
-  fClusters{new TClonesArray("THaVDCCluster", 5)},
-  fNHits(0), fNWiresHit(0), fNpass(0), fMinClustSize(0),
-  fMaxClustSpan(kMaxInt), fNMaxGap(0), fMinTime(0), fMaxTime(kMaxInt),
-  fMaxThits(0), fMinTdiff(0), fMaxTdiff(kBig), fTDCRes(0), fDriftVel(0),
-  fT0Resolution(0), fOnlyFastestHit(false), fNoNegativeTime(false),
-  fWBeg(0), fWSpac(0), fWAngle(0), fSinWAngle(0),
-  fCosWAngle(1), /*fTable(0),*/ fTTDConv(nullptr),
-  fVDC{dynamic_cast<THaVDC*>( GetMainDetector() )},
-  fMaxData(kMaxUInt), fNextHit(0), fPrevWire(nullptr)
+                          THaDetectorBase* parent )
+  : THaSubDetector(name, description, parent)
+    // Since TCloneArrays can resize, the size here is fairly unimportant
+  , fWires{new TClonesArray("THaVDCWire", 368)}
+  , fHits{new TClonesArray("THaVDCHit", 20)}
+  , fClusters{new TClonesArray("THaVDCCluster", 5)}
+  , fNHits(0)
+  , fNWiresHit(0)
+  , fNpass(0)
+  , fMinClustSize(0)
+  , fMaxClustSpan(kMaxInt)
+  , fNMaxGap(0)
+  , fMinTime(0)
+  , fMaxTime(kMaxInt)
+  , fMaxThits(0)
+  , fMinTdiff(0)
+  , fMaxTdiff(kBig)
+  , fTDCRes(0)
+  , fDriftVel(0)
+  , fT0Resolution(0)
+  , fOnlyFastestHit(false)
+  , fNoNegativeTime(false)
+  , fWBeg(0)
+  , fWSpac(0)
+  , fWAngle(0)
+  , fSinWAngle(0)
+  , fCosWAngle(1)
+  , /*fTable(0),*/ fTTDConv(nullptr)
+  , fVDC{dynamic_cast<THaVDC*>(GetMainDetector())}
+  , fMaxData(kMaxUInt)
+  , fNextHit(0)
+  , fPrevWire(nullptr)
 {
   // Constructor
 }
@@ -618,8 +636,7 @@ void THaVDCPlane::PrintDecodedData( const THaEvData& /*evdata*/ ) const
     for( int i = 0; i < (nhits+ncol-1)/ncol; i++ ) {
       for( int c = ncol*i; c < ncol*(i+1); c++ ) {
         if( c < nhits ) {
-          auto* hit = dynamic_cast<THaVDCHit*>(fHits->At(c));
-          if( hit )
+          if( auto* hit = dynamic_cast<THaVDCHit*>(fHits->At(c)) )
             cout << right
                  << "  " << setw(3) << hit->GetWireNum()
                  << "  " << setw(5) << hit->GetRawTime()

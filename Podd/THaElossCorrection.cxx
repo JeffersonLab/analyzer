@@ -22,15 +22,25 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaElossCorrection::THaElossCorrection( const char* name, 
-					const char* description,
-					const char* input_tracks,
-					Double_t particle_mass,
-					Int_t hadron_charge ) :
-  THaPhysicsModule(name,description), fEloss(kBig), fM(kBig),
-  fZ(hadron_charge), fZmed(0.0), fAmed(0.0), fDensity(0.0), fPathlength(0.0),
-  fZref(0.0), fScale(0.0),
-  fTestMode(false), fElectronMode(false), fExtPathMode(false),
-  fInputName(input_tracks), fVertexModule(nullptr)
+                                        const char* description,
+                                        const char* input_tracks,
+                                        Double_t particle_mass,
+                                        Int_t hadron_charge )
+  : THaPhysicsModule(name, description)
+  , fEloss(kBig)
+  , fM(kBig)
+  , fZ(hadron_charge)
+  , fZmed(0.0)
+  , fAmed(0.0)
+  , fDensity(0.0)
+  , fPathlength(0.0)
+  , fZref(0.0)
+  , fScale(0.0)
+  , fTestMode(false)
+  , fElectronMode(false)
+  , fExtPathMode(false)
+  , fInputName(input_tracks)
+  , fVertexModule(nullptr)
 {
   // Normal constructor.
 

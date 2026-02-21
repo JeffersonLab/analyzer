@@ -106,8 +106,7 @@ Int_t THaVDCChamber::DefineVariables( EMode mode )
   // initialize global variables
 
   // Register variables in global list
-  Int_t ret = THaSubDetector::DefineVariables(mode);
-  if( ret )
+  if( Int_t ret = THaSubDetector::DefineVariables(mode) )
     return ret;
 
   const vector<RVarDef> vars = {
@@ -149,7 +148,10 @@ PointCoords_t THaVDCChamber::CalcDetCoords( const THaVDCCluster* ucl,
   // Project v0 into the u plane
   Double_t v = v0 - mv * GetSpacing();
 
-  PointCoords_t c{ UVtoX(u,v), UVtoY(u,v), UVtoX(mu,mv), UVtoY(mu,mv) };
+  PointCoords_t c{
+    .x = UVtoX(u, v), .y = UVtoY(u, v),
+    .theta = UVtoX(mu, mv), .phi = UVtoY(mu, mv)
+  };
 
   return c;
 }
@@ -206,8 +208,7 @@ Int_t THaVDCChamber::CalcPointCoords() const
 
   Int_t nPoints = GetNPoints();
   for (int i = 0; i < nPoints; i++) {
-    THaVDCPoint* point = GetPoint(i);
-    if( point )
+    if( THaVDCPoint* point = GetPoint(i) )
       point->CalcDetCoords();
   }
   return nPoints;

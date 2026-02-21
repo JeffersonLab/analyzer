@@ -54,11 +54,17 @@ using namespace Podd;
 
 //_____________________________________________________________________________
 THaExtTarCor::THaExtTarCor( const char* name, const char* description,
-			    const char* spectro, const char* vertex ) :
-  THaPhysicsModule(name,description), fThetaCorr(0.0), fDeltaCorr(0.0),
-  fDeltaP(0.0), fDeltaDp(0.0), fDeltaTh(0.0),
-  fSpectroName(spectro), fVertexName(vertex),
-  fTrackModule(nullptr), fVertexModule(nullptr)
+                            const char* spectro, const char* vertex )
+  : THaPhysicsModule(name, description)
+  , fThetaCorr(0.0)
+  , fDeltaCorr(0.0)
+  , fDeltaP(0.0)
+  , fDeltaDp(0.0)
+  , fDeltaTh(0.0)
+  , fSpectroName(spectro)
+  , fVertexName(vertex)
+  , fTrackModule(nullptr)
+  , fVertexModule(nullptr)
 {
   // Normal constructor.
 

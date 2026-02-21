@@ -46,8 +46,7 @@ Int_t THaHelicity::DefineVariables( EMode mode )
   // Initialize global variables
 
   // Define standard variables from base class
-  Int_t ret = THaADCHelicity::DefineVariables( mode );
-  if( ret )
+  if( Int_t ret = THaADCHelicity::DefineVariables( mode ) )
     return ret;
 
   // Define variables for the G0 in-time mode

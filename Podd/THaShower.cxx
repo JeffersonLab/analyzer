@@ -249,8 +249,7 @@ Int_t THaShower::DefineVariables( EMode mode )
   // Initialize global variables
 
   // Set up standard variables, including the objects in fChannelData
-  Int_t ret = THaPidDetector::DefineVariables(mode);
-  if( ret )
+  if( Int_t ret = THaPidDetector::DefineVariables(mode) )
     return ret;
 
   const vector<RVarDef> vars = {

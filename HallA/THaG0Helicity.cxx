@@ -98,8 +98,7 @@ Int_t THaG0Helicity::DefineVariables( EMode mode )
   // Initialize global variables
 
   // Define standard variables from base class
-  Int_t ret = THaHelicityDet::DefineVariables( mode );
-  if( ret )
+  if( Int_t ret = THaHelicityDet::DefineVariables( mode ) )
     return ret;
 
   const vector<RVarDef> var = {
@@ -200,8 +199,7 @@ Int_t THaG0Helicity::Decode( const THaEvData& evdata )
   // Decode Helicity data.
   // Return 1 if helicity was assigned, 0 if not, <0 if error.
 
-  Int_t err = ReadData( evdata );
-  if( err ) {
+  if( Int_t err = ReadData( evdata ) ) {
     Error( Here("Decode"), "Error decoding helicity data." );
     return err;
   }

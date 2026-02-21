@@ -72,7 +72,7 @@ public:
    if (pos != string::npos) {
       string temp1{sdata.substr(0,pos)};
       string temp2{sdata.substr(pos+1,sdata.length())};
-// In case someone used "==" instead of "="
+      // In case someone used "==" instead of "="
       if (temp2.find('=') != string::npos)
             temp2.assign
               (sdata.substr(pos+2,sdata.length()));
@@ -118,8 +118,11 @@ private:
 
 //_____________________________________________________________________________
 THaOdata::THaOdata( const THaOdata& other )
-  : tree{other.tree}, name{other.name}, ndata{other.ndata}, nsize{other.nsize},
-    data{new Double_t[nsize]}
+  : tree{other.tree}
+  , name{other.name}
+  , ndata{other.ndata}
+  , nsize{other.nsize}
+  , data{new Double_t[nsize]}
 {
   memcpy(data, other.data, ndata * sizeof(Double_t));
 }
@@ -189,12 +192,29 @@ Bool_t THaOdata::Resize( Int_t i, bool save_old_data )
 
 //_____________________________________________________________________________
 THaOutput::THaOutput()
-  : fNvar(0), fVar(nullptr), fEpicsVar(nullptr), fTree(nullptr),
-    fEpicsTimestamp(-1), fEpicsEvtNum(0), fEpicsTree(nullptr),
-    fInit(false), fDoBench(false), fVerbose(1), fBench(new THaBenchmark),
-    fExtra(nullptr), fEpicsHandler(nullptr),
-    nx(0), ny(0), iscut(0), xlo(0), xhi(0), ylo(0), yhi(0),
-    fOpenEpics(false), fFirstEpics(false), fIsScalar(false)
+  : fNvar(0)
+  , fVar(nullptr)
+  , fEpicsVar(nullptr)
+  , fTree(nullptr)
+  , fEpicsTimestamp(-1)
+  , fEpicsEvtNum(0)
+  , fEpicsTree(nullptr)
+  , fInit(false)
+  , fDoBench(false)
+  , fVerbose(1)
+  , fBench(new THaBenchmark)
+  , fExtra(nullptr)
+  , fEpicsHandler(nullptr)
+  , nx(0)
+  , ny(0)
+  , iscut(0)
+  , xlo(0)
+  , xhi(0)
+  , ylo(0)
+  , yhi(0)
+  , fOpenEpics(false)
+  , fFirstEpics(false)
+  , fIsScalar(false)
 {
   // Constructor
 }
@@ -933,10 +953,10 @@ vector<string> THaOutput::reQuote(const vector<string>& input) {
 //_____________________________________________________________________________
 string THaOutput::CleanEpicsName( const string& input )
 {
-// To clean up EPICS variable names that contain
-// bad characters like ":" and arithmetic operations
-// that confuse TTree::Draw().
-// Replace all 'badchar' with 'goodchar'
+  // To clean up EPICS variable names that contain
+  // bad characters like ":" and arithmetic operations
+  // that confuse TTree::Draw().
+  // Replace all 'badchar' with 'goodchar'
 
   static const char badchar[]=":+-*/=";
   static const string goodchar = "_";

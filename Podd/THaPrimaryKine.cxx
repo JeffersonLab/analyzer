@@ -215,8 +215,8 @@ Int_t THaPrimaryKine::ReadRunDatabase( const TDatime& date )
   // For the target mass, first search for "<prefix>.MA", then, if not found, 
   // for "MA". If still not found, use proton mass.
 
-  Int_t err = THaPhysicsModule::ReadRunDatabase( date );
-  if( err ) return err;
+  if( Int_t err = THaPhysicsModule::ReadRunDatabase( date ) )
+    return err;
 
   if ( fM > 0.0 && fMA > 0.0 ) 
     return 0;

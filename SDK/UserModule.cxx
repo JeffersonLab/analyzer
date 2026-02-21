@@ -29,10 +29,13 @@ using namespace Podd;
 
 //_____________________________________________________________________________
 UserModule::UserModule( const char* name, const char* description,
-			const char* spectro, Double_t parameter ) :
-  THaPhysicsModule(name,description), 
-  fResultA(kBig), fResultB(kBig), fParameter(parameter),
-  fSpectroName(spectro), fSpectro(nullptr)
+                        const char* spectro, Double_t parameter )
+  : THaPhysicsModule(name, description)
+  , fResultA(kBig)
+  , fResultB(kBig)
+  , fParameter(parameter)
+  , fSpectroName(spectro)
+  , fSpectro(nullptr)
 {
   // Normal constructor. 
 
@@ -133,9 +136,9 @@ Int_t UserModule::ReadRunDatabase( const TDatime& date )
 
   // Call the run database reader of the base class. Currently, this
   // does nothing, but it might do something (e.g. initialization of
-  // common parameters) in the future. 
-  Int_t err = THaPhysicsModule::ReadRunDatabase( date );
-  if( err ) return err;
+  // common parameters) in the future.
+  if( Int_t err = THaPhysicsModule::ReadRunDatabase( date ) )
+    return err;
 
   // Parameter already set? If so, nothing to do here
   if ( fParameter != 0.0 ) 

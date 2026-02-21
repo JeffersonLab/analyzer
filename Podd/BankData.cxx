@@ -138,10 +138,9 @@ Int_t BankData::ReadDatabase( const TDatime& date )
   // dvars must be of length Nvars in order to fit all the data
   // for this class; it's the global data.
   // Check that neither of these are "too_big" for some reason.
-  const Int_t too_big = 1000000;
-  if (maxwords > too_big || Nvars > too_big) {
+  if( constexpr Int_t too_big = 1000000; maxwords > too_big || Nvars > too_big ) {
     cerr << "BankData::ERROR:  very huge number of words "
-         <<maxwords<<"  "<<Nvars<<endl;
+         << maxwords << "  " << Nvars << endl;
     return kInitError;
   }
 

@@ -53,8 +53,8 @@ void FADCData::Reset( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-Int_t
-FADCData::ReadConfig( THaDetectorBase* det, const TDatime& date, const char* key_prefix )
+Int_t FADCData::ReadConfig( THaDetectorBase* det, const TDatime& date,
+                            const char* key_prefix )
 {
   // Load FADC configuration parameters (required) from database
 

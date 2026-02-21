@@ -46,8 +46,7 @@ Int_t TimeCorrectionModule::DefineVariables( THaAnalysisObject::EMode mode )
 {
   // Define/delete event-by-event global variables
 
-  Int_t ret = InterStageModule::DefineVariables(mode);// exports fDataValid etc.
-  if( ret )
+  if( Int_t ret = InterStageModule::DefineVariables(mode) ) // exports fDataValid etc.
     return ret;
 
   const vector<RVarDef> vars = {

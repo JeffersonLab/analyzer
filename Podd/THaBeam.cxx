@@ -75,8 +75,7 @@ Int_t THaBeam::DefineVariables( EMode mode )
     { .name = "dir.z", .desc = "reconstructed z-component of beam direction",        .def = "fDirection.fZ" },
   };
 
-  Int_t ret = DefineVarsFromList(vars, mode);
-  if( ret )
+  if( Int_t ret = DefineVarsFromList(vars, mode) )
     return ret;
 
   // Define the variables for the beam info subobject
@@ -88,8 +87,7 @@ void THaBeam::Update()
 {
   // Update the fBeamIfo data with the info from the current event
 
-  THaRunParameters* rp = gHaRun->GetParameters();
-  if( rp )
+  if( THaRunParameters* rp = gHaRun->GetParameters() )
     fBeamIfo.Set( rp->GetBeamP(), fDirection, fPosition,
 		  rp->GetBeamPol() );
   else

@@ -25,10 +25,18 @@ Bool_t THaG0HelicityReader::ROCinfo::valid() const
 }
 
 //____________________________________________________________________
-THaG0HelicityReader::THaG0HelicityReader() :
-  fPresentReading(0), fQrt(0), fGate(0), fTimestamp(0),
-  fOldT1(-1.0), fOldT2(-1.0), fOldT3(-1.0), fValidTime(false),
-  fG0Debug(0), fHaveROCs(false), fNegGate(false)
+THaG0HelicityReader::THaG0HelicityReader()
+  : fPresentReading(0)
+  , fQrt(0)
+  , fGate(0)
+  , fTimestamp(0)
+  , fOldT1(-1.0)
+  , fOldT2(-1.0)
+  , fOldT3(-1.0)
+  , fValidTime(false)
+  , fG0Debug(0)
+  , fHaveROCs(false)
+  , fNegGate(false)
 {
   // Default constructor
 }

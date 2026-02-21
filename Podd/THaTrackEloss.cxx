@@ -110,8 +110,7 @@ Int_t THaTrackEloss::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
-  Int_t ret = THaElossCorrection::DefineVariables( mode );
-  if( ret )
+  if( Int_t ret = THaElossCorrection::DefineVariables( mode ) )
     return ret;
 
   return DefineVarsFromList( GetRVarDef(), mode );

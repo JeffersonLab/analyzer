@@ -214,8 +214,7 @@ Int_t THaCherenkov::DefineVariables( EMode mode )
   // Initialize global variables
 
   // Set up standard variables, including objects in fChannelData
-  Int_t ret = THaPidDetector::DefineVariables(mode);
-  if( ret )
+  if( Int_t ret = THaPidDetector::DefineVariables(mode) )
     return ret;
 
   const vector<RVarDef> vars = {

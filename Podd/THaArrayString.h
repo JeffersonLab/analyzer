@@ -65,8 +65,8 @@ Int_t THaArrayString::operator[](Int_t i) const
   if( fNdim>kMaxA ) {
     assert( fDim );
     return fDim[i];
-  } else
-    return fDimA[i];
+  }
+  return fDimA[i];
 }
 
 //_____________________________________________________________________________
@@ -74,11 +74,10 @@ inline
 const Int_t* THaArrayString::GetDim() const
 {
   if( fNdim == 0 )
-    return 0;
-  else if( fNdim>kMaxA )
+    return nullptr;
+  if( fNdim>kMaxA )
     return fDim;
-  else
-    return fDimA;
+  return fDimA;
 }
 
 #endif

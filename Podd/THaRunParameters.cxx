@@ -166,7 +166,6 @@ void THaRunParameters::SetPolarizations( Double_t pb, Double_t pt )
   fBeamPol = pb;
   fTgtPol  = pt;
   fIsPol   = (TMath::Abs(pb*pt) > 1e-8);
-    
 }
 
 //_____________________________________________________________________________

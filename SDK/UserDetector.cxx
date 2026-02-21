@@ -273,7 +273,7 @@ Int_t UserDetector::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
   Int_t chan = hitinfo.lchan;
 
   // Check if 'chan' is in range here as a bugcheck of the detector map logic.
-  // Like asserts, such bugchecks may be skipped for better performance when
+  // Like asserts, such bug checks may be skipped for better performance when
   // compiling production code with -DNDEBUG. Or you may keep them for more
   // safety, especially when some value depends on unpredictable input data.
 #ifndef NDEBUG

@@ -74,8 +74,7 @@ Int_t THaQWEAKHelicity::DefineVariables( EMode mode )
   //       << mode << endl;
 
   // Define standard variables from base class
-  Int_t ret = THaHelicityDet::DefineVariables( mode );
-  if( ret )
+  if( Int_t ret = THaHelicityDet::DefineVariables( mode ) )
     return ret;
 
   const vector<RVarDef> var = {
@@ -230,8 +229,7 @@ Int_t THaQWEAKHelicity::Decode( const THaEvData& evdata )
   // Decode Helicity data.
   // Return 1 if helicity was assigned, 0 if not, <0 if error.
 
-  Int_t err = ReadData( evdata ); // from THaQWEAKHelicityReader class
-  if( err ) {
+  if( Int_t err = ReadData( evdata ) ) {
     Error( Here("THaQWEAKHelicity::Decode"), "Error decoding helicity data." );
     return err;
   }
@@ -241,10 +239,7 @@ Int_t THaQWEAKHelicity::Decode( const THaEvData& evdata )
   if(fQWEAKDebug>1)
     PrintEvent(evdata.GetEvNum());
   CheckTIRvsRing(evdata.GetEvNum());
-  if(fErrorCode==0)  
-    fValidHel=true;
-  else
-    fValidHel=false;
+  fValidHel = (fErrorCode==0);
   FillHisto();
 
   return 0;

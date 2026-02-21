@@ -43,8 +43,7 @@ Int_t THaADCHelicity::DefineVariables( EMode mode )
 {
   // Initialize global variables
 
-  Int_t ret = THaHelicityDet::DefineVariables( mode );
-  if( ret )
+  if( Int_t ret = THaHelicityDet::DefineVariables( mode ) )
     return ret;
 
   const vector<RVarDef> var = {

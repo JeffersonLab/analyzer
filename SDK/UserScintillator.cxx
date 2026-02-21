@@ -40,10 +40,14 @@ using namespace std;
 
 //_____________________________________________________________________________
 UserScintillator::UserScintillator( const char* name, const char* description,
-				    THaApparatus* apparatus ) :
-  // Make sure to initialize member variables to sane values/defaults here!
-  THaScintillator(name,description,apparatus),
-  fPaddle(0), fYtdc(kBig), fYtrk(kBig), fGoodToGo(false), fCommonStop(true)
+                                    THaApparatus* apparatus )
+  : THaScintillator(name, description, apparatus)
+    // Make sure to initialize member variables to sane values/defaults here!
+  , fPaddle(0)
+  , fYtdc(kBig)
+  , fYtrk(kBig)
+  , fGoodToGo(false)
+  , fCommonStop(true)
 {
   // Constructor
 }
@@ -63,8 +67,7 @@ Int_t UserScintillator::DefineVariables( EMode mode )
 
   // Since the base class defines its own variables, call the base class
   // implementation here to create them.
-  Int_t ret = THaScintillator::DefineVariables( mode );
-  if( ret )
+  if( Int_t ret = THaScintillator::DefineVariables( mode ) )
     return ret;
 
   const vector<RVarDef> vars = {
@@ -86,8 +89,7 @@ Int_t UserScintillator::ReadDatabase( const TDatime& date )
 
   // Now read the database file
   // First read base class parameters
-  Int_t ret = THaScintillator::ReadDatabase(date);
-  if( ret )
+  if( Int_t ret = THaScintillator::ReadDatabase(date) )
     return ret;
 
   // Read our parameters. For detailed comments, see UserDetector.cxx.
@@ -167,8 +169,7 @@ Int_t UserScintillator::FineProcess( TClonesArray& tracks )
   // within that paddle using the paddle's TDC data.
 
   // Call the base class method to do the standard work first:
-  Int_t ret = THaScintillator::FineProcess(tracks);
-  if( ret )
+  if( Int_t ret = THaScintillator::FineProcess(tracks) )
     return ret;
 
   // Now here go the extensions ...

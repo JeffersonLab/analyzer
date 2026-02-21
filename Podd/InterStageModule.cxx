@@ -21,8 +21,10 @@ namespace Podd {
 
 //_____________________________________________________________________________
 InterStageModule::InterStageModule( const char* name, const char* description,
-                                    Int_t stage ) :
-  THaAnalysisObject(name, description), fStage(stage), fDataValid(false)
+                                    Int_t stage )
+  : THaAnalysisObject(name, description)
+  , fStage(stage)
+  , fDataValid(false)
 {
   // Constructor
 }

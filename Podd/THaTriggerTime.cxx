@@ -27,8 +27,11 @@ using Podd::TimeCorrectionModule;
 
 //____________________________________________________________________________
 THaTriggerTime::THaTriggerTime( const char* name, const char* desc )
-  : TimeCorrectionModule(name, desc, THaAnalyzer::kDecode),
-    fDetMap(new THaDetMap), fTDCRes(0.0), fCommonStop(0), fEvtType(-1)
+  : TimeCorrectionModule(name, desc, THaAnalyzer::kDecode)
+  , fDetMap(new THaDetMap)
+  , fTDCRes(0.0)
+  , fCommonStop(0)
+  , fEvtType(-1)
 {
   // basic do-nothing-else constructor
 }

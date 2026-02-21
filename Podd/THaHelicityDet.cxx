@@ -17,7 +17,9 @@ using namespace std;
 //_____________________________________________________________________________
 THaHelicityDet::THaHelicityDet( const char* name, const char* description ,
 				THaApparatus* apparatus )
-  : THaDetector( name, description, apparatus ), fHelicity(kUnknown), fSign(1)
+  : THaDetector( name, description, apparatus )
+  , fHelicity(kUnknown)
+  , fSign(1)
 {
   // Constructor
 }

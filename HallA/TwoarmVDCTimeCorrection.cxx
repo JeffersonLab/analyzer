@@ -85,10 +85,10 @@ TwoarmVDCTimeCorrection::Init( const TDatime& run_time )
       THaVar*& pvar;
     };
     vector<VarDef> vardefs {
-      { detdef.fName + ".nthit",  detdef.fNthit },
-      { detdef.fName + ".t_pads", detdef.fTpad },
-      { detdef.fName + ".rt_c",   detdef.fRT },
-      { detdef.fName + ".lt_c",   detdef.fLT }
+      { .name = detdef.fName + ".nthit",  .pvar = detdef.fNthit },
+      { .name = detdef.fName + ".t_pads", .pvar = detdef.fTpad },
+      { .name = detdef.fName + ".rt_c",   .pvar = detdef.fRT },
+      { .name = detdef.fName + ".lt_c",   .pvar = detdef.fLT }
     };
     for( const auto& vardef : vardefs ) {
       vardef.pvar = gHaVars->Find(vardef.name); // sets the relevant THaVar

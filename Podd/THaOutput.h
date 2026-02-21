@@ -87,7 +87,9 @@ class THaOutput {
 public:
 
   THaOutput();
-  virtual ~THaOutput(); 
+  THaOutput(const THaOutput&) = delete;
+  THaOutput& operator=(const THaOutput& ) = delete;
+  virtual ~THaOutput();
 
   virtual Int_t Init( const char* filename="output.def" );
   virtual Int_t Process();
@@ -146,9 +148,6 @@ protected:
   TObject*  fExtra;     // Additional member data (for binary compat.)
 
 private:
-
-  THaOutput(const THaOutput&);
-  THaOutput& operator=(const THaOutput& );
 
   std::string stitle, sfvarx, sfvary, scut;
 

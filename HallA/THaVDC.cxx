@@ -454,8 +454,7 @@ Int_t THaVDC::DefineVariables( EMode mode )
 {
   // Initialize global variables and lookup table for decoder
 
-  Int_t ret = THaTrackingDetector::DefineVariables(mode);
-  if( ret )
+  if( Int_t ret = THaTrackingDetector::DefineVariables(mode) )
     return ret;
 
   // Register variables in global list

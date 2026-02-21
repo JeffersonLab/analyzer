@@ -35,18 +35,40 @@ ClassImp(THaSecondaryKine)
 
 //_____________________________________________________________________________
 THaSecondaryKine::THaSecondaryKine( const char* name, const char* description,
-				    const char* secondary_spectro, 
-				    const char* primary_kine, 
-				    Double_t secondary_mass ) :
-  THaPhysicsModule(name,description),
-  fTheta_xq(kBig), fPhi_xq(kBig), fTheta_bq(kBig), fPhi_bq(kBig),
-  fXangle(kBig), fPmiss(kBig), fPmiss_x(kBig), fPmiss_y(kBig), fPmiss_z(kBig),
-  fEmiss(kBig), fMrecoil(kBig), fErecoil(kBig), fTX(kBig), fTB(kBig),
-  fPX_cm(kBig), fTheta_x_cm(kBig), fPhi_x_cm(kBig), fTheta_b_cm(kBig),
-  fPhi_b_cm(kBig), fTX_cm(kBig), fTB_cm(kBig), fTtot_cm(kBig), fMandelS(kBig),
-  fMandelT(kBig), fMandelU(kBig),
-  fMX(secondary_mass), fSpectroName(secondary_spectro), fSpectro(nullptr),
-  fPrimaryName(primary_kine), fPrimary(nullptr)
+                                    const char* secondary_spectro,
+                                    const char* primary_kine,
+                                    Double_t secondary_mass )
+  : THaPhysicsModule(name, description)
+  , fTheta_xq(kBig)
+  , fPhi_xq(kBig)
+  , fTheta_bq(kBig)
+  , fPhi_bq(kBig)
+  , fXangle(kBig)
+  , fPmiss(kBig)
+  , fPmiss_x(kBig)
+  , fPmiss_y(kBig)
+  , fPmiss_z(kBig)
+  , fEmiss(kBig)
+  , fMrecoil(kBig)
+  , fErecoil(kBig)
+  , fTX(kBig)
+  , fTB(kBig)
+  , fPX_cm(kBig)
+  , fTheta_x_cm(kBig)
+  , fPhi_x_cm(kBig)
+  , fTheta_b_cm(kBig)
+  , fPhi_b_cm(kBig)
+  , fTX_cm(kBig)
+  , fTB_cm(kBig)
+  , fTtot_cm(kBig)
+  , fMandelS(kBig)
+  , fMandelT(kBig)
+  , fMandelU(kBig),
+    fMX(secondary_mass)
+  , fSpectroName(secondary_spectro)
+  , fSpectro(nullptr)
+  , fPrimaryName(primary_kine)
+  , fPrimary(nullptr)
 {
   // Constructor
 
@@ -281,8 +303,8 @@ Int_t THaSecondaryKine::ReadRunDatabase( const TDatime& date )
   // First searches for "<prefix>.MX", then, if not found, for "MX".
   // If still not found, use proton mass.
 
-  Int_t err = THaPhysicsModule::ReadRunDatabase( date );
-  if( err ) return err;
+  if( Int_t err = THaPhysicsModule::ReadRunDatabase( date ) )
+    return err;
 
   FILE* f = OpenRunDBFile( date );
   if( !f ) return kFileError;
