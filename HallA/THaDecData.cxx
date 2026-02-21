@@ -44,7 +44,7 @@ using namespace Podd;
 
 //_____________________________________________________________________________
 THaDecData::THaDecData( const char* name, const char* descript )
-  : Podd::DecData(name,descript)
+  : DecData(name,descript)
 {
 }
 
@@ -139,7 +139,6 @@ Int_t THaDecData::SetupDBVersion( FILE* file, Int_t db_version )
   fConfigstrMap.clear();
   if( db_version == 1 )
     return ReadOldFormatDB( file, fConfigstrMap );
-  else
 #endif
   return Podd::DecData::SetupDBVersion(file,db_version);
 }
@@ -158,7 +157,7 @@ Int_t THaDecData::GetConfigstr( FILE* file, const TDatime& date,
       return -1;
     configstr = found->second;
     return 0;
-  } else
+  }
 #endif
   return Podd::DecData::GetConfigstr(file,date,db_version,loctype,configstr);
 }

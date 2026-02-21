@@ -18,10 +18,10 @@ class THaPrintOption;
 // Utility class that provides the PrintOpt method
 class THaHashList : public THashList {
 public:
-  explicit THaHashList(Int_t capacity = TCollection::kInitHashTableCapacity,
+  explicit THaHashList(Int_t capacity = kInitHashTableCapacity,
 	      Int_t rehash = 0) : THashList(capacity,rehash) {}
   explicit THaHashList(TObject* parent,
-	      Int_t capacity = TCollection::kInitHashTableCapacity, 
+	      Int_t capacity = kInitHashTableCapacity,
 	      Int_t rehash = 0) : THashList(parent,capacity,rehash) {}
 
   virtual void PrintOpt( Option_t* opt ) const;

@@ -55,7 +55,7 @@ Int_t THaVDCSimRun::Init()
 Int_t THaVDCSimRun::Open()
 {
   rootFile = new TFile(rootFileName, "READ", "VDC Tracks");
-  if (!rootFile || rootFile->IsZombie()) {
+  if (rootFile->IsZombie()) {
     if (rootFile->IsOpen()) Close();
     return READ_FATAL;
   }

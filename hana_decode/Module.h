@@ -55,9 +55,9 @@ namespace Decoder {
     virtual UInt_t GetData( UInt_t /*chan*/) const { return 0; };
     virtual UInt_t GetData( UInt_t /*chan*/, UInt_t /*hit*/) const { return 0; };
     virtual UInt_t GetData( UInt_t, UInt_t, UInt_t) const { return 0; };
-    virtual UInt_t GetData( Decoder::EModuleType /*emode*/,
+    virtual UInt_t GetData( EModuleType /*emode*/,
                             UInt_t /*chan*/, UInt_t /*ievent*/) const { return 0; };
-    virtual UInt_t GetData( Decoder::EModuleType,
+    virtual UInt_t GetData( EModuleType,
                             UInt_t, UInt_t, UInt_t ) const { return 0; };
     virtual UInt_t GetOpt( UInt_t /* rdata */) const { return 0; };
 
@@ -76,7 +76,7 @@ namespace Decoder {
 
     virtual UInt_t GetNumChan()         const { return fNumChan; };
 
-    virtual UInt_t GetNumEvents( Decoder::EModuleType /*emode*/,
+    virtual UInt_t GetNumEvents( EModuleType /*emode*/,
                                  UInt_t /*chan*/ ) const { return 0; };
     virtual UInt_t GetNumEvents( UInt_t )  const { return 0; };
     virtual UInt_t GetNumEvents()          const { return 0; };
@@ -118,7 +118,7 @@ namespace Decoder {
     virtual void DoPrint() const;
 
     virtual Bool_t IsMultiFunction() { return false; };
-    virtual Bool_t HasCapability( Decoder::EModuleType ) { return false; };
+    virtual Bool_t HasCapability( EModuleType ) { return false; };
 
     // Invalid input data exception, thrown by "Load*" functions
     class module_data_error : public std::runtime_error {

@@ -55,7 +55,7 @@ const char* Here( const char* method, const char* prefix )
   // ::Here("Class::method","prefix") -> returns Class("prefix")::method
 
   // One static string buffer per thread
-  static thread_local TString buffer;
+  thread_local TString buffer;
 
   TString txt;
   if( prefix && *prefix ) {

@@ -158,9 +158,9 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
 
     if( !err ) {
       if( detmap.size() != 6 ) {
-	Error( Here(here), "Invalid number of detector map values = %d for "
+	Error( Here(here), "Invalid number of detector map values = %lu for "
 	       "database key %sdetmap. Must be exactly 6. Fix database.",
-	       static_cast<Int_t>(detmap.size()), pref.Data() );
+	       detmap.size(), pref.Data() );
 	err = kInitError;
       } else {
 	if( detmap[2] != detmap[3] ) {

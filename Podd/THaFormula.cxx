@@ -42,7 +42,7 @@ enum EFuncCode { kLength, kSum, kMean, kStdDev, kMax, kMin,
 
 //_____________________________________________________________________________
 namespace {
-inline Int_t NumberOfSetBits( ULong64_t v )
+Int_t NumberOfSetBits( ULong64_t v )
 {
   // Count number of bits in 64-bit integer
 
@@ -372,7 +372,7 @@ Double_t THaFormula::DefinedValue( Int_t i ) // NOLINT(misc-no-recursion)
       }
       switch( code ) {
       case kSum:
-	y = accumulate( ALL(values), static_cast<Double_t>(0.0) );
+	y = accumulate( ALL(values), 0.0 );
 	break;
       case kMean:
 	y = TMath::Mean( ndata, values.data() );

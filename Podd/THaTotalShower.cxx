@@ -108,12 +108,12 @@ void THaTotalShower::Setup( const char* name,
   psdesc.append(" preshower subdetector");
 
   fShower = new THaShower( sname.c_str(), sdesc.c_str(), apparatus );
-  if( !fShower || fShower->IsZombie() ) {
+  if( fShower->IsZombie() ) {
     MakeZombie();
     return;
   }
   fPreShower = new THaShower( psname.c_str(), psdesc.c_str(), apparatus );
-  if( !fPreShower || fPreShower->IsZombie() ) {
+  if( fPreShower->IsZombie() ) {
     MakeZombie();
     return;
   }

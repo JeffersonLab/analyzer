@@ -60,7 +60,7 @@ static TString GetDirName(const char *pathname)
 }
 
 //_____________________________________________________________________________
-static inline TString JoinPath( const TString& base, const TString& to_join )
+static TString JoinPath( const TString& base, const TString& to_join )
 {
   if( base.IsNull() )
     return to_join;
@@ -68,7 +68,7 @@ static inline TString JoinPath( const TString& base, const TString& to_join )
 }
 
 //_____________________________________________________________________________
-static inline string JoinPath( const string& base, const string& to_join )
+static string JoinPath( const string& base, const string& to_join )
 {
   if( base.empty() )
     return to_join;

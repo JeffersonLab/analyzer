@@ -16,8 +16,7 @@ class THaTrackingModule {
   
 public:
   THaTrackingModule(); // needed public for ROOT I/O
-  virtual ~THaTrackingModule() = default;
-  
+
   THaTrackInfo*  GetTrackInfo() { return &fTrkIfo; }
   THaTrack*      GetTrack()     { return fTrk; }
 
@@ -29,12 +28,7 @@ protected:
   THaTrackInfo  fTrkIfo;          //  Track information
   THaTrack*     fTrk;             //! Pointer to associated track
 
-  THaTrackingModule( const THaTrackingModule& ) = default;
-  THaTrackingModule( THaTrackingModule&& ) = default;
-  THaTrackingModule& operator=( const THaTrackingModule& ) = default;
-  THaTrackingModule& operator=( THaTrackingModule&& ) = default;
-
-  ClassDef(THaTrackingModule,2)   // ABC for a tracking module
+  ClassDefNV(THaTrackingModule,2)   // ABC for a tracking module
 
 };
 

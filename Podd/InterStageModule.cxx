@@ -49,7 +49,7 @@ void InterStageModule::PrintInitError( const char* here )
 }
 
 //_____________________________________________________________________________
-Int_t InterStageModule::DefineVariables( THaAnalysisObject::EMode mode )
+Int_t InterStageModule::DefineVariables( EMode mode )
 {
   // Define/delete global variables for this module
 

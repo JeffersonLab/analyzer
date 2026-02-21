@@ -78,7 +78,7 @@ Int_t FADCData::ReadConfig( THaDetectorBase* det, const TDatime& date,
 }
 
 //_____________________________________________________________________________
-static inline
+static
 OptUInt_t GetFADCValue( EModuleType type, const DigitizerHitInfo_t& hitinfo,
                         Fadc250Module* fadc ) {
   // Get item "type" from FADC module pointed to by fFADC

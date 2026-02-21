@@ -24,19 +24,6 @@ public:
     : fPosition(position), fPvect(vect), fPol(pol), fOK(1), fBeam(nullptr)
   { SetP(p); }
 
-  THaBeamInfo( const THaBeamInfo& t ) = default;
-  THaBeamInfo& operator=( const THaBeamInfo& rhs ) {
-    if( this != &rhs ) {
-      fPosition = rhs.fPosition;
-      fPvect    = rhs.fPvect;
-      fPol      = rhs.fPol;
-      fOK       = rhs.fOK;
-      fBeam     = rhs.fBeam;
-    }
-    return *this;
-  }
-  virtual ~THaBeamInfo() = default;
-
   void      Clear( Option_t* opt="" );
   Bool_t    IsOK()     const { return fOK; }
   Double_t  GetPx()    const { return fPvect.X(); }
@@ -78,7 +65,7 @@ protected:
 
   THaBeam*  fBeam;      //! Beam apparatus for this beam information
 
-  ClassDef(THaBeamInfo,1)  // Beam information for physics modules
+  ClassDefNV(THaBeamInfo,1)  // Beam information for physics modules
 };
 
 //_____________________________________________________________________________

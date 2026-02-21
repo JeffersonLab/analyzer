@@ -18,7 +18,7 @@ Double_t THaVDCHit::ConvertTimeToDist(Double_t slope)
   // Converts TDC time to drift distance
   // Takes the (estimated) slope of the track as an argument
 
-  VDC::TimeToDistConv* ttdConv = (fWire) ? fWire->GetTTDConv() : nullptr;
+  TimeToDistConv* ttdConv = (fWire) ? fWire->GetTTDConv() : nullptr;
 
   if (ttdConv) {
     // If a time to distance algorithm exists, use it to convert the TDC time

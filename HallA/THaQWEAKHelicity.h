@@ -38,7 +38,7 @@ protected:
   void  CheckTIRvsRing( ULong64_t eventnumber );
   void  LoadHelicity( ULong64_t eventnumber );
   UInt_t RanBit30( UInt_t& ranseed ) const;
-  THaHelicityDet::EHelicity SetHelicity( UInt_t polarity, UInt_t phase);
+  EHelicity SetHelicity( UInt_t polarity, UInt_t phase);
 
   
   // variables that need to be read from the database

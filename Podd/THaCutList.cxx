@@ -444,8 +444,7 @@ void THaCutList::MakePrintOption( THaPrintOption& opt, const TList* plist )
 		      (strlen(pcut->GetTitle())) );
       width[2] = max( width[2], static_cast<UInt_t>
 		      (strlen(pcut->GetBlockname())) );
-      width[3] = max( width[3], IntDigits( static_cast<Int_t>
-					   (pcut->GetNPassed()) ));
+      width[3] = max( width[3], IntDigits( pcut->GetNPassed() ));
     }
     TString newopt = opt.GetOption(0);
     for( UInt_t i : width ) {
@@ -555,7 +554,7 @@ Int_t THaCutList::Result( const char* cutname, EWarnMode mode )
       Warning("Result", "No such cut: %s", cutname );
     return -1;
   }
-  return static_cast<Int_t>( pcut->GetResult() );
+  return pcut->GetResult();
 }
 
 //______________________________________________________________________________
