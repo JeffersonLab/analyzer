@@ -201,6 +201,7 @@ public:
                                     const char* caller = "",
                                     const char* def_prefix = "",
                                     const char* comment_subst = "");
+  virtual THaVar*  Find( TString name ) const;
   virtual THaVar*  Find( const char* name ) const;
   virtual void     PrintFull(Option_t *opt="") const;
   virtual Int_t    RemoveName( const char* name );

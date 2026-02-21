@@ -622,16 +622,21 @@ Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
 }
 
 //_____________________________________________________________________________
+THaVar* THaVarList::Find( TString name ) const
+{
+  auto pos = name.Index('[');
+  if( pos != kNPOS )
+    name.Remove(pos);
+  return dynamic_cast<THaVar*>(FindObject(name));
+}
+
+//_____________________________________________________________________________
 THaVar* THaVarList::Find( const char* name ) const
 {
   // Find a variable in the list.  If 'name' has array syntax ("var[3]"),
   // the search is performed for the array basename ("var").
 
-  TString s(name);
-  auto pos = s.Index('[');
-  if( pos != kNPOS )
-    s.Remove(pos);
-  return dynamic_cast<THaVar*>(FindObject(s));
+  return Find( TString(name) );
 }
 
 //_____________________________________________________________________________
