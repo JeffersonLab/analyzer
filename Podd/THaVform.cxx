@@ -222,7 +222,7 @@ void THaVform::ShortPrint() const
 }
 
 //_____________________________________________________________________________
-void THaVform::ErrPrint(Int_t err) const
+void THaVform::ErrPrint(Int_t err)
 {
   // Gives friendly explanation of the usage errors.
   // The possibilities are only bounded by human imagination.
@@ -565,7 +565,7 @@ string THaVform::StripPrefix(const char* expr)
 }
 
 //_____________________________________________________________________________
-string THaVform::StripBracket(const string& var) const
+string THaVform::StripBracket(const string& var)
 {
 // If the string contains "[anything]", we strip
 // it away.

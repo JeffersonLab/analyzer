@@ -43,7 +43,7 @@ public:
 // Must reattach if pointers to global variables redone
   void ReAttach();
 // To explain the error return status from Init() if it's nonzero.
-  void ErrPrint(Int_t status) const;
+  static void ErrPrint(Int_t status) ;
 // Must 'SetOutput' at initialization if output to appear in tree.
 // Normally not desired for THaVforms that belong to THaVhist's
   Int_t SetOutput(TTree *tree);
@@ -84,7 +84,7 @@ protected:
 
   Int_t MakeFormula(Int_t flo, Int_t fhi);
   std::string StripPrefix(const char* formula);
-  std::string StripBracket(const std::string& var) const;
+  static std::string StripBracket(const std::string& var);
   void  GetForm(Int_t size);
   void  Create(const THaVform& vf);
   void  Uncreate();
