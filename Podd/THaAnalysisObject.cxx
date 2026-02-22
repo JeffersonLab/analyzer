@@ -864,7 +864,7 @@ void THaAnalysisObject::DebugPrint( const vector<DBRequest>& list ) const
   for( const auto& it: list)
     maxw = TMath::Max(maxw,strlen(it.name));
   for( const auto& it: list) {
-    cout << "  " << std::left << setw(static_cast<int>(maxw)) << it.name;
+    cout << "  " << std::left << setw(ToInt(maxw)) << it.name;
     size_t maxc = it.nelem;
     if( maxc == 0 ) maxc = 1;
     if( it.type == kDoubleV )

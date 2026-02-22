@@ -9,6 +9,7 @@
 
 #include "TObject.h"
 #include "DataType.h"
+#include "Helper.h"    // for TOINT
 #include <utility>
 #include <vector>
 
@@ -62,7 +63,7 @@ public:
   //Get and Set Functions
   THaVDCHit*     GetHit(Int_t i)     const { return fHits[i]; }
   THaVDCPlane*   GetPlane()          const { return fPlane; }
-  Int_t          GetSize ()          const { return static_cast<Int_t>(fHits.size()); }
+  Int_t          GetSize ()          const { return Podd::ToInt(fHits.size()); }
   Double_t       GetSlope()          const { return fSlope; }
   Double_t       GetLocalSlope()     const { return fLocalSlope; }
   Double_t       GetSigmaSlope()     const { return fSigmaSlope; }

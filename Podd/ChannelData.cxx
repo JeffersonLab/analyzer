@@ -15,6 +15,7 @@
 #include "THaDetMap.h"          // for DigitizerHitInfo_t
 #include "THaDetectorBase.h"    // for THaDetectorBase
 #include "TString.h"            // for TString
+#include "Helper.h"             // for ToInt
 #include <cassert>              // for assert
 #include <cstdio>               // for fclose, FILE, size_t
 #include <sstream>              // for ostringstream etc.
@@ -61,7 +62,7 @@ Int_t ChannelData::GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const
   if( nelem == 0 )
     throw logic_error(msg(hitinfo,
     "ChannelData: bad size. Should never happen. Call expert."));
-  return hitinfo.lchan % static_cast<Int_t>(nelem);
+  return hitinfo.lchan % ToInt(nelem);
 }
 
 //_____________________________________________________________________________

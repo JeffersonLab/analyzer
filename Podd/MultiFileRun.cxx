@@ -806,7 +806,7 @@ Int_t MultiFileRun::Open()
   fLastUsedStream = 0;
   FindSegmentNumber();
   fFilename = fStreams[fLastUsedStream].GetFilename();
-  fNActive = static_cast<Int_t>(fStreams.size());
+  fNActive = ToInt(fStreams.size());
   fOpened = true;
   return READ_OK;
 }

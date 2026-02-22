@@ -13,6 +13,7 @@
 #include "THaPrintOption.h"
 #include "THaGlobals.h"
 #include "TMath.h"
+#include "Helper.h"
 
 #include <iostream>
 #include <iomanip>
@@ -22,6 +23,7 @@
 #include <utility>
 
 using namespace std;
+using namespace Podd;
 
 //_____________________________________________________________________________
 THaCut::THaCut()
@@ -220,10 +222,10 @@ void THaCut::Print( Option_t* option ) const
   //   "STATS" -- one-line (listing of statistics only)
 
   THaPrintOption s(option);
-  Int_t nn = max( s.GetValue(1), (Int_t)strlen(GetName()) );
-  Int_t nt = max( s.GetValue(2), (Int_t)strlen(GetTitle()) );
-  Int_t nb = max( s.GetValue(3), fBlockname.Length() );
-  Int_t np = max( s.GetValue(4), (Int_t)strlen(s.GetOption(4)) );
+  Int_t nn = std::max( s.GetValue(1), ToInt(strlen(GetName())) );
+  Int_t nt = std::max( s.GetValue(2), ToInt(strlen(GetTitle())) );
+  Int_t nb = std::max( s.GetValue(3), fBlockname.Length() );
+  Int_t np = std::max( s.GetValue(4), ToInt(strlen(s.GetOption(4))) );
 
   // Print data according to the requested format
 

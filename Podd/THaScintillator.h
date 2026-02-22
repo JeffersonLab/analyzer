@@ -9,6 +9,7 @@
 
 #include "THaNonTrackingDetector.h"
 #include "ChannelData.h"
+#include "Helper.h"
 #include <vector>
 #include <set>
 
@@ -47,7 +48,7 @@ public:
   Int_t     CoarseProcess( TClonesArray& tracks ) override;
   Int_t     FineProcess( TClonesArray& tracks ) override;
 
-  Int_t             GetNHits() const  { return static_cast<Int_t>(fHits.size()); }
+  Int_t             GetNHits() const  { return Podd::ToInt(fHits.size()); }
   const HitData_t&  GetHit( Int_t i ) { return fHits[i]; }
   const HitData_t&  GetPad( Int_t i ) { return fPadData[i]; }
 

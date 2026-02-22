@@ -10,6 +10,7 @@
 
 #include "ArrayRTTI.h"
 #include "VarDef.h"  // for RVarDef
+#include "Helper.h"
 #include <vector>    // for vector, ssize
 
 using namespace std;
@@ -89,7 +90,7 @@ ArrayRTTI::~ArrayRTTI()
 // Return number of variables that this object should define
 Int_t ArrayRTTI::GetNvars()
 {
-  return static_cast<Int_t>(GetRVarDef().size());
+  return ToInt(GetRVarDef().size());
 }
 
 //_____________________________________________________________________________

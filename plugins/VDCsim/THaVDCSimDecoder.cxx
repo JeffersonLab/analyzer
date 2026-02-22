@@ -12,9 +12,11 @@
 #include "THaVDCSim.h"
 #include "THaBenchmark.h"
 #include "VarDef.h"
+#include "Helper.h"
 #include <vector>
 
 using namespace std;
+using namespace Podd;
 
 const char* const MC_PREFIX = "MC.";
 
@@ -79,7 +81,7 @@ void THaVDCSimDecoder::Clear( Option_t* )
 //-----------------------------------------------------------------------------
 Int_t THaVDCSimDecoder::GetNTracks() const
 {
-  return fTracks.size();
+  return ToInt(fTracks.size());
 }
 
 //-----------------------------------------------------------------------------

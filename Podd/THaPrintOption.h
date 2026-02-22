@@ -7,7 +7,7 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "Rtypes.h"
+#include "Helper.h"
 #include <string>
 #include <vector>
 #include <ostream>
@@ -59,7 +59,7 @@ protected:
 inline
 Int_t THaPrintOption::GetNOptions() const
 {
-  return static_cast<Int_t>(fTokens.size());
+  return Podd::ToInt(fTokens.size());
 }
 
 //_____________________________________________________________________________

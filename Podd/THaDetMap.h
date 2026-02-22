@@ -21,6 +21,7 @@
 
 #include "THaEvData.h"
 #include "Decoder.h"
+#include "Helper.h"
 #include <vector>
 #include <string>
 #include <memory>
@@ -75,7 +76,7 @@ public:
     // Get logical detector channel from physical one, starting at 0.
     // For historical reasons, 'first' starts at 1, so subtract 1 here.
     Int_t  ConvertToLogicalChannel( UInt_t chan ) const
-    { return static_cast<Int_t>(first + (reverse ? hi-chan : chan-lo) - 1); }
+    { return Podd::ToInt(first + (reverse ? hi-chan : chan-lo) - 1); }
   };
 
   // Flags for GetMinMaxChan()

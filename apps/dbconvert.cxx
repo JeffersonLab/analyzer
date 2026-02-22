@@ -757,7 +757,7 @@ void PrepareStreamImpl( ostringstream& str, const vector <T>& arr, T round_level
       ndigits = max( ndigits, GetSignificantDigits(x,round_level) );
     }
     if( ndigits > 0 )
-      str << scientific << setprecision(static_cast<int>(ndigits-1));
+      str << scientific << setprecision(ToInt(ndigits-1));
     return;
   }
   else if( format_fixed ) {
@@ -767,7 +767,7 @@ void PrepareStreamImpl( ostringstream& str, const vector <T>& arr, T round_level
       ndigits = max( ndigits, GetSignificantDigits(x,round_level) );
     }
     if( ndigits > 0 )
-      str << fixed << setprecision(static_cast<int>(ndigits));
+      str << fixed << setprecision(ToInt(ndigits));
   }
 }
 
@@ -1050,7 +1050,7 @@ int WriteAllKeysForTime( ofstream& ofs,
 	if( num_to_do == ncol )
 	  ofs << " "; // New line indentation
 	assert( vt->width > 0 );
-	ofs << setw(static_cast<int>(vt->width) + 2);
+	ofs << setw(ToInt(vt->width) + 2);
 	ofs << val;
 	++nelem;
 	if( --num_to_do == 0 ) {

@@ -996,7 +996,7 @@ void THaAnalyzer::PrintCounters() const
 {
   // Print statistics counters
   ULong64_t w = 0;
-  auto ncounters = static_cast<Int_t>(fCounters.size());
+  auto ncounters = ToInt(fCounters.size());
   for( Int_t i = 0; i < ncounters; i++ ) {
     if( GetCount(i) > w )
       w = GetCount(i);

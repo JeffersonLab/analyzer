@@ -407,7 +407,7 @@ Int_t ChopPrefix( string& s )
   if( auto len = s.size(); len >= 2 ) {
     if( auto pos = s.rfind('.', len-2); pos != string::npos ) {
       s.erase(pos + 1);
-      return static_cast<Int_t>(ranges::count(s, '.'));
+      return ToInt(ranges::count(s, '.'));
     }
   }
   s.clear();

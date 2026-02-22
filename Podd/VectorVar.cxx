@@ -10,6 +10,7 @@
 
 #include "VectorVar.h"
 #include "THaVar.h"
+#include "Helper.h"
 #include "TError.h"
 #include <vector>
 #include <cassert>
@@ -76,9 +77,7 @@ Int_t VectorVar::GetLen() const
     assert(false); // should never happen, object ill-constructed
     break;
   }
-  if( siz > kMaxInt )
-    throw overflow_error("Podd::VectorVar array size overflow");
-  return static_cast<Int_t>(siz);
+  return ToInt(siz);
 }
 
 //_____________________________________________________________________________

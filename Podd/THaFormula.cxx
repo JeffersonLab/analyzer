@@ -34,6 +34,7 @@
 #include <utility>
 
 using namespace std;
+using namespace Podd;
 
 const Option_t* const THaFormula::kPRINTFULL  = "FULL";
 const Option_t* const THaFormula::kPRINTBRIEF = "BRIEF";
@@ -265,7 +266,7 @@ Int_t THaFormula::Compile( const char* expression )
     // that the loops in EvalPar calculate all the values. This is inefficient,
     // but the best we can do with the implementation of TFormula.
     if( fNstring > 0 && fNval > 0 )
-      fNval = fNstring = static_cast<Int_t>(fVarDef.size());
+      fNval = fNstring = ToInt(fVarDef.size());
   }
   return status;
 }
@@ -544,10 +545,10 @@ Int_t THaFormula::DefinedCutWithType( TString& name, EVariableType type )
       for( vector<FVarDef_t>::size_type i=0; i<fVarDef.size(); ++i ) {
 	const FVarDef_t& def = fVarDef[i];
 	if( def.type == type && pcut == def.obj )
-	  return i;
+	  return ToInt(i);
       }
       fVarDef.emplace_back(type, pcut, 0);
-      return fVarDef.size()-1;
+      return ToInt(fVarDef.size()) - 1;
     }
   }
   return -1;
@@ -620,13 +621,13 @@ Int_t THaFormula::DefinedGlobalVariableExtraList( TString& name,
     const FVarDef_t& def = fVarDef[i];
     if( var == def.obj && index == def.index ) {
       assert( type == def.type );
-      return i;
+      return ToInt(i);
     }
   }
   // If this is a new variable, add it to the list
   fVarDef.emplace_back(type, var, index);
 
-  return fVarDef.size()-1;
+  return ToInt(fVarDef.size()) - 1;
 }
 
 
@@ -657,7 +658,7 @@ Int_t THaFormula::DefinedSpecialFunction( TString& name )
   for( const auto& def : func_defs ) {
     if( def.form && name.BeginsWith(def.func) && name.EndsWith(")") ) {
       // Make a subformula for the argument, but don't register it with ROOT
-      TString subform = name( strlen(def.func), name.Length() );
+      TString subform = name( ToInt(strlen(def.func)), name.Length() );
       subform.Chop();
       auto* func = new THaFormula(def.form, subform, false,
                                   fVarList, fCutList );
@@ -686,11 +687,11 @@ Int_t THaFormula::DefinedSpecialFunction( TString& name )
 	SetBit( kArrayFormula, func->IsArray() );
 	SetBit( kVarArray, func->IsVarArray() );
       }
-      return fVarDef.size()-1;
+      return ToInt(fVarDef.size()) - 1;
     }
     else if( !def.form && name == def.func ) {
       fVarDef.emplace_back(def.type, nullptr, def.code);
-      return fVarDef.size()-1;
+      return ToInt(fVarDef.size()) - 1;
     }
   }
   return -1;

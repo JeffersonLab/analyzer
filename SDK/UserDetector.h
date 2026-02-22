@@ -8,6 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaNonTrackingDetector.h"
+#include "Helper.h"
 #include <vector>
 
 class UserDetector : public THaNonTrackingDetector {
@@ -35,7 +36,7 @@ public:
   Int_t  FineProcess( TClonesArray& tracks ) override;
   void   Print( Option_t* opt="" ) const override;
 
-  Int_t GetNhits() const { return static_cast<Int_t>(fEventData.size()); }
+  Int_t  GetNhits() const { return Podd::ToInt(fEventData.size()); }
 
 protected:
   // Almost every detector needs to override these functions:

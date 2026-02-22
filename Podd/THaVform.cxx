@@ -18,6 +18,7 @@
 #include "THaCut.h"
 #include "THaGlobals.h"
 #include "TTree.h"
+#include "Helper.h"
 
 #include <iostream>
 #include <cassert>
@@ -26,6 +27,7 @@
 
 using namespace std;
 using namespace THaString;
+using namespace Podd;
 
 //_____________________________________________________________________________
 THaVform::THaVform()
@@ -625,7 +627,7 @@ Int_t THaVform::Process()
 	THaFormula* theFormula = fFormula[i];
 	if ( !theFormula->IsError()) {
 	  //FIXME: use cached result?
-	  fOdata->Fill(i,theFormula->Eval());
+	  fOdata->Fill(ToInt(i),theFormula->Eval());
 	}
       }
     }
@@ -688,7 +690,7 @@ Int_t THaVform::Process()
 	if ( !theCut->IsError() )
 	  //FIXME: use cached result?
 	  //	  fOdata->Fill( i, ((theCut->GetResult()) ? 1.0 : 0.0) );  // 1 = true
-	  fOdata->Fill( i, ((theCut->EvalCut()) ? 1.0 : 0.0) );  // 1 = true
+	  fOdata->Fill( ToInt(i), ((theCut->EvalCut()) ? 1.0 : 0.0) );  // 1 = true
       }
     }
     return 0;

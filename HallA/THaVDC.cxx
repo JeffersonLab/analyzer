@@ -27,6 +27,7 @@
 #include "TROOT.h"
 #include "THaString.h"
 #include "TimeCorrectionModule.h"
+#include "Helper.h"
 #include <map>
 #include <cstdio>
 #include <cstdlib>
@@ -39,6 +40,7 @@
 
 using namespace std;
 using namespace VDC;
+using namespace Podd;
 
 // Helper structure for parsing tensor data
 typedef vector<THaVDC::THaMatrixElement> MEvec_t;
@@ -178,7 +180,7 @@ static Int_t ParseMatrixElements( const string& MEstring,
             ME.poly.push_back( atof(word.c_str()) );
             if( ME.poly.back() != 0.0 ) {
               ME.iszero = false;
-              ME.order = static_cast<int>(ME.poly.size());
+              ME.order = ToInt(ME.poly.size());
             }
           }
         }
