@@ -18,8 +18,8 @@ public:
     : fX(x), fY(y), fPathl(pathl), fdX(dx), fChannel(ch),
       fIsOK(x<0.5*kBig&&y<0.5*kBig) {}
 
-  virtual void Clear( Option_t* opt="" );
-  virtual void Print( Option_t* opt="" ) const;
+  void Clear( Option_t* opt="" ) override;
+  void Print( Option_t* opt="" ) const override;
 
   Double_t  GetX()       const { return fX; }
   Double_t  GetY()       const { return fY; }
@@ -43,7 +43,7 @@ protected:
   Bool_t            fIsOK;           // True if data valid (within defined detector area)
 
  public:
-  ClassDef(THaTrackProj,2)    // Track coordinates projected to detector plane
+  ClassDefOverride(THaTrackProj,2)    // Track coordinates projected to detector plane
 };
 
 #endif

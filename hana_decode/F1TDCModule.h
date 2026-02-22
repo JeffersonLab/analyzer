@@ -27,10 +27,10 @@ public:
 
    enum EResolution { ILO = 0, IHI = 1 };
 
-   virtual void Init();
-   virtual void Clear(Option_t *opt="");
-   virtual Bool_t IsSlot(UInt_t rdata);
-   virtual UInt_t GetData( UInt_t chan, UInt_t hit) const;
+   void Init() override;
+   void Clear(Option_t *opt="") override;
+   Bool_t IsSlot(UInt_t rdata) override;
+   UInt_t GetData( UInt_t chan, UInt_t hit) const override;
 
    void SetResolution(Int_t which=0) {
      fResol = (which==0) ? ILO : IHI;
@@ -39,13 +39,13 @@ public:
    Bool_t IsHiResolution() const { return (fResol==IHI); };
 
    UInt_t GetNumHits() const { return fNumHits; };
-   Int_t Decode(const UInt_t*) { return 0; };
+   Int_t  Decode(const UInt_t*) override { return 0; };
+
+   // Loads sldat and increments ptr to evbuffer
+   UInt_t LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
+                    const UInt_t* pstop ) override;
 
 private:
-
-// Loads sldat and increments ptr to evbuffer
-  UInt_t LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer, const UInt_t* pstop );
-
    UInt_t fNumHits;
    EResolution fResol;
    std::vector<UInt_t> fTdcData;  // Raw data (either samples or pulse integrals)
@@ -53,8 +53,8 @@ private:
    UInt_t slotmask, chanmask, datamask;
 
    static TypeIter_t fgThisType;
-   ClassDef(F1TDCModule,0)  //  JLab F1 TDC Module
 
+   ClassDefOverride(F1TDCModule,0)  //  JLab F1 TDC Module
 };
 
 }

@@ -20,13 +20,13 @@ public:
   explicit THaCherenkov( const char* name, const char* description = "",
                          THaApparatus* a = nullptr );
   THaCherenkov(); // for ROOT I/O
-  virtual ~THaCherenkov();
+  ~THaCherenkov() override;
 
   // THaCherenkov now uses THaDetectorBase::Decode()
-  virtual void       Clear( Option_t* ="" );
-  virtual Int_t      CoarseProcess( TClonesArray& tracks );
-  virtual Int_t      FineProcess( TClonesArray& tracks );
-          Data_t     GetAsum() const { return fASUM_c; }
+  void       Clear( Option_t* ="" ) override;
+  Int_t      CoarseProcess( TClonesArray& tracks ) override;
+  Int_t      FineProcess( TClonesArray& tracks ) override;
+  Data_t     GetAsum() const { return fASUM_c; }
 
 protected:
 
@@ -34,13 +34,13 @@ protected:
   Data_t         fASUM_p;    // Sum of ADC minus pedestal values of channels
   Data_t         fASUM_c;    // Sum of corrected ADC amplitudes of channels
 
-  virtual Int_t    StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
-  virtual void     PrintDecodedData( const THaEvData& evdata ) const;
+  Int_t    StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data ) override;
+  void     PrintDecodedData( const THaEvData& evdata ) const override;
 
-  virtual Int_t    DefineVariables( EMode mode = kDefine );
-  virtual Int_t    ReadDatabase( const TDatime& date );
+  Int_t    DefineVariables( EMode mode = kDefine ) override;
+  Int_t    ReadDatabase( const TDatime& date ) override;
 
-  ClassDef(THaCherenkov,0)    //Generic Cherenkov class
+  ClassDefOverride(THaCherenkov,0)    //Generic Cherenkov class
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -19,15 +19,14 @@ class THaHelicityDet : public THaDetector {
 public:
   enum EHelicity { kMinus = -1, kUnknown, kPlus };
 
-  virtual ~THaHelicityDet();
+  ~THaHelicityDet() override;
 
-  virtual void       Clear( Option_t* opt="" ) 
+  void       Clear( Option_t* opt="" ) override
   { THaDetector::Clear(opt); fHelicity = kUnknown; }
   virtual EHelicity  GetHelicity()   const { return fHelicity; }
   virtual Bool_t     HelicityValid() const { return (fHelicity != kUnknown); }
 
-  virtual const char* GetDBFileName() const;
-  virtual void        MakePrefix();
+  const char* GetDBFileName() const override;
 
   THaHelicityDet() : fHelicity(kUnknown), fSign(1) {}  // For ROOT I/O only
 
@@ -40,10 +39,11 @@ protected:
   EHelicity fHelicity;  // Beam helicity. fHelicity = fSign * decoded_helicity
   Int_t     fSign;      // Overall sign of beam helicity. Default 1.
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadDatabase( const TDatime& date );
+  void  MakePrefix() override;
+  Int_t DefineVariables( EMode mode = kDefine ) override;
+  Int_t ReadDatabase( const TDatime& date ) override;
 
-  ClassDef(THaHelicityDet,1)     // ABC for a beam helicity detector
+  ClassDefOverride(THaHelicityDet,1)     // ABC for a beam helicity detector
 };
 
 #endif

@@ -46,7 +46,11 @@ public:
   BdataLoc( BdataLoc&& ) = delete;
   BdataLoc& operator=( const BdataLoc& ) = delete;
   BdataLoc& operator=( BdataLoc&& ) = delete;
-  virtual ~BdataLoc();
+  ~BdataLoc() override;
+
+  // Base class overrides
+  void    Clear( const Option_t* ="" ) override { data = kMaxUInt; }
+  void    Print( Option_t* opt="" ) const override;
 
   // Main function: extract the defined data from the event
   virtual void    Load( const THaEvData& evt ) = 0;
@@ -59,11 +63,9 @@ public:
   // Optional data passed in via generic pointer
   virtual Int_t   OptionPtr( void* ) { return 0; }
 
-  virtual void    Clear( const Option_t* ="" )  { data = kMaxUInt; }
   virtual Bool_t  DidLoad() const               { return (data != kMaxUInt); }
   virtual UInt_t  NumHits() const               { return DidLoad() ? 1 : 0; }
   virtual UInt_t  Get( UInt_t i = 0 ) const     { assert(DidLoad() && i == 0); return data; }
-  virtual void    Print( Option_t* opt="" ) const;
   //TODO: Needed?
   Bool_t operator==( const char* aname ) const  { return fName == aname; }
   // operator== and != compare the hardware definitions of two BdataLoc's
@@ -94,7 +96,7 @@ protected:
   // Bit used by DefineVariables
   enum { kIsSetup = BIT(14) };
 
-  ClassDef(BdataLoc,0)  
+  ClassDefOverride(BdataLoc,0)
 };
 
 //___________________________________________________________________________
@@ -105,11 +107,11 @@ public:
     : BdataLoc(nm,cra), slot(slo), chan(cha) { ResetBit(kIsSetup); }
   CrateLoc() : slot(0), chan(0) {}
 
-  virtual void   Load( const THaEvData& evt );
-  virtual Int_t  Configure( const TObjArray* params, Int_t start = 0 );
-  virtual Int_t  GetNparams() const       { return fgThisType->fNparams; }
-  virtual const char* GetTypeKey() const  { return fgThisType->fDBkey; };
-  virtual void    Print( Option_t* opt="" ) const;
+  void   Load( const THaEvData& evt ) override;
+  Int_t  Configure( const TObjArray* params, Int_t start = 0 ) override;
+  Int_t  GetNparams() const override { return fgThisType->fNparams; }
+  const char* GetTypeKey() const override { return fgThisType->fDBkey; };
+  void   Print( Option_t* opt="" ) const override;
 
   // virtual Bool_t operator==( const BdataLoc& rhs ) const
   // { return (crate == rhs.crate && slot == rhs.slot && chan == rhs.chan); }
@@ -122,7 +124,7 @@ protected:
 private:
   static TypeIter_t fgThisType;
 
-  ClassDef(CrateLoc,0)  
+  ClassDefOverride(CrateLoc,0)
 };
 
 //___________________________________________________________________________
@@ -133,16 +135,16 @@ public:
     : CrateLoc(nm,cra,slo,cha) { }
   CrateLocMulti() = default;
 
-  virtual void    Load( const THaEvData& evt );
+  void    Load( const THaEvData& evt ) override;
 
-  virtual void    Clear( const Option_t* ="" ) { CrateLoc::Clear(); rdata.clear(); }
-  virtual UInt_t  NumHits() const              { return rdata.size(); }
-  virtual UInt_t  Get( UInt_t i = 0 ) const    { return rdata.at(i); }
-  virtual Int_t   GetNparams() const           { return fgThisType->fNparams; }
-  virtual const char* GetTypeKey() const       { return fgThisType->fDBkey; };
-  virtual void    Print( Option_t* opt="" ) const;
+  void    Clear( const Option_t* ="" ) override { CrateLoc::Clear(); rdata.clear(); }
+  UInt_t  NumHits() const override              { return rdata.size(); }
+  UInt_t  Get( UInt_t i = 0 ) const override    { return rdata.at(i); }
+  Int_t   GetNparams() const override           { return fgThisType->fNparams; }
+  const char* GetTypeKey() const override       { return fgThisType->fDBkey; };
+  void    Print( Option_t* opt="" ) const override;
 
-  virtual Int_t   DefineVariables( EMode mode = THaAnalysisObject::kDefine );
+  Int_t   DefineVariables( EMode mode = THaAnalysisObject::kDefine ) override;
 
 protected:
   std::vector<UInt_t> rdata;     // raw data
@@ -152,7 +154,7 @@ protected:
 private:
   static TypeIter_t fgThisType;
 
-  ClassDef(CrateLocMulti,0)  
+  ClassDefOverride(CrateLocMulti,0)
 };
 
 //___________________________________________________________________________
@@ -163,11 +165,11 @@ public:
     : BdataLoc(nm,cra), header(head), ntoskip(skip) { }
   WordLoc() : header(0), ntoskip(1) {}
 
-  virtual void   Load( const THaEvData& evt );
-  virtual Int_t  Configure( const TObjArray* params, Int_t start = 0 );
-  virtual Int_t  GetNparams() const       { return fgThisType->fNparams; }
-  virtual const char* GetTypeKey() const  { return fgThisType->fDBkey; };
-  virtual void    Print( Option_t* opt="" ) const;
+  void   Load( const THaEvData& evt ) override;
+  Int_t  Configure( const TObjArray* params, Int_t start = 0 ) override;
+  Int_t  GetNparams() const override         { return fgThisType->fNparams; }
+  const char* GetTypeKey() const override    { return fgThisType->fDBkey; };
+  void   Print( Option_t* opt="" ) const override;
 
   // virtual Bool_t operator==( const BdataLoc& rhs ) const
   // { return (crate == rhs.crate &&
@@ -180,7 +182,7 @@ protected:
 private:
   static TypeIter_t fgThisType;
 
-  ClassDef(WordLoc,0)  
+  ClassDefOverride(WordLoc,0)
 };
 
 //___________________________________________________________________________
@@ -190,14 +192,14 @@ public:
   RoclenLoc( const char* nm, UInt_t cra ) : BdataLoc(nm, cra) { }
   RoclenLoc() = default;
 
-  virtual void   Load( const THaEvData& evt );
-  virtual Int_t  GetNparams() const       { return fgThisType->fNparams; }
-  virtual const char* GetTypeKey() const  { return fgThisType->fDBkey; };
+  void   Load( const THaEvData& evt ) override;
+  Int_t  GetNparams() const override         { return fgThisType->fNparams; }
+  const char* GetTypeKey() const override    { return fgThisType->fDBkey; };
 
 private:
   static TypeIter_t fgThisType;
 
-  ClassDef(RoclenLoc,0)  
+  ClassDefOverride(RoclenLoc,0)
 };
 
 ///////////////////////////////////////////////////////////////////////////////

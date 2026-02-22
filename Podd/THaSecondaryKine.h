@@ -22,9 +22,9 @@ public:
 		    const char* secondary_spectro = "", 
 		    const char* primary_kine = "", 
 		    Double_t secondary_mass = 0.0 /* GeV */ );
-  virtual ~THaSecondaryKine();
-  
-  virtual void      Clear( Option_t* opt="" );
+  ~THaSecondaryKine() override;
+
+  void              Clear( Option_t* opt = "" ) override;
 
   Double_t          GetTheta_xq()   const { return fTheta_xq; }
   Double_t          GetPhi_xq()     const { return fPhi_xq; }
@@ -60,11 +60,11 @@ public:
   const FourVect*   GetPX()     const { return &fX; }
   const FourVect*   GetPB()     const { return &fB; }
 
-  virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process( const THaEvData& );
-          void      SetSpectrometer( const char* name );
-          void      SetPrimary( const char* name );
-          void      SetMX( Double_t m );
+  EStatus           Init( const TDatime& run_time ) override;
+  Int_t             Process( const THaEvData& ) override;
+  void              SetSpectrometer( const char* name );
+  void              SetPrimary( const char* name );
+  void              SetMX( Double_t m );
 
   THaPrimaryKine*   GetPrimary() const { return fPrimary; }
 
@@ -108,10 +108,10 @@ protected:
   TString            fPrimaryName;  // Name of module for primary interaction kinematics
   THaPrimaryKine*    fPrimary;      // Pointer to primary kinematics module
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadRunDatabase( const TDatime& date );
+  Int_t DefineVariables( EMode mode = kDefine ) override;
+  Int_t ReadRunDatabase( const TDatime& date ) override;
 
-  ClassDef(THaSecondaryKine,0)   //Secondary particle kinematics module
+  ClassDefOverride(THaSecondaryKine,0)   //Secondary particle kinematics module
 };
 
 #endif

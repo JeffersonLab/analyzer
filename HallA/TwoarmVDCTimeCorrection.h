@@ -25,10 +25,10 @@ public:
   TwoarmVDCTimeCorrection( const char* name, const char* description,
                            const char* scint1, const char* scint2,
                            const char* cond="" );
-  virtual ~TwoarmVDCTimeCorrection();
+  ~TwoarmVDCTimeCorrection() override;
 
-  virtual EStatus Init( const TDatime& run_time );
-  virtual Int_t   Process( const THaEvData& );
+  EStatus Init( const TDatime& run_time ) override;
+  Int_t   Process( const THaEvData& ) override;
 
 protected:
   // Configuration
@@ -53,9 +53,9 @@ protected:
 
   Int_t InitDefs();
   void  MakeBlockName();
-  virtual Int_t ReadDatabase( const TDatime& date );
+  Int_t ReadDatabase( const TDatime& date ) override;
 
-  ClassDef(TwoarmVDCTimeCorrection, 0)   //Two-arm VDC time correction
+  ClassDefOverride(TwoarmVDCTimeCorrection, 0)   //Two-arm VDC time correction
 };
 
 } // namespace HallA

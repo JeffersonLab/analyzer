@@ -20,13 +20,13 @@ public:
    Scaler560() = default;
 
    using GenScaler::Init;
-   virtual void Init();
+   void Init() override;
 
 private:
 
    static TypeIter_t fgThisType;
 
-   ClassDef(Scaler560,0)  // CAEN scaler model 560
+   ClassDefOverride(Scaler560,0)  // CAEN scaler model 560
 
 };
 

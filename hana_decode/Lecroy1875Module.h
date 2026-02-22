@@ -21,13 +21,13 @@ public:
    Lecroy1875Module() = default;
 
    using FastbusModule::Init;
-   virtual void Init();
+   void Init() override;
 
 private:
 
    static TypeIter_t fgThisType;
 
-   ClassDef(Lecroy1875Module,0)  // Lecroy 1875 TDC module
+   ClassDefOverride(Lecroy1875Module,0)  // Lecroy 1875 TDC module
 
 };
 

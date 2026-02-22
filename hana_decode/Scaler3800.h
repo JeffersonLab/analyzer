@@ -20,13 +20,13 @@ public:
    Scaler3800() = default;
 
    using GenScaler::Init;
-   virtual void Init();
+   void Init() override;
 
 private:
 
    static TypeIter_t fgThisType;
 
-   ClassDef(Scaler3800,0)  // SIS model 3800 scaler
+   ClassDefOverride(Scaler3800,0)  // SIS model 3800 scaler
 
 };
 

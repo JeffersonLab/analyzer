@@ -20,7 +20,7 @@ public:
   explicit THaScintillator( const char* name, const char* description = "",
                             THaApparatus* a = nullptr );
   THaScintillator();
-  virtual ~THaScintillator();
+  ~THaScintillator() override;
 
   enum ESide { kNone = -1, kRight = 0, kLeft = 1 };
   using Idx_t  = std::pair<ESide,Int_t>;
@@ -42,10 +42,10 @@ public:
     Data_t ampl;     // Estimated energy deposition dE/dx (a.u.)
   };
 
-  virtual void      Clear( Option_t* opt="" );
-  virtual Int_t     Decode( const THaEvData& );
-  virtual Int_t     CoarseProcess( TClonesArray& tracks );
-  virtual Int_t     FineProcess( TClonesArray& tracks );
+  void      Clear( Option_t* opt="" ) override;
+  Int_t     Decode( const THaEvData& ) override;
+  Int_t     CoarseProcess( TClonesArray& tracks ) override;
+  Int_t     FineProcess( TClonesArray& tracks ) override;
 
   Int_t             GetNHits() const  { return static_cast<Int_t>(fHits.size()); }
   const HitData_t&  GetHit( Int_t i ) { return fHits[i]; }
@@ -66,17 +66,17 @@ protected:
   // fPadData duplicates the info in fHits for direct access via paddle number
   std::vector<HitData_t> fPadData;        // Calculated hit data, per paddle
 
-  virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
-  virtual void   PrintDecodedData( const THaEvData& evdata ) const;
-
   virtual Int_t  ApplyCorrections();
   virtual Data_t TimeWalkCorrection( Idx_t idx, Data_t adc );
   virtual Int_t  FindPaddleHits();
 
-  virtual Int_t  ReadDatabase( const TDatime& date );
-  virtual Int_t  DefineVariables( EMode mode = kDefine );
+  Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data ) override;
+  void   PrintDecodedData( const THaEvData& evdata ) const override;
 
-  ClassDef(THaScintillator,1)   // Generic scintillator class
+  Int_t  ReadDatabase( const TDatime& date ) override;
+  Int_t  DefineVariables( EMode mode = kDefine ) override;
+
+  ClassDefOverride(THaScintillator,1)   // Generic scintillator class
 };
 
 ////////////////////////////////////////////////////////////////////////////////

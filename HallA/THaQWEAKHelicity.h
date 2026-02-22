@@ -22,14 +22,14 @@ public:
   THaQWEAKHelicity( const char* name, const char* description, 
                     THaApparatus* a = nullptr );
   THaQWEAKHelicity();
-  virtual ~THaQWEAKHelicity();
+  ~THaQWEAKHelicity() override;
 
-  virtual Int_t  Begin( THaRunBase* r=nullptr );
-  virtual void   Clear( Option_t* opt = "" );
-  virtual Int_t  Decode( const THaEvData& evdata );
-  virtual Int_t  End( THaRunBase* r=nullptr );
-  virtual void   SetDebug( Int_t level );
-  virtual Bool_t HelicityValid() const { return fValidHel; }
+  Int_t  Begin( THaRunBase* r=nullptr ) override;
+  void   Clear( Option_t* opt = "" ) override;
+  Int_t  Decode( const THaEvData& evdata ) override;
+  Int_t  End( THaRunBase* r=nullptr ) override;
+  void   SetDebug( Int_t level ) override;
+  Bool_t HelicityValid() const override { return fValidHel; }
 
   void PrintEvent( ULong64_t evtnum ) const;
 
@@ -81,10 +81,10 @@ protected:
   static const Int_t NHIST = 2;
   std::vector<TH1F*> fHisto;
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadDatabase( const TDatime& date );
+  Int_t DefineVariables( EMode mode = kDefine ) override;
+  Int_t ReadDatabase( const TDatime& date ) override;
 
-  ClassDef(THaQWEAKHelicity,0)   // Beam helicity from QWEAK electronics in delayed mode
+  ClassDefOverride(THaQWEAKHelicity,0)   // Beam helicity from QWEAK electronics in delayed mode
 
 };
 

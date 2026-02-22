@@ -103,24 +103,24 @@ public:
                          const char* description = "",
                          bool is_regex = false );
   MultiFileRun( const MultiFileRun& run );
-  MultiFileRun& operator=( const THaRunBase& rhs );
+  MultiFileRun& operator=( const THaRunBase& rhs ) override;
 
-  virtual void   Clear( Option_t* opt="" );
-  virtual Int_t  Close();
-  virtual Int_t  Compare( const TObject* obj ) const;
-  virtual const UInt_t* GetEvBuffer() const;
+  void   Clear( Option_t* opt="" ) override;
+  Int_t  Close() override;
+  Int_t  Compare( const TObject* obj ) const override;
+  const UInt_t* GetEvBuffer() const override;
+  Bool_t IsOpen() const override;
+  Int_t  Open() override;
+  void   Print( Option_t* opt="" ) const override;
+  Int_t  ReadEvent() override;
+  Int_t  SetFilename( const char* name ) override;
   // Get the last-seen physics event number. For CODA 3 in block mode, this
   // is the event number of the first event in the block.
   virtual ULong64_t GetEvNum() const;
-  virtual Bool_t IsOpen() const;
-  virtual Int_t  Open();
-  virtual void   Print( Option_t* opt="" ) const;
-  virtual Int_t  ReadEvent();
-  virtual Int_t  SetFilename( const char* name );
-  bool           SetFileList( std::vector<std::string> filelist );
-  bool           SetPathList( std::vector<std::string> pathlist );
-  void           SetFlags( UInt_t set ) { fFlags = set; }
-  UInt_t         GetFlags() const { return fFlags; }
+  bool    SetFileList( std::vector<std::string> filelist );
+  bool    SetPathList( std::vector<std::string> pathlist );
+  void    SetFlags( UInt_t set ) { fFlags = set; }
+  UInt_t  GetFlags() const { return fFlags; }
 
   // These getters will return valid data after Init()
   // Number of input files found in all streams
@@ -221,10 +221,11 @@ protected:
   ULong64_t fNevRead;                  //! Number of events read
 
   virtual Int_t    BuildInputList();
-  virtual Bool_t   FindSegmentNumber();
   virtual Int_t    FindNextStream() const;
-  virtual TString  FindInitInfoFile( const TString& fname );
-  virtual TString  GetInitInfoFileName( TString fname );
+
+  Bool_t  FindSegmentNumber() override;
+  TString FindInitInfoFile( const TString& fname ) override;
+  TString GetInitInfoFileName( TString fname ) override;
 
   bool  CheckWarnAbsFilename() const;
   void  ClearStreams();
@@ -255,7 +256,7 @@ private:
 
   enum { kResolvingWildcard = BIT(18) };
 
-  ClassDef(MultiFileRun, 2)            // CODA data from multiple files
+  ClassDefOverride(MultiFileRun, 2)            // CODA data from multiple files
 };
 
 } //namespace Podd

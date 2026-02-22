@@ -19,18 +19,18 @@ public:
   THaTotalShower( const char* name, const char* shower_name,
 		  const char* preshower_name, const char* description = "",
 		  THaApparatus* a = nullptr );
-  virtual ~THaTotalShower();
+  ~THaTotalShower() override;
 
-  virtual void       Clear( Option_t* ="" );
-  virtual Int_t      Decode( const THaEvData& );
-  virtual Int_t      CoarseProcess( TClonesArray& tracks );
-  virtual Int_t      FineProcess( TClonesArray& tracks );
-          Data_t     GetE() const           { return fE; }
-	  Int_t      GetID() const          { return fID; }
-      	  THaShower* GetShower() const      { return fShower; }
-	  THaShower* GetPreShower() const   { return fPreShower; }
-  virtual EStatus    Init( const TDatime& run_time );
-  virtual void       SetApparatus( THaApparatus* );
+  void       Clear( Option_t* ="" ) override;
+  Int_t      Decode( const THaEvData& ) override;
+  Int_t      CoarseProcess( TClonesArray& tracks ) override;
+  Int_t      FineProcess( TClonesArray& tracks ) override;
+  Data_t     GetE() const           { return fE; }
+  Int_t      GetID() const          { return fID; }
+  THaShower* GetShower() const      { return fShower; }
+  THaShower* GetPreShower() const   { return fPreShower; }
+  EStatus    Init( const TDatime& run_time ) override;
+  void       SetApparatus( THaApparatus* ) override;
 
 protected:
 
@@ -46,15 +46,15 @@ protected:
   Data_t     fE;           // Total shower energy
   Int_t      fID;          // ID of Presh and Shower coincidence
 
-  virtual Int_t  ReadDatabase( const TDatime& date );
-  virtual Int_t  DefineVariables( EMode mode = kDefine );
+  Int_t  ReadDatabase( const TDatime& date ) override;
+  Int_t  DefineVariables( EMode mode = kDefine ) override;
 
 private:
   void           Setup( const char* name, const char* shower_name,
                         const char* preshower_name, const char* description,
                         THaApparatus* app, bool mode );
 
-  ClassDef(THaTotalShower,0)    //A total shower detector (shower plus preshower)
+  ClassDefOverride(THaTotalShower,0)    //A total shower detector (shower plus preshower)
 };
 
 ///////////////////////////////////////////////////////////////////////////////

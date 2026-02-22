@@ -19,27 +19,27 @@ public:
   THaNamedList();
   explicit THaNamedList( const char* name );
   THaNamedList( const char* name, const char* descript );
-  virtual  ~THaNamedList();
+  ~THaNamedList() override;
 
-  virtual Int_t    Compare( const TObject* obj) const    
+          Int_t    Compare( const TObject* obj) const override
     { return fNamed->Compare(obj); }
-  virtual void     FillBuffer(char*& buffer)    { fNamed->FillBuffer(buffer); }
-          const Text_t*  GetName() const        { return fNamed->GetName(); }
-          const Text_t*  GetTitle() const       { return fNamed->GetTitle(); }
-  virtual ULong_t  Hash() const                 { return fNamed->Hash(); }
-          Bool_t   IsSortable() const           { return true; }
+  virtual void     FillBuffer(char*& buffer)       { fNamed->FillBuffer(buffer); }
+          const Text_t*  GetName() const override  { return fNamed->GetName(); }
+          const Text_t*  GetTitle() const override { return fNamed->GetTitle(); }
+          ULong_t  Hash() const override           { return fNamed->Hash(); }
+          Bool_t   IsSortable() const override     { return true; }
   virtual void     PrintOpt( Option_t* opt="" ) const;
   virtual void     SetName(const Text_t *name); // *MENU*
   virtual void     SetNameTitle(const Text_t *name, const Text_t *title);
   virtual void     SetTitle(const Text_t *title="") 
     { fNamed->SetTitle(title); } // *MENU*
-  virtual void     ls(Option_t *option="") const;
-          Int_t    Sizeof() const               { return fNamed->Sizeof(); }
+          void     ls(Option_t *option="") const override;
+          Int_t    Sizeof() const                  { return fNamed->Sizeof(); }
 
 protected:
   TNamed*    fNamed;   //Name of the list
 
-  ClassDef(THaNamedList,0)   //A list with a name
+  ClassDefOverride(THaNamedList,0)   //A list with a name
 };
 
 #endif

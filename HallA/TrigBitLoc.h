@@ -21,13 +21,13 @@ public:
       bitloc(loc) { }
   TrigBitLoc() : bitnum(0), cutlo(0), cuthi(kMaxUInt), bitloc(nullptr) {}
 
-  virtual void    Load( const THaEvData& evt );
-  virtual Int_t   Configure( const TObjArray* params, Int_t start = 0 );
-  virtual Int_t   DefineVariables( EMode mode = THaAnalysisObject::kDefine );
-  virtual Int_t   GetNparams() const      { return fgThisType->fNparams; }
-  virtual const char* GetTypeKey() const  { return fgThisType->fDBkey; };
-  virtual Int_t   OptionPtr( void* ptr );
-  virtual void    Print( Option_t* opt="" ) const;
+  void    Load( const THaEvData& evt ) override;
+  Int_t   Configure( const TObjArray* params, Int_t start = 0 ) override;
+  Int_t   DefineVariables( EMode mode = THaAnalysisObject::kDefine ) override;
+  Int_t   GetNparams() const override        { return fgThisType->fNparams; }
+  const char* GetTypeKey() const override    { return fgThisType->fDBkey; };
+  Int_t   OptionPtr( void* ptr ) override;
+  void    Print( Option_t* opt="" ) const override;
 
 protected:
   UInt_t  bitnum;        // Bit number for this variable (0-31)
@@ -37,7 +37,7 @@ protected:
 private:
   static TypeIter_t fgThisType;
 
-  ClassDef(TrigBitLoc,0)
+  ClassDefOverride(TrigBitLoc,0)
 };
 
 #endif

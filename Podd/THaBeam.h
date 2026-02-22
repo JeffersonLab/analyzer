@@ -16,17 +16,16 @@
 class THaBeam : public THaApparatus, public THaBeamModule {
   
 public:
-  virtual ~THaBeam();
-  
-  virtual EStatus Init( const TDatime& run_time );
+  ~THaBeam() override;
+
+  EStatus Init( const TDatime& run_time ) override;
 
   virtual const TVector3& GetPosition()  const { return fPosition; }
   virtual const TVector3& GetDirection() const { return fDirection; }
   THaRunParameters*   GetRunParameters() const { return fRunParam; }
 
 protected:
-
-  virtual Int_t  DefineVariables( EMode mode = kDefine );
+  Int_t          DefineVariables( EMode mode = kDefine ) override;
   virtual void   Update();
 
   TVector3  fPosition;   // Beam position at the target (usually z=0) (meters)
@@ -36,7 +35,7 @@ protected:
 
   THaBeam( const char* name, const char* description ) ;
 
-  ClassDef(THaBeam,1)    // ABC for an apparatus providing beam information
+  ClassDefOverride(THaBeam,1)    // ABC for an apparatus providing beam information
 };
 
 #endif

@@ -16,23 +16,23 @@ namespace Podd {
 
   public:
     VariableArrayVar( THaVar* pvar, const void* addr, VarType type,
-		      const Int_t* count );
+                      const Int_t* count );
 
-    virtual VarPtr_t     clone( THaVar* pvar ) const;
+    VarPtr_t       clone( THaVar* pvar ) const override;
 
-    virtual Int_t        GetLen()  const;
-    virtual Int_t        GetNdim() const;
-    virtual const Int_t* GetDim()  const;
+    Int_t          GetLen()  const override;
+    Int_t          GetNdim() const override;
+    const Int_t*   GetDim()  const override;
 
-    virtual Bool_t       HasSizeVar() const;
+    Bool_t         HasSizeVar() const override;
 
-    virtual Bool_t       HasSameSize( const Variable& rhs ) const;
-    virtual Bool_t       IsContiguous() const;
-    virtual Bool_t       IsPointerArray() const;
-    virtual Bool_t       IsVarArray() const;
+    Bool_t         HasSameSize( const Variable& rhs ) const override;
+    Bool_t         IsContiguous() const override;
+    Bool_t         IsPointerArray() const override;
+    Bool_t         IsVarArray() const override;
 
   protected:
-    const Int_t*         fCount;    //Pointer to array size variable
+    const Int_t*   fCount;    //Pointer to array size variable
   };
 
 }// namespace Podd

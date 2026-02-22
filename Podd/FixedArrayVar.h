@@ -18,25 +18,25 @@ namespace Podd {
   public:
     FixedArrayVar( THaVar* pvar, const void* addr, VarType type );
 
-    virtual VarPtr_t     clone( THaVar* pvar ) const;
+    VarPtr_t       clone( THaVar* pvar ) const override;
 
-    virtual Int_t        GetLen()  const;
-    virtual Int_t        GetNdim() const;
-    virtual const Int_t* GetDim()  const;
+    Int_t          GetLen()  const override;
+    Int_t          GetNdim() const override;
+    const Int_t*   GetDim()  const override;
 
-    virtual Bool_t       HasSameSize( const Variable& rhs ) const;
-    virtual Bool_t       IsContiguous() const;
-    virtual Bool_t       IsPointerArray() const;
-    virtual Bool_t       IsVarArray() const;
-    virtual void         Print( Option_t* opt="FULL" ) const;
+    Bool_t         HasSameSize( const Variable& rhs ) const override;
+    Bool_t         IsContiguous() const override;
+    Bool_t         IsPointerArray() const override;
+    Bool_t         IsVarArray() const override;
+    void           Print( Option_t* opt="FULL" ) const override;
 
-    virtual void         SetName( const char* );
-    virtual void         SetNameTitle( const char* name, const char* desc );
+    void           SetName( const char* ) override;
+    void           SetNameTitle( const char* name, const char* desc ) override;
 
   protected:
-    THaArrayString       fParsedName;
+    THaArrayString fParsedName;
   
-    Bool_t               VerifyArrayName( const THaArrayString& astr ) const;
+    Bool_t       VerifyArrayName( const THaArrayString& astr ) const;
   };
 
 }// namespace Podd

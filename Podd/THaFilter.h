@@ -13,11 +13,11 @@ class THaRunBase;
 class THaFilter : public THaPostProcess {
  public:
   THaFilter( const char *cutexpr, const char* filename );
-  virtual ~THaFilter();
+  ~THaFilter() override;
 
-  virtual Int_t Init(const TDatime&);
-  virtual Int_t Process( const THaEvData*, const THaRunBase*, Int_t code );
-  virtual Int_t Close();
+  Int_t Init(const TDatime&) override;
+  Int_t Process( const THaEvData*, const THaRunBase*, Int_t code ) override;
+  Int_t Close() override;
 
   THaCut* GetCut() const { return fCut; }
 
@@ -28,7 +28,7 @@ class THaFilter : public THaPostProcess {
   THaCut*   fCut;        // Pointer to cut used for filtering
 
  public:
-  ClassDef(THaFilter,0)
+  ClassDefOverride(THaFilter,0)
 };
 
 #endif

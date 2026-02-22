@@ -18,14 +18,14 @@ namespace Decoder {
 
     Caen792Module() = default;
     Caen792Module(Int_t crate, Int_t slot);
-    virtual const char* MyModType() {return "adc";}
-    virtual const char* MyModName() {return "792";}
+    const char* MyModType() override {return "adc";}
+    const char* MyModName() override {return "792";}
 
   private:
 
     static TypeIter_t fgThisType;
 
-    ClassDef(Caen792Module,0)  //  Caen792 module
+    ClassDefOverride(Caen792Module,0)  //  Caen792 module
 
   };
 

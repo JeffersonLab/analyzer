@@ -20,10 +20,10 @@ class THaHelicity : public THaADCHelicity, public THaG0HelicityReader {
 public:
   THaHelicity( const char* name, const char* description, 
 	       THaApparatus* a = nullptr );
-  virtual ~THaHelicity();
+  ~THaHelicity() override;
 
-  virtual void   Clear( Option_t* opt = "" );
-  virtual Int_t  Decode( const THaEvData& evdata );
+  void   Clear( Option_t* opt = "" ) override;
+  Int_t  Decode( const THaEvData& evdata ) override;
 
   THaHelicity();  // For ROOT RTTI
   
@@ -34,10 +34,10 @@ protected:
   Bool_t fGoodHel;          // ADC and G0 helicities agree
   Bool_t fGoodHel2;         // ADC and G0 helicities agree unless one unknown
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadDatabase( const TDatime& date );
+  Int_t DefineVariables( EMode mode = kDefine ) override;
+  Int_t ReadDatabase( const TDatime& date ) override;
 
-  ClassDef(THaHelicity,2)   // In-time helicity from ADC and G0 readout
+  ClassDefOverride(THaHelicity,2)   // In-time helicity from ADC and G0 readout
 
 };
 

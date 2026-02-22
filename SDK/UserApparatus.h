@@ -14,18 +14,18 @@ class UserApparatus : public THaApparatus {
 public:
   explicit UserApparatus( const char* name="U",
                           const char* description="User Apparatus" );
-  virtual ~UserApparatus();
+  ~UserApparatus() override;
 
-  virtual void  Clear( Option_t* opt="");
-  virtual Int_t Reconstruct();
+  void  Clear( Option_t* opt="") override;
+  Int_t Reconstruct() override;
 
 protected:
 
   Int_t  fNtotal;  // Total number of hits in all detectors
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
+  Int_t DefineVariables( EMode mode = kDefine ) override;
 
-  ClassDef(UserApparatus,0) // An example apparatus
+  ClassDefOverride(UserApparatus,0) // An example apparatus
 };
 
 #endif

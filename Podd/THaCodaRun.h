@@ -16,23 +16,23 @@ class THaCodaRun : public THaRunBase {
 public:
   explicit THaCodaRun( const char* description="" );
   THaCodaRun( const THaCodaRun& rhs );
-  virtual THaCodaRun& operator=( const THaRunBase& );
-  virtual ~THaCodaRun();
+  THaCodaRun& operator=( const THaRunBase& ) override;
+  ~THaCodaRun() override;
 
-  virtual Int_t          Close();
-  virtual const UInt_t*  GetEvBuffer() const;
-  virtual Bool_t         IsOpen() const;
-  virtual Int_t          ReadEvent();
-  virtual Int_t          SetDataVersion( Int_t version );
-  Int_t                  GetCodaVersion();
-  Int_t                  SetCodaVersion( Int_t version );
+  Int_t          Close() override;
+  const UInt_t*  GetEvBuffer() const override;
+  Bool_t         IsOpen() const override;
+  Int_t          ReadEvent() override;
+  Int_t          SetDataVersion( Int_t version ) override;
+  Int_t          GetCodaVersion();
+  Int_t          SetCodaVersion( Int_t version );
 
 protected:
   static Int_t ReturnCode( Int_t coda_retcode);
 
   std::unique_ptr<Decoder::THaCodaData> fCodaData;  //! CODA data associated with this run
 
-  ClassDef(THaCodaRun,2)    // ABC for a run based on CODA data
+  ClassDefOverride(THaCodaRun,2)    // ABC for a run based on CODA data
 };
 
 //________________________ inlines ____________________________________________

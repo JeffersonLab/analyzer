@@ -21,15 +21,15 @@ namespace Podd {
     MethodVar( THaVar* pvar, const void* addr, VarType type,
 	       MethodPtr_t method );
 
-    virtual VarPtr_t     clone( THaVar* pvar ) const;
+    VarPtr_t     clone( THaVar* pvar ) const override;
 
-    virtual const void*  GetDataPointer( Int_t i = 0 ) const;
-    virtual Bool_t       IsBasic() const;
+    const void*  GetDataPointer( Int_t i = 0 ) const override;
+    Bool_t       IsBasic() const override;
 
   protected:
-    MethodPtr_t          fMethod;   //Member function to access data in object
+    MethodPtr_t      fMethod;   //Member function to access data in object
     // Data cache, filled in GetDataPointer()
-    mutable Double_t     fData;     //Function call result (interpretation depends on fType!)
+    mutable Double_t fData;     //Function call result (interpretation depends on fType!)
 
     const void*  GetDataPointer( const void* obj ) const;
   };

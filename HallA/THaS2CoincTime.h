@@ -24,11 +24,11 @@ public:
 		  Double_t mass1 = .938272, Double_t mass2 = 0.000511,
 		  const char* ch_name1=nullptr, const char* ch_name2=nullptr,
 		  const char* detname1="s2", const char* detname2="");
-  
-  virtual ~THaS2CoincTime();
-  
-  virtual Int_t     Process( const THaEvData& );
-  virtual EStatus   Init( const TDatime& run_time );
+
+  ~THaS2CoincTime() override;
+
+  Int_t     Process( const THaEvData& ) override;
+  EStatus   Init( const TDatime& run_time ) override;
   
 protected:
   // store the THaVar variable locations for faster processing
@@ -46,7 +46,7 @@ protected:
   
 public:  
 
-  ClassDef(THaS2CoincTime,0)   // Coinc.Time calc using only S2
+  ClassDefOverride(THaS2CoincTime,0)   // Coinc.Time calc using only S2
 };
 
 #endif

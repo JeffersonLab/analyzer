@@ -28,7 +28,7 @@ namespace Decoder {
     Module( Module&& ) = delete;
     Module& operator=( const Module& ) = delete;
     Module& operator=( Module&& ) = delete;
-    virtual ~Module();
+    ~Module() override;
 
     class ModuleType {
     public:
@@ -98,7 +98,7 @@ namespace Decoder {
     virtual void   Init();
     virtual void   Init( const char* configstr );
 
-    virtual void   Clear( Option_t* = "" );
+    void           Clear( Option_t* = "" ) override;
 
     virtual Bool_t IsSlot( UInt_t rdata );
 
@@ -170,7 +170,7 @@ namespace Decoder {
 
   private:
 
-    ClassDef(Module,0)  // A module in a crate and slot
+    ClassDefOverride(Module,0)  // A module in a crate and slot
 
   };
 

@@ -21,14 +21,14 @@ public:
   THaG0Helicity( const char* name, const char* description, 
 		 THaApparatus* a = nullptr );
   THaG0Helicity();
-  virtual ~THaG0Helicity();
+  ~THaG0Helicity() override;
 
-  virtual Int_t  Begin( THaRunBase* r=nullptr );
-  virtual void   Clear( Option_t* opt = "" );
-  virtual Int_t  Decode( const THaEvData& evdata );
-  virtual Int_t  End( THaRunBase* r=nullptr );
-  virtual void   SetDebug( Int_t level );
-  virtual Bool_t HelicityValid() const { return fValidHel; }
+  Int_t  Begin( THaRunBase* r=nullptr ) override;
+  void   Clear( Option_t* opt = "" ) override;
+  Int_t  Decode( const THaEvData& evdata ) override;
+  Int_t  End( THaRunBase* r=nullptr ) override;
+  void   SetDebug( Int_t level ) override;
+  Bool_t HelicityValid() const override { return fValidHel; }
 
   Int_t     GetQuad()  const { return fQuad; }
   Double_t  GetTdiff() const { return fTdiff; }
@@ -88,10 +88,10 @@ protected:
   // at the beginning of a Qrt does NOT contain the qrt flag
   Bool_t    fDelayedQrt;
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadDatabase( const TDatime& date );
+  Int_t DefineVariables( EMode mode = kDefine ) override;
+  Int_t ReadDatabase( const TDatime& date ) override;
 
-  ClassDef(THaG0Helicity,2)   // Beam helicity from G0 electronics in delayed mode
+  ClassDefOverride(THaG0Helicity,2)   // Beam helicity from G0 electronics in delayed mode
 
 };
 

@@ -21,9 +21,8 @@ public:
   enum EvalMode { kModeErr = -1, kAND, kOR, kXOR };
 
           void         ClearResult()        { fLastResult = false; }
-  // Requires ROOT >= 4.00/00
-  virtual Int_t        DefinedVariable( TString& variable, Int_t& action );
-  virtual Double_t     Eval();
+          Int_t        DefinedVariable( TString& variable, Int_t& action ) override;
+          Double_t     Eval() override;
   // For backward compatibility
           Bool_t       EvalCut()            { Eval(); return fLastResult; }
           const char*  GetBlockname() const { return fBlockname.Data(); }
@@ -31,13 +30,13 @@ public:
           UInt_t       GetNCalled()   const { return fNCalled; }
           UInt_t       GetNPassed()   const { return fNPassed; }
           Bool_t       GetResult()    const { return fLastResult; }
-  virtual Bool_t       IsArray()      const { return false; }
-  virtual Bool_t       IsVarArray()   const { return false; }
-  virtual void         Print( Option_t *opt="" ) const;
+          Bool_t       IsArray()      const override { return false; }
+          Bool_t       IsVarArray()   const override { return false; }
+          void         Print( Option_t *opt="" ) const override;
   virtual void         Reset();
   virtual void         SetBlockname( const Text_t* name );
-  virtual void         SetName( const Text_t* name );
-  virtual void         SetNameTitle( const Text_t* name, const Text_t* title );
+          void         SetName( const Text_t* name ) override;
+          void         SetNameTitle( const Text_t* name, const Text_t* title ) override;
 
 protected:
   Bool_t      fLastResult;  // Result of last evaluation of this formula
@@ -49,7 +48,7 @@ protected:
   Bool_t      EvalElement( Int_t instance );
   EvalMode    ParsePrefix( TString& expr );
 
-  ClassDef(THaCut,0)   // A logical cut (a.k.a. test)
+  ClassDefOverride(THaCut,0)   // A logical cut (a.k.a. test)
 };
 
 #endif

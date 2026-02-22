@@ -12,9 +12,7 @@
 class THaPhysicsModule : public THaAnalysisObject {
   
 public:
-  virtual ~THaPhysicsModule() = default;
-  
-  virtual void  Clear( Option_t* opt="" ) { 
+  void  Clear( Option_t* opt="" ) override {
     THaAnalysisObject::Clear(opt); 
     fDataValid = false;
   }
@@ -37,7 +35,7 @@ protected:
   bool  fMultiTrk;               // Flag for multi-track mode
   bool  fDataValid;              // Data valid
 
-  ClassDef(THaPhysicsModule,1)   //ABC for a physics/kinematics module
+  ClassDefOverride(THaPhysicsModule,1)   //ABC for a physics/kinematics module
 };
 
 #endif

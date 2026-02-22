@@ -25,7 +25,7 @@ public:
   void            Analyze();
   void            Associate( THaTrack* track );
   VDC::chi2_t     CalcChi2() const;
-  virtual Int_t   Compare( const TObject* ) const;
+  Int_t           Compare( const TObject* ) const override;
   Double_t        GetError()   const { return fError; }
   THaVDCPoint*    GetLower()   const { return fLowerPoint; }
   THaVDCPoint*    GetUpper()   const { return fUpperPoint; }
@@ -33,8 +33,8 @@ public:
   Int_t           GetStatus()  const { return fStatus; }
   THaTrack*       GetTrack()   const;
   Bool_t          HasUsedCluster() const;
-  virtual Bool_t  IsSortable() const { return true; }
-  virtual void    Print( Option_t* opt="" ) const;
+  Bool_t          IsSortable() const override { return true; }
+  void            Print( Option_t* opt="" ) const override;
 //  void            Release();
   void            SetStatus( Int_t i ) { fStatus = i; }
   void            Use();
@@ -55,7 +55,7 @@ protected:
   Double_t        fError;       // Goodness of match between the points
   Int_t           fStatus;      // Status flag
 
-  ClassDef(THaVDCPointPair,0)     // Pair of lower/upper VDC points
+  ClassDefOverride(THaVDCPointPair,0)   // Pair of lower/upper VDC points
 };
 
 //////////////////////////////////////////////////////////////////////////////

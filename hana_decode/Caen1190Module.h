@@ -25,24 +25,24 @@ public:
   using VmeModule::GetData;
   using VmeModule::Init;
 
-  virtual void Init();
-  virtual void Clear( Option_t* opt = "" );
-  virtual Int_t Decode( const UInt_t* p );
-  virtual UInt_t GetData( UInt_t chan, UInt_t hit ) const;
-  virtual UInt_t GetOpt( UInt_t chan, UInt_t hit ) const;
+  void Init() override;
+  void Clear( Option_t* opt = "" ) override;
+  Int_t Decode( const UInt_t* p ) override;
+  UInt_t GetData( UInt_t chan, UInt_t hit ) const override;
+  UInt_t GetOpt( UInt_t chan, UInt_t hit ) const override;
 
   // Loads slot data
-  virtual UInt_t LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
-                           const UInt_t* pstop );
+  UInt_t LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
+                   const UInt_t* pstop ) override;
   // Loads slot data for bank structures
-  virtual UInt_t LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
-                           UInt_t pos, UInt_t len );
+  UInt_t LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
+                   UInt_t pos, UInt_t len ) override;
   // Loads slot data for bank structures with support for event blocking
-  virtual UInt_t LoadBank( THaSlotData* sldat, const UInt_t* evbuffer,
-                           UInt_t pos, UInt_t len );
+  UInt_t LoadBank( THaSlotData* sldat, const UInt_t* evbuffer,
+                   UInt_t pos, UInt_t len ) override;
 
 private:
-  virtual UInt_t LoadNextEvBuffer( THaSlotData* sldat );
+  UInt_t LoadNextEvBuffer( THaSlotData* sldat ) override;
   std::string Here( const char* function );
 
   enum EDataType {
@@ -89,7 +89,7 @@ private:
 
   static TypeIter_t fgThisType;
 
-  ClassDef(Caen1190Module, 0)  //  CAEN 1190 multi-hit TDC module
+  ClassDefOverride(Caen1190Module, 0)  //  CAEN 1190 multi-hit TDC module
 };
 
 //_____________________________________________________________________________

@@ -20,16 +20,16 @@ class THaRunBase;
 class THaDetector : public THaDetectorBase {
 
 public:
-  virtual ~THaDetector();
-  virtual Int_t  End( THaRunBase* r=0 );
+  ~THaDetector() override;
+
+  Int_t          End( THaRunBase* r=nullptr ) override;
   THaApparatus*  GetApparatus() const;
   virtual void   SetApparatus( THaApparatus* );
 
   THaDetector();  // for ROOT I/O only
 
 protected:
-
-  virtual void MakePrefix();
+  void MakePrefix() override;
 
   //Only derived classes may construct me
   THaDetector( const char* name, const char* description,
@@ -38,7 +38,7 @@ protected:
 private:
   TRef  fApparatus;         // Apparatus containing this detector
 
-  ClassDef(THaDetector,1)   //Abstract base class for a Hall A detector
+  ClassDefOverride(THaDetector,1)   //Abstract base class for a Hall A detector
 };
 
 #endif

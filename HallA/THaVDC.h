@@ -24,21 +24,21 @@ namespace Podd {
 
 class THaVDC : public THaTrackingDetector {
 
-friend class THaVDCPlane;
+  friend class THaVDCPlane;
 
 public:
   explicit THaVDC( const char* name, const char* description = "",
                    THaApparatus* a = nullptr );
 
-  virtual ~THaVDC();
+  ~THaVDC() override;
 
-  virtual void  Clear( Option_t* opt="" );
-  virtual Int_t Decode( const THaEvData& );
-  virtual Int_t CoarseTrack( TClonesArray& tracks );
-  virtual Int_t FineTrack( TClonesArray& tracks );
-  virtual Int_t FindVertices( TClonesArray& tracks );
-  virtual EStatus Init( const TDatime& date );
-  virtual void  SetDebug( Int_t level );
+  void  Clear( Option_t* opt="" ) override;
+  Int_t Decode( const THaEvData& ) override;
+  Int_t CoarseTrack( TClonesArray& tracks ) override;
+  Int_t FineTrack( TClonesArray& tracks ) override;
+  Int_t FindVertices( TClonesArray& tracks ) override;
+  EStatus Init( const TDatime& date ) override;
+  void  SetDebug( Int_t level ) override;
 
   // Get and Set Functions
   THaVDCChamber* GetUpper() const { return fUpper; }
@@ -50,7 +50,7 @@ public:
   std::pair<Double_t,bool> GetTimeCorrection() const;
   Double_t GetTimeCorrectionUnchecked() const;
 
-  void Print(const Option_t* opt="") const;
+  void Print(const Option_t* opt="") const override;
 
   // Bits & and bit masks for THaTrack
   enum {
@@ -161,12 +161,12 @@ protected:
   void CorrectTimeOfFlight( const TClonesArray& tracks);
   void FindBadTracks(TClonesArray &tracks) const;
 
-  virtual Int_t ReadDatabase( const TDatime& date );
-  virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
-			      Bool_t required = false );
-  virtual Int_t DefineVariables( EMode mode = kDefine );
+  Int_t ReadDatabase( const TDatime& date ) override;
+  Int_t ReadGeometry( FILE* file, const TDatime& date,
+                      Bool_t required = false ) override;
+  Int_t DefineVariables( EMode mode = kDefine ) override;
 
-  ClassDef(THaVDC,0)             // VDC class
+  ClassDefOverride(THaVDC,0)             // VDC class
 };
 
 ////////////////////////////////////////////////////////////////////////////////

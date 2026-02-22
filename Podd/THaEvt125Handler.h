@@ -21,8 +21,8 @@ public:
 
    THaEvt125Handler(const char* name, const char* description);
 
-   virtual Int_t Analyze(THaEvData *evdata);
-   virtual EStatus Init( const TDatime& run_time);
+   Int_t Analyze(THaEvData *evdata) override;
+   EStatus Init( const TDatime& run_time) override;
    Float_t GetData(const std::string& tag);
 
 private:
@@ -32,7 +32,7 @@ private:
    UInt_t NVars;
    Double_t *dvars; 
 
-   ClassDef(THaEvt125Handler,0)  // Hall C event type 125
+   ClassDefOverride(THaEvt125Handler,0)  // Hall C event type 125
 
 };
 

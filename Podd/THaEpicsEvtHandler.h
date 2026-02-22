@@ -24,9 +24,10 @@ public:
 
    THaEpicsEvtHandler(const char* name, const char* description);
 
-   virtual Int_t Analyze(THaEvData *evdata);
-   virtual EStatus Init( const TDatime& run_time);
-   virtual Int_t End( THaRunBase* r=nullptr );
+   Int_t Analyze(THaEvData *evdata) override;
+   EStatus Init( const TDatime& run_time) override;
+   Int_t End( THaRunBase* r=nullptr ) override;
+
    Bool_t IsLoaded(const char* tag) const;
    Double_t GetData( const char* tag, UInt_t event = 0 ) const;
    time_t GetTime( const char* tag, UInt_t event = 0 ) const;
@@ -40,7 +41,7 @@ private:
    THaEpicsEvtHandler(const THaEpicsEvtHandler& fh);
    THaEpicsEvtHandler& operator=(const THaEpicsEvtHandler& fh);
 
-   ClassDef(THaEpicsEvtHandler,0)  // EPICS Event handler
+   ClassDefOverride(THaEpicsEvtHandler,0)  // EPICS Event handler
 
 };
 

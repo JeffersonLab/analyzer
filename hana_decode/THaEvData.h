@@ -29,7 +29,7 @@ class THaEvData : public TObject {
 
 public:
   THaEvData();
-  virtual ~THaEvData();
+  ~THaEvData() override;
 
   // Return codes for LoadEvent
   enum { HED_OK = 0, HED_WARN = -63, HED_ERR = -127, HED_FATAL = -255 };
@@ -243,7 +243,7 @@ protected:
 
   TObject* fExtra;   // additional member data, for binary compatibility
 
-  ClassDef(THaEvData,0)  // Base class for raw data decoders
+  ClassDefOverride(THaEvData,0)  // Base class for raw data decoders
 
 };
 

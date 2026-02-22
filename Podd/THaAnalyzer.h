@@ -37,7 +37,9 @@ class THaAnalyzer : public TObject {
 
 public:
   THaAnalyzer();
-  virtual ~THaAnalyzer();
+  THaAnalyzer( const THaAnalyzer& ) = delete;
+  THaAnalyzer& operator=( const THaAnalyzer& ) = delete;
+  ~THaAnalyzer() override;
 
   virtual Int_t  AddInterStage( Podd::InterStageModule* module );
   virtual Int_t  AddPostProcess( THaPostProcess* module );
@@ -48,7 +50,7 @@ public:
   virtual Long64_t Process( THaRunBase* run = nullptr );
           Long64_t Process( THaRunBase& run ) { return Process(&run); }
           Int_t  Process( std::shared_ptr<THaRunBase> run );
-  virtual void   Print( Option_t* opt="" ) const;
+          void   Print( Option_t* opt="" ) const override;
 
   void           EnableBenchmarks( Bool_t b = true );
   void           EnableHelicity( Bool_t b = true );
@@ -233,12 +235,8 @@ protected:
   // In-class constants
   static const char* const kMasterCutName;
 
-private:
-  THaAnalyzer( const THaAnalyzer& );
-  THaAnalyzer& operator=( const THaAnalyzer& );
 
-  ClassDef(THaAnalyzer,0)  //Hall A Analyzer Standard Event Loop
-
+  ClassDefOverride(THaAnalyzer,0)  //Hall A Analyzer Standard Event Loop
 };
 
 //---------------- inlines ----------------------------------------------------

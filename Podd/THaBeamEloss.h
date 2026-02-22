@@ -15,12 +15,12 @@ class THaBeamEloss : public THaElossCorrection, public THaBeamModule {
 public:
   THaBeamEloss( const char* name, const char* description,
 		const char* input_beam = "" );
-  virtual ~THaBeamEloss();
-  
-  virtual void      Clear( Option_t* opt="" );
+  ~THaBeamEloss() override;
 
-  virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process( const THaEvData& );
+  void      Clear( Option_t* opt="" ) override;
+
+  EStatus   Init( const TDatime& run_time ) override;
+  Int_t     Process( const THaEvData& ) override;
 
 
 protected:
@@ -31,9 +31,9 @@ protected:
   virtual void      CalcEloss( THaBeamInfo* beamifo );
 
   // Setup functions
-  virtual Int_t DefineVariables( EMode mode = kDefine );
+  Int_t DefineVariables( EMode mode = kDefine ) override;
 
-  ClassDef(THaBeamEloss,0)   //Beam energy loss correction module
+  ClassDefOverride(THaBeamEloss,0)   //Beam energy loss correction module
 };
 
 #endif

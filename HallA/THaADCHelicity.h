@@ -20,10 +20,10 @@ public:
 
   THaADCHelicity( const char* name, const char* description,
                   THaApparatus* a = nullptr );
-  virtual ~THaADCHelicity();
+  ~THaADCHelicity() override;
 
-  virtual void   Clear( Option_t* opt = "" );
-  virtual Int_t  Decode( const THaEvData& evdata );
+  void   Clear( Option_t* opt = "" ) override;
+  Int_t  Decode( const THaEvData& evdata ) override;
 
   THaADCHelicity()
     : fADC_hdata(0), fADC_Gate(0), fADC_Hel(kUnknown),
@@ -64,10 +64,10 @@ protected:
   ChanDef_t  fAddr[2];    // Definitions of helicity and gate channels
   UInt_t     fNchan;      // Number of channels to read out (1 or 2)
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadDatabase( const TDatime& date );
+  Int_t DefineVariables( EMode mode = kDefine ) override;
+  Int_t ReadDatabase( const TDatime& date ) override;
 
-  ClassDef(THaADCHelicity,1)     // Beam helicity from ADC (in time)
+  ClassDefOverride(THaADCHelicity,1)     // Beam helicity from ADC (in time)
 };
 
 #endif

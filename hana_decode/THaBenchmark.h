@@ -19,7 +19,6 @@
 class THaBenchmark : public TBenchmark {
 public:
   THaBenchmark() { fNmax = 50; }
-  virtual ~THaBenchmark() = default;
 
   virtual void Begin(const char *name) {
     if (!fNbench)
@@ -43,7 +42,7 @@ public:
       PrintBenchmark(name.Data(), width);
   }
 
-  virtual void Print(Option_t *name="") const {
+  void Print(Option_t *name="") const override {
     if( name && name[0] != '\0' )
       PrintBenchmark(name);
     else {
@@ -68,7 +67,7 @@ private:
     std::cout.flags(fmt);
     std::cout.precision(prec);
   }
-  ClassDef(THaBenchmark,0)   // TBenchmark with true start/stop mode
+  ClassDefOverride(THaBenchmark,0)   // TBenchmark with true start/stop mode
 };
 
 #endif

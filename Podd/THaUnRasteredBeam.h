@@ -16,9 +16,7 @@ public:
   THaUnRasteredBeam( const char* name, const char* description,
                      Int_t runningsum_depth = 0, bool do_setup = true );
 
-  virtual ~THaUnRasteredBeam() = default;
-  
-  virtual Int_t Reconstruct();
+  Int_t Reconstruct() override;
 
   void ClearRunningSum();
 
@@ -33,7 +31,7 @@ protected:
   TVector3 fRSAvPos;
   TVector3 fRSAvDir;   
 
-  ClassDef(THaUnRasteredBeam,0)  // Unrastered beam from two BPMs
+  ClassDefOverride(THaUnRasteredBeam,0)  // Unrastered beam from two BPMs
 };
 
 #endif

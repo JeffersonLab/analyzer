@@ -19,18 +19,18 @@ class THaGoldenTrack : public THaPhysicsModule {
 public:
   THaGoldenTrack( const char* name, const char* description,
 		  const char* spectro="" );
-  virtual ~THaGoldenTrack();
-  
-  virtual void      Clear( Option_t* opt="" );
-  virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process( const THaEvData& evdata );
+  ~THaGoldenTrack() override;
 
-  THaTrack*         GetTrack()     const { return fTrack; }
+  void      Clear( Option_t* opt="" ) override;
+  EStatus   Init( const TDatime& run_time ) override;
+  Int_t     Process( const THaEvData& evdata ) override;
+
+  THaTrack* GetTrack()     const { return fTrack; }
   const THaTrackInfo* GetTrackInfo() const { return &fTrkIfo; }
-  Int_t             GetIndex()     const { return fIndex; }
-  Double_t          GetGoldBeta()  const { return fGoldBeta; }
+  Int_t     GetIndex()     const { return fIndex; }
+  Double_t  GetGoldBeta()  const { return fGoldBeta; }
 
-  void              SetSpectrometer( const char* name );
+  void      SetSpectrometer( const char* name );
 
 protected:
 
@@ -42,9 +42,9 @@ protected:
   TString                 fSpectroName;  // Name of spectrometer
   THaSpectrometer*        fSpectro;      // Pointer to spectrometer object
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
+  Int_t DefineVariables( EMode mode = kDefine ) override;
 
-  ClassDef(THaGoldenTrack,1)   //Golden track module
+  ClassDefOverride(THaGoldenTrack,1)   //Golden track module
 };
 
 //_________ inlines __________________________________________________________

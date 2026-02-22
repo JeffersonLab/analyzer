@@ -21,10 +21,10 @@ namespace Podd {
     VectorObjMethodVar( THaVar* pvar, const void* addr, VarType type,
                         Int_t elem_size, MethodPtr_t method );
 
-    virtual VarPtr_t     clone( THaVar* pvar ) const;
+    VarPtr_t     clone( THaVar* pvar ) const override;
 
-    virtual const void*  GetDataPointer( Int_t i = 0 ) const;
-    virtual Bool_t       IsBasic() const;
+    const void*  GetDataPointer( Int_t i = 0 ) const override;
+    Bool_t       IsBasic() const override;
   };
 
 }// namespace Podd

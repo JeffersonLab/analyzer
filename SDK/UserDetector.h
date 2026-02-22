@@ -31,7 +31,6 @@ public:
   // Public base class functions that one typically overrides
   // (see comments in UserDetector.cxx for details)
   void   Clear( Option_t* opt="" ) override;
-  Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data ) override;
   Int_t  CoarseProcess( TClonesArray& tracks ) override;
   Int_t  FineProcess( TClonesArray& tracks ) override;
   void   Print( Option_t* opt="" ) const override;
@@ -44,6 +43,8 @@ protected:
   Int_t  ReadDatabase( const TDatime& date ) override;
   // Define "global variables" holding results from analyzing this detector
   Int_t  DefineVariables( EMode mode ) override;
+
+  Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data ) override;
 
   //---- Data stored with this detector follow here ----
 
@@ -64,7 +65,7 @@ protected:
   // Vector with the hit information for the current event
   std::vector<EventData> fEventData;
 
-  ClassDef(UserDetector,0)   // Example detector
+  ClassDefOverride(UserDetector,0)   // Example detector
 };
 
 ////////////////////////////////////////////////////////////////////////////////

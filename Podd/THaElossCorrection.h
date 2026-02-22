@@ -15,23 +15,23 @@ class THaVertexModule;
 class THaElossCorrection : public THaPhysicsModule {
   
 public:
-  virtual ~THaElossCorrection();
-  
-  virtual void      Clear( Option_t* opt="" );
-  virtual EStatus   Init( const TDatime& run_time );
+  ~THaElossCorrection() override;
 
-  Double_t          GetMass()       const { return fM; }
-  Double_t          GetEloss()      const { return fEloss; }
+  void      Clear( Option_t* opt="" ) override;
+  EStatus   Init( const TDatime& run_time ) override;
 
-          void      SetInputModule( const char* name );
-          void      SetMass( Double_t m /* GeV/c^2 */ );
-          void      SetTestMode( Bool_t enable=true,
-				 Double_t eloss_value=0.0 /* GeV */ );
-          void      SetMedium( Double_t Z, Double_t A,
-			       Double_t density  /* g/cm^3 */ );
-          void      SetPathlength( Double_t pathlength /* m */ );
-          void      SetPathlength( const char* vertex_module,
-				   Double_t z_ref /* m */, Double_t scale = 1.0 );
+  Double_t  GetMass()       const { return fM; }
+  Double_t  GetEloss()      const { return fEloss; }
+
+  void      SetInputModule( const char* name );
+  void      SetMass( Double_t m /* GeV/c^2 */ );
+  void      SetTestMode( Bool_t enable=true,
+                         Double_t eloss_value=0.0 /* GeV */ );
+  void      SetMedium( Double_t Z, Double_t A,
+                       Double_t density  /* g/cm^3 */ );
+  void      SetPathlength( Double_t pathlength /* m */ );
+  void      SetPathlength( const char* vertex_module,
+                           Double_t z_ref /* m */, Double_t scale = 1.0 );
 
   static  Double_t  ElossElectron( Double_t beta, Double_t z_med,
 				   Double_t a_med, 
@@ -43,8 +43,7 @@ public:
 				 Double_t pathlength /* m */ );
 
 protected:
-
-  // Event-by-event data  
+  // Event-by-event data
   Double_t           fEloss;       // Energy loss correction (GeV)
 
   // Parameters
@@ -66,8 +65,8 @@ protected:
   THaVertexModule*   fVertexModule;// Pointer to vertex module
 
   // Setup functions
-  virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadRunDatabase( const TDatime& date );
+  Int_t DefineVariables( EMode mode = kDefine ) override;
+  Int_t ReadRunDatabase( const TDatime& date ) override;
 
   THaElossCorrection( const char* name, const char* description,
 		      const char* input = "", 
@@ -80,7 +79,7 @@ private:
   static void     HaDensi( Double_t z_med, Double_t d_med,
 			   Double_t& X0, Double_t& X1, Double_t& M );
 
-  ClassDef(THaElossCorrection,0)   //Track energy loss correction module
+  ClassDefOverride(THaElossCorrection,0)   //Track energy loss correction module
 };
 
 #endif

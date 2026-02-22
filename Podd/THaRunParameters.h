@@ -22,7 +22,9 @@ public:
 
   THaRunParameters();
 
-  virtual void   Clear( Option_t* opt="" );
+  void   Clear( Option_t* opt = "" ) override;
+  void   Print( Option_t* opt = "" ) const override;
+
   const char*    GetBeamName()    const { return fBeamName.Data(); }
   Double_t       GetBeamE()       const { return fBeamE; }
   Double_t       GetBeamdE()      const { return fBeamdE; }
@@ -38,7 +40,6 @@ public:
   virtual Bool_t IsFixedTarget()  const { return true; }
   Bool_t         IsPolzarized()   const { return fIsPol; }
 
-  virtual void   Print( Option_t* opt="" ) const;
   virtual Int_t  ReadDatabase( const TDatime& date );
 
   void           SetBeam( Double_t E, Double_t M, Int_t Q, Double_t dE = 0.0 );
@@ -78,7 +79,7 @@ protected:
   // DAQ configuration text data
   VecCfg        fDAQconfig; // DAQ configuration text data
 
-  ClassDef(THaRunParameters,2) // Beam & fixed target run parameters
+  ClassDefOverride(THaRunParameters,2) // Beam & fixed target run parameters
 };
 
 

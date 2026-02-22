@@ -19,14 +19,14 @@ public:
   THaBPM() : fCalibRot(0) {}
   THaBPM( const THaBPM& ) = delete;
   THaBPM& operator=( const THaBPM& ) = delete;
-  virtual ~THaBPM();
+  ~THaBPM() override;
 
-  virtual void   Clear( Option_t* ="" );
-  virtual Int_t  Decode( const THaEvData& );
-  virtual Int_t  Process();
+  void   Clear( Option_t* ="" ) override;
+  Int_t  Decode( const THaEvData& ) override;
+  Int_t  Process() override;
 
-  virtual TVector3 GetPosition()  const { return fPosition; }
-  virtual TVector3 GetDirection()  const { return fDirection; }
+  TVector3 GetPosition()  const override { return fPosition; }
+  TVector3 GetDirection()  const override { return fDirection; }
 
   Double_t GetRawSignal0() {return fRawSignal(0);}
   Double_t GetRawSignal1() {return fRawSignal(1);}
@@ -49,15 +49,15 @@ protected:
                            // always points along z-axis
   Double_t fCalibRot;
 
-  virtual Int_t  ReadDatabase( const TDatime& date );
-  virtual Int_t  DefineVariables( EMode mode = kDefine );
+  Int_t  ReadDatabase( const TDatime& date ) override;
+  Int_t  DefineVariables( EMode mode = kDefine ) override;
 
-  bool              CheckHitInfo( const DigitizerHitInfo_t& hitinfo ) const;
-  virtual OptUInt_t LoadData( const THaEvData& evdata,
-                              const DigitizerHitInfo_t& hitinfo );
-  virtual Int_t     StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
+  bool      CheckHitInfo( const DigitizerHitInfo_t& hitinfo ) const;
+  OptUInt_t LoadData( const THaEvData& evdata,
+                      const DigitizerHitInfo_t& hitinfo ) override;
+  Int_t     StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data ) override;
 
-  ClassDef(THaBPM,0)   // Generic BPM class
+  ClassDefOverride(THaBPM,0)   // Generic BPM class
 };
 
 ////////////////////////////////////////////////////////////////////////////////

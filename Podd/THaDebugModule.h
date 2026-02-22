@@ -19,11 +19,11 @@ public:
   explicit THaDebugModule( const char* var_list, const char* test="" );
   THaDebugModule( const THaDebugModule& ) = delete;
   THaDebugModule& operator=( const THaDebugModule& ) = delete;
-  virtual ~THaDebugModule();
+  ~THaDebugModule() override;
 
-  virtual EStatus   Init( const TDatime& run_time );
-  virtual void      Print( Option_t* opt="" ) const;
-  virtual Int_t     Process( const THaEvData& evdata );
+  EStatus   Init( const TDatime& run_time ) override;
+  void      Print( Option_t* opt="" ) const override;
+  Int_t     Process( const THaEvData& evdata ) override;
 
 protected:
 
@@ -37,7 +37,7 @@ protected:
   void    PrintEvNum( const THaEvData& ) const;
   Int_t   ParseList();
 
-  ClassDef(THaDebugModule,0)  // Physics module for debugging
+  ClassDefOverride(THaDebugModule,0)  // Physics module for debugging
 };
 
 #endif

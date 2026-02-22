@@ -25,9 +25,9 @@ public:
   THaPrimaryKine( const char* name, const char* description,
 		  const char* spectro, const char* beam,
 		  Double_t target_mass = 0.0 /* GeV */ );
-  virtual ~THaPrimaryKine();
-  
-  virtual void      Clear( Option_t* opt="" );
+  ~THaPrimaryKine() override;
+
+  void              Clear( Option_t* opt="" ) override;
 
   Double_t          GetQ2()         const { return fQ2; }
   Double_t          GetOmega()      const { return fOmega; }
@@ -48,12 +48,12 @@ public:
   const FourVect*   GetA1()         const { return &fA1; }
   const FourVect*   GetQ()          const { return &fQ; }
 
-  virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process( const THaEvData& );
-          void      SetMass( Double_t m );
-          void      SetTargetMass( Double_t m );
-          void      SetSpectrometer( const char* name );
-          void      SetBeam( const char* name );
+  EStatus           Init( const TDatime& run_time ) override;
+  Int_t             Process( const THaEvData& ) override;
+  void              SetMass( Double_t m );
+  void              SetTargetMass( Double_t m );
+  void              SetSpectrometer( const char* name );
+  void              SetBeam( const char* name );
 
 protected:
 
@@ -75,15 +75,15 @@ protected:
   Double_t          fM;            // Mass of incident particle (GeV/c^2)
   Double_t          fMA;           // Target mass (GeV/c^2)
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadRunDatabase( const TDatime& date );
+  TString           fSpectroName;  // Name of spectrometer to consider
+  TString           fBeamName;     // Name of beam position apparatus
+  THaTrackingModule* fSpectro;     // Pointer to spectrometer object
+  THaBeamModule*    fBeam;         // Pointer to beam position apparatus
 
-  TString                 fSpectroName;  // Name of spectrometer to consider
-  TString                 fBeamName;     // Name of beam position apparatus
-  THaTrackingModule*      fSpectro;      // Pointer to spectrometer object
-  THaBeamModule*          fBeam;         // Pointer to beam position apparatus
+  Int_t DefineVariables( EMode mode = kDefine ) override;
+  Int_t ReadRunDatabase( const TDatime& date ) override;
 
-  ClassDef(THaPrimaryKine,0)   //Single arm kinematics module
+  ClassDefOverride(THaPrimaryKine,0)   //Single arm kinematics module
 };
 
 #endif

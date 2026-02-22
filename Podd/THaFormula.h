@@ -28,21 +28,20 @@ public:
               const THaVarList* vlst = nullptr, const THaCutList* clst = nullptr );
   THaFormula( const THaFormula& rhs );
   THaFormula& operator=( const THaFormula& rhs );
-  virtual ~THaFormula();
+  ~THaFormula() override;
 
-  virtual Int_t       Compile( const char* expression="" );
-  virtual char*       DefinedString( Int_t i );
-  virtual Double_t    DefinedValue( Int_t i );
-  // Requires ROOT >= 4.00/00
-  virtual Int_t       DefinedVariable( TString& variable, Int_t& action );
+          Int_t       Compile( const char* expression="" ) override;
+          char*       DefinedString( Int_t i ) override;
+          Double_t    DefinedValue( Int_t i ) override;
+          Int_t       DefinedVariable( TString& variable, Int_t& action ) override;
   virtual Int_t       DefinedCut( TString& variable );
   virtual Int_t       DefinedGlobalVariable( TString& variable );
   virtual Int_t       DefinedGlobalVariableExtraList( TString& variable, const THaVarList* extralist );
   virtual Int_t       DefinedSpecialFunction( TString& name );
   virtual Double_t    Eval();
   // Requires ROOT >= 4.02/04
-  virtual Double_t    Eval( Double_t /*x*/, Double_t /*y*/=0.0,
-			    Double_t /*z*/=0.0, Double_t /*t*/=0.0 ) const
+          Double_t    Eval( Double_t /*x*/, Double_t /*y*/=0.0,
+                            Double_t /*z*/=0.0, Double_t /*t*/=0.0 ) const override
   // need to hack this-pointer to be non-const - courtesy of ROOT team
   { return const_cast<THaFormula*>(this)->Eval(); }
   virtual Double_t    EvalInstance( Int_t instance );
@@ -51,7 +50,7 @@ public:
   virtual Bool_t      IsVarArray() const { return TestBit(kVarArray); }
           Bool_t      IsError()    const { return TestBit(kError); }
           Bool_t      IsInvalid()  const { return TestBit(kInvalid); }
-  virtual void        Print( Option_t* option="" ) const;
+          void        Print( Option_t* option="" ) const override;
           void        SetList( const THaVarList* lst )    { fVarList = lst; }
           void        SetCutList( const THaCutList* lst ) { fCutList = lst; }
 
@@ -90,10 +89,10 @@ protected:
           Double_t  EvalInstanceUnchecked( Int_t instance );
           Int_t     GetNdataUnchecked() const;
           Int_t     Init( const char* name, const char* expression );
-  virtual Bool_t    IsString( Int_t oper ) const;
+          Bool_t    IsString( Int_t oper ) const override;
   virtual void      RegisterFormula( Bool_t add = true );
 
-  ClassDef(THaFormula,0)  //Formula defined on list of variables
+  ClassDefOverride(THaFormula,0)  //Formula defined on list of variables
 };
 
 //__________________inlines____________________________________________________

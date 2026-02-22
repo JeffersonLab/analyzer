@@ -26,11 +26,11 @@ namespace Decoder {
 
     using VmeModule::GetData;
 
-    virtual void   Clear( Option_t* opt = "" );
-    virtual Int_t  Decode( const UInt_t* evbuffer );
-    virtual UInt_t GetData( UInt_t chan ) const;   // Raw scaler counts
-    virtual Bool_t IsSlot( UInt_t rdata );
-    virtual void   DoPrint() const;
+    void   Clear( Option_t* opt = "" ) override;
+    Int_t  Decode( const UInt_t* evbuffer ) override;
+    UInt_t GetData( UInt_t chan ) const override;   // Raw scaler counts
+    Bool_t IsSlot( UInt_t rdata ) override;
+    void   DoPrint() const override;
 
     void GenInit();
     Int_t    SetClock( Double_t deltaT, UInt_t clockchan = 0, Double_t clockrate = 0 );
@@ -41,11 +41,13 @@ namespace Decoder {
     void DebugPrint(std::ofstream *file=nullptr) const;
 
     // Loads sldat
-    virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer, const UInt_t *pstop );
+    UInt_t LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer,
+                     const UInt_t *pstop ) override;
     // Load slot for bank structures
-    virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer, UInt_t pos, UInt_t len);
+    UInt_t LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer,
+                     UInt_t pos, UInt_t len) override;
 
-    virtual void SetBank(Int_t bank);
+    void SetBank(Int_t bank) override;
 
 
   protected:
@@ -63,7 +65,7 @@ namespace Decoder {
     Bool_t firsttime, firstwarn;
     static const UInt_t fgNumChanDefault=32;
 
-    ClassDef(GenScaler,0)  //   A generic scaler.  Abstract class.
+    ClassDefOverride(GenScaler,0)  //   A generic scaler.  Abstract class.
 
   };
 

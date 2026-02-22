@@ -58,7 +58,7 @@ public:
 
   THaEventHeader*   GetHeader() { return &fEvtHdr; }
 
-  virtual void      Clear( Option_t *opt = "" );
+  void              Clear( Option_t *opt = "" ) override;
   virtual Int_t     Init();
   virtual Int_t     Fill();
   virtual void      Reset( Option_t *opt = "" );
@@ -79,7 +79,7 @@ protected:
   };
   std::vector<DataMap> fDataMap; //! Map of global variables to copy
 
-  ClassDef(THaEvent,3)  //Base class for event structure definition
+  ClassDefOverride(THaEvent,3)   //Base class for event structure definition
 };
 
 

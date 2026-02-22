@@ -19,18 +19,18 @@ public:
   explicit THaShower( const char* name, const char* description = "",
                       THaApparatus* a = nullptr );
   THaShower(); // for ROOT I/O
-  virtual ~THaShower();
+  ~THaShower() override;
 
   // THaShower now uses THaDetectorBase::Decode()
-  virtual void       Clear( Option_t* ="" );
-  virtual Int_t      CoarseProcess( TClonesArray& tracks );
-  virtual Int_t      FineProcess( TClonesArray& tracks );
-          UInt_t     GetMainClusterSize() const { return fClBlk.size(); }
-          UInt_t     GetNclust() const { return fNclust; }
-          UInt_t     GetNhits() const  { return fADCData->GetHitCount(); }
-          Data_t     GetE() const      { return fE; }
-          Data_t     GetX() const      { return fX; }
-          Data_t     GetY() const      { return fY; }
+  void       Clear( Option_t* ="" ) override;
+  Int_t      CoarseProcess( TClonesArray& tracks ) override;
+  Int_t      FineProcess( TClonesArray& tracks ) override;
+  UInt_t     GetMainClusterSize() const { return fClBlk.size(); }
+  UInt_t     GetNclust() const { return fNclust; }
+  UInt_t     GetNhits()  const { return fADCData->GetHitCount(); }
+  Data_t     GetE()      const { return fE; }
+  Data_t     GetX()      const { return fX; }
+  Data_t     GetY()      const { return fY; }
 
   // Extension of standard ADCData to handle channel mapping
   class ShowerADCData : public Podd::ADCData {
@@ -77,13 +77,13 @@ protected:
 
   ShowerADCData* fADCData; // Convenience pointer to ADC data in fChannelData
 
-  virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
-  virtual void   PrintDecodedData( const THaEvData& evdata ) const;
+  Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data ) override;
+  void   PrintDecodedData( const THaEvData& evdata ) const override;
 
-  virtual Int_t  ReadDatabase( const TDatime& date );
-  virtual Int_t  DefineVariables( EMode mode = kDefine );
+  Int_t  ReadDatabase( const TDatime& date ) override;
+  Int_t  DefineVariables( EMode mode = kDefine ) override;
 
-  ClassDef(THaShower,0)     //Generic shower detector class
+  ClassDefOverride(THaShower,0)     //Generic shower detector class
 };
 
 ////////////////////////////////////////////////////////////////////////////////

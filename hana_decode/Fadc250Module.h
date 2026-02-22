@@ -23,13 +23,28 @@ namespace Decoder {
     
     Fadc250Module() : Fadc250Module(0,0) {}
     Fadc250Module( UInt_t crate, UInt_t slot );
-    virtual ~Fadc250Module();
+    ~Fadc250Module() override;
 
     using PipeliningModule::GetData;
     using PipeliningModule::Init;
 
-    virtual void Clear( Option_t *opt="" );
-    virtual void Init();
+    // Base class overrides
+    void Clear( Option_t *opt="" ) override;
+    void Init() override;
+    UInt_t LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
+      const UInt_t* pstop ) override;
+    UInt_t LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
+      UInt_t pos, UInt_t len ) override;
+    Int_t  Decode( const UInt_t* data ) override;
+    Bool_t IsMultiFunction() override { return true; }
+    Bool_t HasCapability( Decoder::EModuleType type ) override;
+    UInt_t GetData( Decoder::EModuleType mtype, UInt_t chan, UInt_t ievent ) const override;
+    Int_t  GetMode() const override { return GetFadcMode(); };
+    UInt_t GetNumEvents( Decoder::EModuleType mtype, UInt_t ichan ) const override;
+    UInt_t GetNumEvents() const override { return GetNumEvents(0); } ;
+    UInt_t GetNumEvents( UInt_t ichan) const override { return GetNumFadcEvents(ichan); } ;
+    UInt_t GetNumSamples( UInt_t ichan) const override { return GetNumFadcSamples(ichan, 0);};
+
     virtual void CheckDecoderStatus() const;
     virtual UInt_t GetPulseIntegralData( UInt_t chan, UInt_t ievent ) const;
     virtual UInt_t GetEmulatedPulseIntegralData( UInt_t chan ) const;
@@ -44,19 +59,8 @@ namespace Decoder {
     virtual UInt_t GetUnderflowBit( UInt_t chan, UInt_t ievent ) const;
     virtual std::vector<uint32_t> GetPulseSamplesVector( UInt_t chan ) const;
     virtual Int_t  GetFadcMode() const;
-    virtual Int_t  GetMode() const { return GetFadcMode(); };
     virtual UInt_t GetNumFadcEvents( UInt_t chan ) const;
     virtual UInt_t GetNumFadcSamples( UInt_t chan, UInt_t ievent ) const;
-    virtual UInt_t LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer, const UInt_t* pstop );
-    virtual UInt_t LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer, UInt_t pos, UInt_t len );
-    virtual Int_t  Decode( const UInt_t* data );
-    virtual Bool_t IsMultiFunction() { return true; }
-    virtual Bool_t HasCapability( Decoder::EModuleType type );
-    virtual UInt_t GetData( Decoder::EModuleType mtype, UInt_t chan, UInt_t ievent ) const;
-    virtual UInt_t GetNumEvents( Decoder::EModuleType mtype, UInt_t ichan ) const;
-    virtual UInt_t GetNumEvents() const { return GetNumEvents(0); } ;
-    virtual UInt_t GetNumEvents( UInt_t ichan) const { return GetNumFadcEvents(ichan); } ;
-    virtual UInt_t GetNumSamples( UInt_t ichan) const { return GetNumFadcSamples(ichan, 0);};
     virtual UInt_t GetTriggerTime() const;
 
   private:
@@ -132,7 +136,7 @@ namespace Decoder {
 
     static TypeIter_t fgThisType;
 
-    ClassDef(Fadc250Module,0)  //  JLab FADC 250 Module
+    ClassDefOverride(Fadc250Module,0)  //  JLab FADC 250 Module
   };  // Fadc250Module class
 
 }  // Decoder namespace

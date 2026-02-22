@@ -17,9 +17,9 @@ namespace Podd {
 class InterStageModule : public THaAnalysisObject {
 
 public:
-  virtual ~InterStageModule();
+  ~InterStageModule() override;
 
-  virtual void  Clear( Option_t* opt="" );
+  void  Clear( Option_t* opt="" ) override;
   virtual Int_t Process( const THaEvData& ) = 0;
 
   bool  DataValid() const { return fDataValid; }
@@ -32,9 +32,9 @@ protected:
   InterStageModule( const char* name, const char* description, Int_t stage );
 
   void PrintInitError( const char* here );
-  virtual Int_t DefineVariables( EMode mode = kDefine );
+  Int_t DefineVariables( EMode mode = kDefine ) override;
 
-  ClassDef(InterStageModule,1)   //ABC for an inter-stage processing module
+  ClassDefOverride(InterStageModule,1)   //ABC for an inter-stage processing module
 };
 
 } // namespace Podd

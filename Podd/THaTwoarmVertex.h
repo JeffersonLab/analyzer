@@ -18,17 +18,17 @@ class THaTwoarmVertex : public THaPhysicsModule, public THaVertexModule {
 public:
   THaTwoarmVertex( const char* name, const char* description,
 		   const char* spectro1="", const char* spectro2="" );
-  virtual ~THaTwoarmVertex();
-  
-  virtual void      Clear( Option_t* opt="" );
+  ~THaTwoarmVertex() override;
 
-  Double_t          GetX()       const { return fVertex.X(); }
-  Double_t          GetY()       const { return fVertex.Y(); }
-  Double_t          GetZ()       const { return fVertex.Z(); }
+  void      Clear( Option_t* opt="" ) override;
 
-  virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process( const THaEvData& );
-          void      SetSpectrometers( const char* name1, const char* name2 );
+  Double_t  GetX()       const { return fVertex.X(); }
+  Double_t  GetY()       const { return fVertex.Y(); }
+  Double_t  GetZ()       const { return fVertex.Z(); }
+
+  EStatus   Init( const TDatime& run_time ) override;
+  Int_t     Process( const THaEvData& ) override;
+  void      SetSpectrometers( const char* name1, const char* name2 );
 
 protected:
 
@@ -37,9 +37,9 @@ protected:
   THaTrackingModule*      fSpectro1;   // Pointer to spectrometer #1 object
   THaTrackingModule*      fSpectro2;   // Pointer to spectrometer #2 object
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
+  Int_t DefineVariables( EMode mode = kDefine ) override;
 
-  ClassDef(THaTwoarmVertex,0)   //Two-arm vertex module
+  ClassDefOverride(THaTwoarmVertex,0)   //Two-arm vertex module
 };
 
 //_________ inlines __________________________________________________________

@@ -45,6 +45,12 @@ public:
 
   enum EMode { kSimple, kWeighted, kT0 };
 
+  // TObject functions redefined
+  void   Clear( Option_t* opt="" ) override;
+  Int_t  Compare( const TObject* obj ) const override;
+  Bool_t IsSortable() const override { return true; }
+  void   Print( Option_t* opt="" ) const override;
+
   virtual void   AddHit( THaVDCHit* hit );
   virtual void   EstTrackParameters();
   virtual void   ConvertTimeToDist();
@@ -52,12 +58,6 @@ public:
   virtual void   ClearFit();
   virtual void   CalcChisquare(Double_t& chi2, Int_t& nhits) const;
   VDC::chi2_t    CalcDist() const;    // calculate global track to wire distances
-
-  // TObject functions redefined
-  virtual void   Clear( Option_t* opt="" );
-  virtual Int_t  Compare( const TObject* obj ) const;
-  virtual Bool_t IsSortable() const        { return true; }
-  virtual void   Print( Option_t* opt="" ) const;
 
   //Get and Set Functions
   THaVDCHit*     GetHit(Int_t i)     const { return fHits[i]; }
@@ -127,7 +127,7 @@ protected:
   void   Linear3DFit( Double_t& slope, Double_t& icpt, Double_t& d0 ) const;
   Int_t  LinearClusterFitWithT0();
 
-  ClassDef(THaVDCCluster,0)          // A group of VDC hits
+  ClassDefOverride(THaVDCCluster,0)    // A group of VDC hits
 };
 
 //////////////////////////////////////////////////////////////////////////////

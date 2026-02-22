@@ -15,7 +15,7 @@ class THaPostProcess : public TObject {
   THaPostProcess( THaPostProcess&& ) = delete;
   THaPostProcess& operator=( const THaPostProcess& ) = delete;
   THaPostProcess& operator=( THaPostProcess&& ) = delete;
-  virtual ~THaPostProcess();
+  ~THaPostProcess() override;
 
   virtual Int_t Init(const TDatime& )=0;
   virtual Int_t Process( const THaEvData*, const THaRunBase*, Int_t code )=0;
@@ -28,7 +28,7 @@ protected:
 
   static TList* fgModules; // List of all current PostProcess modules
 
-  ClassDef(THaPostProcess,0)
+  ClassDefOverride(THaPostProcess,0)
 };
 
 #endif

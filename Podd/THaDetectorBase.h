@@ -19,11 +19,11 @@ public:
   using VecChanData_t = std::vector<std::unique_ptr<Podd::ChannelData>>;
   using DetMapPtr_t   = std::unique_ptr<THaDetMap>;
 
-  virtual ~THaDetectorBase();
+  ~THaDetectorBase() override;
 
   THaDetectorBase(); // only for ROOT I/O
 
-  virtual void     Clear( Option_t* ="" );
+          void     Clear( Option_t* ="" ) override;
   virtual Int_t    Decode( const THaEvData& );
   virtual void     Reset( Option_t* opt="" );
 
@@ -74,8 +74,8 @@ protected:
 
   virtual void  DefineAxes( Double_t rotation_angle );
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadDatabase( const TDatime& date );
+          Int_t DefineVariables( EMode mode = kDefine ) override;
+          Int_t ReadDatabase( const TDatime& date ) override;
   virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
 			      Bool_t required = false );
 
@@ -92,7 +92,7 @@ protected:
   // Only derived classes may construct me
   THaDetectorBase( const char* name, const char* description );
 
-  ClassDef(THaDetectorBase,4)   //ABC for a detector or subdetector
+  ClassDefOverride(THaDetectorBase,4)   //ABC for a detector or subdetector
 };
 
 #endif

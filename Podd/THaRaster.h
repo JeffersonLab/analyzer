@@ -15,14 +15,14 @@ class THaRaster : public THaBeamDet {
 public:
   explicit THaRaster( const char* name, const char* description = "",
                       THaApparatus* a = nullptr );
-  virtual ~THaRaster();
+  ~THaRaster() override;
 
-  virtual void       Clear( Option_t* ="" );
-  virtual Int_t      Decode( const THaEvData& );
-  virtual Int_t      Process();
+  void       Clear( Option_t* ="" ) override;
+  Int_t      Decode( const THaEvData& ) override;
+  Int_t      Process() override;
 
-  virtual TVector3 GetPosition()  const { return fPosition[2]; }
-  virtual TVector3 GetDirection() const { return fDirection; }
+  TVector3 GetPosition()  const override { return fPosition[2]; }
+  TVector3 GetDirection() const override { return fDirection; }
 
   // As soon as someone finds a better solution, the following lines should be
   // changed. It is ridiculous to have nine methods to get the components
@@ -47,13 +47,13 @@ public:
   Double_t GetPosTarZ() { return fPosition[2](2); }
 
 protected:
-  virtual Int_t  ReadDatabase( const TDatime& date );
-  virtual Int_t  DefineVariables( EMode mode = kDefine );
+  Int_t  ReadDatabase( const TDatime& date ) override;
+  Int_t  DefineVariables( EMode mode = kDefine ) override;
 
-  bool              CheckHitInfo( const DigitizerHitInfo_t& hitinfo ) const;
-  virtual Int_t     StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
-  virtual OptUInt_t LoadData( const THaEvData& evdata,
-                              const DigitizerHitInfo_t& hitinfo );
+  bool      CheckHitInfo( const DigitizerHitInfo_t& hitinfo ) const;
+  Int_t     StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data ) override;
+  OptUInt_t LoadData( const THaEvData& evdata,
+                      const DigitizerHitInfo_t& hitinfo ) override;
 
   typedef TVectorT<Double_t> TVectorD;
 
@@ -72,7 +72,7 @@ protected:
 
   Int_t fNfired;
 
-  ClassDef(THaRaster,0)   // Generic Raster class
+  ClassDefOverride(THaRaster,0)   // Generic Raster class
 };
 
 ////////////////////////////////////////////////////////////////////////////////

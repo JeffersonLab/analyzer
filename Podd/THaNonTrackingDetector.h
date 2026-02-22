@@ -16,13 +16,13 @@ class THaNonTrackingDetector : public THaSpectrometerDetector {
 public:
   THaNonTrackingDetector(); // only for ROOT I/O
 
-  virtual ~THaNonTrackingDetector();
+  ~THaNonTrackingDetector() override;
 
-  virtual void     Clear( Option_t* ="" );
+  void             Clear( Option_t* ="" ) override;
   virtual Int_t    CoarseProcess( TClonesArray& tracks ) = 0;
   virtual Int_t    FineProcess( TClonesArray& tracks )  = 0;
-  virtual Bool_t   IsTracking() { return false; }
-  virtual Bool_t   IsPid()      { return false; }
+  Bool_t           IsTracking() override { return false; }
+  Bool_t           IsPid() override { return false; }
 
   Int_t GetNTracks() const;  // Number of tracks crossing this detector
   const TClonesArray* GetTrackHits() const { return fTrackProj; }
@@ -31,14 +31,14 @@ protected:
 
   TClonesArray*  fTrackProj;  // projection of track(s) onto detector plane
 
-  virtual Int_t  DefineVariables( EMode mode = kDefine );
+  Int_t          DefineVariables( EMode mode = kDefine ) override;
   Int_t          CalcTrackProj( const TClonesArray& tracks );
 
   //Only derived classes may construct me
   THaNonTrackingDetector( const char* name, const char* description,
                           THaApparatus* a = nullptr);
 
-  ClassDef(THaNonTrackingDetector,2)  //ABC for a non-tracking spectrometer detector
+  ClassDefOverride(THaNonTrackingDetector,2)  //ABC for a non-tracking spectrometer detector
 };
 
 #endif

@@ -21,18 +21,14 @@ public:
 
    using Module::LoadSlot;
 
-   virtual Bool_t IsSlot(UInt_t rdata);
+   Bool_t IsSlot(UInt_t rdata) override;
    // virtual Int_t Slot(Int_t) const { return fSlot; };
    // virtual Int_t Data(Int_t rdata) const { return rdata; };
 
-   virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer,
-                            const UInt_t *pstop );
+   UInt_t LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer,
+                    const UInt_t *pstop ) override;
 
-protected:
-
-private:
-
-   ClassDef(Decoder::VmeModule,0)  // A VME module (abstract)
+   ClassDefOverride(Decoder::VmeModule,0)  // A VME module (abstract)
 
 };
 

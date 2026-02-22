@@ -38,18 +38,18 @@ public:
   using Module::GetData;
   using Module::LoadSlot;
 
-  virtual UInt_t GetData( UInt_t chan ) const;
-  virtual void   Init();
-  virtual void   Clear( const Option_t* opt = "" );
-  virtual Int_t  Decode( const UInt_t* /* p */ ) { return 0; };
+  UInt_t GetData( UInt_t chan ) const override;
+  void   Init() override;
+  void   Clear( const Option_t* opt = "" ) override;
+  Int_t  Decode( const UInt_t* /* p */ ) override { return 0; };
 
   // optional Init method only needed if using cratemap configuration string
-  virtual void   Init( const char* configstr );
+  void   Init( const char* configstr ) override;
 
 #ifdef LIKEV792
   // Loads slot data.  if you don't define this, the base class's method is used
-  virtual UInt_t LoadSlot( Decoder::THaSlotData* sldat,
-                           const UInt_t* evbuffer, const UInt_t* pstop );
+  UInt_t LoadSlot( THaSlotData* sldat,
+                   const UInt_t* evbuffer, const UInt_t* pstop ) override;
 #endif
 
 private:
@@ -59,7 +59,7 @@ private:
 
   static TypeIter_t fgThisType;
 
-  ClassDef(SkeletonModule,0)  // Skeleton decoder module; make your replacements
+  ClassDefOverride(SkeletonModule,0)  // Skeleton decoder module; make your replacements
 };
 
 } // namespace Decoder

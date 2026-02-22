@@ -13,19 +13,19 @@ class THaVDCSimRun : public THaRunBase {
  public:
   explicit THaVDCSimRun(const char* filename = "", const char* description = "");
   THaVDCSimRun(const THaVDCSimRun &run);
-  virtual ~THaVDCSimRun();
-  virtual THaVDCSimRun &operator=(const THaRunBase &rhs);
+  ~THaVDCSimRun() override;
+  THaVDCSimRun &operator=(const THaRunBase &rhs) override;
 
-  Int_t Close();
-  Int_t Open();
-  const UInt_t* GetEvBuffer() const;
-  Int_t ReadEvent();
-  Int_t Init();
+  Int_t Close() override;
+  Int_t Open() override;
+  const UInt_t* GetEvBuffer() const override;
+  Int_t ReadEvent() override;
+  Int_t Init() override;
   const char* GetFileName() const { return rootFileName.Data(); }
   void SetFileName( const char* name ) { rootFileName = name; }
 
  protected:
-  virtual Int_t ReadDatabase() {return 0;}
+  Int_t ReadDatabase() override {return 0;}
 
   TString rootFileName;  //  Name of input file
   TFile *rootFile;       //! Input ROOT file
@@ -36,7 +36,7 @@ class THaVDCSimRun : public THaRunBase {
   Int_t nentries;        //! Number of entries in tre e
   Int_t entry;           //! Current entry number
 
-  ClassDef(THaVDCSimRun, 1) // Run class for simulated VDC data
+  ClassDefOverride(THaVDCSimRun, 1) // Run class for simulated VDC data
 };
 
 #endif

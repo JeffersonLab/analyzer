@@ -17,11 +17,11 @@
 class THaVDCSimDecoder : public THaEvData {
  public:
   THaVDCSimDecoder();
-  virtual ~THaVDCSimDecoder();
+  ~THaVDCSimDecoder() override;
 
-  virtual Int_t  LoadEvent( const UInt_t* evbuffer);
+  Int_t  LoadEvent( const UInt_t* evbuffer) override;
 
-  void   Clear( Option_t* opt="" );
+  void   Clear( Option_t* opt = "" ) override;
   Int_t  GetNTracks() const;
   Int_t  DefineVariables( THaAnalysisObject::EMode mode =
 			  THaAnalysisObject::kDefine );
@@ -32,7 +32,7 @@ class THaVDCSimDecoder : public THaEvData {
 
   bool    fIsSetup;
 
-  ClassDef(THaVDCSimDecoder,0) // Decoder for simulated VDC data
+  ClassDefOverride(THaVDCSimDecoder,0) // Decoder for simulated VDC data
 };
 
 #endif

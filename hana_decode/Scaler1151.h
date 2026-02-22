@@ -20,13 +20,13 @@ public:
    Scaler1151() = default;
 
    using GenScaler::Init;
-   virtual void Init();
+   void Init() override;
 
 private:
 
    static TypeIter_t fgThisType;
 
-   ClassDef(Scaler1151,0)  // LeCroy scaler model 1151
+   ClassDefOverride(Scaler1151,0)  // LeCroy scaler model 1151
 
 };
 

@@ -23,16 +23,16 @@ public:
   THaPhotoReaction( const char* name, const char* description,
 		    const char* spectro, const char* beam );
   //                Double_t target_mass = 0.0 /* GeV/c2 */ );
-  virtual ~THaPhotoReaction();
-  
-  virtual void      Clear( Option_t* opt="" );
+  ~THaPhotoReaction() override;
 
-  
-  virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process( const THaEvData& );
+  void      Clear( Option_t* opt="" ) override;
+
+
+  EStatus   Init( const TDatime& run_time ) override;
+  Int_t     Process( const THaEvData& ) override;
   //          void        SetTargetMass( Double_t m );
-  void              SetSpectrometer( const char* name );
-  void              SetBeam( const char* name );
+  void      SetSpectrometer( const char* name );
+  void      SetBeam( const char* name );
 
 protected:
 
@@ -43,15 +43,15 @@ protected:
 
   Double_t          fMA;           // Target mass (GeV/c^2)
 
-  virtual Int_t     DefineVariables( EMode mode = kDefine );
-  //  virtual Int_t     ReadRunDatabase( const TDatime& date );
+  TString           fSpectroName;  // Name of module providing tracks
+  TString           fBeamName;     // Name of module providing beam info
+  THaTrackingModule* fSpectro;      // Pointer to tracking module
+  THaBeamModule*    fBeam;         // Pointer to beam module
 
-  TString                 fSpectroName;  // Name of module providing tracks
-  TString                 fBeamName;     // Name of module providing beam info
-  THaTrackingModule*      fSpectro;      // Pointer to tracking module
-  THaBeamModule*          fBeam;         // Pointer to beam module
+  Int_t     DefineVariables( EMode mode = kDefine ) override;
+  //  Int_t     ReadRunDatabase( const TDatime& date ) override;
 
-  ClassDef(THaPhotoReaction,0)  //deuterium photodisintegration kinematics
+  ClassDefOverride(THaPhotoReaction,0)  //deuterium photodisintegration kinematics
 };
 
 #endif

@@ -16,20 +16,20 @@ class TList;
 class THaApparatus : public THaAnalysisObject {
   
 public:
-  virtual ~THaApparatus();
+  ~THaApparatus() override;
   
   virtual Int_t        AddDetector( THaDetector* det, Bool_t quiet = false,
 				    Bool_t first = false );
-  virtual Int_t        Begin( THaRunBase* r=nullptr );
-  virtual void         Clear( Option_t* opt="" );
+          Int_t        Begin( THaRunBase* r = nullptr ) override;
+          void         Clear( Option_t* opt = "" ) override;
   virtual Int_t        Decode( const THaEvData& );
-  virtual Int_t        End( THaRunBase* r=nullptr );
+          Int_t        End( THaRunBase* r=nullptr ) override;
           Int_t        GetNumDets() const;
   virtual THaDetector* GetDetector( const char* name );
           TList*       GetDetectors() { return fDetectors; }
 
-  virtual EStatus      Init( const TDatime& run_time );
-  virtual void         Print( Option_t* opt="" ) const;
+          EStatus      Init( const TDatime& run_time ) override;
+          void         Print( Option_t* opt = "" ) const override;
   virtual Int_t        CoarseReconstruct() { return 0; }
   virtual Int_t        Reconstruct() = 0;
   virtual void         SetDebugAll( Int_t level );
@@ -40,7 +40,7 @@ protected:
   THaApparatus( const char* name, const char* description );
   THaApparatus( );
 
-  ClassDef(THaApparatus,1)   //A generic apparatus (collection of detectors)
+  ClassDefOverride(THaApparatus,1)   //A generic apparatus (collection of detectors)
 };
 
 #endif

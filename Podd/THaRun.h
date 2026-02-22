@@ -18,16 +18,16 @@ public:
   THaRun( const THaRun& run );
   THaRun( const std::vector<TString>& pathList, const char* filename,
 	  const char* description="" );
-  virtual THaRun& operator=( const THaRunBase& rhs );
-  virtual ~THaRun();
+  THaRun& operator=( const THaRunBase& rhs ) override;
+  ~THaRun() override;
 
-  virtual void         Clear( Option_t* opt="" );
-  virtual Int_t        Compare( const TObject* obj ) const;
+          void         Clear( Option_t* opt="" ) override;
+          Int_t        Compare( const TObject* obj ) const override;
           const char*  GetFilename() const { return fFilename.Data(); }
           Int_t        GetSegment()  const { return fSegment; }
           Int_t        GetStream()   const { return fStream; }
-  virtual Int_t        Open();
-  virtual void         Print( Option_t* opt="" ) const;
+          Int_t        Open() override;
+          void         Print( Option_t* opt="" ) const override;
   virtual Int_t        SetFilename( const char* name );
           void         SetNscan( UInt_t n );
           void         SetMinScan( UInt_t n );
@@ -44,14 +44,14 @@ protected:
   virtual Bool_t   FindSegmentNumber();
   virtual Int_t    PrescanFile();
   virtual Bool_t   ProvidesInitInfo();
-  virtual Int_t    ReadInitInfo( Int_t level );
+          Int_t    ReadInitInfo( Int_t level ) override;
   virtual TString  GetInitInfoFileName( TString fname );
   virtual TString  FindInitInfoFile( const TString& fname );
 
   static Bool_t    StdFindSegmentNumber( const TString& filename, TString& stem,
                                          Int_t& segment, Int_t& stream );
 
-  ClassDef(THaRun,8)  // A run based on a CODA data file on disk
+  ClassDefOverride(THaRun,8)  // A run based on a CODA data file on disk
 };
 
 #endif

@@ -28,10 +28,11 @@ public:
 
   explicit THaVDCPlane( const char* name="", const char* description="",
                         THaDetectorBase* parent = nullptr );
-  virtual ~THaVDCPlane();
+  ~THaVDCPlane() override;
 
-  virtual void    Clear( Option_t* opt="" );
-  virtual Int_t   Decode( const THaEvData& ); // Raw data -> hits
+  void    Clear( Option_t* opt="" ) override;
+  Int_t   Decode( const THaEvData& ) override; // Raw data -> hits
+
   virtual Int_t   ApplyTimeCorrection();      // Drift time correction
   virtual Int_t   FindClusters();             // Hits -> clusters
   virtual Int_t   FitTracks();                // Clusters -> tracks
@@ -77,7 +78,7 @@ public:
 
   // Override function from THaDetectorBase to check positions
   // relative to fCenter
-  virtual Bool_t  IsInActiveArea( Double_t x, Double_t y ) const;
+  Bool_t  IsInActiveArea( Double_t x, Double_t y ) const override;
 
   void  UpdateGeometry( Double_t x, Double_t y, bool force = false );
 
@@ -131,14 +132,14 @@ protected:
   Int_t  fNextHit;
   THaVDCWire* fPrevWire;
 
-  virtual void  MakePrefix();
-  virtual Int_t ReadDatabase( const TDatime& date );
-  virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
-			      Bool_t required = false );
+  void  MakePrefix() override;
+  Int_t ReadDatabase( const TDatime& date ) override;
+  Int_t DefineVariables( EMode mode = kDefine ) override;
+  Int_t ReadGeometry( FILE* file, const TDatime& date,
+                      Bool_t required = false ) override;
 
-  virtual Int_t StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
-  virtual void  PrintDecodedData( const THaEvData& evdata ) const;
+  Int_t StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data ) override;
+  void  PrintDecodedData( const THaEvData& evdata ) const override;
 
 private:
   Int_t ReadDatabaseErrcheck( const std::vector<Float_t>& tdc_offsets,
@@ -150,7 +151,7 @@ private:
                        const std::vector<Double_t>& ttd_param,
                        const char* here );
 
-ClassDef(THaVDCPlane,0)             // VDCPlane class
+  ClassDefOverride(THaVDCPlane,0)  // VDCPlane class
 };
 
 //////////////////////////////////////////////////////////////////////////////

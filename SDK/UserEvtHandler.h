@@ -21,8 +21,8 @@ public:
 
    UserEvtHandler(const char* name, const char* description);
 
-   virtual Int_t Analyze(THaEvData *evdata);
-   virtual EStatus Init( const TDatime& run_time);
+   Int_t Analyze(THaEvData *evdata) override;
+   EStatus Init( const TDatime& run_time) override;
    Data_t GetData(const std::string& tag) const;
 
 private:
@@ -31,7 +31,7 @@ private:
    std::vector<std::string> dataKeys;
    Data_t *dvars;
 
-   ClassDef(UserEvtHandler,0)  // Example of an Event handler
+   ClassDefOverride(UserEvtHandler,0)  // Example of an Event handler
 };
 
 #endif

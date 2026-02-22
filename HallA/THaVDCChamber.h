@@ -27,17 +27,16 @@ public:
 class THaVDCChamber : public THaSubDetector {
 
 public:
-
   explicit THaVDCChamber( const char* name="", const char* description="",
                           THaDetectorBase* parent = nullptr );
-  virtual ~THaVDCChamber();
+  ~THaVDCChamber() override;
 
-  virtual void    Clear( Option_t* opt="" );    // Reset event-by-event data
-  virtual Int_t   Decode( const THaEvData& evData );
+          void    Clear( Option_t* opt="" ) override; // Reset event-by-event data
+          Int_t   Decode( const THaEvData& evData ) override;
   virtual Int_t   CoarseTrack();          // Find clusters & estimate track
   virtual Int_t   FineTrack();            // More precisely calculate track
-  virtual EStatus Init( const TDatime& date );
-  virtual void    SetDebug( Int_t level );
+          EStatus Init( const TDatime& date ) override;
+          void    SetDebug( Int_t level ) override;
 
   PointCoords_t   CalcDetCoords( const THaVDCCluster* u,
 				 const THaVDCCluster* v ) const;
@@ -80,9 +79,9 @@ protected:
   Double_t UVtoX( Double_t u, Double_t v ) const;
   Double_t UVtoY( Double_t u, Double_t v ) const;
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
+  Int_t DefineVariables( EMode mode = kDefine ) override;
 
-  ClassDef(THaVDCChamber,0)   // VDC chamber (pair of a U and a V plane)
+  ClassDefOverride(THaVDCChamber,0)   // VDC chamber (pair of a U and a V plane)
 };
 
 //_____________________________________________________________________________

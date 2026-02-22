@@ -22,7 +22,7 @@ public:
   explicit THaRunBase( const char* description="" );
   THaRunBase( const THaRunBase& run );
   virtual THaRunBase& operator=( const THaRunBase& rhs ); //TODO make non-virtual?
-  virtual ~THaRunBase();
+  ~THaRunBase() override;
   //TODO Implement Clone() and use in THaAnalyzer
 
   virtual bool operator==( const THaRunBase& ) const;
@@ -43,10 +43,10 @@ public:
   virtual Int_t        Close() = 0;
 
   // Auxiliary functions
-  virtual void         Clear( Option_t* opt="" );
+          void         Clear( Option_t* opt="" ) override;
   virtual void         ClearDate();
           void         ClearEventRange();
-  virtual Int_t        Compare( const TObject* obj ) const;
+          Int_t        Compare( const TObject* obj ) const override;
           Bool_t       DBRead()         const { return fDBRead; }
           void         IncrNumAnalyzed( Int_t n=1 ) { fNumAnalyzed += n; }
   const   TDatime&     GetDate()        const { return fDate; }
@@ -62,7 +62,7 @@ public:
   virtual Bool_t       HasInfoRead( UInt_t bits ) const;
           Bool_t       IsInit()         const { return fIsInit; }
   virtual Bool_t       IsOpen()         const;
-  virtual void         Print( Option_t* opt="" ) const;
+          void         Print( Option_t* opt="" ) const override;
   virtual void         SetDate( const TDatime& date );
           void         SetDate( Long64_t tloc );
 	  void         SetDataRequired( UInt_t mask ); // mask is OR of EInfoType
@@ -129,7 +129,7 @@ protected:
   virtual Int_t ReadInitInfo( Int_t level = 0 );
 
   //TODO: schema evolution 6 -> 7 (fDate, fEvtRange)
-  ClassDef(THaRunBase,7)       // Base class for run objects
+  ClassDefOverride(THaRunBase,7)  // Base class for run objects
 };
 
 

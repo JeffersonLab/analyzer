@@ -14,11 +14,11 @@ class UserScintillator : public THaScintillator {
 public:
   explicit UserScintillator( const char* name, const char* description = "",
                              THaApparatus* a = nullptr );
-  virtual ~UserScintillator();
+  ~UserScintillator() override;
 
-  virtual void       Clear( Option_t* ="" );
-  //  virtual Int_t      Decode( const THaEvData& );
-  virtual Int_t      FineProcess( TClonesArray& tracks );
+  void       Clear( Option_t* ="" ) override;
+  //  Int_t      Decode( const THaEvData& ) override;
+  Int_t      FineProcess( TClonesArray& tracks ) override;
 
 protected:
   Int_t     fPaddle;      // Paddle number hit by first track
@@ -30,10 +30,10 @@ protected:
   // Parameters from database
   Bool_t    fCommonStop;  // True if TDCs use common stop mode
 
-  virtual Int_t  ReadDatabase( const TDatime& date );
-  virtual Int_t  DefineVariables( EMode mode = kDefine );
+  Int_t  ReadDatabase( const TDatime& date ) override;
+  Int_t  DefineVariables( EMode mode = kDefine ) override;
 
-  ClassDef(UserScintillator,0)   // User-extended version of THaScintillator
+  ClassDefOverride(UserScintillator,0)   // User-extended version of THaScintillator
 };
 
 ////////////////////////////////////////////////////////////////////////////////

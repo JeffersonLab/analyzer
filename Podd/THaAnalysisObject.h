@@ -41,10 +41,10 @@ public:
   THaAnalysisObject& operator=( const THaAnalysisObject& ) = delete;
   THaAnalysisObject& operator=( THaAnalysisObject&& ) = delete;
 
-  virtual ~THaAnalysisObject();
+  ~THaAnalysisObject() override;
 
   virtual Int_t        Begin( THaRunBase* r=nullptr );
-  virtual void         Clear( Option_t* ="" ) {} // override TNamed::Clear()
+          void         Clear( Option_t* ="" ) override {} // override TNamed::Clear()
   virtual Int_t        End( THaRunBase* r=nullptr );
   virtual const char*  GetDBFileName() const;
           const char*  GetClassName() const;
@@ -61,15 +61,15 @@ public:
 
           void         SetConfig( const char* label );
   virtual void         SetDebug( Int_t level );
-  virtual void         SetName( const char* name );
-  virtual void         SetNameTitle( const char* name, const char* title );
+          void         SetName( const char* name ) override;
+          void         SetNameTitle( const char* name, const char* title ) override;
           EStatus      Status() const            { return fStatus; }
 
   virtual Int_t        InitOutput( THaOutput * );
           Bool_t       IsOKOut() const           { return fOKOut; }
   virtual FILE*        OpenFile( const TDatime& date );
   virtual FILE*        OpenRunDBFile( const TDatime& date );
-  virtual void         Print( Option_t* opt="" ) const;
+          void         Print( Option_t* opt="" ) const override;
 
   // For backwards compatibility
   [[deprecated("Use LoadDatabase")]]
@@ -161,8 +161,8 @@ protected:
                                            const char* def_prefix = "",
                                            const char* comment_subst = "" ) const;
 
-  virtual void         DoError( int level, const char* location,
-				const char* fmt, va_list va) const;
+          void         DoError( int level, const char* location,
+                                const char* fmt, va_list va) const override;
 
   THaAnalysisObject*   FindModule( const char* name, const char* classname,
 				   bool do_error = true );
@@ -198,7 +198,7 @@ private:
 
   static TList* fgModules;  // List of all currently existing Analysis Modules
 
-  ClassDef(THaAnalysisObject,2)   //ABC for a data analysis object
+  ClassDefOverride(THaAnalysisObject,2)   //ABC for a data analysis object
 };
 
 //____________ inline functions _______________________________________________

@@ -22,27 +22,27 @@ namespace Decoder {
 class CodaDecoder : public THaEvData {
 public:
   CodaDecoder();
-  virtual ~CodaDecoder();
+  ~CodaDecoder() override;
 
-  virtual Int_t  Init();
+  Int_t  Init() override;
 
-  virtual Int_t  LoadEvent(const UInt_t* evbuffer);
+  Int_t  LoadEvent(const UInt_t* evbuffer) override;
 
-  virtual Int_t  GetPrescaleFactor( UInt_t trigger ) const;
-  virtual void   SetRunTime( Long64_t tloc );
-  virtual Int_t  SetDataVersion( Int_t version );
-          Int_t  SetCodaVersion( Int_t version )  { return SetDataVersion(version); }
+  Int_t  GetPrescaleFactor( UInt_t trigger ) const override;
+  void   SetRunTime( Long64_t tloc ) override;
+  Int_t  SetDataVersion( Int_t version ) override;
+  Int_t  SetCodaVersion( Int_t version )  { return SetDataVersion(version); }
 
-  virtual Bool_t DataCached() { return fMultiBlockMode && !fBlockIsDone; }
-  virtual Int_t  LoadFromMultiBlock();
-          Bool_t IsMultiBlockMode() const { return fMultiBlockMode; };
-          Bool_t BlockIsDone() const { return fBlockIsDone; };
+  Bool_t DataCached() override { return fMultiBlockMode && !fBlockIsDone; }
+  Bool_t IsMultiBlockMode() const { return fMultiBlockMode; }
+  Bool_t BlockIsDone() const { return fBlockIsDone; }
 
-  virtual Int_t  FillBankData( UInt_t* rdat, UInt_t roc, Int_t bank,
-                               UInt_t offset = 0, UInt_t num = 1 ) const;
+  virtual Int_t LoadFromMultiBlock();
+  virtual Int_t FillBankData( UInt_t* rdat, UInt_t roc, Int_t bank,
+                              UInt_t offset = 0, UInt_t num = 1 ) const;
 
-  UInt_t         GetTSEvType() const { return tsEvType; }
-  UInt_t         GetBlockIndex() const { return blkidx; }
+  UInt_t GetTSEvType() const { return tsEvType; }
+  UInt_t GetBlockIndex() const { return blkidx; }
 
   // CODA file format exception, thrown by LoadEvent/LoadFromMultiBlock
   class coda_format_error : public std::runtime_error {
@@ -124,7 +124,7 @@ protected:
   void ChkFbSlot( UInt_t roc, const UInt_t* evbuffer, UInt_t ipt, UInt_t istop );
   void ChkFbSlots();
 
-  virtual Int_t  init_slotdata();
+  Int_t  init_slotdata() override;
   virtual Int_t  interpretCoda3( const UInt_t* buffer );
   virtual Int_t  trigBankDecode( const UInt_t* evbuffer );
   virtual Int_t  daqConfigDecode( const UInt_t* evbuf );
@@ -184,7 +184,7 @@ protected:
    Int_t LoadTrigBankInfo( UInt_t index_buffer );
    TBOBJ tbank;
 
-   ClassDef(CodaDecoder,0) // Decoder for CODA event buffer
+   ClassDefOverride(CodaDecoder,0) // Decoder for CODA event buffer
 };
 
 }

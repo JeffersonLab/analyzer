@@ -27,13 +27,13 @@ public:
 		const char* spec1="L", const char* spec2="R",
 		Double_t mass1 = .938272, Double_t mass2 = 0.000511,
 		const char* ch_name1=nullptr, const char* ch_name2= nullptr);
-  
-  virtual ~THaCoincTime();
-  
-  virtual void      Clear( Option_t* opt="" );
-  
-  virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process( const THaEvData& );
+
+  ~THaCoincTime() override;
+
+  void      Clear( Option_t* opt="" ) override;
+
+  EStatus   Init( const TDatime& run_time ) override;
+  Int_t     Process( const THaEvData& ) override;
 
   Int_t   GetNTr1()   const { return fVxTime1.size(); }
   Int_t   GetNTr2()   const { return fVxTime2.size(); }
@@ -75,13 +75,12 @@ public:
   };
   std::vector<TimeCombo> fTimeCombos;  // time combinations to consider
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadDatabase( const TDatime& date );
-
+  Int_t DefineVariables( EMode mode = kDefine ) override;
+  Int_t ReadDatabase( const TDatime& date ) override;
 
  public:
   
-  ClassDef(THaCoincTime,0)   //Single arm kinematics module
+  ClassDefOverride(THaCoincTime,0)   //Single arm kinematics module
 };
 
 #endif

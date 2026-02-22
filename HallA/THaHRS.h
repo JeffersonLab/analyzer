@@ -16,8 +16,8 @@ class THaHRS : public THaSpectrometer {
 public:
   THaHRS( const char* name, const char* description );
 
-  virtual Int_t   FindVertices( TClonesArray& tracks );
-  virtual Int_t   TrackCalc();
+          Int_t   FindVertices( TClonesArray& tracks ) override;
+          Int_t   TrackCalc() override;
   virtual Int_t   TrackTimes( TClonesArray* tracks );
 
   virtual Int_t   SetRefDet( const char* name );
@@ -28,8 +28,8 @@ public:
   Bool_t GetTrSorting() const;
   Bool_t SetTrSorting( Bool_t set = false );
   Bool_t AutoStandardDetectors( Bool_t set = true );
-  
-  virtual EStatus Init( const TDatime& run_time );
+
+  EStatus Init( const TDatime& run_time ) override;
 
 protected:
   THaNonTrackingDetector* fRefDet;  // calculate time track hits this plane
@@ -40,7 +40,7 @@ protected:
     kAutoStdDets  = BIT(15)  // Auto-create standard detectors if no "vdc"
   };
 
-  ClassDef(THaHRS,0) //A Hall A High Resolution Spectrometer
+  ClassDefOverride(THaHRS,0) //A Hall A High Resolution Spectrometer
 };
 
 #endif

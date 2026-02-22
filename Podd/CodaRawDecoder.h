@@ -19,9 +19,9 @@ namespace Podd {
 class CodaRawDecoder : public Decoder::CodaDecoder {
 public:
   CodaRawDecoder();
-  virtual ~CodaRawDecoder();
+  ~CodaRawDecoder() override;
 
-  ClassDef(CodaRawDecoder,0) // CODA event data decoder exporting global vars
+  ClassDefOverride(CodaRawDecoder,0) // CODA event data decoder exporting global vars
 };
 
 } // namespace Podd

@@ -19,11 +19,11 @@ namespace Podd {
     VectorObjVar( THaVar* pvar, const void* addr, VarType type,
 		  Int_t elem_size, Int_t offset );
 
-    virtual VarPtr_t     clone( THaVar* pvar ) const;
+    VarPtr_t     clone( THaVar* pvar ) const override;
 
-    virtual Int_t        GetLen()  const;
-    virtual const void*  GetDataPointer( Int_t i = 0 ) const;
-    virtual Bool_t       HasSameSize( const Variable& rhs ) const;
+    Int_t        GetLen()  const override;
+    const void*  GetDataPointer( Int_t i = 0 ) const override;
+    Bool_t       HasSameSize( const Variable& rhs ) const override;
 
   protected:
     Int_t   fElemSize;  // Size of one vector element. If 0, assume pointers

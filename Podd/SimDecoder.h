@@ -41,7 +41,7 @@ public:
   Double_t PTheta() const { return fMomentum.Theta(); }
   Double_t PPhi() const   { return fMomentum.Phi(); }
 
-  virtual void Print( const Option_t* opt="" ) const;
+  void Print( const Option_t* opt="" ) const override;
 
   // Physics truth data
   Int_t    fNumber;        // Track counter
@@ -67,7 +67,7 @@ public:
   Double_t fMCFitPar[NFP]; // Results of fit(s) to MC hits
   Double_t fRcFitPar[NFP]; // Results of fit(s) to reconstructed hits
 
-  ClassDef(MCTrack,2)  // An MC physics track
+  ClassDefOverride(MCTrack,2)  // An MC physics track
 };
 
 //_____________________________________________________________________________
@@ -111,9 +111,9 @@ public:
       fClustSize(0), fMCPoint(point), fMCP(pvect), fMCTime(kBig), fDeltaE(kBig),
       fDeflect(kBig), fToF(kBig), fHitResid(kBig), fTrackResid(kBig)  {}
 
-  virtual Int_t  Compare( const TObject* obj ) const;
-  virtual Bool_t IsSortable() const { return true; }
-  virtual void   Print( Option_t* opt ) const;
+  Int_t  Compare( const TObject* obj ) const override;
+  Bool_t IsSortable() const override { return true; }
+  void   Print( Option_t* opt ) const override;
 
   Double_t X()         const { return fMCPoint.X(); }
   Double_t Y()         const { return fMCPoint.Y(); }
@@ -155,7 +155,7 @@ public:
 
   static Double_t fgWindowSize; // Half-size of search window (m)
 
-  ClassDef(MCTrackPoint,3)  // Monte Carlo track interaction coordinates
+  ClassDefOverride(MCTrackPoint,3)  // Monte Carlo track interaction coordinates
 };
 
 //_____________________________________________________________________________
@@ -163,9 +163,9 @@ public:
 class SimDecoder : public THaEvData {
  public:
   SimDecoder();
-  virtual ~SimDecoder();
+  ~SimDecoder() override;
 
-  virtual void       Clear( Option_t* opt="" );
+          void       Clear( Option_t* opt="" ) override;
   virtual MCHitInfo  GetMCHitInfo( Int_t crate, Int_t slot, Int_t chan ) const;
   virtual Int_t      DefineVariables( THaAnalysisObject::EMode mode =
 				      THaAnalysisObject::kDefine );
@@ -201,7 +201,7 @@ protected:
   TClonesArray*  fMCPoints;   //-> MC physics track points
   Bool_t         fIsSetup;    // DefineVariables has run
 
-  ClassDef(SimDecoder,0) // Generic decoder for simulation data
+  ClassDefOverride(SimDecoder,0) // Generic decoder for simulation data
 };
 
 ///////////////////////////////////////////////////////////////////////////////

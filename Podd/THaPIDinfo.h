@@ -21,14 +21,15 @@ public:
   THaPIDinfo( UInt_t ndet, UInt_t npart );
   explicit THaPIDinfo( const THaTrack* track );
 
-  virtual void      Clear( Option_t* opt="" );
+          void      Clear( Option_t* opt="" ) override;
+          void      Print( Option_t* opt="" ) const override;
+
   virtual void      CombinePID();
           UInt_t    GetNdet()  const { return fNdet; }
           UInt_t    GetNpart() const { return fNpart; }
           Double_t  GetPrior( UInt_t particle ) const;
           Double_t  GetProb( UInt_t detector, UInt_t particle ) const;
           Double_t  GetCombinedProb( UInt_t particle ) const;
-  virtual void      Print( Option_t* opt="" ) const;
           void      SetDefaultPriors();
           void      SetPrior( UInt_t particle, Double_t prob );
           void      SetProb( UInt_t detector, UInt_t particle, Double_t prob );
@@ -48,7 +49,7 @@ protected:
 
   UInt_t            idx( UInt_t detector, UInt_t particle ) const;
 
-  ClassDef(THaPIDinfo,1)  //Particle ID information for a track
+  ClassDefOverride(THaPIDinfo,1)  //Particle ID information for a track
 };
 
 //---------------- inlines ----------------------------------------------------

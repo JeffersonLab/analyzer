@@ -26,14 +26,14 @@ public:
   Double_t         Z() const { return fCenter.Z(); }
 
   // TObject functions redefined
-  virtual void     Clear( Option_t* opt="" );
-  virtual void     Print( Option_t* opt="" ) const;
+  void             Clear( Option_t* opt="" ) override;
+  void             Print( Option_t* opt="" ) const override;
 
 protected:
 
   TVector3         fCenter;          // Center coordinates of cluster
 
-  ClassDef(THaCluster,0)             // Generic wire chamber cluster
+  ClassDefOverride(THaCluster,0)     // Generic wire chamber cluster
 };
 
 //////////////////////////////////////////////////////////////////////////////

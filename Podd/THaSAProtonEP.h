@@ -20,9 +20,9 @@ public:
                  const char* spectro, const char* beam,
                  Double_t target_mass = -1.0 /* GeV/c2 */ );
 
-  virtual Int_t  Process( const THaEvData& );
+  Int_t  Process( const THaEvData& ) override;
 
-  ClassDef(THaSAProtonEP,0)   //Single arm proton kinematics
+  ClassDefOverride(THaSAProtonEP,0)   //Single arm proton kinematics
 };
 
 #endif

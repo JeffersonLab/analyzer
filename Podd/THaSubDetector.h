@@ -29,14 +29,14 @@ public:
   // Search for parent THaDetector (not subdetector)
   THaDetector*     GetMainDetector() const;
   THaApparatus*    GetApparatus() const;
-  
+
+  const char*      GetDBFileName() const override;
+
   virtual void     SetParent( THaDetectorBase* );
   void             SetDetector( THaDetectorBase* det ) { SetParent(det); }
 
 protected:
-
-  virtual const char* GetDBFileName() const;
-  virtual void MakePrefix();
+  void MakePrefix() override;
 
   //Only derived classes may construct me
   THaSubDetector( const char* name, const char* description,
@@ -47,7 +47,7 @@ protected:
   TRef fParent;        // (Sub)detector containing this subdetector
 
  public:
-  ClassDef(THaSubDetector,1)   //ABC for a subdetector
+  ClassDefOverride(THaSubDetector,1)   //ABC for a subdetector
 };
 
 #endif

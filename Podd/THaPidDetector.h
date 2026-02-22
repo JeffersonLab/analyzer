@@ -21,7 +21,7 @@ class THaPidDetector : public THaNonTrackingDetector {
 public:
   THaPidDetector() = default; // for ROOT I/O
 
-  virtual Bool_t   IsPid() { return true; }
+  Bool_t   IsPid() override { return true; }
 
 protected:
 
@@ -30,7 +30,7 @@ protected:
   THaPidDetector( const char* name, const char* description,
                   THaApparatus* a = nullptr );
 
-  ClassDef(THaPidDetector,0)  //ABC for a PID detector
+  ClassDefOverride(THaPidDetector,0)  //ABC for a PID detector
 };
 
 #endif

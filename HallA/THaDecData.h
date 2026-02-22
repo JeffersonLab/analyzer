@@ -18,21 +18,20 @@ class THaDecData : public Podd::DecData {
 public:
   explicit THaDecData( const char* name = "D",
                        const char* description = "Raw Hall A decoder data" );
-  virtual FILE*   OpenFile( const TDatime& date );
+  FILE*    OpenFile( const TDatime& date ) override;
 
 protected:
-  virtual Int_t   ReadDatabase( const TDatime& date );
+  Int_t    ReadDatabase( const TDatime& date ) override;
 
   // Expansion hooks for DecData::ReadDatabase
-  virtual Int_t   SetupDBVersion( FILE* file, Int_t db_version );
-  virtual Int_t   GetConfigstr( FILE* file, const TDatime& date,
-				Int_t db_version,
-				const BdataLoc::BdataLocType& loctype,
-				TString& configstr );
+  Int_t    SetupDBVersion( FILE* file, Int_t db_version ) override;
+  Int_t    GetConfigstr( FILE* file, const TDatime& date, Int_t db_version,
+                         const BdataLoc::BdataLocType& loctype,
+                         TString& configstr ) override;
 
   std::map<TString,TString> fConfigstrMap;
 
-  ClassDef(THaDecData,0)
+  ClassDefOverride(THaDecData,0)
 };
 
 #endif

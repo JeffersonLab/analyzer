@@ -17,20 +17,20 @@ public:
   UserModule( const char* name, const char* description,
 	      const char* spectro = "",
 	      Double_t parameter = 0.0 );
-  virtual ~UserModule();
+  ~UserModule() override;
+
+  void    Clear( Option_t* opt="" ) override;
+
+  Data_t  GetResultA() const { return fResultA; }
+  Data_t  GetResultB() const { return fResultB; }
   
-  virtual void  Clear( Option_t* opt="" );
+  Data_t  GetParameter() const { return fParameter; }
 
-  Data_t        GetResultA() const { return fResultA; }
-  Data_t        GetResultB() const { return fResultB; }
-  
-  Data_t        GetParameter() const { return fParameter; }
+  void    SetParameter( Data_t value );
+  void    SetSpectrometer( const char* name );
 
-  void          SetParameter( Data_t value );
-  void          SetSpectrometer( const char* name );
-
-  virtual EStatus Init( const TDatime& run_time );
-  virtual Int_t   Process( const THaEvData& );
+  EStatus Init( const TDatime& run_time ) override;
+  Int_t   Process( const THaEvData& ) override;
 
 protected:
 
@@ -39,13 +39,13 @@ protected:
 
   Data_t        fParameter;    // Example parameter
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadRunDatabase( const TDatime& date );
-
-  TString             fSpectroName;  // Name of spectrometer
+  TString       fSpectroName;  // Name of spectrometer
   THaTrackingModule*  fSpectro;      // Pointer to spectrometer object
 
-  ClassDef(UserModule,0)   //Example physics module
+  Int_t   DefineVariables( EMode mode = kDefine ) override;
+  Int_t   ReadRunDatabase( const TDatime& date ) override;
+
+  ClassDefOverride(UserModule,0)   //Example physics module
 };
 
 #endif

@@ -14,14 +14,13 @@ class THaIdealBeam : public THaBeam {
 public:
   THaIdealBeam( const char* name, const char* description );
 
-  virtual EStatus Init( const TDatime& run_time );
-  virtual Int_t   Reconstruct() { return 0; }
+  EStatus Init( const TDatime& run_time ) override;
+  Int_t   Reconstruct() override { return 0; }
 
 protected:
+  Int_t   ReadRunDatabase( const TDatime& date ) override;
 
-  virtual Int_t   ReadRunDatabase( const TDatime& date );
-
-  ClassDef(THaIdealBeam,1)    // A beam with constant position and direction
+  ClassDefOverride(THaIdealBeam,1)    // A beam with constant position and direction
 };
 
 #endif

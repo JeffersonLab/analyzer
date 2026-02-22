@@ -17,12 +17,12 @@ public:
 		 const char* input_tracks = "", 
 		 Double_t particle_mass = 0.511e-3 /* GeV/c^2 */,
 		 Int_t hadron_charge = 1 );
-  virtual ~THaTrackEloss();
-  
-  virtual void      Clear( Option_t* opt="" );
+  ~THaTrackEloss() override;
 
-  virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process( const THaEvData& );
+  void      Clear( Option_t* opt="" ) override;
+
+  EStatus   Init( const TDatime& run_time ) override;
+  Int_t     Process( const THaEvData& ) override;
 
 
 protected:
@@ -33,9 +33,9 @@ protected:
   virtual void       CalcEloss( THaTrackInfo* trkifo );
 
   // Setup functions
-  virtual Int_t DefineVariables( EMode mode = kDefine );
+  Int_t DefineVariables( EMode mode = kDefine ) override;
 
-  ClassDef(THaTrackEloss,0)   //Track energy loss correction module
+  ClassDefOverride(THaTrackEloss,0)   //Track energy loss correction module
 };
 
 #endif

@@ -43,11 +43,11 @@ class THaScalerEvtHandler : public THaEvtTypeHandler {
 public:
 
   THaScalerEvtHandler(const char* name, const char* description);
-  virtual ~THaScalerEvtHandler();
+  ~THaScalerEvtHandler() override;
 
-   virtual Int_t Analyze(THaEvData *evdata);
-   virtual EStatus Init( const TDatime& run_time);
-   virtual Int_t End( THaRunBase* r=nullptr );
+  Int_t Analyze(THaEvData *evdata) override;
+  EStatus Init( const TDatime& run_time) override;
+  Int_t End( THaRunBase* r=nullptr ) override;
 
 
 protected:
@@ -68,7 +68,7 @@ protected:
    Double_t *dvars;
    TTree *fScalerTree;
 
-   ClassDef(THaScalerEvtHandler,0)  // Scaler Event handler
+   ClassDefOverride(THaScalerEvtHandler,0)  // Scaler Event handler
 
 };
 

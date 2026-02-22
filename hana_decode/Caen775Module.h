@@ -22,12 +22,13 @@ public:
    using VmeModule::GetData;
    using VmeModule::Init;
 
-   virtual UInt_t GetData( UInt_t chan) const;
-   virtual void   Init();
-   virtual void   Clear(Option_t *opt="");
-   virtual Int_t  Decode(const UInt_t*) { return 0; }
-   virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer, const UInt_t *pstop );
-   virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer, UInt_t pos, UInt_t len );
+   UInt_t GetData( UInt_t chan) const override;
+   void   Init() override;
+   void   Clear(Option_t *opt="") override;
+   Int_t  Decode(const UInt_t*) override { return 0; }
+   UInt_t LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer, const UInt_t *pstop ) override;
+   UInt_t LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer, UInt_t pos, UInt_t len ) override;
+
    virtual const char* MyModType() {return "tdc";}
    virtual const char* MyModName() {return "775";}
  
@@ -36,8 +37,8 @@ private:
    static const size_t NTDCCHAN = 32;
 
    static TypeIter_t fgThisType;
-   ClassDef(Caen775Module,0)  //  Caen775 of a module; make your replacements
 
+  ClassDefOverride(Caen775Module,0)  //  Caen775 of a module; make your replacements
 };
 
 }

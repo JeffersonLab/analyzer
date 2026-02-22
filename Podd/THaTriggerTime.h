@@ -21,12 +21,12 @@ class THaDetMap;
 class THaTriggerTime : public Podd::TimeCorrectionModule {
 public:
   explicit THaTriggerTime( const char* name="trg", const char* description = "" );
-  virtual ~THaTriggerTime();
+  ~THaTriggerTime() override;
 
-  Int_t               EventType()  const { return fEvtType; }
+  Int_t       EventType()  const { return fEvtType; }
 
-  virtual void        Clear( Option_t* opt="" );
-  virtual Int_t       Process( const THaEvData& );
+  void        Clear( Option_t* opt="" ) override;
+  Int_t       Process( const THaEvData& ) override;
 
  protected:
   // Configuration
@@ -41,10 +41,10 @@ public:
   std::vector<Double_t> fTrgTimes; // array of the read-out trigger times
   Int_t     fEvtType;     // the relevant event type for this spectr.
 
-  virtual Int_t  DefineVariables( EMode mode = kDefine );
-  virtual Int_t  ReadDatabase( const TDatime& date );
+  Int_t  DefineVariables( EMode mode = kDefine ) override;
+  Int_t  ReadDatabase( const TDatime& date ) override;
 
-  ClassDef(THaTriggerTime,0)
+  ClassDefOverride(THaTriggerTime,0)
 };
 
 #endif  /*  Podd_THaTriggerTime_h_  */

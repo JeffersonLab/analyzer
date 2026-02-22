@@ -19,25 +19,25 @@ class THaReactionPoint : public THaPhysicsModule, public THaVertexModule {
 public:
   THaReactionPoint( const char* name, const char* description,
 		    const char* spectro="", const char* beam="" );
-  virtual ~THaReactionPoint();
-  
-  virtual void      Clear( Option_t* opt="" );
+  ~THaReactionPoint() override;
 
-  virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process( const THaEvData& );
-          void      SetSpectrometer( const char* name );
-          void      SetBeam( const char* name );
+  void      Clear( Option_t* opt="" ) override;
+
+  EStatus   Init( const TDatime& run_time ) override;
+  Int_t     Process( const THaEvData& ) override;
+  void      SetSpectrometer( const char* name );
+  void      SetBeam( const char* name );
 
 protected:
 
-  TString                 fSpectroName;  // Name of spectrom. to consider
-  TString                 fBeamName;     // Name of beam position apparatus
-  THaSpectrometer*        fSpectro;      // Pointer to spectrometer object
-  THaBeam*                fBeam;         // Pointer to beam position apparatus
+  TString          fSpectroName;  // Name of spectrom. to consider
+  TString          fBeamName;     // Name of beam position apparatus
+  THaSpectrometer* fSpectro;      // Pointer to spectrometer object
+  THaBeam*         fBeam;         // Pointer to beam position apparatus
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
+  Int_t DefineVariables( EMode mode = kDefine ) override;
 
-  ClassDef(THaReactionPoint,0)   //Single arm track-beam vertex module
+  ClassDefOverride(THaReactionPoint,0)   //Single arm track-beam vertex module
 };
 
 //_________ inlines __________________________________________________________

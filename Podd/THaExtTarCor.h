@@ -18,17 +18,17 @@ class THaExtTarCor : public THaPhysicsModule, public THaTrackingModule {
 public:
   THaExtTarCor( const char* name, const char* description,
 		const char* spectro="", const char* vertex="" );
-  virtual ~THaExtTarCor();
-  
-  virtual void      Clear( Option_t* opt="" );
+  ~THaExtTarCor() override;
 
-  Double_t          GetDeltaP()  const { return fDeltaP; }
-  Double_t          GetDeltaDp() const { return fDeltaDp; }
-  Double_t          GetDeltaTh() const { return fDeltaTh; }
+  void      Clear( Option_t* opt="" ) override;
 
-  virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process( const THaEvData& );
-          void      SetModuleNames( const char* spectro, const char* vertex="" );
+  Double_t  GetDeltaP()  const { return fDeltaP; }
+  Double_t  GetDeltaDp() const { return fDeltaDp; }
+  Double_t  GetDeltaTh() const { return fDeltaTh; }
+
+  EStatus   Init( const TDatime& run_time ) override;
+  Int_t     Process( const THaEvData& ) override;
+  void      SetModuleNames( const char* spectro, const char* vertex="" );
 
 protected:
 
@@ -44,10 +44,10 @@ protected:
   THaTrackingModule*      fTrackModule;  // Pointer to tracking module
   THaVertexModule*        fVertexModule; // Pointer to vertex module
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadRunDatabase( const TDatime& date );
+  Int_t DefineVariables( EMode mode = kDefine ) override;
+  Int_t ReadRunDatabase( const TDatime& date ) override;
 
-  ClassDef(THaExtTarCor,0)   //Extended target corrections module
+  ClassDefOverride(THaExtTarCor,0)   //Extended target corrections module
 };
 
 //_________ inlines __________________________________________________________

@@ -31,8 +31,8 @@ public:
   {}
 
   virtual Double_t ConvertTimeToDist(Double_t slope);
-  Int_t  Compare ( const TObject* obj ) const;
-  Bool_t IsSortable () const { return true; }
+  Int_t  Compare ( const TObject* obj ) const override;
+  Bool_t IsSortable () const override { return true; }
 
   // Get and Set Functions
   THaVDCWire* GetWire() const { return fWire; }
@@ -82,7 +82,7 @@ protected:
   Int_t       fTrkNum;   // Number of the track using this hit (0 = unused)
   Int_t       fClsNum;   // Number of the cluster using this hit (-1 = unused)
 
-  ClassDef(THaVDCHit,4)     // VDCHit class
+  ClassDefOverride(THaVDCHit,4)     // VDCHit class
 };
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -28,12 +28,12 @@ public:
   THaVform();
   THaVform( const char* type, const char* name, const char* formula,
       const THaVarList* vlst=nullptr, const THaCutList* clst=nullptr );
-  virtual  ~THaVform();
+  ~THaVform() override;
   THaVform(const THaVform& vform);
   THaVform& operator=(const THaVform& vform);
 
 // Over-rides base class DefinedGlobalVariables
-  Int_t DefinedGlobalVariable( TString& variable );
+  Int_t DefinedGlobalVariable( TString& variable ) override;
 // Self-explanatory printouts
   void  ShortPrint() const;
   void  LongPrint() const;
@@ -102,7 +102,7 @@ protected:
 
 private:
 
-  ClassDef(THaVform,0)  // Vector of formulas or a var-sized array
+  ClassDefOverride(THaVform,0)  // Vector of formulas or a var-sized array
 };
 
 

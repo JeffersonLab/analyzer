@@ -25,22 +25,22 @@ class THaSpectrometer : public THaApparatus, public THaTrackingModule,
                         public THaVertexModule {
   
 public:
-  virtual ~THaSpectrometer();
+  ~THaSpectrometer() override;
   
   // Main functions
-  virtual void             Clear( Option_t* opt="");
+          void             Clear( Option_t* opt="") override;
   virtual Int_t            CoarseTrack();
-  virtual Int_t            CoarseReconstruct();
-  virtual EStatus          Init( const TDatime& run_time );
+          Int_t            CoarseReconstruct() override;
+          EStatus          Init( const TDatime& run_time ) override;
   virtual Int_t            Track();
-  virtual Int_t            Reconstruct();
+          Int_t            Reconstruct() override;
   virtual Int_t            CalcPID();
   virtual Int_t            FindVertices( TClonesArray& tracks ) = 0;
   virtual Int_t            TrackCalc() = 0;
 
   // Auxiliary functions
-  virtual Int_t            AddDetector( THaDetector* det, Bool_t quiet = false,
-                                        Bool_t first = false );
+          Int_t            AddDetector( THaDetector* det, Bool_t quiet = false,
+                                        Bool_t first = false ) override;
   virtual Int_t            AddPidParticle( const char* shortname, 
                                            const char* name,
                                            Double_t mass, Int_t charge = 0 );
@@ -53,8 +53,8 @@ public:
           Int_t            GetNTracks()  const { return fTracks->GetLast()+1; }
           TClonesArray*    GetTracks()   const { return fTracks; }
           TClonesArray*    GetTrackPID() const { return fTrackPID; }
-  virtual const TVector3&  GetVertex()   const;
-  virtual Bool_t           HasVertex() const;
+          const TVector3&  GetVertex()   const override;
+          Bool_t           HasVertex() const override;
 
           Bool_t           IsDone( UInt_t stage ) const;
           Bool_t           IsPID() const       { return fPID; }
@@ -126,12 +126,12 @@ protected:
   // only derived classes can construct me
   THaSpectrometer( const char* name, const char* description );
 
-  virtual Int_t   DefineVariables( EMode mode = kDefine );
-  virtual Int_t   ReadRunDatabase( const TDatime& date );
+          Int_t   DefineVariables( EMode mode = kDefine ) override;
+          Int_t   ReadRunDatabase( const TDatime& date ) override;
   virtual void    ListInit();     // Initialize lists of detector types
   virtual void    PidInit();      // Initialize PID structures
 
-  ClassDef(THaSpectrometer,1)     // A generic spectrometer
+  ClassDefOverride(THaSpectrometer,1)     // A generic spectrometer
 };
 
 

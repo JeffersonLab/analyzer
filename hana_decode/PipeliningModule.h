@@ -45,14 +45,16 @@ public:
    PipeliningModule( UInt_t crate, UInt_t slot );
 
    using VmeModule::Init;
-   virtual void Init( const char* configstr );
-   virtual void Clear( Option_t *opt="" );
+   void Init( const char* configstr ) override;
+   void Clear( Option_t *opt="" ) override;
+
+   UInt_t LoadNextEvBuffer( THaSlotData *sldat ) override;
 
   // Wrappers for LoadSlot methods to allow buffer preprocessing
-  virtual UInt_t LoadBlock( THaSlotData* sldat, const UInt_t* evbuffer,
-                            const UInt_t* pstop );
-  virtual UInt_t LoadBank( THaSlotData* sldat, const UInt_t* evbuffer,
-                           UInt_t pos, UInt_t len );
+   UInt_t LoadBlock( THaSlotData* sldat, const UInt_t* evbuffer,
+                     const UInt_t* pstop ) override;
+   UInt_t LoadBank( THaSlotData* sldat, const UInt_t* evbuffer,
+                    UInt_t pos, UInt_t len ) override;
 
 #ifdef WITH_DEBUG
   // Print buffer structure, for debugging
@@ -62,7 +64,6 @@ public:
 
 protected:
 
-   virtual UInt_t LoadNextEvBuffer( THaSlotData *sldat );
    UInt_t fBlockHeader;    // Copy of block header word
    UInt_t data_type_def;   // Data type indicated by most recent header word
 
@@ -85,7 +86,7 @@ protected:
    Long64_t VerifyBlockTrailer( const UInt_t* evbuffer, UInt_t pos, UInt_t len,
                                 Long64_t ibeg, Long64_t iend ) const;
 
-   ClassDef(Decoder::PipeliningModule,0)  // A pipelining module
+   ClassDefOverride(Decoder::PipeliningModule,0)  // A pipelining module
 };
 
 //_____________________________________________________________________________
