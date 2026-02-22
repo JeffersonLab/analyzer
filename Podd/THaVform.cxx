@@ -182,8 +182,8 @@ void THaVform::Uncreate()
 {
   delete fOdata;
   fOdata = nullptr;
-  for( auto& itc : fCut ) delete itc;
-  for( auto& itf : fFormula ) delete itf;
+  DeleteContainer(fCut);
+  DeleteContainer(fFormula);
   fCut.clear();
   fFormula.clear();
 }
@@ -502,20 +502,15 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
     string cname(GetName());
 
     if (IsCut()) {
-      if( !fCut.empty() ) {  // drop what was there before
-        for( auto& itc : fCut ) delete itc;
-        fCut.clear();
-      }
+      // drop what was there before
+      DeleteContainer(fCut);
       cname += "cut";
       //FIXME: avoid duplicate cuts/formulas
       fCut.push_back(new THaCut(cname.c_str(),sform.c_str(),
 				"thavsform"));
     } else if (IsFormula()) {
-      if( !fFormula.empty() ) {  // drop what was there before
-        for( auto& itf : fFormula )
-          delete itf;
-	fFormula.clear();
-      }
+      // drop what was there before
+      DeleteContainer(fFormula );
       cname += "form";
       //FIXME: avoid duplicate cuts/formulas
       fFormula.push_back(new THaFormula(cname.c_str(),sform.c_str()));
