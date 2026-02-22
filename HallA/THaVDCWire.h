@@ -37,16 +37,15 @@ public:
   void SetTOffset (Double_t tOffset){ fTOffset = tOffset; }
   void SetTTDConv (VDC::TimeToDistConv * ttdConv){ fTTDConv = ttdConv;}
 
+  THaVDCWire( const THaVDCWire& ) = delete;
+  THaVDCWire& operator=( const THaVDCWire& ) = delete;
+
 protected:
   Int_t    fNum;                       //Wire Number
   Int_t    fFlag;                      //Flag for errors (e.g. Bad wire)
   Double_t fPos;                       //Position within the plane
   Double_t fTOffset;                   //Timing Offset
   VDC::TimeToDistConv* fTTDConv;       //!Time to Distance Converter
-
-private:
-  THaVDCWire( const THaVDCWire& );
-  THaVDCWire& operator=( const THaVDCWire& );
 
   ClassDef(THaVDCWire,1)             // VDCWire class
 };

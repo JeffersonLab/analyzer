@@ -20,6 +20,8 @@ class THaVDCPoint : public THaCluster {
 public:
   THaVDCPoint( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
 	       THaVDCChamber* chamber );
+  THaVDCPoint( const THaVDCPoint& ) = delete;
+  THaVDCPoint& operator=( const THaVDCPoint& ) = delete;
 
   void CalcDetCoords();
 
@@ -64,11 +66,6 @@ protected:
 
   void Set( Double_t x, Double_t y, Double_t theta, Double_t phi )
   { fX = x; fY = y; fTheta = theta; fPhi = phi; }
-
-private:
-  // Hide copy ctor and op=
-  THaVDCPoint( const THaVDCPoint& );
-  THaVDCPoint& operator=( const THaVDCPoint& );
 
   ClassDef(THaVDCPoint,0)    // Pair of one U and one V cluster in a VDC chamber
 };
