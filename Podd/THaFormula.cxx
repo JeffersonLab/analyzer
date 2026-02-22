@@ -672,6 +672,7 @@ Int_t THaFormula::DefinedSpecialFunction( TString& name )
 	  SetBit( kFuncOfVarArray );
 	} else if( func->GetNdata() == 0 ) {
 	  // Empty fixed-size array is an invalid argument
+          delete func;
 	  return -2;
 	}
       }

@@ -122,7 +122,7 @@ Int_t BankData::ReadDatabase( const TDatime& date )
     if (fDebug) cout << "svar " << svar << "  len " << svar.length()
                      << "  iroc " << iroc << "  ibank " << ibank
                      << "  offset " << ioff << "  num " << inum << endl;
-    banklocs.emplace_back(new BankLoc(svar, iroc, ibank, ioff, inum));
+    banklocs.emplace_back(make_unique<BankLoc>(svar, iroc, ibank, ioff, inum));
   }
 
   Int_t maxwords = 1, ibank = 0;
