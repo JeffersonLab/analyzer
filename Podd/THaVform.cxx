@@ -20,6 +20,7 @@
 #include "TTree.h"
 #include "Helper.h"
 
+#include <algorithm>
 #include <iostream>
 #include <cassert>
 #include <utility>
@@ -425,7 +426,7 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
 
   Int_t status = 0;
 
-  if (flo < 0) flo = 0;
+  flo = std::max(flo, 0);
   if (flo >= fhi) return 0;
   if (fhi > fgVFORM_HUGE) {
     // fSize cannot be infinite.
@@ -799,7 +800,7 @@ void THaVform::GetForm(Int_t size)
       aline.append(acopy.substr(ipos[ipos.size()-1],acopy.length()));
       acopy = aline;
     }
-    if( aline.length() > 0 )
+    if( !aline.empty() )
       fVectSform.push_back(aline);
   }
 

@@ -998,8 +998,7 @@ void THaAnalyzer::PrintCounters() const
   ULong64_t w = 0;
   auto ncounters = ToInt(fCounters.size());
   for( Int_t i = 0; i < ncounters; i++ ) {
-    if( GetCount(i) > w )
-      w = GetCount(i);
+    w = std::max(GetCount(i), w);
   }
   UShort_t ndig = IntDigits(SINT(w));
 

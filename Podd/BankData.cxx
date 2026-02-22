@@ -15,6 +15,7 @@
 #include "CodaDecoder.h"
 #include "THaGlobals.h"
 #include "Textvars.h"   // vsplit
+#include <algorithm>
 #include <sstream>
 #include <iterator>
 #include <cctype>       // isspace
@@ -131,7 +132,7 @@ Int_t BankData::ReadDatabase( const TDatime& date )
     if (fDebug) cout << "bankloc " << ibank++ << "   " << bankloc->roc << "   "
                      << bankloc->bank << "  " << bankloc->offset << "  "
                      << bankloc->numwords << endl;
-    if( bankloc->numwords > maxwords) maxwords = bankloc->numwords;
+    maxwords = std::max(bankloc->numwords, maxwords);
     Nvars += bankloc->numwords;
   }
   // maxwords is the biggest number of words for all banklocs.

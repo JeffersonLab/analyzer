@@ -14,6 +14,7 @@
 #include "TMath.h"
 #include "TClass.h"
 
+#include <algorithm>
 #include <iostream>
 
 using namespace VDC;
@@ -56,10 +57,8 @@ void THaVDCCluster::AddHit( THaVDCHit* hit )
   assert( hit );
 
   fHits.push_back( hit );
-  if( fClsBeg > hit->GetWireNum() )
-    fClsBeg = hit->GetWireNum();
-  if( fClsEnd < hit->GetWireNum() )
-    fClsEnd = hit->GetWireNum();
+  fClsBeg = std::min(fClsBeg, hit->GetWireNum());
+  fClsEnd = std::max(fClsEnd, hit->GetWireNum());
 }
 
 //_____________________________________________________________________________
@@ -466,7 +465,7 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
 
     // calculate chi2 for the track given this slope,
     // intercept, and distance offset
-    chi2_t chi2 = CalcChisquare( m, b, d0 );
+    auto [chi2, npt] = CalcChisquare( m, b, d0 );
 
     // scale the uncertainty of the fit parameters based upon the
     // quality of the fit. This really should not be necessary if
@@ -475,9 +474,9 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
 //     sigmaB *= chi2/(nhits - 2);
 
     // Pick the better value
-    if( ipivot == 0 || chi2.first < bestFit ) {
-      bestFit     = fChi2 = chi2.first;
-      fNDoF       = chi2.second - 3;
+    if( ipivot == 0 || chi2 < bestFit ) {
+      bestFit     = fChi2 = chi2;
+      fNDoF       = npt - 3;
       fLocalSlope = m;
       fInt        = b;
       fT0         = d0;

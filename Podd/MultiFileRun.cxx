@@ -1176,7 +1176,7 @@ bool MultiFileRun::SetPathList( vector<std::string> pathlist )
 //_____________________________________________________________________________
 void MultiFileRun::SetFirstSegment( Int_t n )
 {
-  if( n < 0 ) n = 0;
+  n = std::max(n, 0);
   fFirstSegment = n;
   ClearStreams();
 }
@@ -1184,7 +1184,7 @@ void MultiFileRun::SetFirstSegment( Int_t n )
 //_____________________________________________________________________________
 void MultiFileRun::SetFirstStream( Int_t n )
 {
-  if( n < 0 ) n = 0;
+  n = std::max(n, 0);
   fFirstStream = n;
   ClearStreams();
 }
@@ -1192,7 +1192,7 @@ void MultiFileRun::SetFirstStream( Int_t n )
 //_____________________________________________________________________________
 void MultiFileRun::SetMaxSegments( Int_t n )
 {
-  if( n < 0 ) n = 0;
+  n = std::max(n, 0);
   fMaxSegments = n;
   ClearStreams();
 }
@@ -1200,7 +1200,7 @@ void MultiFileRun::SetMaxSegments( Int_t n )
 //_____________________________________________________________________________
 void MultiFileRun::SetMaxStreams( Int_t n )
 {
-  if( n < 0 ) n = 0;
+  n = std::max(n, 0);
   fMaxStreams = n;
   ClearStreams();
 }
@@ -1234,7 +1234,7 @@ bool MultiFileRun::CheckWarnAbsFilename() const
 {
   bool found = false;
   for( const auto& file: fFileList ) {
-    if( file.length() > 0 && file.front() == '/' && !fPathList.empty() ) {
+    if( !file.empty() && file.front() == '/' && !fPathList.empty() ) {
       cerr << "MultiFileRun: Warning: file name " << file
            << " is an absolute path, but path list also specified. "
               "Will ignore path list for this file." << endl;
@@ -1281,8 +1281,7 @@ Int_t MultiFileRun::GetStartSegment() const
   Int_t minseg = kMaxInt;
   for( const auto& stream: fStreams ) {
     for( const auto& file: stream.fFiles ) {
-      if( file.fSegment < minseg )
-        minseg = file.fSegment;
+      minseg = std::min(file.fSegment, minseg);
     }
   }
   return minseg;
@@ -1294,8 +1293,7 @@ Int_t MultiFileRun::GetLastSegment() const
   Int_t maxseg = kMinInt;
   for( const auto& stream: fStreams ) {
     for( const auto& file: stream.fFiles ) {
-      if( file.fSegment > maxseg )
-        maxseg = file.fSegment;
+      maxseg = std::max(file.fSegment, maxseg);
     }
   }
   return maxseg;
@@ -1306,8 +1304,7 @@ Int_t MultiFileRun::GetStartStream() const
 {
   Int_t minstr = kMaxInt;
   for( const auto& stream: fStreams ) {
-    if( stream.fID < minstr )
-      minstr = stream.fID;
+    minstr = std::min(stream.fID, minstr);
   }
   return minstr;
 }
@@ -1317,8 +1314,7 @@ Int_t MultiFileRun::GetLastStream() const
 {
   Int_t maxstr = kMinInt;
   for( const auto& stream: fStreams ) {
-    if( stream.fID > maxstr )
-      maxstr = stream.fID;
+    maxstr = std::max(stream.fID, maxstr);
   }
   return maxstr;
 }
