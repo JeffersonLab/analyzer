@@ -26,9 +26,10 @@ namespace Podd {
 
 //_____________________________________________________________________________
 VectorObjVar::VectorObjVar( THaVar* pvar, const void* addr, VarType type,
-			    Int_t elem_size, Int_t offset )
-  : Variable(pvar,addr,type), SeqCollectionVar(pvar,addr,type,offset),
-    fElemSize(elem_size)
+                            Int_t elem_size, Int_t offset )
+  : Variable(pvar, addr, type)
+  , SeqCollectionVar(pvar, addr, type, offset)
+  , fElemSize(elem_size)
 {
   // Constructor
   assert( fElemSize >= 0 );

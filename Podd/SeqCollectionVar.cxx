@@ -25,7 +25,9 @@ namespace Podd {
 //_____________________________________________________________________________
 SeqCollectionVar::SeqCollectionVar( THaVar* pvar, const void* addr,
 				    VarType type, Int_t offset )
-  : Variable(pvar,addr,type), fOffset(offset), fDim(0)
+  : Variable(pvar,addr,type)
+  , fOffset(offset)
+  , fDim(0)
 {
   // Constructor
   assert( offset >= 0 );

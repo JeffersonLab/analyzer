@@ -93,8 +93,10 @@ namespace Podd {
 
 //_____________________________________________________________________________
 DecData::DecData( const char* name, const char* descript )
-  : THaApparatus( name, descript ), evtype(0), evtypebits(0),
-    fBdataLoc( kInitHashCapacity, kRehashLevel )
+  : THaApparatus(name, descript)
+  , evtype(0)
+  , evtypebits(0)
+  , fBdataLoc(kInitHashCapacity, kRehashLevel)
 {
   fProperties &= ~kNeedsRunDB;
   fBdataLoc.SetOwner(true);

@@ -23,11 +23,15 @@ constexpr Double_t kDefaultThreshold = 4000.0;
 
 //____________________________________________________________________
 THaADCHelicity::THaADCHelicity( const char* name, const char* description,
-				THaApparatus* app ) : 
-  THaHelicityDet( name, description, app ),
-  fADC_hdata(kBig), fADC_Gate(kBig), fADC_Hel(kUnknown), 
-  fThreshold(kDefaultThreshold), fIgnoreGate(false),
-  fInvertGate(false), fNchan(0)
+                                THaApparatus* app )
+  : THaHelicityDet(name, description, app)
+  , fADC_hdata(kBig)
+  , fADC_Gate(kBig)
+  , fADC_Hel(kUnknown)
+  , fThreshold(kDefaultThreshold)
+  , fIgnoreGate(false)
+  , fInvertGate(false)
+  , fNchan(0)
 {
   // Constructor
 }
@@ -66,7 +70,8 @@ Int_t THaADCHelicity::ReadDatabase( const TDatime& date )
     return err;
 
   FILE* file = OpenFile( date );
-  if( !file ) return kFileError;
+  if( !file )
+    return kFileError;
 
   vector<Int_t> heldef, gatedef;
   fThreshold  = kDefaultThreshold;

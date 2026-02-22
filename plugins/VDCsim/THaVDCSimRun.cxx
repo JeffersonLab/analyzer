@@ -8,9 +8,15 @@
 using namespace std;
 
 //-----------------------------------------------------------------------------
-THaVDCSimRun::THaVDCSimRun(const char* filename, const char* description) :
-  THaRunBase(description), rootFileName(filename), rootFile(nullptr),
-  tree(nullptr), branch(nullptr), event(nullptr), nentries(0), entry(0)
+THaVDCSimRun::THaVDCSimRun( const char* filename, const char* description )
+  : THaRunBase(description)
+  , rootFileName(filename)
+  , rootFile(nullptr)
+  , tree(nullptr)
+  , branch(nullptr)
+  , event(nullptr)
+  , nentries(0)
+  , entry(0)
 {
   // Constructor
 
@@ -20,9 +26,15 @@ THaVDCSimRun::THaVDCSimRun(const char* filename, const char* description) :
 }
 
 //-----------------------------------------------------------------------------
-THaVDCSimRun::THaVDCSimRun(const THaVDCSimRun &run)
-  : THaRunBase(run), rootFileName(run.rootFileName), rootFile(nullptr),
-    tree(nullptr), branch(nullptr), event(nullptr), nentries(0), entry(0)
+THaVDCSimRun::THaVDCSimRun( const THaVDCSimRun& run )
+  : THaRunBase(run)
+  , rootFileName(run.rootFileName)
+  , rootFile(nullptr)
+  , tree(nullptr)
+  , branch(nullptr)
+  , event(nullptr)
+  , nentries(0)
+  , entry(0)
 {
 }
 

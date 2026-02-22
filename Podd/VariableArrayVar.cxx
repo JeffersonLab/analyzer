@@ -20,7 +20,8 @@ namespace Podd {
 //_____________________________________________________________________________
 VariableArrayVar::VariableArrayVar( THaVar* pvar, const void* addr,
 				    VarType type, const Int_t* count )
-  : Variable(pvar,addr,type), fCount(count)
+  : Variable(pvar,addr,type)
+  , fCount(count)
 {
   // Constructor
 

@@ -23,11 +23,24 @@ constexpr Int_t kDefaultNHit = 16;
 
 //_____________________________________________________________________________
 THaVDCCluster::THaVDCCluster( THaVDCPlane* owner )
-  : fPlane(owner), fPointPair(nullptr), fTrack(nullptr), fTrkNum(0),
-    fSlope(kBig), fLocalSlope(kBig), fSigmaSlope(kBig),
-    fInt(kBig), fSigmaInt(kBig), fT0(kBig), fSigmaT0(kBig),
-    fPivot(nullptr), fTimeCorrection(0),
-    fFitOK(false), fChi2(kBig), fNDoF(0.0), fClsBeg(kMaxInt), fClsEnd(-1)
+  : fPlane(owner)
+  , fPointPair(nullptr)
+  , fTrack(nullptr)
+  , fTrkNum(0)
+  , fSlope(kBig)
+  , fLocalSlope(kBig)
+  , fSigmaSlope(kBig)
+  , fInt(kBig)
+  , fSigmaInt(kBig)
+  , fT0(kBig)
+  , fSigmaT0(kBig)
+  , fPivot(nullptr)
+  , fTimeCorrection(0)
+  , fFitOK(false)
+  , fChi2(kBig)
+  , fNDoF(0.0)
+  , fClsBeg(kMaxInt)
+  , fClsEnd(-1)
 {
   // Constructor
 

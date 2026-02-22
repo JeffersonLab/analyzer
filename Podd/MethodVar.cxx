@@ -24,7 +24,9 @@ namespace Podd {
 //_____________________________________________________________________________
 MethodVar::MethodVar( THaVar* pvar, const void* addr,
 		      VarType type, MethodPtr_t method )
-  : Variable(pvar,addr,type), fMethod(std::move(method)), fData(0)
+  : Variable(pvar,addr,type)
+  , fMethod(std::move(method))
+  , fData(0)
 {
   // Constructor
   assert( fMethod );

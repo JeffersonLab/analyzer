@@ -16,11 +16,19 @@
 class THaVDCHit : public TObject {
 
 public:
-  explicit THaVDCHit( THaVDCWire* wire=nullptr, UInt_t rawtime=0,
-                      Double_t time=0.0, UInt_t nthit=0 )
-    : fWire(wire), fRawTime(rawtime), fTime(time),
-      fNthit(nthit), fDist(kBig), fdDist(1.0), ftrDist(kBig),
-      fltrDist(kBig), fTrkNum(0), fClsNum(-1) {}
+  explicit THaVDCHit( THaVDCWire* wire = nullptr, UInt_t rawtime = 0,
+                      Double_t time = 0.0, UInt_t nthit = 0 )
+    : fWire(wire)
+    , fRawTime(rawtime)
+    , fTime(time)
+    , fNthit(nthit)
+    , fDist(kBig)
+    , fdDist(1.0)
+    , ftrDist(kBig)
+    , fltrDist(kBig)
+    , fTrkNum(0)
+    , fClsNum(-1)
+  {}
 
   virtual Double_t ConvertTimeToDist(Double_t slope);
   Int_t  Compare ( const TObject* obj ) const;

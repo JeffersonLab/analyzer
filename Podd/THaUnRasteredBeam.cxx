@@ -26,8 +26,10 @@ ClassImp(THaUnRasteredBeam)
 
 THaUnRasteredBeam::THaUnRasteredBeam( const char* name, const char* description,
                                       Int_t runningsum_depth, bool do_setup )
-  : THaBeam( name, description ), fRunningSumDepth(runningsum_depth),
-    fRunningSumWrap(false), fRunningSumNext(0)
+  : THaBeam(name, description)
+  , fRunningSumDepth(runningsum_depth)
+  , fRunningSumWrap(false)
+  , fRunningSumNext(0)
 {
 
 

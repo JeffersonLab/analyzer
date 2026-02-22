@@ -21,7 +21,8 @@ namespace Podd {
 
 //_____________________________________________________________________________
 FixedArrayVar::FixedArrayVar( THaVar* pvar, const void* addr, VarType type )
-  : Variable(pvar,addr,type), fParsedName(GetName())
+  : Variable(pvar,addr,type)
+  , fParsedName(GetName())
 {
   // Constructor
 

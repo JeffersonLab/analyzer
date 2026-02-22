@@ -9,7 +9,7 @@
 
 #include "THaPhysicsModule.h"
 #include <vector>
-#include <string_view> // for std::swap (since C++17)
+#include <utility>   // for std::swap (since C++11)
 
 class THaVar;
 class TH1F;

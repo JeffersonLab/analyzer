@@ -106,7 +106,7 @@ static Int_t ReadOldFormatDB( FILE* file, map<TString,TString>& configstr_map )
     if( is_bit ) {
       TString name2 = name(3,name.Length());
       if( name2.IsDigit() && name2.Atoi() < 32 )
-	idx = 2;
+        idx = 2;
     }
     confval[idx] += name;
     confval[idx] += " ";

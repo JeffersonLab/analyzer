@@ -15,10 +15,14 @@ namespace VDC {
 class THaVDCWire : public TObject {
 
 public:
-
-  explicit THaVDCWire( Int_t num=0, Double_t pos=0.0, Double_t offset=0.0,
-	      VDC::TimeToDistConv* ttd=nullptr ) :
-    fNum(num), fFlag(0), fPos(pos), fTOffset(offset), fTTDConv(ttd) {}
+  explicit THaVDCWire( Int_t num = 0, Double_t pos = 0.0, Double_t offset = 0.0,
+                       VDC::TimeToDistConv* ttd = nullptr )
+    : fNum(num)
+    , fFlag(0)
+    , fPos(pos)
+    , fTOffset(offset)
+    , fTTDConv(ttd)
+  {}
 
   // Get and Set Functions
   Int_t    GetNum()     const { return fNum;  }

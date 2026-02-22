@@ -78,13 +78,25 @@ THaVform::THaVform( const char* type, const char* name, const char* formula,
 }
 
 //_____________________________________________________________________________
-THaVform::THaVform( const THaVform& rhs ) :
-  THaFormula(rhs), fNvar(rhs.fNvar), fObjSize(rhs.fObjSize),
-  fEyeOffset(rhs.fEyeOffset), fData(rhs.fData),
-  fType(rhs.fType), fDebug(rhs.fDebug), fAndStr(rhs.fAndStr), fOrStr(rhs.fOrStr),
-  fSumStr(rhs.fSumStr), fVarName(rhs.fVarName), fVarStat(rhs.fVarStat),
-  fSarray(rhs.fSarray), fVectSform(rhs.fVectSform), fStitle(rhs.fStitle),
-  fVarPtr(rhs.fVarPtr), fOdata(nullptr), fPrefix(rhs.fPrefix)
+THaVform::THaVform( const THaVform& rhs )
+  : THaFormula(rhs)
+  , fNvar(rhs.fNvar)
+  , fObjSize(rhs.fObjSize)
+  , fEyeOffset(rhs.fEyeOffset)
+  , fData(rhs.fData)
+  , fType(rhs.fType)
+  , fDebug(rhs.fDebug)
+  , fAndStr(rhs.fAndStr)
+  , fOrStr(rhs.fOrStr)
+  , fSumStr(rhs.fSumStr)
+  , fVarName(rhs.fVarName)
+  , fVarStat(rhs.fVarStat)
+  , fSarray(rhs.fSarray)
+  , fVectSform(rhs.fVectSform)
+  , fStitle(rhs.fStitle)
+  , fVarPtr(rhs.fVarPtr)
+  , fOdata(nullptr)
+  , fPrefix(rhs.fPrefix)
 {
   // Copy ctor
 

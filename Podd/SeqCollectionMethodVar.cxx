@@ -19,8 +19,9 @@ namespace Podd {
 //_____________________________________________________________________________
 SeqCollectionMethodVar::SeqCollectionMethodVar( THaVar* pvar, const void* addr,
 	VarType type, MethodPtr_t method )
-  : Variable(pvar,addr,type), MethodVar(pvar,addr,type,std::move(method)),
-    SeqCollectionVar(pvar,addr,type,0)
+  : Variable(pvar, addr, type)
+  , MethodVar(pvar, addr, type, std::move(method))
+  , SeqCollectionVar(pvar, addr, type, 0)
 {
   // Constructor
 }

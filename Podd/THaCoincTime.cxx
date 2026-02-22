@@ -35,11 +35,17 @@ THaCoincTime::THaCoincTime( const char* name,
 			    const char* spec1, const char* spec2,
 			    Double_t m1, Double_t m2,
 			    const char* ch_name1, const char* ch_name2 )
-  : THaPhysicsModule(name,description), fSpectN1(spec1), fSpectN2(spec2),
-    fpmass1(m1), fpmass2(m2), fSpect1(nullptr), fSpect2(nullptr),
-    fDetMap{new THaDetMap()},
-    fTdcRes{0,0}, fTdcOff{0,0}, fTdcData{0, 0}
-
+  : THaPhysicsModule(name, description)
+  , fSpectN1(spec1)
+  , fSpectN2(spec2)
+  , fpmass1(m1)
+  , fpmass2(m2)
+  , fSpect1(nullptr)
+  , fSpect2(nullptr)
+  , fDetMap{new THaDetMap()}
+  , fTdcRes{0, 0}
+  , fTdcOff{0, 0}
+  , fTdcData{0, 0}
 {
   // Normal constructor.
 

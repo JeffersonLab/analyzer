@@ -14,14 +14,28 @@ class THaBeam;
 
 class THaBeamInfo {
 public:
-  THaBeamInfo() : fPosition(kBig,kBig,kBig), fPvect(kBig,kBig,kBig), fPol(0.0),
-		  fOK(0), fBeam(nullptr) {}
+  THaBeamInfo()
+    : fPosition(kBig, kBig, kBig)
+    , fPvect(kBig, kBig, kBig)
+    , fPol(0.0)
+    , fOK(0)
+    , fBeam(nullptr)
+  {}
   THaBeamInfo( const TVector3& pvect, const TVector3& position, 
 	       Double_t pol = 0.0 ) 
-    : fPosition(position), fPvect(pvect), fPol(pol), fOK(1), fBeam(nullptr) {}
+    : fPosition(position)
+    , fPvect(pvect)
+    , fPol(pol)
+    , fOK(1)
+    , fBeam(nullptr)
+  {}
   THaBeamInfo( Double_t p, const TVector3& vect, const TVector3& position, 
 	       Double_t pol = 0.0 ) 
-    : fPosition(position), fPvect(vect), fPol(pol), fOK(1), fBeam(nullptr)
+    : fPosition(position)
+    , fPvect(vect)
+    , fPol(pol)
+    , fOK(1)
+    , fBeam(nullptr)
   { SetP(p); }
 
   void      Clear( Option_t* opt="" );

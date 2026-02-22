@@ -20,8 +20,9 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaBeamEloss::THaBeamEloss( const char* name, const char* description,
-			    const char* input_beam ) :
-  THaElossCorrection(name,description,input_beam), fBeamModule(nullptr)
+                            const char* input_beam )
+  : THaElossCorrection(name, description, input_beam)
+  , fBeamModule(nullptr)
 {
   // Normal constructor.
 
@@ -142,9 +143,9 @@ Int_t THaBeamEloss::Process( const THaEvData& )
     // calculate pathlength for this event if we have a vertex module
     if( fExtPathMode ) {
       if( !fVertexModule->HasVertex() )
-	return 1;
-      fPathlength = 
-	TMath::Abs(fVertexModule->GetVertex().Z() - fZref) * fScale;
+        return 1;
+      fPathlength =
+        TMath::Abs(fVertexModule->GetVertex().Z() - fZref) * fScale;
     }
     //update fEloss
     CalcEloss(beamifo);

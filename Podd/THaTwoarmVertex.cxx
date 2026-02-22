@@ -32,9 +32,12 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaTwoarmVertex::THaTwoarmVertex( const char* name, const char* description,
-				  const char* spectro1, const char* spectro2 ) :
-  THaPhysicsModule(name,description),
-  fName1(spectro1), fName2(spectro2), fSpectro1(nullptr), fSpectro2(nullptr)
+				  const char* spectro1, const char* spectro2 )
+  : THaPhysicsModule(name, description)
+  , fName1(spectro1)
+  , fName2(spectro2)
+  , fSpectro1(nullptr)
+  , fSpectro2(nullptr)
 {
   // Normal constructor.
 

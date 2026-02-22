@@ -25,7 +25,10 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaCut::THaCut()
-  : THaFormula(), fLastResult(false), fNCalled(0), fNPassed(0), fMode(kAND)
+  : fLastResult(false)
+  , fNCalled(0)
+  , fNPassed(0)
+  , fMode(kAND)
 {
   // Default constructor
 }
@@ -33,8 +36,11 @@ THaCut::THaCut()
 //_____________________________________________________________________________
 THaCut::THaCut( const char* name, const char* expression, const char* block,
 		const THaVarList* vlst, const THaCutList* clst )
-  : THaFormula(), fLastResult(false), fBlockname(block), fNCalled(0),
-    fNPassed(0), fMode(kAND)
+  : fLastResult(false)
+  , fBlockname(block)
+  , fNCalled(0)
+  , fNPassed(0)
+  , fMode(kAND)
 {
   // Create a cut 'name' according to 'expression'.
   // The cut may use global variables from the list 'vlst' and other,
@@ -171,9 +177,10 @@ THaCut::EvalMode THaCut::ParsePrefix( TString& expr )
     EvalMode    mode;
   };
   const vector<ModeDef_t> mode_defs = {
-    { "OR", kOR },     { "ANY", kOR },  { "AND", kAND },
-    { "ALL", kAND },   { "XOR", kXOR }, { "ONE", kXOR },
-    { "ONEOF", kXOR },
+    { .prefix = "OR",    .mode = kOR  }, { .prefix = "ANY", .mode = kOR  },
+    { .prefix = "AND",   .mode = kAND }, { .prefix = "ALL", .mode = kAND },
+    { .prefix = "XOR",   .mode = kXOR }, { .prefix = "ONE", .mode = kXOR },
+    { .prefix = "ONEOF", .mode = kXOR }
   };
 
   Ssiz_t colon = expr.Index(":");

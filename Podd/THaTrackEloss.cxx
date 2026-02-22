@@ -24,9 +24,9 @@ THaTrackEloss::THaTrackEloss( const char* name,
 			      const char* description,
 			      const char* input_tracks,
 			      Double_t particle_mass,
-			      Int_t hadron_charge ) :
-  THaElossCorrection(name,description,input_tracks,particle_mass,
-		     hadron_charge), fTrackModule(nullptr)
+			      Int_t hadron_charge )
+  : THaElossCorrection(name, description, input_tracks, particle_mass, hadron_charge)
+  , fTrackModule(nullptr)
 {
   // Normal constructor.
 

@@ -50,7 +50,8 @@ Int_t NumberOfSetBits( ULong64_t v )
   constexpr ULong64_t mask32 = (1LL<<32)-1;
   return Podd::NumberOfSetBits( static_cast<UInt_t>(mask32 & v) ) +
     Podd::NumberOfSetBits( static_cast<UInt_t>(v>>32) );
-}}
+}
+} // namespace
 
 //_____________________________________________________________________________
 THaFormula::THaFormula()
@@ -157,9 +158,12 @@ Int_t THaFormula::Init( const char* name, const char* expression )
 }
 
 //_____________________________________________________________________________
-THaFormula::THaFormula( const THaFormula& rhs ) : // NOLINT(misc-no-recursion)
-  TFormula(rhs), fVarDef(rhs.fVarDef),
-  fVarList(rhs.fVarList), fCutList(rhs.fCutList), fInstance(0)
+THaFormula::THaFormula( const THaFormula& rhs ) // NOLINT(*-no-recursion)
+  : TFormula(rhs)
+  , fVarDef(rhs.fVarDef)
+  , fVarList(rhs.fVarList)
+  , fCutList(rhs.fCutList)
+  , fInstance(0)
 {
   // Copy ctor
 }
@@ -182,7 +186,9 @@ THaFormula& THaFormula::operator=( const THaFormula& rhs )
 
 //_____________________________________________________________________________
 THaFormula::FVarDef_t::FVarDef_t( const FVarDef_t& rhs ) // NOLINT(misc-no-recursion)
-  : type(rhs.type), obj(rhs.obj), index(rhs.index)
+  : type(rhs.type)
+  , obj(rhs.obj)
+  , index(rhs.index)
 {
   if( (type == kFormula || type == kVarFormula) && rhs.obj != nullptr )
     obj = new THaFormula(*static_cast<THaFormula*>(rhs.obj));
@@ -206,7 +212,9 @@ THaFormula::FVarDef_t& THaFormula::FVarDef_t::operator=( const FVarDef_t& rhs )
 
 //_____________________________________________________________________________
 THaFormula::FVarDef_t::FVarDef_t( FVarDef_t&& rhs ) noexcept
-  : type(rhs.type), obj(rhs.obj), index(rhs.index)
+  : type(rhs.type)
+  , obj(rhs.obj)
+  , index(rhs.index)
 {
   rhs.obj = nullptr;
 }
@@ -531,8 +539,7 @@ Int_t THaFormula::DefinedCutWithType( TString& name, EVariableType type )
 
   // Cut names are obviously only valid if there is a list of existing cuts
   if( fCutList ) {
-    THaCut* pcut = fCutList->FindCut( name );
-    if( pcut ) {
+    if( THaCut* pcut = fCutList->FindCut( name ) ) {
       // See if this cut already used earlier in the expression
       for( vector<FVarDef_t>::size_type i=0; i<fVarDef.size(); ++i ) {
 	const FVarDef_t& def = fVarDef[i];
@@ -636,16 +643,16 @@ Int_t THaFormula::DefinedSpecialFunction( TString& name )
     EFuncCode      code;
   };
   static const vector<FuncDef_t> func_defs = {
-    { "Length$(",     "length$Form",  kFormula,    kLength },
-    { "Sum$(",        "sum$Form",     kFormula,    kSum },
-    { "Mean$(",       "mean$Form",    kFormula,    kMean },
-    { "StdDev$(",     "stddev$Form",  kFormula,    kStdDev },
-    { "Max$(",        "max$Form",     kFormula,    kMax },
-    { "Min$(",        "min$Form",     kFormula,    kMin },
-    { "GeoMean$(",    "geoMean$Form", kFormula,    kGeoMean },
-    { "Median$(",     "median$Form",  kFormula,    kMedian },
-    { "Iteration$",   nullptr,        kFunction,   kIteration },
-    { "NumSetBits$(", "numbits$Form", kVarFormula, kNumSetBits }
+    { .func = "Length$(",     .form = "length$Form",  .type = kFormula,    .code = kLength     },
+    { .func = "Sum$(",        .form = "sum$Form",     .type = kFormula,    .code = kSum        },
+    { .func = "Mean$(",       .form = "mean$Form",    .type = kFormula,    .code = kMean       },
+    { .func = "StdDev$(",     .form = "stddev$Form",  .type = kFormula,    .code = kStdDev     },
+    { .func = "Max$(",        .form = "max$Form",     .type = kFormula,    .code = kMax        },
+    { .func = "Min$(",        .form = "min$Form",     .type = kFormula,    .code = kMin        },
+    { .func = "GeoMean$(",    .form = "geoMean$Form", .type = kFormula,    .code = kGeoMean    },
+    { .func = "Median$(",     .form = "median$Form",  .type = kFormula,    .code = kMedian     },
+    { .func = "Iteration$",   .form = nullptr,        .type = kFunction,   .code = kIteration  },
+    { .func = "NumSetBits$(", .form = "numbits$Form", .type = kVarFormula, .code = kNumSetBits }
   };
   for( const auto& def : func_defs ) {
     if( def.form && name.BeginsWith(def.func) && name.EndsWith(")") ) {

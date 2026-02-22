@@ -32,9 +32,12 @@ ClassImp(THaReactionPoint)
 
 //_____________________________________________________________________________
 THaReactionPoint::THaReactionPoint( const char* name, const char* description,
-				    const char* spectro, const char* beam ) :
-  THaPhysicsModule(name,description), fSpectroName(spectro), 
-  fBeamName(beam), fSpectro(nullptr), fBeam(nullptr)
+                                    const char* spectro, const char* beam )
+  : THaPhysicsModule(name, description)
+  , fSpectroName(spectro)
+  , fBeamName(beam)
+  , fSpectro(nullptr)
+  , fBeam(nullptr)
 {
   // Normal constructor.
 

@@ -1543,16 +1543,14 @@ Int_t MultiFileRun::StreamInfo::FetchEventNumber()
   if( fVersion == 2 ) {
     auto evtyp = tag;
     if( evtyp <= MAX_PHYS_EVTYPE ) {
-      Int_t ret = GetEvNumV2(evbuf, fEvNum);
-      if( ret )
+      if( Int_t ret = GetEvNumV2(evbuf, fEvNum) )
         return ret;
     }
   }
   else if( fVersion == 3 ) {
     auto evtyp = CodaDecoder::InterpretBankTag(tag);
     if( evtyp == 1 ) {  // CODA 3 physics event
-      Int_t ret = GetEvNumV3(evbuf, fEvNum);
-      if( ret )
+      if( Int_t ret = GetEvNumV3(evbuf, fEvNum) )
         return ret;
     }
   }

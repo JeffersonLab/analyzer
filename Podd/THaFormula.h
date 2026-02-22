@@ -24,8 +24,8 @@ public:
   static const Option_t* const kPRINTBRIEF;
 
   THaFormula();
-  THaFormula( const char* name, const char* formula, Bool_t do_register=true,
-	      const THaVarList* vlst=nullptr, const THaCutList* clst=nullptr );
+  THaFormula( const char* name, const char* formula, Bool_t do_register = true,
+              const THaVarList* vlst = nullptr, const THaCutList* clst = nullptr );
   THaFormula( const THaFormula& rhs );
   THaFormula& operator=( const THaFormula& rhs );
   virtual ~THaFormula();
