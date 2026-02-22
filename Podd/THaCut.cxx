@@ -71,7 +71,7 @@ THaCut::THaCut( const char* name, const char* expression, const char* block,
 
   // This calls THaFormula::Compile(), which calls TFormula::Analyze(),
   // which then calls our own DefinedVariable()
-  Compile();
+  THaCut::Compile();
 }
 
 //_____________________________________________________________________________

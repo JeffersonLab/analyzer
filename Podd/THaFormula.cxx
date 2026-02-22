@@ -87,16 +87,16 @@ THaFormula::THaFormula( const char* name, const char* expression,
     fCutList = gHaCuts;
 
   if( Init( name, expression ) != 0 ) {
-    RegisterFormula(false);
+    THaFormula::RegisterFormula(false);
     return;
   }
 
   SetBit(kNotGlobal,!do_register);
 
-  Compile();   // This calls our own Compile()
+  THaFormula::Compile();   // This calls our own Compile()
 
   if( do_register )
-    RegisterFormula();
+    THaFormula::RegisterFormula();
 }
 
 //_____________________________________________________________________________
@@ -787,7 +787,7 @@ void THaFormula::Print( Option_t* option ) const
   if( !strcmp( option, kPRINTFULL ))
     TFormula::Print( option );
   else
-    TNamed::Print(option);
+    TNamed::Print(option); // NOLINT(*-parent-virtual-call)
 }
 
 //_____________________________________________________________________________

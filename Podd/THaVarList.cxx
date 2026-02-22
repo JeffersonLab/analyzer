@@ -257,7 +257,9 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     break;
   default:
     assert(false); // not reached
-    break;
+#ifdef NDEBUG
+      break;
+#endif
   }
 
   // Define the variable based on the parse results

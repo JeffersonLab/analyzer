@@ -36,6 +36,7 @@ THaVform::THaVform()
   , fEyeOffset{0}
   , fData{0}
   , fType{kUnknown}
+  , fDebug(0)
   , fVarPtr{nullptr}
   , fOdata{nullptr}
   , fPrefix{0}
@@ -49,11 +50,12 @@ THaVform::THaVform( const char* type, const char* name, const char* formula,
   , fEyeOffset{0}
   , fData{0.0}
   , fType{kUnknown}
+  , fDebug{0}
   , fVarPtr{nullptr}
   , fOdata{nullptr}
   , fPrefix{kNoPrefix}
 {
-  SetName(name);
+  THaVform::SetName(name);
   if( !vlst )
     vlst = gHaVars;
   if( !clst )
@@ -61,7 +63,7 @@ THaVform::THaVform( const char* type, const char* name, const char* formula,
   SetList(vlst);
   SetCutList(clst);
   string stemp1 = StripPrefix(formula);
-  SetTitle(stemp1.c_str());
+  THaVform::SetTitle(stemp1.c_str());
 
   if( type && *type ) {
     if( !CmpNoCase(type, "cut") )
@@ -76,7 +78,7 @@ THaVform::THaVform( const char* type, const char* name, const char* formula,
 
   // Call THaFormula's Compile() unless it's an "eye"
   if (IsEye()) return;
-  Compile();
+  THaVform::Compile();
 }
 
 //_____________________________________________________________________________

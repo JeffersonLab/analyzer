@@ -34,7 +34,7 @@ public:
   void PrintEvent( ULong64_t evtnum ) const;
 
 protected:
-  virtual void  FillHisto();
+  void  FillHistos();
   void  CheckTIRvsRing( ULong64_t eventnumber );
   void  LoadHelicity( ULong64_t eventnumber );
   UInt_t RanBit30( UInt_t& ranseed ) const;

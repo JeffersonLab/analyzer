@@ -133,7 +133,7 @@ MultiFileRun::MultiFileRun( vector<string> pathList, vector<string> fileList,
   ranges::for_each(fFileList, expand_name);
   ranges::for_each(fPathList, expand_name);
 
-  CheckWarnAbsFilename();
+  (void)CheckWarnAbsFilename();
 
   ResetBit(kResolvingWildcard);
 }
@@ -537,10 +537,12 @@ Int_t MultiFileRun::ForEachMatchItemInDir(
 {
   auto* dirp = gSystem->OpenDirectory(dir);
   assert( dirp ); // else item_is_dir() faulty
+#ifdef NDEBUG
   if( !dirp ) {
     cerr << "Directory " << dir << " unexpectedly cannot be opened." << endl;
     return READ_ERROR;
   }
+#endif
   Int_t ret = READ_OK;
   SetBit(kResolvingWildcard);
   bool found_exact = false;
@@ -944,7 +946,7 @@ TString MultiFileRun::FindInitInfoFile( const TString& fname )
 // - First, in the same directory as the continuation segment.
 // - Then, look in the directories in fPathList
 // Returns an empty string if no matching file can be found.
-TString MultiFileRun::FindInitInfoFileImpl( const TString& fname,
+TString MultiFileRun::FindInitInfoFileImpl( const TString& /*fname*/,
                                             TString initinfo_file )
 {
   if( initinfo_file.IsNull() )
@@ -1462,8 +1464,10 @@ const UInt_t* MultiFileRun::StreamInfo::GetEvBuffer() const
 {
   assert(fCodaData);
   assert(fActive);
+#ifdef NDEBUG
   if( !fCodaData || !fActive )
     return nullptr; // if not active, the buffer does not contain valid data
+#endif
   return fCodaData->getEvBuffer();
 }
 

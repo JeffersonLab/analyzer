@@ -177,7 +177,7 @@ Int_t THaQWEAKHelicity::Begin( THaRunBase* )
 }
 
 //_____________________________________________________________________________
-void THaQWEAKHelicity::FillHisto()
+void THaQWEAKHelicity::FillHistos()
 {
   fHisto[0]->Fill(fRing_NSeed);
   fHisto[1]->Fill(fErrorCode);
@@ -240,7 +240,7 @@ Int_t THaQWEAKHelicity::Decode( const THaEvData& evdata )
     PrintEvent(evdata.GetEvNum());
   CheckTIRvsRing(evdata.GetEvNum());
   fValidHel = (fErrorCode==0);
-  FillHisto();
+  FillHistos();
 
   return 0;
 }
