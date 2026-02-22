@@ -510,9 +510,9 @@ Int_t THaAnalyzer::Init( THaRunBase* run )
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalyzer::Init( std::shared_ptr<THaRunBase> run )
+Int_t THaAnalyzer::Init( const shared_ptr<THaRunBase>& run )
 {
-  return Process(run.get());
+  return Init(run.get());
 }
 
 //_____________________________________________________________________________
@@ -1691,7 +1691,7 @@ Long64_t THaAnalyzer::Process( THaRunBase* run )
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalyzer::Process( std::shared_ptr<THaRunBase> run )
+Long64_t THaAnalyzer::Process( const std::shared_ptr<THaRunBase>& run )
 {
   return Process(run.get());
 }

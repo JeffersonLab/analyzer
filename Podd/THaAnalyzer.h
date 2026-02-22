@@ -46,10 +46,10 @@ public:
   virtual void   Close();
   virtual Int_t  Init( THaRunBase* run );
           Int_t  Init( THaRunBase& run )    { return Init( &run ); }
-          Int_t  Init( std::shared_ptr<THaRunBase> run );
+          Int_t  Init( const std::shared_ptr<THaRunBase>& run );
   virtual Long64_t Process( THaRunBase* run = nullptr );
           Long64_t Process( THaRunBase& run ) { return Process(&run); }
-          Int_t  Process( std::shared_ptr<THaRunBase> run );
+          Long64_t Process( const std::shared_ptr<THaRunBase>& run );
           void   Print( Option_t* opt="" ) const override;
 
   void           EnableBenchmarks( Bool_t b = true );
