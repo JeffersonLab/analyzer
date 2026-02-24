@@ -47,7 +47,6 @@ TEST_CASE("Textvars string substitution", "[Database]") // NOLINT(*-function-cog
   auto tvars = make_unique<Podd::Textvars>();
 
   // Fill replacement map with a handful of examples to test
-  using Param = pair<string,string>;
   tvars->Add("key1", "value1");
   tvars->Add("ind1", "key1");
   tvars->AddVerbatim("key2", "value21, value22, value23  ");
@@ -114,8 +113,8 @@ TEST_CASE("Textvars string substitution", "[Database]") // NOLINT(*-function-cog
     CHECK(tvars->Get("key3",3) == nullptr);
     const auto& tmap = tvars->GetAllStringsMap();
     CHECK(tmap.size() == tvars->Size());
-    CHECK(tmap.find("key2") != tmap.end());
-    CHECK_FALSE(tmap.find(" key1") != tmap.end());
+    CHECK(tmap.contains("key2"));
+    CHECK_FALSE(tmap.contains(" key1"));
     auto vals3 = tvars->GetArray("key4");
     for( size_t i = 0; const auto& s: vals3 ) {
       CHECK(s == refs[i]);
@@ -124,7 +123,7 @@ TEST_CASE("Textvars string substitution", "[Database]") // NOLINT(*-function-cog
     CHECK(tvars->GetArray("nokey").empty());
     auto names = tvars->GetNames();
     CHECK(names.size() == tvars->Size());
-    CHECK(std::find(names.begin(), names.end(), "ind1") != names.end() );
+    CHECK(ranges::find(names, "ind1") != names.end() );
   }
 
   SECTION("Miscellaneous") {
@@ -152,5 +151,31 @@ Textvar:  key4 = "value41"," value42 ","   value43","a word here","value45  "
     CHECK(tvars->Size() == 0);
     CHECK(tvars->GetNames().empty());
     CHECK(tvars->GetArray("key2").empty());
+  }
+
+  SECTION("String utilities")
+  {
+    // Podd::Trim()
+    string s;
+    Podd::Trim(s);
+    CHECK(s.empty());
+    s = "word";
+    Podd::Trim(s);
+    CHECK(s == "word");
+    s = "word    ";
+    Podd::Trim(s);
+    CHECK(s == "word");
+    s = "word\n";
+    Podd::Trim(s);
+    CHECK(s == "word");
+    s = "\tword";
+    Podd::Trim(s);
+    CHECK(s == "word");
+    s = "\n   word";
+    Podd::Trim(s);
+    CHECK(s == "word");
+    s = " many     words   here ";
+    Podd::Trim(s);
+    CHECK(s == "many     words   here");
   }
 }
