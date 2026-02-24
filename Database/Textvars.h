@@ -68,18 +68,18 @@ void Trim( std::string& str )
 
   if( str.empty() )
     return;
-  const char *s = str.data(), *c = s;
+  const char *s = str.data(), *e = s + str.size() - 1, *p = e;
+  while( isspace(*p) )
+    --p;
+  if( p != e )
+    str.erase(p-s+1);
+  const char *c = s;
   while( isspace(*c) )
     ++c;
   if( !*c ) {
     str.clear();
     return;
   }
-  const char *e = s + str.size() - 1, *p = e;
-  while( isspace(*p) )
-    --p;
-  if( p != e )
-    str.erase(p-s+1);
   if( c != s )
     str.erase(0,c-s);
 }
