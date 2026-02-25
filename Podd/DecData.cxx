@@ -75,6 +75,7 @@
 #include "TObjString.h"
 #include "BdataLoc.h"
 #include "THaEvData.h"
+#include "Database.h"
 
 #include <iostream>
 #include <cctype>
@@ -83,6 +84,7 @@
 #include <cassert>
 #include <memory>
 #include <vector>
+#include <cerrno>
 
 using namespace std;
 
@@ -262,9 +264,12 @@ static Int_t CheckDBVersion( FILE* file )
 
   const TString identifier("Version:");
 
+  errno = 0;
+  if( Rewind(file) != 0 || errno )
+    return 1;
+
   constexpr size_t bufsiz = 82;
   char* buf = new char[bufsiz];
-  rewind(file);
   const char* s = fgets(buf,bufsiz,file);
   if( !s ) { // No first line? Not our problem...
     delete [] buf;

@@ -97,6 +97,17 @@ TString& GetObjArrayString( const TObjArray* array, Int_t i )
 }
 
 //_____________________________________________________________________________
+int Rewind( FILE* file )
+{
+  // Rewind file with error detection
+  if( !file )
+    return -1;
+  errno = 0;
+  clearerr(file);
+  return fseeko(file, 0L, SEEK_SET);
+}
+
+//_____________________________________________________________________________
 namespace {
 
 fs::path FindDBDir( const char* here )
@@ -646,8 +657,7 @@ Int_t LoadDBvalue( FILE* file, const TDatime& datime, const string& key,
 
   errno = 0;
   errtxt.clear();
-  rewind(file);
-  if( errno )
+  if( Rewind(file) != 0 || errno )
     goto err;
 
   while( ReadDBline(file, bufp, bufsiz, dbline) != EOF ) {

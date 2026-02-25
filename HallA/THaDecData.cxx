@@ -30,8 +30,10 @@
 #include "TClass.h"
 #include "BdataLoc.h"
 #include "TrigBitLoc.h"
+#include "Database.h"
 
 #include <cstdio>
+#include <cerrno>
 
 #ifdef DECDATA_LEGACY_DB
 # include "TObjArray.h"
@@ -82,6 +84,9 @@ static Int_t ReadOldFormatDB( FILE* file, map<TString,TString>& configstr_map )
   // Old-style "crate" objects are all assumed to be multihit channels, even
   // though they usually are not.
 
+  errno = 0;
+  if( Rewind(file) != 0 )
+    return -1;
   constexpr Int_t bufsiz = 256;
   char* buf = new char[bufsiz];
   string dbline;
@@ -89,7 +94,6 @@ static Int_t ReadOldFormatDB( FILE* file, map<TString,TString>& configstr_map )
   TString confkey[nkeys] = { "multi", "word", "bit" };
   TString confval[nkeys];
   // Read all non-comment lines
-  rewind(file);
   while( ReadDBline(file, buf, bufsiz, dbline) != EOF ) {
     if( dbline.empty() ) continue;
     // Tokenize each line read
