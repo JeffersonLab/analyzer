@@ -233,26 +233,27 @@ void THaCrateMap::setUnused( UInt_t crate, UInt_t slot )
 //_____________________________________________________________________________
 Int_t THaCrateMap::readFile( FILE* fi, string& text )
 {
-  // Read contents of opened file 'fi' to 'text'
+  // Read entire file 'fi' into string 'text'.
+  // Returns CM_OK if successful, otherwise CM_ERR, in which case the
+  // contents of 'text' are undefined.
   if( !fi )
     return CM_ERR;
-  Int_t ret = CM_ERR;
   errno = 0;
-  if( fseek(fi, 0, SEEK_END) == 0 ) {
-    long size = ftell(fi);
-    if( size > 0 ) {
-      rewind(fi);
-      unique_ptr<char[]> fbuf{new char[size]};
-      auto* const buf = &fbuf[0];
-      size_t nread = fread(buf, sizeof(char), size, fi);
-      if( std::cmp_equal(nread ,size) ) {
-        text.reserve(nread);
-        text.assign(buf, buf+nread);
-        ret = CM_OK;
-      }
-    }
+  if( fseeko(fi, 0L, SEEK_END) != 0 )
+    return CM_ERR;
+  auto size = ftello(fi);
+  if( size <= 0 || Podd::Rewind(fi) != 0 )
+    return CM_ERR;
+  try {
+    text.resize(size);
+    auto nread = fread(text.data(), sizeof(char), size, fi);
+    if( std::cmp_not_equal(nread ,size) )
+      return CM_ERR;
+  } catch ( ... ) {
+    text.clear();
+    return CM_ERR;
   }
-  return ret;
+  return CM_OK;
 }
 
 //_____________________________________________________________________________
