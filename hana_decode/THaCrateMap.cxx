@@ -575,7 +575,7 @@ Long64_t THaCrateMap::GetInitTime() const
 
 //_____________________________________________________________________________
 THaCrateMap::CrateInfo_t::CrateInfo_t() :
-  crate_code(kUnknown), crate_type_name("unknown"),
+  crate_type_name("unknown"), crate_code(kUnknown),
   crate_used(false), bank_structure(false), all_banks(false)
 {
   used_slots.reserve(sltdat.size()/2);

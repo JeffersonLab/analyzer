@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <cstdint>
 
 namespace Decoder {
 class THaCrateMap {
@@ -78,7 +79,7 @@ public:
   static constexpr UInt_t MAXDATA = 65536;
 
 private:
-  enum ECrateCode { kUnknown, kFastbus, kVME, kScaler, kCamac };
+  enum ECrateCode : std::int8_t { kUnknown, kFastbus, kVME, kScaler, kCamac };
 
   std::string fDBfileName;     // Database file name
   Long64_t    fInitTime;       // Database time stamp
@@ -105,12 +106,12 @@ private:
   public:
     CrateInfo_t();
     Int_t ParseSlotInfo( THaCrateMap* crmap, UInt_t crate, std::string& line );
-    ECrateCode crate_code;
-    std::string crate_type_name;
-    std::string scalerloc;
-    bool crate_used;
-    bool bank_structure;
-    bool all_banks;
+    std::string  crate_type_name;
+    std::string  scalerloc;
+    ECrateCode   crate_code;
+    bool         crate_used;
+    bool         bank_structure;
+    bool         all_banks;
     std::vector<UInt_t> used_slots;
     std::array<SlotInfo_t, MAXSLOT> sltdat;
   };
