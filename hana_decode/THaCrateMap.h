@@ -36,7 +36,7 @@ class THaCrateMap {
      static const UInt_t MAXDATA;
 
      explicit THaCrateMap( const char* db = "cratemap" ); // Construct uninitialized
-     virtual ~THaCrateMap() = default;
+
      bool isFastBus( UInt_t crate ) const;          // True if fastbus crate;
      bool isVme( UInt_t crate ) const;              // True if VME crate;
      bool isCamac( UInt_t crate ) const;            // True if CAMAC crate;
@@ -71,11 +71,6 @@ class THaCrateMap {
 
      const std::vector<UInt_t>& GetUsedCrates() const;
      const std::vector<UInt_t>& GetUsedSlots( UInt_t crate ) const;
-
-     static const Int_t CM_OK;
-     static const Int_t CM_ERR;
-
-     static const UInt_t DEFAULT_TSROC;
 
      const char* GetName() const { return fDBfileName.c_str(); }
      Long64_t GetInitTime() const;
@@ -134,7 +129,7 @@ class THaCrateMap {
 
      static Int_t readFile( FILE* fi, std::string& text );
 
-     ClassDef(THaCrateMap,0) // Map of modules in DAQ crates
+     ClassDefNV(THaCrateMap,0) // Map of modules in DAQ crates
 };
 
 //=============== inline functions ================================
