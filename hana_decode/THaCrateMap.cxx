@@ -63,11 +63,6 @@ static string StrError()
 //_____________________________________________________________________________
 namespace Decoder {
 
-const UInt_t THaCrateMap::MAXCHAN = 8192;
-const UInt_t THaCrateMap::MAXDATA = 65536;
-const Int_t  THaCrateMap::CM_OK   = 1;
-const Int_t  THaCrateMap::CM_ERR  = -1;
-
 // default crate number for trigger supervisor
 const UInt_t THaCrateMap::DEFAULT_TSROC = 21;
 
