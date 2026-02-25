@@ -116,7 +116,7 @@ class THaCrateMap {
 
      std::vector<UInt_t> used_crates;
 
-     Int_t  loadConfig( std::string& line, std::string& cfgstr );
+     Int_t  loadConfig( std::string& line, std::string& cfgstr ) const;
      Int_t  resetCrate( UInt_t crate );
      Int_t  setCrateType( UInt_t crate, const char* stype ); // set the crate type
      Int_t  setModel( UInt_t crate, UInt_t slot, Int_t mod,

@@ -325,7 +325,7 @@ void THaCrateMap::print(ostream& os) const
 }
 
 //_____________________________________________________________________________
-Int_t THaCrateMap::loadConfig( string& line, string& cfgstr )
+Int_t THaCrateMap::loadConfig( string& line, string& cfgstr ) const
 {
   // Check if module configuration option is specified in 'line' and,
   // if so, extract it and erase the option string from 'line'.
