@@ -48,7 +48,7 @@ using namespace std;
 static string StrError()
 {
   // Return description of current errno as a std::string
-  const size_t BUFLEN = 128;
+  constexpr size_t BUFLEN = 128;
   char buf[BUFLEN];
 
 #ifdef GNU_STRERROR_R
@@ -179,7 +179,7 @@ int THaCrateMap::SetModelSize( UInt_t crate, UInt_t slot, UInt_t model )
     { 250, 16, 20000 },  // FADC 250
   }};
   const auto* item =
-    find_if(ALL(modelpar), [model]( const ModelPar_t& modelParam ) {
+    ranges::find_if(modelpar, [model]( const ModelPar_t& modelParam ) {
       return model == modelParam.model;
     });
   if( item != modelpar.end() ) {
@@ -197,9 +197,9 @@ void THaCrateMap::setUsed( UInt_t crate, UInt_t slot )
   auto& cr = fCrateDat[crate];
   cr.crate_used = true;
   cr.sltdat[slot].used = true;
-  if( std::find(ALL(fUsedCrates), crate) == fUsedCrates.end() )
+  if( ranges::find(fUsedCrates, crate) == fUsedCrates.end() )
     fUsedCrates.push_back(crate);
-  if( std::find(ALL(cr.used_slots), slot) == cr.used_slots.end() ) {
+  if( ranges::find(cr.used_slots, slot) == cr.used_slots.end() ) {
     cr.used_slots.push_back(slot);
   }
 }
@@ -207,8 +207,8 @@ void THaCrateMap::setUsed( UInt_t crate, UInt_t slot )
 //_____________________________________________________________________________
 void THaCrateMap::setUnused( UInt_t crate )
 {
-  auto jt = std::find(ALL(fUsedCrates), crate);
-  if( jt != fUsedCrates.end() )
+  if( auto jt = ranges::find(fUsedCrates, crate);
+        jt != fUsedCrates.end() )
     fUsedCrates.erase(jt);
   fCrateDat[crate].crate_used = false;
 }
@@ -219,8 +219,8 @@ void THaCrateMap::setUnused( UInt_t crate, UInt_t slot )
   assert( crate < fCrateDat.size() && slot < fCrateDat[crate].sltdat.size() );
   auto& cr = fCrateDat[crate];
   cr.sltdat[slot].used = false;
-  auto it = std::find(ALL(cr.used_slots), slot);
-  if( it != cr.used_slots.end() ) {
+  if( auto it = ranges::find(cr.used_slots, slot);
+        it != cr.used_slots.end() ) {
     cr.used_slots.erase(it);
   }
   if( cr.used_slots.empty() )
@@ -482,12 +482,12 @@ Int_t THaCrateMap::SetBankInfo()
   for( auto& iused: fUsedCrates ) {
     auto& cr = fCrateDat[iused];
     assert(!cr.used_slots.empty());
-    sort(ALL(cr.used_slots));
+    ranges::sort(cr.used_slots);
     auto slot_is_bank = [&]( UInt_t idx ) { return cr.sltdat[idx].bank >= 0; };
-    cr.bank_structure = any_of(ALL(cr.used_slots), slot_is_bank);
-    cr.all_banks = all_of(ALL(cr.used_slots), slot_is_bank);
+    cr.bank_structure = ranges::any_of(cr.used_slots, slot_is_bank);
+    cr.all_banks = ranges::all_of(cr.used_slots, slot_is_bank);
   }
-  sort(ALL(fUsedCrates));
+  ranges::sort(fUsedCrates);
   return 0;
 }
 
