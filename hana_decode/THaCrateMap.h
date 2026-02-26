@@ -82,14 +82,13 @@ private:
   enum ECrateCode : std::int8_t { kUnknown, kFastbus, kVME, kScaler, kCamac };
 
   std::string fDBfileName;     // Database file name
-  Long64_t    fInitTime;       // Database time stamp
+  Long64_t    fInitTime;       // Database time stamp (Unix time)
   UInt_t      fTSROC;          // Crate (aka ROC) of the trigger supervisor
 
   class SlotInfo_t {
   public:
     SlotInfo_t() : model(0), header(0), headmask(0xffffffff), bank(-1),
-                   nchan(0), ndata(0), used(false), clear(true)
-    {}
+                   nchan(0), ndata(0), used(false), clear(true) {}
     Int_t  model;
     UInt_t header;
     UInt_t headmask;
@@ -116,9 +115,9 @@ private:
     std::array<SlotInfo_t, MAXSLOT> sltdat;
   };
 
-  std::vector<CrateInfo_t> crdat;
+  std::vector<CrateInfo_t> fCrateDat;
 
-  std::vector<UInt_t> used_crates;
+  std::vector<UInt_t> fUsedCrates;
 
   Int_t loadConfig( std::string& line, std::string& cfgstr ) const;
   Int_t resetCrate( UInt_t crate );
@@ -140,141 +139,141 @@ private:
 inline
 bool THaCrateMap::isFastBus( UInt_t crate ) const
 {
-  assert(crate < crdat.size());
-  return (crdat[crate].crate_code == kFastbus);
+  assert(crate < fCrateDat.size());
+  return (fCrateDat[crate].crate_code == kFastbus);
 }
 
 inline
 bool THaCrateMap::isVme( UInt_t crate ) const
 {
-  assert(crate < crdat.size());
-  return (crdat[crate].crate_code == kVME ||
-          crdat[crate].crate_code == kScaler);
+  assert(crate < fCrateDat.size());
+  return (fCrateDat[crate].crate_code == kVME ||
+          fCrateDat[crate].crate_code == kScaler);
 }
 
 inline
 bool THaCrateMap::isCamac( UInt_t crate ) const
 {
-  assert(crate < crdat.size());
-  return (crdat[crate].crate_code == kCamac);
+  assert(crate < fCrateDat.size());
+  return (fCrateDat[crate].crate_code == kCamac);
 }
 
 inline
 bool THaCrateMap::isScalerCrate( UInt_t crate ) const
 {
-  assert(crate < crdat.size());
-  return (crdat[crate].crate_code == kScaler);
+  assert(crate < fCrateDat.size());
+  return (fCrateDat[crate].crate_code == kScaler);
 }
 
 inline
 bool THaCrateMap::isBankStructure( UInt_t crate ) const
 {
-  assert(crate < crdat.size());
-  return (crdat[crate].bank_structure);
+  assert(crate < fCrateDat.size());
+  return (fCrateDat[crate].bank_structure);
 }
 
 inline
 bool THaCrateMap::isAllBanks( UInt_t crate ) const
 {
-  assert(crate < crdat.size());
-  return (crdat[crate].all_banks);
+  assert(crate < fCrateDat.size());
+  return (fCrateDat[crate].all_banks);
 }
 
 inline
 bool THaCrateMap::crateUsed( UInt_t crate ) const
 {
-  assert(crate < crdat.size());
-  return crdat[crate].crate_used;
+  assert(crate < fCrateDat.size());
+  return fCrateDat[crate].crate_used;
 }
 
 inline
 bool THaCrateMap::slotUsed( UInt_t crate, UInt_t slot ) const
 {
-  assert(crate < crdat.size() && slot < crdat[crate].sltdat.size());
-  if( crate >= crdat.size() || slot >= crdat[crate].sltdat.size() )
+  assert(crate < fCrateDat.size() && slot < fCrateDat[crate].sltdat.size());
+  if( crate >= fCrateDat.size() || slot >= fCrateDat[crate].sltdat.size() )
     return false;
-  return crdat[crate].sltdat[slot].used;
+  return fCrateDat[crate].sltdat[slot].used;
 }
 
 inline
 bool THaCrateMap::slotClear( UInt_t crate, UInt_t slot ) const
 {
-  assert(crate < crdat.size() && slot < crdat[crate].sltdat.size());
-  return crdat[crate].sltdat[slot].clear;
+  assert(crate < fCrateDat.size() && slot < fCrateDat[crate].sltdat.size());
+  return fCrateDat[crate].sltdat[slot].clear;
 }
 
 inline
 Int_t THaCrateMap::getModel( UInt_t crate, UInt_t slot ) const
 {
-  assert(crate < crdat.size() && slot < crdat[crate].sltdat.size());
-  return crdat[crate].sltdat[slot].model;
+  assert(crate < fCrateDat.size() && slot < fCrateDat[crate].sltdat.size());
+  return fCrateDat[crate].sltdat[slot].model;
 }
 
 inline
 UInt_t THaCrateMap::getMask( UInt_t crate, UInt_t slot ) const
 {
-  assert(crate < crdat.size() && slot < crdat[crate].sltdat.size());
-  return crdat[crate].sltdat[slot].headmask;
+  assert(crate < fCrateDat.size() && slot < fCrateDat[crate].sltdat.size());
+  return fCrateDat[crate].sltdat[slot].headmask;
 }
 
 inline
 Int_t THaCrateMap::getBank( UInt_t crate, UInt_t slot ) const
 {
-  assert(crate < crdat.size() && slot < crdat[crate].sltdat.size());
-  return crdat[crate].sltdat[slot].bank;
+  assert(crate < fCrateDat.size() && slot < fCrateDat[crate].sltdat.size());
+  return fCrateDat[crate].sltdat[slot].bank;
 }
 
 inline
 UInt_t THaCrateMap::getNchan( UInt_t crate, UInt_t slot ) const
 {
-  assert(crate < crdat.size() && slot < crdat[crate].sltdat.size());
-  return crdat[crate].sltdat[slot].nchan;
+  assert(crate < fCrateDat.size() && slot < fCrateDat[crate].sltdat.size());
+  return fCrateDat[crate].sltdat[slot].nchan;
 }
 
 inline
 UInt_t THaCrateMap::getNdata( UInt_t crate, UInt_t slot ) const
 {
-  assert(crate < crdat.size() && slot < crdat[crate].sltdat.size());
-  return crdat[crate].sltdat[slot].ndata;
+  assert(crate < fCrateDat.size() && slot < fCrateDat[crate].sltdat.size());
+  return fCrateDat[crate].sltdat[slot].ndata;
 }
 
 inline
 UInt_t THaCrateMap::getNslot( UInt_t crate ) const
 {
-  assert(crate < crdat.size());
-  return crdat[crate].used_slots.size();
+  assert(crate < fCrateDat.size());
+  return fCrateDat[crate].used_slots.size();
 }
 
 inline
 const char* THaCrateMap::getScalerLoc( UInt_t crate ) const
 {
-  assert(crate < crdat.size());
-  return crdat[crate].scalerloc.c_str();
+  assert(crate < fCrateDat.size());
+  return fCrateDat[crate].scalerloc.c_str();
 }
 
 inline
 const char* THaCrateMap::getConfigStr( UInt_t crate, UInt_t slot ) const
 {
-  assert(crate < crdat.size() && slot < crdat[crate].sltdat.size());
-  return crdat[crate].sltdat[slot].cfgstr.c_str();
+  assert(crate < fCrateDat.size() && slot < fCrateDat[crate].sltdat.size());
+  return fCrateDat[crate].sltdat[slot].cfgstr.c_str();
 }
 
 inline
 UInt_t THaCrateMap::getMinSlot( UInt_t crate ) const
 {
-  assert(crate < crdat.size());
-  if( crdat[crate].used_slots.empty() )
+  assert(crate < fCrateDat.size());
+  if( fCrateDat[crate].used_slots.empty() )
     return kMaxUInt;
-  return crdat[crate].used_slots.front();
+  return fCrateDat[crate].used_slots.front();
 }
 
 inline
 UInt_t THaCrateMap::getMaxSlot( UInt_t crate ) const
 {
-  assert(crate < crdat.size());
-  if( crdat[crate].used_slots.empty() )
+  assert(crate < fCrateDat.size());
+  if( fCrateDat[crate].used_slots.empty() )
     return 0;
-  return crdat[crate].used_slots.back();
+  return fCrateDat[crate].used_slots.back();
 }
 
 inline
@@ -286,21 +285,21 @@ UInt_t THaCrateMap::getTSROC() const
 inline
 UInt_t THaCrateMap::getHeader( UInt_t crate, UInt_t slot ) const
 {
-  assert(crate < crdat.size() && slot < crdat[crate].sltdat.size());
-  return crdat[crate].sltdat[slot].header;
+  assert(crate < fCrateDat.size() && slot < fCrateDat[crate].sltdat.size());
+  return fCrateDat[crate].sltdat[slot].header;
 }
 
 inline
 const std::vector<UInt_t>& THaCrateMap::GetUsedCrates() const
 {
-  return used_crates;
+  return fUsedCrates;
 }
 
 inline
 const std::vector<UInt_t>& THaCrateMap::GetUsedSlots( UInt_t crate ) const
 {
-  assert(crate < crdat.size());
-  return crdat[crate].used_slots;
+  assert(crate < fCrateDat.size());
+  return fCrateDat[crate].used_slots;
 }
 
 } // namespace Decoder
