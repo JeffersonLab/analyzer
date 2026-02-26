@@ -28,6 +28,7 @@
 #include <vector>
 #include <array>
 #include <cstdint>
+#include <map>
 
 namespace Decoder {
 class THaCrateMap {
@@ -118,6 +119,7 @@ private:
   std::vector<CrateInfo_t> fCrateDat;
 
   std::vector<UInt_t> fUsedCrates;
+  std::map<Int_t, std::string> fModuleCfg;
 
   Int_t loadConfig( std::string& line, std::string& cfgstr ) const;
   Int_t resetCrate( UInt_t crate );

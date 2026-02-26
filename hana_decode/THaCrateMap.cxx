@@ -35,6 +35,7 @@
 #include <algorithm> // for std::find, std::sort
 #include <array>
 #include <utility>
+#include <string_view>
 
 // This is a well-known problem with strerror_r
 #if defined(__linux__) && (defined(_GNU_SOURCE) || !(_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE > 600))
@@ -330,6 +331,7 @@ Int_t THaCrateMap::loadConfig( string& line, string& cfgstr ) const
   auto pos2 = line.find("dbfile:");
   bool have_cfg = (pos1 != string::npos);
   bool have_dbf = (pos2 != string::npos);
+  cfgstr.clear();
   if( have_cfg or have_dbf ) {
     if( have_cfg and have_dbf ) {
       ::Error(here, "Cannot specify both database file and options, "
@@ -405,12 +407,9 @@ Int_t THaCrateMap::CrateInfo_t::ParseSlotInfo( THaCrateMap* crmap, UInt_t crate,
 
   // Check for and extract any configuration string given on the line and,
   // if found, remove it from line and put a copy in cfgstr.
-  // This is primarily intended for bank-decoded VME and scaler modules.
   string cfgstr;
-  if( crate_code == kVME /*or code == kScaler*/ ) {
-    if( Int_t st = crmap->loadConfig(line, cfgstr); st != CM_OK )
-      return st;
-  }
+  if( Int_t st = crmap->loadConfig(line, cfgstr); st != CM_OK )
+    return st;
 
   // The line is of the format
   //        slot  model  [clear header mask nchan ndata ]
@@ -449,7 +448,30 @@ Int_t THaCrateMap::CrateInfo_t::ParseSlotInfo( THaCrateMap* crmap, UInt_t crate,
     if( nread > 4 )
       slt.headmask = mask;
   }
-  slt.cfgstr = std::move(cfgstr);
+  // If a slot-specific configuration string starts with a '+', append it
+  // to the global configuration for this model, if any.
+  // In any case, erase the '+'.
+  string default_cfgstr;
+  if( imodel != 0 ) {
+    if( auto mcfg = crmap->fModuleCfg.find(imodel);
+          mcfg != crmap->fModuleCfg.end() )
+      default_cfgstr = mcfg->second;
+  }
+  if( !cfgstr.empty() ) {
+    if( cfgstr[0] == '+' ) {
+      // If there is a '+', prepend default string
+      if( !default_cfgstr.empty() ) {
+        cfgstr[0] = ' '; // wipe the leading '+'
+        Podd::Trim(cfgstr); // OCD moment
+        slt.cfgstr = default_cfgstr + ' ' + cfgstr;
+      } else
+        slt.cfgstr = cfgstr.substr(1);
+    } else
+      // Have cfgstr without '+' -> ignore default string
+      slt.cfgstr = std::move(cfgstr);
+  } else
+    // No slot-specific string -> use default
+    slt.cfgstr = std::move(default_cfgstr);
 
   return CM_OK;
 }
@@ -493,10 +515,8 @@ int THaCrateMap::init(const string& the_map)
   UInt_t crate = kMaxUInt; // current CRATE
   string line; line.reserve(128);
   istringstream s(the_map);
-  Int_t found_tscrate=0;
-  const Long64_t ldate = fInitTime;
   Long64_t keydate = 0, prevdate = 0;
-  bool do_ignore = false, in_crate = false;
+  bool do_ignore = false, in_crate = false, found_tscrate = false;
   int lineno = 0;
 
   while( getline(s, line) ) {
@@ -504,9 +524,9 @@ int THaCrateMap::init(const string& the_map)
     // Drop comments. For historical reasons, they may start with '!' or '#'
     if( auto pos = line.find_first_of("!#"); pos != string::npos )
       line.erase(pos);
-    // Skip empty or blank lines
-    if( line.find_first_not_of(" \t") == string::npos )
-      continue;
+    Podd::Trim(line);
+    if( line.empty() )
+      continue; // skip empty or comment-only lines
 
     // Check for timestamps. Employ the algorithm from Podd::LoadDBvalue, i.e.
     // read data for timestamps <= init time and newer than prior timestamps.
@@ -515,7 +535,7 @@ int THaCrateMap::init(const string& the_map)
     // To remove a previously-defined crate after a certain time stamp, use
     // crate type "unused".
     if( Podd::IsDBtimestamp(line, keydate) ) {
-      do_ignore = (keydate > ldate || keydate < prevdate);
+      do_ignore = (keydate > fInitTime || keydate < prevdate);
       in_crate = false;
       continue;
     }
@@ -523,11 +543,45 @@ int THaCrateMap::init(const string& the_map)
       continue;
     prevdate = keydate;
 
-    // Recognize TSROC definition at start of map (or right after a timestamp)
-    if( !in_crate && line.find("TSROC") != string::npos ) {
-      sscanf(line.c_str(), " TSROC %u", &fTSROC);
-      found_tscrate = 1;
-      continue;
+    if( !in_crate ) {
+      // Parse optional TSROC definition at start of map (or right after a timestamp)
+      if( constexpr string_view TSROC_KEY = "TSROC "; line.starts_with(TSROC_KEY) ) {
+        size_t pos;
+        unsigned long val;
+        bool err = false; try {
+          val = stoul(line.substr(TSROC_KEY.length()), &pos);
+        } catch( ... ) { err = true; }
+        if( !err && pos + TSROC_KEY.length() == line.length() ) {
+          found_tscrate = true;
+          fTSROC = val;
+          continue;
+        }
+        Error(here, "db_%s.dat:%d: Failed to parse line \"%s\". "
+              "Expected \"TSROC <ROC number>\".",
+              fDBfileName.c_str(), lineno, line.c_str());
+        return CM_ERR;
+      }
+      // Load optional configuration string defaults
+      if( constexpr string_view CONFIG_KEY = "config "; line.starts_with(CONFIG_KEY) ) {
+        int model = 0;
+        size_t pos;
+        bool err = false; try {
+          model = stoi(line.substr(CONFIG_KEY.length()), &pos);
+        } catch( ... ) { err = true; }
+        if( !err && pos > 0 && model != 0 ) {
+          if( string cfgstr; loadConfig(line, cfgstr) == CM_OK ) {
+            if( cfgstr.empty() )
+              fModuleCfg.erase(model); // no config string -> clear the entry
+            else
+              fModuleCfg[model] = cfgstr;
+            continue;
+          }
+        }
+        Error(here, "db_%s.dat:%d: Failed to parse line \"%s\". "
+              "Expected \"config <model number != 0> cfg:<parameters>\". ",
+              fDBfileName.c_str(), lineno, line.c_str());
+        return CM_ERR;
+      }
     }
 
     if( auto pos = line.find("Crate"); pos != string::npos ) {
