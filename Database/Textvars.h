@@ -19,7 +19,7 @@ namespace Podd {
 // Generic string utility functions
 void  Tokenize( std::string_view s, std::string_view delim,
                 std::vector<std::string>& tokens );
-void  Trim( std::string& str );
+size_t  Trim( std::string& str );
 std::vector<std::string> vsplit( const std::string& s );
 
 //_____________________________________________________________________________
@@ -62,12 +62,13 @@ private:
 
 //_____________________________________________________________________________
 inline
-void Trim( std::string& str )
+size_t Trim( std::string& str )
 {
-  // Trim leading and trailing whitespace from string 'str'
+  // Trim leading and trailing whitespace from string 'str'.
+  // Returns length of trimmed string.
 
   if( str.empty() )
-    return;
+    return 0;
   const char *s = str.data(), *e = s + str.size() - 1, *p = e;
   while( isspace(*p) )
     --p;
@@ -78,10 +79,11 @@ void Trim( std::string& str )
     ++c;
   if( !*c ) {
     str.clear();
-    return;
+    return 0;
   }
   if( c != s )
     str.erase(0,c-s);
+  return p-c+1;
 }
 
 } // namespace Podd
