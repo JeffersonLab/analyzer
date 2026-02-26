@@ -236,3 +236,64 @@ TEST_CASE("Database functions", "[Database]") // NOLINT(*-function-cognitive-com
   }
 
 }
+
+// Test the decoder crate map class
+// TODO Move this to a separate "Decoder" test implementation once available
+#include "THaCrateMap.h"
+#include <memory>
+
+TEST_CASE("Crate Map", "[Database]") // NOLINT(*-function-cognitive-complexity)
+{
+  auto crmap = make_unique<Decoder::THaCrateMap>("testmap");
+
+  SECTION("Setup")
+  {
+    CHECK(crmap->GetName() == "testmap"s);
+    CHECK(crmap->getTSROC() == Decoder::THaCrateMap::DEFAULT_TSROC);
+    // TODO CrateMap lacks IsInit(), Size(), etc. Accessors will crash if uninitialized
+  }
+
+  SECTION("Initialization from string")
+  {
+    string testmap = R"TESTMAP(
+# comment
+! Old-style comment
+TSROC 16
+
+config 250 cfg:fw=1
+config 1881 cfg: debug
+
+== Crate 1 type fastbus
+# slot model clear header mask nchan ndata
+6 1877 1  0x0  0x0  96  672
+7 1877  1 0x0 0x0 96 672
+
+   14 1881 1 0x0 0x0 64 64
+   15 1881 1 0x0 0x0 64 64 cfg: highres
+   16 1881 1 0x0 0x0 64 64 cfg: +   highres
+)TESTMAP";
+
+    auto st = crmap->init(testmap);
+    CHECK(st == Decoder::THaCrateMap::CM_OK);
+    CHECK(crmap->getNslot(1) == 5);
+    CHECK(crmap->getMinSlot(1) == 6);
+    CHECK(crmap->getMaxSlot(1) == 16);
+    CHECK(crmap->isFastBus(1) == true);
+    CHECK(crmap->isVme(1) == false);
+    CHECK(crmap->isCamac(1) == false);
+    CHECK(crmap->isScalerCrate(1) == false);
+    CHECK(crmap->isBankStructure(1) == false);
+    CHECK(crmap->isAllBanks(1) == false);
+    CHECK(crmap->getModel(1,6) == 1877);
+    CHECK(crmap->getModel(1,7) == 1877);
+    CHECK(crmap->getModel(1,16) == 1881);
+    CHECK(crmap->getNchan(1,6) == 96);
+    CHECK(crmap->getNdata(1,6) == 672);
+    CHECK(crmap->getMask(1,16) == 0);
+    CHECK(crmap->getConfigStr(1,6) == ""s);
+    CHECK(crmap->getConfigStr(1,14) == "debug"s);
+    CHECK(crmap->getConfigStr(1,15) == "highres"s);
+    CHECK(crmap->getConfigStr(1,16) == "debug highres"s);
+  }
+}
+
