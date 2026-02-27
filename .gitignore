@@ -54,6 +54,7 @@ evio/
 *.log
 
 #IDE work files
+.cache
 .project
 .cproject
 .pydevproject
