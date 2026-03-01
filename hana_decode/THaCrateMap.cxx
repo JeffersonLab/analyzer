@@ -553,7 +553,7 @@ int THaCrateMap::init(const string& the_map)
     // To remove a previously-defined crate after a certain time stamp, use
     // crate type "unused".
     if( Podd::IsDBtimestamp(line, keydate) ) {
-      do_ignore = (keydate > fInitTime || keydate < prevdate);
+      do_ignore = fInitTime > 0 && (keydate > fInitTime || keydate < prevdate);
       in_crate = false;
       continue;
     }
