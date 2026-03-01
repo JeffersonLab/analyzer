@@ -576,7 +576,7 @@ int THaCrateMap::init(const string& the_map)
         }
         Error(here, "db_%s.dat:%d: Failed to parse line \"%s\". "
               "Expected \"TSROC <ROC number>\".",
-              fDBfileName.c_str(), lineno, line.c_str());
+              GetName(), lineno, line.c_str());
         return CM_ERR;
       }
       // Load optional configuration string defaults
@@ -597,7 +597,7 @@ int THaCrateMap::init(const string& the_map)
         }
         Error(here, "db_%s.dat:%d: Failed to parse line \"%s\". "
               "Expected \"config <model number != 0> cfg:<parameters>\". ",
-              fDBfileName.c_str(), lineno, line.c_str());
+              GetName(), lineno, line.c_str());
         return CM_ERR;
       }
     }
@@ -617,12 +617,19 @@ int THaCrateMap::init(const string& the_map)
       Error(here, "db_%s.dat:%d: Expected Crate definition.\n"
                   "For example: \"==== Crate 5 type vme\". "
                   "Found instead: \"%s\"",
-            fDBfileName.c_str(), lineno, line.c_str());
+            GetName(), lineno, line.c_str());
       return CM_ERR;
     }
 
     if( fCrateDat[crate].ParseSlotInfo(this, crate, line) != CM_OK )
       return CM_ERR;
+
+  } // while getline
+
+  if( fUsedCrates.empty() ) {
+    Error(here, "db_%s.dat: No valid crate map entries loaded. "
+          "Decoder will not be usable. Check database.", GetName() );
+    return CM_ERR;
   }
 
   SetBankInfo();
