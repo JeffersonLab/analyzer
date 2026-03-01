@@ -25,8 +25,10 @@
 #include <cstring>                       // for memset
 #include <string>                        // for allocator, basic_string, ope...
 #include <vector>                        // for vector, operator==
+#include <ctime>
 
 using namespace std;
+using namespace std::string_literals;
 
 // #include <sstream>
 //
@@ -246,11 +248,12 @@ TEST_CASE("Crate Map", "[Database]") // NOLINT(*-function-cognitive-complexity)
 {
   auto crmap = make_unique<Decoder::THaCrateMap>("testmap");
 
-  SECTION("Setup")
+  SECTION("Initial setup")
   {
-    CHECK(crmap->GetName() == "testmap"s);
+    CHECK(crmap->GetName() == "testmap"sv);
     CHECK(crmap->getTSROC() == Decoder::THaCrateMap::DEFAULT_TSROC);
-    // TODO CrateMap lacks IsInit(), Size(), etc. Accessors will crash if uninitialized
+    CHECK_FALSE(crmap->isInit());
+    CHECK(crmap->GetSize() == 0);
   }
 
   SECTION("Initialization from string")
@@ -263,21 +266,33 @@ TSROC 16
 config 250 cfg:fw=1
 config 1881 cfg: debug
 
+-------[ 2020-01-01 00:00:00 ] # Test time stamp
+
 == Crate 1 type fastbus
 # slot model clear header mask nchan ndata
 6 1877 1  0x0  0x0  96  672
 7 1877  1 0x0 0x0 96 672
 
-   14 1881 1 0x0 0x0 64 64
-   15 1881 1 0x0 0x0 64 64 cfg: highres
    16 1881 1 0x0 0x0 64 64 cfg: +   highres
+14 1881 1 0x0 0x0 64 64
+15 1881 1 0x0 0x0 64 64 cfg: highres
 )TESTMAP";
+    //TODO VME modules, scalers
 
     auto st = crmap->init(testmap);
-    CHECK(st == Decoder::THaCrateMap::CM_OK);
+    REQUIRE(st == Decoder::THaCrateMap::CM_OK);
+    CHECK(crmap->isInit());
+    CHECK(crmap->GetInitTime() == 0);
+    CHECK(crmap->GetName() == "testmap"sv);
+
+    CHECK(crmap->GetSize() == 5);
+    CHECK(crmap->getTSROC() == 16);
     CHECK(crmap->getNslot(1) == 5);
     CHECK(crmap->getMinSlot(1) == 6);
     CHECK(crmap->getMaxSlot(1) == 16);
+    CHECK(crmap->slotUsed(1,14));
+    CHECK_FALSE(crmap->slotUsed(1,1));
+    CHECK_FALSE(crmap->slotUsed(2,6));
     CHECK(crmap->isFastBus(1) == true);
     CHECK(crmap->isVme(1) == false);
     CHECK(crmap->isCamac(1) == false);
@@ -290,10 +305,24 @@ config 1881 cfg: debug
     CHECK(crmap->getNchan(1,6) == 96);
     CHECK(crmap->getNdata(1,6) == 672);
     CHECK(crmap->getMask(1,16) == 0);
-    CHECK(crmap->getConfigStr(1,6) == ""s);
-    CHECK(crmap->getConfigStr(1,14) == "debug"s);
-    CHECK(crmap->getConfigStr(1,15) == "highres"s);
-    CHECK(crmap->getConfigStr(1,16) == "debug highres"s);
+    CHECK(crmap->getConfigStr(1,6) == ""sv);
+    CHECK(crmap->getConfigStr(1,14) == "debug"sv);
+    CHECK(crmap->getConfigStr(1,15) == "highres"sv);
+    CHECK(crmap->getConfigStr(1,16) == "debug highres"sv);
+
+    auto used_crates = crmap->GetUsedCrates();
+    CHECK(used_crates.size() == 1);
+    CHECK(used_crates == vector<UInt_t>{1});
+
+    auto used_slots = crmap->GetUsedSlots(1);
+    CHECK(used_slots.size() == 5);
+    CHECK(used_slots == vector<UInt_t>{6,7,14,15,16}); // expected sorted
+
+    //TODO timestamps in string (should not have any effect)
+    crmap->clear();
+    CHECK_FALSE(crmap->isInit());
+    CHECK(crmap->GetSize() == 0);
+    CHECK(crmap->getTSROC() == Decoder::THaCrateMap::DEFAULT_TSROC);
   }
 }
 
