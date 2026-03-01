@@ -280,11 +280,16 @@ Int_t THaCrateMap::readFile( FILE* fi, string& text )
 //_____________________________________________________________________________
 int THaCrateMap::init( FILE* fi, const char* fname )
 {
-  // Get the crate map definition string from the given database file.
+  // Get the crate map definition string from the given database file,
+  // which must be opened and closed by the caller.
   // The file is read completely into an internal string, which is then
   // parsed by init(const std::string&).
 
   const char* const here = "THaCrateMap::init(file)";
+
+  if( !fname || !*fname )
+    fname = "(unspecified)";
+  fDBfileName = fname;
 
   if ( !fi ) {
     ::Error( here, "Error opening crate map database file %s: %s",
@@ -296,10 +301,8 @@ int THaCrateMap::init( FILE* fi, const char* fname )
   if( readFile(fi, db) != CM_OK || ferror(fi) ) {
     ::Error( here, "Error reading crate map database file %s: %s",
         fname, StrError().c_str() );
-    (void)fclose(fi);
     return CM_ERR;
   }
-  (void)fclose(fi);
 
   // Parse the crate map definition
   return init(db);
@@ -312,10 +315,18 @@ int THaCrateMap::init( Long64_t tloc )
   // 'tloc' is the time-stamp/index into the database's periods of validity.
 
   const char* const here = "THaCrateMap::init(tloc)";
+  int status;
+  FILE* fi = nullptr;
   fInitTime = tloc;
   WithDefaultTZ(TDatime date = tloc);
-  FILE* fi = Podd::OpenDBFile(fDBfileName.c_str(), date, here, "r", 1);
-  return init(fi, fDBfileName.c_str());
+  try {
+    fi = Podd::OpenDBFile(GetName(), date, here, "r", 1);
+    status = init(fi, GetName());
+  } catch ( ... ) {
+    status = CM_ERR;
+  }
+  (void) fclose(fi);
+  return status;
 }
 
 //_____________________________________________________________________________
