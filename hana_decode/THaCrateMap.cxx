@@ -63,7 +63,6 @@ static string StrError()
 
 //_____________________________________________________________________________
 namespace Decoder {
-
 // default crate number for trigger supervisor
 const UInt_t THaCrateMap::DEFAULT_TSROC = 21;
 
@@ -71,6 +70,7 @@ const UInt_t THaCrateMap::DEFAULT_TSROC = 21;
 THaCrateMap::THaCrateMap( const char* db_filename )
   : fInitTime{0}
   , fTSROC{DEFAULT_TSROC}
+  , fIsInit{false}
 {
   // Construct uninitialized crate map. The argument is the name of
   // the database file to use for initialization
@@ -81,6 +81,30 @@ THaCrateMap::THaCrateMap( const char* db_filename )
     db_filename = "cratemap";
   }
   fDBfileName = db_filename;
+}
+
+//_____________________________________________________________________________
+void THaCrateMap::clear()
+{
+  fCrateDat.clear();
+  // For the time being, we use a simple hardcoded array size
+  //FIXME: no hardcoded MAXROC limit
+  fCrateDat.resize(MAXROC);
+  fUsedCrates.clear(); fUsedCrates.reserve(MAXROC/2);
+  fTSROC = DEFAULT_TSROC;  // default value, if not found in db_cratemap
+  fIsInit = false;
+}
+
+//_____________________________________________________________________________
+UInt_t THaCrateMap::GetSize() const
+{
+  // Convenience function to return total number of used slots. Sums the sizes
+  // of all used_slots arrays of all used crates.
+  UInt_t sum = 0;
+  for( const auto& crate: fUsedCrates ) {
+    sum += getNslot(crate);
+  }
+  return sum;
 }
 
 //_____________________________________________________________________________
@@ -498,19 +522,13 @@ int THaCrateMap::init(const string& the_map)
 
   const char* const here = "THaCrateMap::init(string)";
 
+  clear();
+
   if ( the_map.empty() ) {
     // Warn if we didn't get any data
     ::Warning( here, "Empty crate map definition. Decoder will not be usable. "
         "Check database." );
   }
-
-  // For the time being, we use a simple hardcoded array size
-  //FIXME: no hardcoded MAXROC limit
-  UInt_t ncrates = MAXROC;
-  fCrateDat.clear();   // support re-init
-  fCrateDat.resize(ncrates);
-  fUsedCrates.clear(); fUsedCrates.reserve(ncrates/2);
-  fTSROC = DEFAULT_TSROC;  // default value, if not found in db_cratemap
 
   UInt_t crate = kMaxUInt; // current CRATE
   string line; line.reserve(128);
@@ -615,7 +633,7 @@ int THaCrateMap::init(const string& the_map)
     // if we're analyzing CODA 2 data, for which the TSROC doesn't matter.
     fTSROC += 100;
   }
-
+  fIsInit = true;
   return CM_OK;
 }
 

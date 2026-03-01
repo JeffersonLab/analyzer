@@ -40,6 +40,10 @@ public:
   int    init( FILE* fi, const char* fname );          // Initialize from given file
   void   print( std::ostream& os = std::cout ) const;
 
+  bool   isInit() const { return fIsInit; }            // Successfully initialized
+  void   clear();                                      // Clear all data
+  UInt_t GetSize() const;                              // Total number of used slots
+  Long64_t GetInitTime() const;                        // Initialization time, if given
   const char* GetName() const { return fDBfileName.c_str(); }
   const std::vector<UInt_t>& GetUsedCrates() const;
   const std::vector<UInt_t>& GetUsedSlots( UInt_t crate ) const;
@@ -70,8 +74,6 @@ public:
   void   setUnused( UInt_t crate, UInt_t slot );       // Disables this slot in crate
   void   setUnused( UInt_t crate );                    // Disables this crate
 
-  Long64_t GetInitTime() const;
-
   static constexpr Int_t  CM_OK   = 0;
   static constexpr Int_t  CM_ERR  = -1;
   static const     UInt_t DEFAULT_TSROC;
@@ -85,6 +87,7 @@ private:
   std::string fDBfileName;     // Database file name
   Long64_t    fInitTime;       // Database time stamp (Unix time)
   UInt_t      fTSROC;          // Crate (aka ROC) of the trigger supervisor
+  bool        fIsInit;         // Successfully initialized
 
   class SlotInfo_t {
   public:
