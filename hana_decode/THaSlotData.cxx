@@ -136,7 +136,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
     // Init first, then SetSlot
     try {
-      fModule->Init(map->getConfigStr(crate, slot));
+      fModule->Init(map->getConfigStr(crate, slot).c_str());
     }
     catch( const exception& e ) {
       ostringstream ostr;

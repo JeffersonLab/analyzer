@@ -312,11 +312,11 @@ config 1881 cfg: debug
 
     auto used_crates = crmap->GetUsedCrates();
     CHECK(used_crates.size() == 1);
-    CHECK(used_crates == vector<UInt_t>{1});
+    CHECK(used_crates == set<UInt_t>{1});
 
     auto used_slots = crmap->GetUsedSlots(1);
     CHECK(used_slots.size() == 5);
-    CHECK(used_slots == vector<UInt_t>{6,7,14,15,16}); // expected sorted
+    CHECK(used_slots == set<UInt_t>{6,7,14,15,16});
 
     //TODO timestamps in string (should not have any effect)
     crmap->clear();
