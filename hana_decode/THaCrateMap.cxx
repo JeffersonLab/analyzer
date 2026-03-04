@@ -288,6 +288,7 @@ int THaCrateMap::init( Long64_t tloc )
   int status;
   FILE* fi = nullptr;
   fInitTime = tloc;
+  Podd::gNeedTZCorrection = (Podd::GetTZOffsetToLocal(tloc) != 0);
   WithDefaultTZ(TDatime date = tloc);
   try {
     fi = Podd::OpenDBFile(GetName(), date, here, "r", 1);
