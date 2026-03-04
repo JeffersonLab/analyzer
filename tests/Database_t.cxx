@@ -26,21 +26,31 @@
 #include <string>                        // for allocator, basic_string, ope...
 #include <vector>                        // for vector, operator==
 #include <ctime>
+#include <iostream>
 
 using namespace std;
 using namespace std::string_literals;
 
-// #include <sstream>
-//
-// namespace {
-// struct cout_redirect { // NOLINT(*-special-member-functions)
-//   explicit cout_redirect( std::streambuf* newbuf )
-//     : savebuf_{std::cout.rdbuf(newbuf)} {}
-//   ~cout_redirect() { std::cout.rdbuf(savebuf_); }
-// private:
-//   std::streambuf* savebuf_;
-// };
-// }
+
+namespace {
+struct cout_redirect { // NOLINT(*-special-member-functions)
+  explicit cout_redirect( std::streambuf* newbuf )
+    : savebuf_{std::cout.rdbuf(newbuf)} {}
+  ~cout_redirect() { std::cout.rdbuf(savebuf_); }
+private:
+  std::streambuf* savebuf_;
+};
+
+time_t mktloc( int year, int month, int day, bool dst = false )
+{
+  tm tval{
+    .tm_mday = day, .tm_mon = month - 1 /* sic */,
+    .tm_year = year - 1900, .tm_isdst = dst
+  };
+  return mktime(&tval);
+}
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
@@ -324,5 +334,104 @@ config 1881 cfg: debug
     CHECK(crmap->GetSize() == 0);
     CHECK(crmap->getTSROC() == Decoder::THaCrateMap::DEFAULT_TSROC);
   }
+
+  //TODO init from file
+  SECTION("Initialization from file")
+  {}
+
+  SECTION("Initialization from file with timestamps")
+  {
+    // Open tests/DB/db_testmap.dat and extract info for the given date
+
+    //=== Part 1: Date = 01-Jan-2020 00:00 EST -> nothing defined
+    time_t tloc = mktloc(2020, 1, 1);
+    auto st = crmap->init(tloc);
+    REQUIRE(st == Decoder::THaCrateMap::CM_ERR);
+    //TODO check error message
+
+    //=== Part 2: Date = 0 (1-Jan-1970 UTC)
+    //  -> everything defined (timestamps disabled)
+    st = crmap->init(0);
+    REQUIRE(st == Decoder::THaCrateMap::CM_OK);
+    CHECK(crmap->isInit());
+    CHECK(crmap->GetNcrates() == 32); // 32 crates (some defined and undefined)
+    CHECK(crmap->GetSize() == 231);   // Big experiment
+
+    //=== Part 3: Date = 01-Feb-2021 00:00 EST
+    //  -> 14 crates, defined in first time-stamped block
+    tloc = mktloc(2021, 2, 1);
+    st = crmap->init(tloc);
+    REQUIRE(st == Decoder::THaCrateMap::CM_OK);
+    CHECK(crmap->isInit());
+    CHECK(crmap->GetInitTime() == tloc);
+    CHECK(crmap->getTSROC() == 21);
+    // Overall
+    //crmap->print();
+    CHECK(crmap->GetNcrates() == 14);  // 14 crates
+    CHECK(crmap->GetSize() == 73);     // 73 slots
+    CHECK(crmap->GetUsedCrates() == set<UInt_t>{1,4,5,6,7,10,16,17,19,20,22,23,24,25});
+    vector<UInt_t> nslots; nslots.reserve(crmap->GetNcrates());
+    for( const auto& cr: crmap->GetUsedCrates() )
+      nslots.push_back(crmap->getNslot(cr));
+    CHECK(nslots == vector<UInt_t>{1,4,9,16,10,1,18,8,1,1,1,1,1,1});
+
+    // Crate 1
+    UInt_t crate = 1, cr1slot = 20;
+    CHECK_FALSE(crmap->isFastBus(crate));
+    CHECK(crmap->isVme(crate));
+    CHECK_FALSE(crmap->isCamac(crate));
+    CHECK_FALSE(crmap->isScalerCrate(crate));
+    CHECK(crmap->isBankStructure(crate));
+    CHECK(crmap->isAllBanks(crate));
+    CHECK(crmap->getNslot(crate) == 1);
+
+    CHECK(crmap->getModel(crate, cr1slot) == 250);
+    CHECK(crmap->getNchan(crate, cr1slot) == 16);
+    CHECK(crmap->getNdata(crate, cr1slot) == 20000); // may change
+    CHECK(crmap->getMask(crate, cr1slot) == -1);     // 0xFF FF FF FF
+    CHECK(crmap->getConfigStr(crate, cr1slot).empty());
+
+    // Crate 7
+    crate = 7;
+    CHECK(crmap->isVme(crate));
+    CHECK(crmap->isBankStructure(crate));
+    CHECK_FALSE(crmap->isAllBanks(crate));
+
+    // Crate 17
+    crate = 17;
+    CHECK_FALSE(crmap->slotUsed(crate,1));      // not defined
+    CHECK(crmap->getModel(crate, 1) == 0);      // not defined
+    CHECK(crmap->getBank(crate, 1) == -1);      // not defined
+    CHECK(crmap->slotUsed(crate,4));
+    CHECK(crmap->getModel(crate, 4) == 6401);
+    CHECK(crmap->getBank(crate, 6) == 7);
+    CHECK(crmap->getConfigStr(crate, 5) == "suppress_hitFIFOwarn=100"sv);
+    CHECK(crmap->slotClear(crate,18));          // n/a -> default value
+
+    //....
+
+    //=== Part 4: Date = 01-May-2024 00:00 EDT
+    //  -> Add crates 28 & 29, redefine crate 7, remove 10
+    tloc = mktloc(2024, 5, 1, true);
+    st = crmap->init(tloc);
+    REQUIRE(st == Decoder::THaCrateMap::CM_OK);
+    CHECK(crmap->isInit());
+    CHECK(crmap->GetInitTime() == tloc);
+    CHECK(crmap->getTSROC() == 21);
+
+    crmap->print();
+    CHECK(crmap->GetNcrates() == 15);
+    CHECK(crmap->GetSize() == 73+27-1-10+7);
+    CHECK(crmap->GetUsedCrates() == set<UInt_t>{1,4,5,6,7,16,17,19,20,22,23,24,25,28,29});
+    nslots.clear();
+    for( const auto& cr: crmap->GetUsedCrates() )
+      nslots.push_back(crmap->getNslot(cr));
+    CHECK(nslots == vector<UInt_t>{1,4,9,16,7,18,8,1,1,1,1,1,1,19,8});
+
+    //
+    // Date = 01-Aug-2025 00:00 EDT
+    //TODO
+  }
+
 }
 
