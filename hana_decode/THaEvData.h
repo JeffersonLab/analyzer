@@ -90,10 +90,10 @@ public:
   UInt_t    GetNextChan( UInt_t crate, UInt_t slot, UInt_t index ) const;
   const char* DevType( UInt_t crate, UInt_t slot ) const;
 
-  Bool_t    HasCapability( Decoder::EModuleType type, UInt_t crate, UInt_t slot ) const;
+  Bool_t    HasCapability( Decoder::EModuleDataType type, UInt_t crate, UInt_t slot ) const;
   Bool_t    IsMultifunction( UInt_t crate, UInt_t slot ) const;
-  UInt_t    GetNumEvents( Decoder::EModuleType type, UInt_t crate, UInt_t slot, UInt_t chan ) const;
-  UInt_t    GetData( Decoder::EModuleType type, UInt_t crate, UInt_t slot, UInt_t chan, UInt_t hit ) const;
+  UInt_t    GetNumEvents( Decoder::EModuleDataType type, UInt_t crate, UInt_t slot, UInt_t chan ) const;
+  UInt_t    GetData( Decoder::EModuleDataType type, UInt_t crate, UInt_t slot, UInt_t chan, UInt_t hit ) const;
   UInt_t    GetLEbit( UInt_t crate, UInt_t slot, UInt_t chan, UInt_t hit ) const;
   UInt_t    GetOpt( UInt_t crate, UInt_t slot, UInt_t chan, UInt_t hit ) const;
 
@@ -443,7 +443,7 @@ TString THaEvData::GetEpicsString( const char* /*tag*/, UInt_t /*event*/ ) const
 }
 
 inline
-Bool_t THaEvData::HasCapability( Decoder::EModuleType type, UInt_t crate,
+Bool_t THaEvData::HasCapability( Decoder::EModuleDataType type, UInt_t crate,
                                  UInt_t slot ) const {
   Decoder::Module* module = GetModule(crate, slot);
   if( !module ) {
@@ -464,7 +464,7 @@ Bool_t THaEvData::IsMultifunction( UInt_t crate, UInt_t slot ) const {
 }
 
 inline
-UInt_t THaEvData::GetNumEvents( Decoder::EModuleType type, UInt_t crate, UInt_t slot, UInt_t chan ) const {
+UInt_t THaEvData::GetNumEvents( Decoder::EModuleDataType type, UInt_t crate, UInt_t slot, UInt_t chan ) const {
   Decoder::Module* module = GetModule(crate, slot);
   if( !module ) return 0;
   if( module->HasCapability(type) ) {
@@ -475,7 +475,7 @@ UInt_t THaEvData::GetNumEvents( Decoder::EModuleType type, UInt_t crate, UInt_t 
 }
 
 inline
-UInt_t THaEvData::GetData( Decoder::EModuleType type, UInt_t crate, UInt_t slot, UInt_t chan, UInt_t hit ) const {
+UInt_t THaEvData::GetData( Decoder::EModuleDataType type, UInt_t crate, UInt_t slot, UInt_t chan, UInt_t hit ) const {
   Decoder::Module* module = GetModule(crate, slot);
   if( !module ) return 0;
   if( module->HasCapability(type) ) {

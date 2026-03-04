@@ -56,13 +56,15 @@ namespace Decoder {
   inline constexpr UInt_t MAX_PSFACT = 12;
   inline constexpr Int_t  kDefaultPS = 0;
 
+  // Frontend module types (see Module.h)
+  enum class EModuleType : Byte_t { kUndefined, kADC, kCommonStopTDC,
+    kCommonStartTDC, kMultiFunctionADC, kMultiFunctionTDC };
+
   // Access processed data for multi-function modules
-  enum EModuleType { kSampleADC, kPulseIntegral, kPulseTime,
-                     kPulsePeak, kPulsePedestal, kCoarseTime, kFineTime };
+  enum EModuleDataType : Byte_t { kSampleADC, kPulseIntegral, kPulseTime,
+    kPulsePeak, kPulsePedestal, kCoarseTime, kFineTime };
 
 
-  enum class ChannelType { kUndefined, kADC, kCommonStopTDC, kCommonStartTDC,
-    kMultiFunctionADC, kMultiFunctionTDC };
 }
 
 

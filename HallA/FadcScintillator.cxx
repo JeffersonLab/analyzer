@@ -104,7 +104,7 @@ OptUInt_t FadcScintillator::LoadData( const THaEvData& evdata,
   // This routine supports FADC modules and returns the pulse amplitude integral.
   // Additional info is retrieved from the FADC modules in StoreHit later.
 
-  if( hitinfo.modtype == Decoder::ChannelType::kMultiFunctionADC )
+  if( hitinfo.modtype == Decoder::EModuleType::kMultiFunctionADC )
     return FADCData::LoadFADCData(hitinfo);
 
   // Fallback for legacy modules

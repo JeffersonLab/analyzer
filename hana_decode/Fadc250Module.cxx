@@ -109,7 +109,7 @@ Fadc250Module::~Fadc250Module() = default;
 #endif
 
 //_____________________________________________________________________________
-Bool_t Fadc250Module::HasCapability( Decoder::EModuleType type )
+Bool_t Fadc250Module::HasCapability( Decoder::EModuleDataType type )
 {
   return (type == kSampleADC || type == kPulseIntegral || type == kPulseTime
           || type == kPulsePeak || type == kPulsePedestal
@@ -183,7 +183,7 @@ void Fadc250Module::CheckDecoderStatus() const
 }
 
 //_____________________________________________________________________________
-UInt_t Fadc250Module::GetNumEvents( EModuleType emode, UInt_t chan ) const
+UInt_t Fadc250Module::GetNumEvents( EModuleDataType emode, UInt_t chan ) const
 {
   vsiz_t ret = 0;
   switch( emode ) {
@@ -219,7 +219,7 @@ UInt_t Fadc250Module::GetNumEvents( EModuleType emode, UInt_t chan ) const
 }
 
 //_____________________________________________________________________________
-UInt_t Fadc250Module::GetData( EModuleType emode, UInt_t chan, UInt_t ievent ) const
+UInt_t Fadc250Module::GetData( EModuleDataType emode, UInt_t chan, UInt_t ievent ) const
 {
   switch( emode ) {
     case kSampleADC:

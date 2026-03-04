@@ -9,7 +9,7 @@
 #include "ChannelData.h"
 #include "DataType.h"           // for Data_t
 #include "Database.h"           // for DBRequest, LoadDatabase, VarType, RVarDef
-#include "Decoder.h"            // for ChannelType
+#include "Decoder.h"            // for EModuleType
 #include "TDatime.h"            // for TDatime
 #include "THaAnalysisObject.h"  // for THaAnalysisObject, enums (EMode etc.)
 #include "THaDetMap.h"          // for DigitizerHitInfo_t
@@ -25,7 +25,7 @@
 #include <vector>               // for vector
 
 using namespace std;
-using Decoder::ChannelType;
+using Decoder::EModuleType;
 
 namespace Podd {
 
@@ -238,7 +238,7 @@ static void StoreTDC( TDCHit_t& TDC, const TDCCalib_t& CALIB,
   TDC.tdc   = data;
 //  TDC.tdc_c = (TDC.tdc - CALIB.off) * CALIB.tdc2t;
 //  assert(CALIB.tdc2t >= 0.0);  // else bug in ReadDatabase
-  if( hitinfo.type == ChannelType::kCommonStopTDC ) {
+  if( hitinfo.type == EModuleType::kCommonStopTDC ) {
     // For common stop TDCs, time is negatively correlated to raw data
     // time = (offset-data)*res, so reverse the sign.
     TDC.tdc_c *= -1.0;
@@ -258,13 +258,13 @@ Int_t ADCData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
       std::invalid_argument(msg(hitinfo, "Logical channel number out of range"));
 
   switch( hitinfo.type ) {
-    case ChannelType::kADC:
+    case EModuleType::kADC:
       StoreADC(fADCs[k], fCalib[k], hitinfo, data);
       fNHits++;
       fHitDone = true;
       break;
 
-    case ChannelType::kUndefined:
+    case EModuleType::kUndefined:
       throw logic_error(msg(hitinfo, "Invalid channel type"));
     default:
       break;
@@ -393,14 +393,14 @@ Int_t TDCData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
       std::invalid_argument(msg(hitinfo, "Logical channel number out of range"));
 
   switch( hitinfo.type ) {
-    case ChannelType::kADC:
+    case EModuleType::kADC:
 //      StoreADC(fTDCs[k], fCalib[k], hitinfo, data);
 //      fNHits.adc++;
       fHitDone = true;
       break;
 
-    case ChannelType::kCommonStopTDC:
-    case ChannelType::kCommonStartTDC:
+    case EModuleType::kCommonStopTDC:
+    case EModuleType::kCommonStartTDC:
       StoreTDC(fTDCs[k], fCalib[k], hitinfo, data);
 //      fNHits.tdc++;
       fHitDone = true;
@@ -408,7 +408,7 @@ Int_t TDCData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 
     default:
       break;
-    case ChannelType::kUndefined:
+    case EModuleType::kUndefined:
       throw logic_error(msg(hitinfo, "Invalid channel type"));
   }
   return 0;

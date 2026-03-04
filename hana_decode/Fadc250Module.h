@@ -37,10 +37,10 @@ namespace Decoder {
       UInt_t pos, UInt_t len ) override;
     Int_t  Decode( const UInt_t* data ) override;
     Bool_t IsMultiFunction() override { return true; }
-    Bool_t HasCapability( Decoder::EModuleType type ) override;
-    UInt_t GetData( Decoder::EModuleType mtype, UInt_t chan, UInt_t ievent ) const override;
+    Bool_t HasCapability( Decoder::EModuleDataType type ) override;
+    UInt_t GetData( Decoder::EModuleDataType mtype, UInt_t chan, UInt_t ievent ) const override;
     Int_t  GetMode() const override { return GetFadcMode(); };
-    UInt_t GetNumEvents( Decoder::EModuleType mtype, UInt_t ichan ) const override;
+    UInt_t GetNumEvents( Decoder::EModuleDataType mtype, UInt_t ichan ) const override;
     UInt_t GetNumEvents() const override { return GetNumEvents(0); } ;
     UInt_t GetNumEvents( UInt_t ichan) const override { return GetNumFadcEvents(ichan); } ;
     UInt_t GetNumSamples( UInt_t ichan) const override { return GetNumFadcSamples(ichan, 0);};

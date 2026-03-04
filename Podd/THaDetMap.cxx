@@ -33,23 +33,23 @@ using namespace Podd;
 class ModuleDef {
 public:
   Int_t       model; // model identifier
-  ChannelType type;  // Module type
+  EModuleType type;  // Module type
 };
 
 static const vector<ModuleDef> module_list {
-  { 1875, ChannelType::kCommonStopTDC },
-  { 1877, ChannelType::kCommonStopTDC },
-  { 1881, ChannelType::kADC },
-  { 1872, ChannelType::kCommonStopTDC },
-  { 3123, ChannelType::kADC },
-  { 1182, ChannelType::kADC },
-  { 792,  ChannelType::kADC },
-  { 775,  ChannelType::kCommonStopTDC },
-  { 767,  ChannelType::kCommonStopTDC },
-  { 3201, ChannelType::kCommonStopTDC },
-  { 6401, ChannelType::kCommonStopTDC },
-  { 1190, ChannelType::kCommonStopTDC },
-  { 250,  ChannelType::kMultiFunctionADC },
+  { 1875, EModuleType::kCommonStopTDC },
+  { 1877, EModuleType::kCommonStopTDC },
+  { 1881, EModuleType::kADC },
+  { 1872, EModuleType::kCommonStopTDC },
+  { 3123, EModuleType::kADC },
+  { 1182, EModuleType::kADC },
+  { 792,  EModuleType::kADC },
+  { 775,  EModuleType::kCommonStopTDC },
+  { 767,  EModuleType::kCommonStopTDC },
+  { 3201, EModuleType::kCommonStopTDC },
+  { 6401, EModuleType::kCommonStopTDC },
+  { 1190, EModuleType::kCommonStopTDC },
+  { 250,  EModuleType::kMultiFunctionADC },
 };
 
 static unique_ptr<THaCrateMap> fgCrateMap = nullptr;
@@ -90,7 +90,7 @@ void THaDetMap::Module::SetModel( Int_t mod )
   if( it != module_list.end() )
     type = it->type;
   else
-    type = ChannelType::kUndefined;
+    type = EModuleType::kUndefined;
 }
 
 //_____________________________________________________________________________
@@ -103,25 +103,25 @@ void THaDetMap::Module::SetResolution( Double_t res )
 void THaDetMap::Module::SetTDCMode( Bool_t cstart )
 {
   cmnstart = cstart;
-  if( cstart && type == ChannelType::kCommonStopTDC )
-    type = ChannelType::kCommonStartTDC;
-  else if( !cstart && type == ChannelType::kCommonStartTDC )
-    type = ChannelType::kCommonStopTDC;
+  if( cstart && type == EModuleType::kCommonStopTDC )
+    type = EModuleType::kCommonStartTDC;
+  else if( !cstart && type == EModuleType::kCommonStartTDC )
+    type = EModuleType::kCommonStopTDC;
 }
 
 //_____________________________________________________________________________
 void THaDetMap::Module::MakeTDC()
 {
   if( IsCommonStart() )
-    type = ChannelType::kCommonStartTDC;
+    type = EModuleType::kCommonStartTDC;
   else
-    type = ChannelType::kCommonStopTDC;
+    type = EModuleType::kCommonStopTDC;
 }
 
 //_____________________________________________________________________________
 void THaDetMap::Module::MakeADC()
 {
-  type = ChannelType::kADC;
+  type = EModuleType::kADC;
 }
 
 //_____________________________________________________________________________
@@ -207,10 +207,10 @@ Int_t THaDetMap::AddModule( UInt_t crate, UInt_t slot,
     if( it != module_list.end() )
       m.type = it->type;
     else
-      m.type = ChannelType::kUndefined;
+      m.type = EModuleType::kUndefined;
       //      return -1;  // Unknown module TODO do when module_list is in a database
   } else
-    m.type = ChannelType::kUndefined;
+    m.type = EModuleType::kUndefined;
 
   fMap.push_back(std::move(pm));
   return ToInt(GetSize());
@@ -525,13 +525,13 @@ void THaDetMap::Iterator::incr()
   if( nhit == 0 ) {
     ostringstream ostr;
     ostr << "No hits on active "
-         << (fHitInfo.type == ChannelType::kADC ? "ADC" : "TDC")
+         << (fHitInfo.type == EModuleType::kADC ? "ADC" : "TDC")
          << " channel. Should never happen. Decoder bug. Call expert.";
     throw std::logic_error(msg(ostr.str().c_str()));
   }
   // If multiple hits on a TDC channel take the one earliest in time.
   // For a common-stop TDC, this is actually the last hit.
-  fHitInfo.hit = (fHitInfo.type == ChannelType::kCommonStopTDC) ? nhit - 1 : 0;
+  fHitInfo.hit = (fHitInfo.type == EModuleType::kCommonStopTDC) ? nhit - 1 : 0;
   // Determine logical channel. Decode() methods that use this hit iterator
   // should always assume that logical channel numbers start counting from zero.
   Int_t lchan = fMod->ConvertToLogicalChannel(chan);

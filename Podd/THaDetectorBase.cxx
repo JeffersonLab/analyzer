@@ -314,7 +314,7 @@ void THaDetectorBase::MultipleHitWarning( const DigitizerHitInfo_t& hitinfo,
 {
   ostringstream msg;
   msg << hitinfo.nhit << " hits on "
-      << (hitinfo.type == Decoder::ChannelType::kADC ? "ADC" : "TDC")
+      << (hitinfo.type == Decoder::EModuleType::kADC ? "ADC" : "TDC")
       << " channel "
       << hitinfo.crate << "/" << hitinfo.slot << "/" << hitinfo.chan;
   ++fMessages[msg.str()];
@@ -328,7 +328,7 @@ void THaDetectorBase::DataLoadWarning( const DigitizerHitInfo_t& hitinfo,
 {
   ostringstream msg;
   msg << "Failed to load data for "
-      << (hitinfo.type == Decoder::ChannelType::kADC ? "ADC" : "TDC")
+      << (hitinfo.type == Decoder::EModuleType::kADC ? "ADC" : "TDC")
       << " channel "
       << hitinfo.crate << "/" << hitinfo.slot << "/" << hitinfo.chan
       << ". Skipping channel.";

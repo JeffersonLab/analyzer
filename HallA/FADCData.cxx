@@ -79,7 +79,7 @@ Int_t FADCData::ReadConfig( THaDetectorBase* det, const TDatime& date,
 
 //_____________________________________________________________________________
 static
-OptUInt_t GetFADCValue( EModuleType type, const DigitizerHitInfo_t& hitinfo,
+OptUInt_t GetFADCValue( EModuleDataType type, const DigitizerHitInfo_t& hitinfo,
                         Fadc250Module* fadc ) {
   // Get item "type" from FADC module pointed to by fFADC
 
@@ -121,7 +121,7 @@ Int_t FADCData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
   // Must call LoadData first. Pass LoadData's return value (= pulse integral
   // value) into this routine as 'data'.
 
-  if( hitinfo.modtype != ChannelType::kMultiFunctionADC )
+  if( hitinfo.modtype != EModuleType::kMultiFunctionADC )
     return 0;
 
   size_t k = GetLogicalChannel(hitinfo);
@@ -144,7 +144,7 @@ Int_t FADCData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 
     class TypeItem {
     public:
-      EModuleType type;
+      EModuleDataType type;
       const string name;
     };
     static const vector<TypeItem> items = {

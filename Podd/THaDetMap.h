@@ -44,7 +44,7 @@ public:
     UInt_t   hi;
     UInt_t   first;      // logical number of first channel
     Int_t    model;      // model number of module (for ADC/TDC identification).
-    Decoder::ChannelType type;
+    Decoder::EModuleType type;
     UInt_t   plane;      // Detector plane
     UInt_t   signal;     // (eg. PosADC, NegADC, PosTDC, NegTDC)
     Int_t    refchan;    // for pipeline TDCs: reference channel number
@@ -60,12 +60,12 @@ public:
     UInt_t GetNchan() const { return hi-lo+1; }
     Int_t  GetModel() const { return model; }
     Bool_t IsTDC()    const { return
-        type == Decoder::ChannelType::kCommonStopTDC ||
-        type == Decoder::ChannelType::kCommonStartTDC ||
-        type == Decoder::ChannelType::kMultiFunctionTDC; }
+        type == Decoder::EModuleType::kCommonStopTDC ||
+        type == Decoder::EModuleType::kCommonStartTDC ||
+        type == Decoder::EModuleType::kMultiFunctionTDC; }
     Bool_t IsADC()    const { return
-        type == Decoder::ChannelType::kADC ||
-        type == Decoder::ChannelType::kMultiFunctionADC; }
+        type == Decoder::EModuleType::kADC ||
+        type == Decoder::EModuleType::kMultiFunctionADC; }
     Bool_t IsCommonStart() const { return cmnstart; }
     void   SetModel( Int_t model );
     void   SetResolution( Double_t resolution );
@@ -194,28 +194,28 @@ public:
     class HitInfo_t {
     public:
       HitInfo_t() :
-        module{nullptr}, type{Decoder::ChannelType::kUndefined},
-        modtype{Decoder::ChannelType::kUndefined},
+        module{nullptr}, type{Decoder::EModuleType::kUndefined},
+        modtype{Decoder::EModuleType::kUndefined},
         ev{kMaxULong64}, crate{kMaxUInt}, slot{kMaxUInt}, chan{kMaxUInt},
         nhit{0}, hit{kMaxUInt}, lchan{-1} {}
       void set_crate_slot( const THaDetMap::Module* mod ) {
         if( mod->IsADC() )
-          type = Decoder::ChannelType::kADC;
+          type = Decoder::EModuleType::kADC;
         else if( mod->IsTDC() )
-          type = mod->IsCommonStart() ? Decoder::ChannelType::kCommonStartTDC
-                                      : Decoder::ChannelType::kCommonStopTDC;
+          type = mod->IsCommonStart() ? Decoder::EModuleType::kCommonStartTDC
+                                      : Decoder::EModuleType::kCommonStopTDC;
         modtype = mod->type;
         crate = mod->crate;
         slot  = mod->slot;
       }
       void reset() {
-        module = nullptr; type = modtype = Decoder::ChannelType::kUndefined;
+        module = nullptr; type = modtype = Decoder::EModuleType::kUndefined;
         ev = kMaxULong64;
         crate = slot = chan = hit = kMaxUInt; nhit = 0; lchan = -1;
       }
       Decoder::Module*     module; // Current frontend module being decoded
-      Decoder::ChannelType type;   // Measurement type for current channel (ADC/TDC)
-      Decoder::ChannelType modtype; // Module type (ADC/TDC/MultiFunctionADC etc.)
+      Decoder::EModuleType type;   // Measurement type for current channel (ADC/TDC)
+      Decoder::EModuleType modtype; // Module type (ADC/TDC/MultiFunctionADC etc.)
       ULong64_t  ev;   // Event number (for error messages)
       UInt_t  crate;   // Hardware crate
       UInt_t  slot;    // Hardware slot
