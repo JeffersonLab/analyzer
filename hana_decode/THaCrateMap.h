@@ -42,7 +42,8 @@ public:
   void   print( std::ostream& os = std::cout ) const;
 
   bool   isInit() const { return fIsInit; }            // Successfully initialized
-  void   clear();                                      // Clear all data
+  void   Clear();                                      // Clear all data
+  UInt_t GetNcrates() const;                           // Total number of used crates
   UInt_t GetSize() const;                              // Total number of used slots
   Long64_t GetInitTime() const;                        // Initialization time, if given
   const char* GetName() const { return fDBfileName.c_str(); }
@@ -92,35 +93,37 @@ private:
 
   class SlotInfo_t {
   public:
-    SlotInfo_t() : slot(0), model(0), header(0), headmask(0xffffffff), bank(-1),
-                   nchan(0), ndata(0), used(false), clear(true) {}
-    UInt_t slot;
+    SlotInfo_t() : model(0), header(0), headmask(0xffffffff), bank(-1),
+                   clear(true), nchan(0), ndata(0) {}
     Int_t  model;
     UInt_t header;
     UInt_t headmask;
     Int_t  bank;
-    UInt_t nchan;
+    bool   clear;
+    UShort_t nchan;
     UInt_t ndata;
     std::string cfgstr;
-    bool   used;
-    bool   clear;
   };
 
   // Crate information
   class CrateInfo_t {
   public:
     CrateInfo_t();
-    Int_t ParseSlotInfo( THaCrateMap* crmap, UInt_t crate, std::string& line );
-    bool isScalerCrate() const { return crate_code == kScaler;}
+    Int_t ParseSlotInfo( THaCrateMap* crmap, std::string& line );
+    bool  IsFastBus()     const { return crate_code == kFastbus; }
+    bool  IsVME()         const { return crate_code == kVME || crate_code == kScaler; }
+    bool  IsCamac()       const { return crate_code == kCamac; }
+    bool  IsScalerCrate() const { return crate_code == kScaler; }
+    void  SetBankInfo();
+    void  SetModel( UInt_t slot, Int_t model, UInt_t nchan = MAXCHAN, UInt_t ndata = MAXDATA);
+    Int_t SetModelSize( UInt_t slot, UInt_t model );
     std::string  crate_type_name;
     std::string  scalerloc;
-    UInt_t       crate;
-    ECrateCode   crate_code;
-    bool         crate_used;
-    bool         bank_structure;
-    bool         all_banks;
     std::set<UInt_t> used_slots;
     std::unordered_map<UInt_t, SlotInfo_t> sltdat;
+    ECrateCode   crate_code;
+    bool         has_banks;
+    bool         all_banks;
   };
 
   std::unordered_map<UInt_t, CrateInfo_t> fCrateDat;
@@ -132,13 +135,8 @@ private:
   Int_t loadConfig( std::string& line, std::string& cfgstr ) const;
   Int_t resetCrate( UInt_t crate );
   Int_t setCrateType( UInt_t crate, const char* stype ); // set the crate type
-  Int_t setModel( UInt_t crate, UInt_t slot, Int_t mod,
-                  UInt_t nchan = MAXCHAN,
-                  UInt_t ndata = MAXDATA );            // set the module type
   void  setUsed( UInt_t crate, UInt_t slot );
-  Int_t SetModelSize( UInt_t crate, UInt_t slot, UInt_t model );
   Int_t ParseCrateInfo( const std::string& line, UInt_t& crate );
-  Int_t SetBankInfo();
 
   static Int_t readFile( FILE* fi, std::string& text );
 
@@ -146,8 +144,8 @@ private:
     typename Result = std::invoke_result_t<Proj, CrateInfo_t>>
   auto GetCrateInfo( UInt_t crate, const Proj& p, Result defval = {} ) const
   {
-    if( auto it = fCrateDat.find( crate ); it != fCrateDat.end() )
-      return std::invoke( p, it->second );
+    if( auto it = fCrateDat.find(crate); it != fCrateDat.end() )
+      return std::invoke(p, it->second);
     return defval;
   }
 
@@ -158,8 +156,8 @@ private:
     const auto& sl =
       GetCrateInfo( crate, &CrateInfo_t::sltdat );
     if( !sl.empty() ) {
-      if( auto jt = sl.find( slot ); jt != sl.end() )
-        return std::invoke( p, jt->second );
+      if( auto jt = sl.find(slot); jt != sl.end() )
+        return std::invoke(p, jt->second);
     }
     return defval;
   }
@@ -169,34 +167,39 @@ private:
 
 //=============== inline functions ================================
 inline
+UInt_t THaCrateMap::GetNcrates() const
+{
+  return fUsedCrates.size();
+}
+
+inline
 bool THaCrateMap::isFastBus( UInt_t crate ) const
 {
-  return GetCrateInfo(crate, &CrateInfo_t::crate_code, kUnknown) == kFastbus;
+  return GetCrateInfo(crate, &CrateInfo_t::IsFastBus);
 }
 
 inline
 bool THaCrateMap::isVme( UInt_t crate ) const
 {
-  auto code = GetCrateInfo(crate, &CrateInfo_t::crate_code, kUnknown);
-  return (code == kVME || code == kScaler);
+  return GetCrateInfo(crate, &CrateInfo_t::IsVME);
 }
 
 inline
 bool THaCrateMap::isCamac( UInt_t crate ) const
 {
-  return GetCrateInfo(crate, &CrateInfo_t::crate_code, kUnknown) == kCamac;
+  return GetCrateInfo(crate, &CrateInfo_t::IsCamac);
 }
 
 inline
 bool THaCrateMap::isScalerCrate( UInt_t crate ) const
 {
-  return GetCrateInfo(crate, &CrateInfo_t::isScalerCrate);
+  return GetCrateInfo(crate, &CrateInfo_t::IsScalerCrate);
 }
 
 inline
 bool THaCrateMap::isBankStructure( UInt_t crate ) const
 {
-  return GetCrateInfo(crate, &CrateInfo_t::bank_structure);
+  return GetCrateInfo(crate, &CrateInfo_t::has_banks);
 }
 
 inline
