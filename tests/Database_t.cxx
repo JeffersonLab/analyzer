@@ -286,6 +286,7 @@ config 1881 cfg: debug
     CHECK(crmap->GetName() == "testmap"sv);
 
     CHECK(crmap->GetSize() == 5);
+    CHECK(crmap->GetNcrates() == 1);
     CHECK(crmap->getTSROC() == 16);
     CHECK(crmap->getNslot(1) == 5);
     CHECK(crmap->getMinSlot(1) == 6);
@@ -305,10 +306,10 @@ config 1881 cfg: debug
     CHECK(crmap->getNchan(1,6) == 96);
     CHECK(crmap->getNdata(1,6) == 672);
     CHECK(crmap->getMask(1,16) == 0);
-    CHECK(crmap->getConfigStr(1,6) == ""sv);
-    CHECK(crmap->getConfigStr(1,14) == "debug"sv);
-    CHECK(crmap->getConfigStr(1,15) == "highres"sv);
-    CHECK(crmap->getConfigStr(1,16) == "debug highres"sv);
+    CHECK(crmap->getConfigStr(1,6).empty());
+    CHECK(crmap->getConfigStr(1,14) == "debug");
+    CHECK(crmap->getConfigStr(1,15) == "highres");
+    CHECK(crmap->getConfigStr(1,16) == "debug highres");
 
     auto used_crates = crmap->GetUsedCrates();
     CHECK(used_crates.size() == 1);
@@ -318,8 +319,7 @@ config 1881 cfg: debug
     CHECK(used_slots.size() == 5);
     CHECK(used_slots == set<UInt_t>{6,7,14,15,16});
 
-    //TODO timestamps in string (should not have any effect)
-    crmap->clear();
+    crmap->Clear();
     CHECK_FALSE(crmap->isInit());
     CHECK(crmap->GetSize() == 0);
     CHECK(crmap->getTSROC() == Decoder::THaCrateMap::DEFAULT_TSROC);
