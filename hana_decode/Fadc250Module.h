@@ -42,9 +42,9 @@ public:
   virtual UInt_t GetUnderflowBit(UInt_t chan, UInt_t ievent) const;
 
   // Scaler data getters
-  virtual UInt_t GetScalerValue(UInt_t chan, UInt_t ievent) const;
-  virtual UInt_t GetScalerTime(UInt_t chan, UInt_t ievent) const;
-  virtual UInt_t GetScalerTriggerCount(UInt_t chan, UInt_t ievent) const;
+  virtual UInt_t GetScalerValue(UInt_t chan) const;
+  virtual UInt_t GetScalerTime() const;
+  virtual UInt_t GetScalerTriggerCount() const;
 
   virtual std::vector<uint32_t> GetPulseSamplesVector(UInt_t chan) const;
   virtual Int_t GetFadcMode() const;

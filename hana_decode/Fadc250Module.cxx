@@ -64,8 +64,8 @@
 
 using namespace std;
 
-#define DEBUG
-#define WITH_DEBUG
+// #define DEBUG
+// #define WITH_DEBUG
 
 #ifdef DEBUG
 #include <fstream>
@@ -153,10 +153,10 @@ void Fadc250Module::Clear(Option_t *opt) {
 void Fadc250Module::Init() {
 #if defined DEBUG && defined WITH_DEBUG
   // This will make a HUGE output
-  delete fDebugFile;
-  fDebugFile = 0;
-  fDebugFile = new ofstream;
-  fDebugFile->open("fadcdebug.dat");
+  // delete fDebugFile;
+  // fDebugFile = 0;
+  // fDebugFile = new ofstream;
+  // fDebugFile->open("fadcdebug.dat");
 #endif
   Clear();
   IsInit = true;
@@ -723,14 +723,8 @@ UInt_t Fadc250Module::GetNumFadcSamples(UInt_t chan, UInt_t ievent) const {
 }
 
 //_____________________________________________________________________________
-UInt_t Fadc250Module::GetScalerValue(UInt_t chan, UInt_t ievent) const {
+UInt_t Fadc250Module::GetScalerValue(UInt_t chan) const {
   vsiz_t nevent = fScalerData.size();
-  if (ievent >= nevent) {
-    cout << "ERROR:: Fadc250Module:: GetScalerValue:: invalid event "
-            "number for slot = "
-         << fSlot << ", channel = " << chan << endl;
-    return kMaxUInt;
-  }
   if (nevent == 0) {
     cout << "ERROR:: Fadc250Module:: GetScalerValue:: data vector empty "
             "for slot = "
@@ -739,7 +733,7 @@ UInt_t Fadc250Module::GetScalerValue(UInt_t chan, UInt_t ievent) const {
   }
 
   // Channel idx cannot exceed the scaler values array size for the event
-  if (chan >= fScalerData[ievent].scaler_values.size()) {
+  if (chan >= fScalerData.back().scaler_values.size()) {
     cout << "ERROR:: Fadc250Module:: GetScalerValue:: requested channel "
             "exceeds scaler values size for slot = "
          << fSlot << ", channel = " << chan << endl;
@@ -747,61 +741,46 @@ UInt_t Fadc250Module::GetScalerValue(UInt_t chan, UInt_t ievent) const {
   } else {
 #ifdef WITH_DEBUG
     if (fDebugFile)
-      *fDebugFile << "Fadc250Module::GetScalerValue channel " << chan
-                  << ", event " << ievent << " = "
-                  << fScalerData[ievent].scaler_values[chan] << endl;
+      *fDebugFile << "Fadc250Module::GetScalerValue channel " << chan << " = "
+                  << fScalerData.back().scaler_values[chan] << endl;
 #endif
-    return fScalerData[ievent].scaler_values[chan];
+    return fScalerData.back().scaler_values[chan];
   }
 }
 
 //_____________________________________________________________________________
-UInt_t Fadc250Module::GetScalerTime(UInt_t chan, UInt_t ievent) const {
+UInt_t Fadc250Module::GetScalerTime() const {
   vsiz_t nevent = fScalerData.size();
-  if (ievent >= nevent) {
-    cout << "ERROR:: Fadc250Module:: GetScalerTime:: invalid event "
-            "number for slot = "
-         << fSlot << ", channel = " << chan << endl;
-    return kMaxUInt;
-  }
   if (nevent == 0) {
     cout << "ERROR:: Fadc250Module:: GetScalerTime:: data vector empty "
             "for slot = "
-         << fSlot << ", channel = " << chan << endl;
+         << fSlot << endl;
     return kMaxUInt;
   } else {
 #ifdef WITH_DEBUG
     if (fDebugFile)
-      *fDebugFile << "Fadc250Module::GetScalerTime channel " << chan
-                  << ", event " << ievent << " = "
-                  << fScalerData[ievent].scaler_time << endl;
+      *fDebugFile << "Fadc250Module::GetScalerTime = "
+                  << fScalerData.back().scaler_time << endl;
 #endif
-    return fScalerData[ievent].scaler_time;
+    return fScalerData.back().scaler_time;
   }
 }
 
 //_____________________________________________________________________________
-UInt_t Fadc250Module::GetScalerTriggerCount(UInt_t chan, UInt_t ievent) const {
+UInt_t Fadc250Module::GetScalerTriggerCount() const {
   vsiz_t nevent = fScalerData.size();
-  if (ievent >= nevent) {
-    cout << "ERROR:: Fadc250Module:: GetScalerTriggerCount:: invalid event "
-            "number for slot = "
-         << fSlot << ", channel = " << chan << endl;
-    return kMaxUInt;
-  }
   if (nevent == 0) {
     cout << "ERROR:: Fadc250Module:: GetScalerTriggerCount:: data vector empty "
             "for slot = "
-         << fSlot << ", channel = " << chan << endl;
+         << fSlot << endl;
     return kMaxUInt;
   } else {
 #ifdef WITH_DEBUG
     if (fDebugFile)
-      *fDebugFile << "Fadc250Module::GetScalerTriggerCount channel " << chan
-                  << ", event " << ievent << " = "
-                  << fScalerData[ievent].scaler_trigger_count << endl;
+      *fDebugFile << "Fadc250Module::GetScalerTriggerCount = "
+                  << fScalerData.back().scaler_trigger_count << endl;
 #endif
-    return fScalerData[ievent].scaler_trigger_count;
+    return fScalerData.back().scaler_trigger_count;
   }
 }
 
@@ -1270,7 +1249,7 @@ Int_t Fadc250Module::Decode(const UInt_t *pdat) {
     } else if (fScalersToRead == 2) {
       fScalerData.back().scaler_time = data;
     } else {
-      PopulateDataVector(fScalerData.back().scaler_values, data);
+      fScalerData.back().scaler_values.push_back(data);
     }
     fScalersToRead--;
 
