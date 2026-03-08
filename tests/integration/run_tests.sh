@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Drver script for Podd integration tests.
+# Driver script for Podd integration tests.
 #
 # Assumes ROOT and ANALYZER are set up. Further assumes that all ROOT scripts
 # and reference results are in the same directory as this script.

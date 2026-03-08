@@ -63,10 +63,10 @@ The experimental configuration was as follows:
 * 12C "thin" foil target (single foil).
 * Sieve slit collimator.
 
-The primary prupose of these data is to provide valid input for the analyzer
-regardless of physics content.
-There is no particular significance to this choice of data other than that it
-was conveniently available at the time of writing. The experimental setup was
+The primary purpose of these data is to provide input for testing the analyzer,
+irrespective of physics content. These particular data are especially useful
+for testing as many reconstructed quantities show clear structures from the
+carbon target spectrum and the sieve slit collimator. The experimental setup was
 somehwat unusual in that it employed septa in front of the HRS spectrometers,
 which requires non-standard optics coefficients and a special calculation of
 the effective central scattering angle. The experiment also used a non-standard
@@ -75,4 +75,5 @@ The optics calibration in the database appears to be reasonably good; other
 calibrations (e.g. VDC drift time, scintillator timing, PMT gain matching,
 Cherenkov amplitude) may only be approximate.
 
-In the future, different data may be chosen for the integration test suite.
+In the future, the integration test suite will be expanded to analyze data from
+additional experiments to obtain fuller code coverage.
