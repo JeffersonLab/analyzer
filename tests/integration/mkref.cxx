@@ -13,6 +13,7 @@
 #include "THaRunBase.h"
 #include "THaRunParameters.h"
 #include "RunInfo.h"
+#include <algorithm>    // for std::min
 
 static const char* const here = "mkref.cxx";
 
@@ -23,7 +24,7 @@ int mkref( const char* root_file, const char* ref_file )
 
   //------ Open ROOT files
   if( !root_file || !*root_file || !ref_file || !*ref_file ) {
-    Error(here, R"(Usage: verify("root_file","ref_file"))");
+    Error(here, R"(Usage: mkref("root_file","ref_file"))");
     return 1;
   }
 
@@ -58,7 +59,11 @@ int mkref( const char* root_file, const char* ref_file )
   if( out_f.IsZombie() )
     return 3;
   // Use maximal compression
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,34,0)
+  out_f.SetCompressionAlgorithm(ROOT::RCompressionSetting::EAlgorithm::kLZMA);
+#else
   out_f.SetCompressionAlgorithm(ROOT::ECompressionAlgorithm::kLZMA);
+#endif
   out_f.SetCompressionLevel(9);
 
   Int_t len = 0;  // Total number of bytes written
@@ -71,11 +76,10 @@ int mkref( const char* root_file, const char* ref_file )
   ifo.vers = run->GetDataVersion();
   ifo.beamE = par->GetBeamE();
   ifo.beamM = par->GetBeamM();
-  Int_t n = par->GetPrescales().GetSize();
-  constexpr auto n_ps = Int_t(sizeof(ifo.ps)/sizeof(*ifo.ps));
-  if( n > n_ps ) n = n_ps;
-  for( Int_t i = 0; i < n; ++i )
-    ifo.ps[i] = par->GetPrescales()[i];
+  const auto& psfact = par->GetPrescales();
+  constexpr auto n = std::min(psfact.size(), std::size(ifo.ps));
+  for( size_t i = 0; i < n; ++i )
+    ifo.ps[i] = psfact[i];
   len += out_f.WriteObjectAny(&ifo, "RunInfo", "Run_Info");
   if( len <= 0 ) {
     Error(here, "Cannot write RunInfo. Something odd is going on.");
@@ -84,6 +88,8 @@ int mkref( const char* root_file, const char* ref_file )
   Info(here, "RunInfo written OK");
 
   // Fill and write select replay results
+  // These allocations will be deleted when closing the ROOT file
+  // ReSharper disable CppDFAMemoryLeak
   auto* evlen    = new TH1F("h_evlen",    "fEvtHdr.fEvtLen", 1000, 0, 5000);
   auto* s1lac3   = new TH1F("h_s1lac3",   "L.s1.la_c[3]",    2000, 0, 1000);
   auto* s1rac3   = new TH1F("h_s1rac3",   "L.s1.ra_c[3]",    2000, 0, 1000);
@@ -101,6 +107,7 @@ int mkref( const char* root_file, const char* ref_file )
   auto* ek_angle = new TH1F("h_ek_angle", "L.ekine.angle",   500,2e-2,20e-2);
   auto* ek_W2    = new TH1F("h_ek_W2",    "L.ekine.W2",      4000,124,128);
   auto* vxz      = new TH1F("h_vxz",      "L.vx.z",          500, -0.5, 0.5);
+  // ReSharper restore CppDFAMemoryLeak
 
   T->Draw("fEvtHdr.fEvtLen>>h_evlen",    "", "goff");
   T->Draw("L.s1.la_c[3]>>h_s1lac3",      "", "goff");
@@ -175,5 +182,6 @@ int mkref( const char* root_file, const char* ref_file )
   auto* c = gROOT->FindObject("c1");
   delete c;
 
+  // ReSharper disable once CppDFAMemoryLeak
   return 0;
 }
