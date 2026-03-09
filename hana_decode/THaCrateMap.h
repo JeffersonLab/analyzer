@@ -22,11 +22,8 @@
 #include "TDatime.h"
 #include <fstream>
 #include <cstdio>  // for FILE
-#include <cassert>
 #include <iostream>
 #include <string>
-#include <vector>
-#include <cstdint>
 #include <map>
 #include <unordered_map>
 #include <set>
@@ -45,7 +42,7 @@ public:
   void   Clear();                                      // Clear all data
   UInt_t GetNcrates() const;                           // Total number of used crates
   UInt_t GetSize() const;                              // Total number of used slots
-  Long64_t GetInitTime() const;                        // Initialization time, if given
+  Long64_t GetInitTime() const { return fInitTime; }   // Initialization time, if given
   const char* GetName() const { return fDBfileName.c_str(); }
   const std::set<UInt_t>& GetUsedCrates() const;
   std::set<UInt_t> GetUsedSlots( UInt_t crate ) const;
@@ -69,7 +66,8 @@ public:
   std::string getScalerLoc( UInt_t crate ) const;      // Return scaler crate location
   std::string getConfigStr( UInt_t crate, UInt_t slot ) const; // Configuration string
   UInt_t getNchan( UInt_t crate, UInt_t slot ) const;  // Max number of channels
-  UInt_t getNdata( UInt_t crate, UInt_t slot ) const;  // Max number of data words
+  [[deprecated("Ndata is automatically adjusted internally. User code should ignore this value.")]]
+  UInt_t getNdata( UInt_t, UInt_t ) const { return MAXDATA; };  // Max number of data words NOLINT(*-convert-member-functions-to-static)
   bool   crateUsed( UInt_t crate ) const;              // True if crate is used
   bool   slotUsed( UInt_t crate, UInt_t slot ) const;  // True if slot in crate is used
   bool   slotClear( UInt_t crate, UInt_t slot ) const; // Decide if not clear ea event
@@ -92,14 +90,14 @@ private:
   class SlotInfo_t {
   public:
     SlotInfo_t() : model(0), header(0), headmask(0xffffffff), bank(-1),
-                   clear(true), nchan(0), ndata(0) {}
-    Int_t  model;
-    UInt_t header;
-    UInt_t headmask;
-    Int_t  bank;
-    bool   clear;
+                   nchan(0), slot(0), do_clear(true) {}
+    Int_t    model;
+    UInt_t   header;
+    UInt_t   headmask;
+    Int_t    bank;
     UShort_t nchan;
-    UInt_t ndata;
+    UShort_t slot;     // self-reference, redundant but sometimes useful
+    bool     do_clear;
     std::string cfgstr;
   };
 
@@ -114,15 +112,13 @@ private:
     bool  IsCamac()       const { return crate_code == kCamac; }
     bool  IsScalerCrate() const { return crate_code == kScalerCrate; }
     void  SetBankInfo();
-    void  SetModel( UInt_t slot, Int_t model, UInt_t nchan = MAXCHAN, UInt_t ndata = MAXDATA);
-    Int_t SetModelSize( UInt_t slot, UInt_t model );
-    std::string  crate_type_name;
-    std::string  scalerloc;
-    std::set<UInt_t> used_slots;
-    std::unordered_map<UInt_t, SlotInfo_t> sltdat;
+    UInt_t       crate;     // Crate number, redundant but sometimes useful
     ECrateCode   crate_code;
     bool         has_banks;
     bool         all_banks;
+    std::unordered_map<UInt_t, SlotInfo_t> sltdat;
+    std::set<UInt_t> used_slots;
+    std::string  scalerloc;
   };
 
   std::unordered_map<UInt_t, CrateInfo_t> fCrateDat;
@@ -222,7 +218,7 @@ bool THaCrateMap::slotUsed( UInt_t crate, UInt_t slot ) const
 inline
 bool THaCrateMap::slotClear( UInt_t crate, UInt_t slot ) const
 {
-  return GetSlotInfo(crate, slot, &SlotInfo_t::clear, true );
+  return GetSlotInfo(crate, slot, &SlotInfo_t::do_clear, true );
 }
 
 inline
@@ -247,12 +243,6 @@ inline
 UInt_t THaCrateMap::getNchan( UInt_t crate, UInt_t slot ) const
 {
   return GetSlotInfo(crate, slot, &SlotInfo_t::nchan );
-}
-
-inline
-UInt_t THaCrateMap::getNdata( UInt_t crate, UInt_t slot ) const
-{
-  return GetSlotInfo(crate, slot, &SlotInfo_t::ndata );
 }
 
 inline

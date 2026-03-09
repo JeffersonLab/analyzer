@@ -314,7 +314,6 @@ config 1881 cfg: debug
     CHECK(crmap->getModel(1,7) == 1877);
     CHECK(crmap->getModel(1,16) == 1881);
     CHECK(crmap->getNchan(1,6) == 96);
-    CHECK(crmap->getNdata(1,6) == 672);
     CHECK(crmap->getMask(1,16) == 0);
     CHECK(crmap->getConfigStr(1,6).empty());
     CHECK(crmap->getConfigStr(1,14) == "debug");
@@ -387,7 +386,6 @@ config 1881 cfg: debug
 
     CHECK(crmap->getModel(crate, cr1slot) == 250);
     CHECK(crmap->getNchan(crate, cr1slot) == 16);
-    CHECK(crmap->getNdata(crate, cr1slot) == 20000); // may change
     CHECK(crmap->getMask(crate, cr1slot) == -1);     // 0xFF FF FF FF
     CHECK(crmap->getConfigStr(crate, cr1slot).empty());
 
@@ -405,7 +403,7 @@ config 1881 cfg: debug
     CHECK(crmap->slotUsed(crate,4));
     CHECK(crmap->getModel(crate, 4) == 6401);
     CHECK(crmap->getBank(crate, 6) == 7);
-    CHECK(crmap->getConfigStr(crate, 5) == "suppress_hitFIFOwarn=100"sv);
+    CHECK(crmap->getConfigStr(crate, 5) == "suppress_hitFIFOwarn=100");
     CHECK(crmap->slotClear(crate,18));          // n/a -> default value
 
     //....
