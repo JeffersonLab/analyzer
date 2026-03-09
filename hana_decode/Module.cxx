@@ -82,8 +82,7 @@ void Module::Clear( Option_t* opt )
   // This is called for each event block read from file, but not for each
   // individual event in a multi-event block.
 
-  TString sopt(opt);
-  if( !sopt.Contains("E")) {
+  if( TString sopt(opt); !sopt.Contains("E")) {
     fWordsSeen = 0;
     block_size = 1;
     fMultiBlockMode = false;
@@ -92,7 +91,8 @@ void Module::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-static void StoreValue( const string& item, UInt_t& data )
+namespace {
+void StoreValue( const string& item, UInt_t& data )
 {
   // Convert 'item' to unsigned int and store the result in 'data'
   size_t len = 0;
@@ -105,6 +105,7 @@ static void StoreValue( const string& item, UInt_t& data )
   }
   data = val;
 }
+} // namespace
 
 //_____________________________________________________________________________
 void Module::ParseConfigStr( const char* configstr,
@@ -130,8 +131,7 @@ void Module::ParseConfigStr( const char* configstr,
     }
     // Do we have a named parameter?
     string name;
-    auto pos = item.find('=');
-    if( pos != string::npos ) {
+    if( auto pos = item.find('='); pos != string::npos ) {
       if( pos > 0 )
         name = item.substr(0,pos);
       item.erase(0,pos+1);
@@ -141,7 +141,8 @@ void Module::ParseConfigStr( const char* configstr,
       StoreValue( item, req[idx].data );
     } else {
       // Named: find and assign to corresponding destination
-      auto it = find_if(ALL(req), [&name]( const ConfigStrReq& r ) { return name == r.name; });
+      auto it = ranges::find_if(
+        req, [&name]( const ConfigStrReq& r ) { return name == r.name; });
       if( it != req.end() ) {
         StoreValue( item, it->data );
       } else {
@@ -171,27 +172,28 @@ void Module::Init( const char* /*configstr*/ )
 
 
 //_____________________________________________________________________________
-Bool_t Module::IsSlot(UInt_t rdata) {
-// Simplest version of IsSlot relies on a unique header.
- if ((rdata & fHeaderMask)==fHeader) {
-    fWordsExpect = (rdata & fWdcntMask)>>fWdcntShift;
+Bool_t Module::IsSlot( UInt_t rdata )
+{
+  // Simplest version of IsSlot relies on a unique header.
+  if( (rdata & fHeaderMask) == fHeader ) {
+    fWordsExpect = (rdata & fWdcntMask) >> fWdcntShift;
     return true;
   }
   return false;
 }
 
 //_____________________________________________________________________________
-void Module::DoPrint() const {
-  if (fDebugFile) {
-    *fDebugFile << "Module   name = "<<fName<<endl;
-    *fDebugFile << "Module::    Crate  "<<fCrate<<"     slot "<<fSlot<<endl;
-    *fDebugFile << "Module::    fWdcntMask "<<hex<<fWdcntMask<<dec<<endl;
-    *fDebugFile << "Module::    fHeader "<<hex<<fHeader<<endl;
-    *fDebugFile << "Module::    fHeaderMask "<<hex<<fHeaderMask<<dec<<endl;
-    *fDebugFile << "Module::    num chan "<<fNumChan<<endl;
+void Module::DoPrint() const
+{
+  if( fDebugFile ) {
+    *fDebugFile << "Module   name = " << fName << endl;
+    *fDebugFile << "Module::    Crate  " << fCrate << "     slot " << fSlot << endl;
+    *fDebugFile << "Module::    fWdcntMask " << hex << fWdcntMask << dec << endl;
+    *fDebugFile << "Module::    fHeader " << hex << fHeader << endl;
+    *fDebugFile << "Module::    fHeaderMask " << hex << fHeaderMask << dec << endl;
+    *fDebugFile << "Module::    num chan " << fNumChan << endl;
   }
 }
-
 
 //_____________________________________________________________________________
 Module::TypeSet_t& Module::fgModuleTypes()
@@ -205,26 +207,26 @@ Module::TypeSet_t& Module::fgModuleTypes()
 }
 
 //_____________________________________________________________________________
-Module::TypeIter_t Module::DoRegister( const ModuleType& info )
+Module::TypeIter_t Module::DoRegister( const ModuleType& registration_info )
 {
   // Add given info in fgModuleTypes
 
-  if( !info.fClassName ||!*info.fClassName ) {
+  if( !registration_info.fClassName || !*registration_info.fClassName ) {
     ::Error( "Module::DoRegister", "Attempt to register empty class name. "
 	     "Coding error. Call expert." );
     return fgModuleTypes().end();
   }
 
-  pair< TypeIter_t, bool > ins = fgModuleTypes().insert(info);
+  auto [elem, success] = fgModuleTypes().insert(registration_info);
 
-  if( !ins.second ) {
+  if( !success ) {
     ::Error( "Module::DoRegister", "Attempt to register duplicate decoder module "
-	     "class \"%s\". Coding error. Call expert.", info.fClassName );
+	     "class \"%s\". Coding error. Call expert.", registration_info.fClassName );
     return fgModuleTypes().end();
   }
   // NB: std::set guarantees that iterators remain valid on further insertions,
   // so this return value will remain good, unlike, e.g., std::vector iterators.
-  return ins.first;
+  return elem;
 }
 
 //_____________________________________________________________________________
@@ -256,7 +258,9 @@ UInt_t Module::LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer,
   // which every module is required to implement
 
   assert(len > 0);
+#ifdef NDEBUG
   if( len == 0 ) return 0;
+#endif
   return LoadSlot(sldat, evbuffer+pos, evbuffer+pos+len-1);
 }
 
