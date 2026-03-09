@@ -260,6 +260,114 @@ UInt_t Module::LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer,
   return LoadSlot(sldat, evbuffer+pos, evbuffer+pos+len-1);
 }
 
+//_____________________________________________________________________________
+// Lookup table of DAQ frontend module parameters. For backwards compatibility
+// only. Modules should set these values when adding themselves to the module
+// registry (call to DoRegister).
+
+class ModuleParam_t {
+public:
+  Int_t       model; // Model identifier
+  ECrateCode  bus;   // Bus type (Fastbus, VME), for crosscheck with crate map
+  EModuleType type;  // Module type
+  UShort_t    nchan; // Number of input channels
+};
+
+using enum EModuleType;
+using enum ECrateCode;
+
+static constexpr array<ModuleParam_t, 26> module_list = {{
+  { .model=250,  .bus=kVME,     .type=kMultiFunctionADC,  .nchan=16   }, // FADC 250
+  { .model=514,  .bus=kVME                                            }, // VTP
+  { .model=526,  .bus=kVME,     .type=kMultiFunctionTDC,  .nchan=128  }, // VETROC
+  { .model=527,  .bus=kVME,     .type=kADC,               .nchan=256  }, // vfTDC
+  { .model=550,  .bus=kVME,     .type=kADC,               .nchan=2    }, // CAEN 550 ADC sequencer readout (RICH)
+  { .model=560,  .bus=kVME,     .type=kScaler,            .nchan=16   }, // CAEN 560 scaler
+  { .model=767,  .bus=kVME,     .type=kCommonStartTDC,    .nchan=128  }, // CAEN 767 multihit TDC
+  { .model=775,  .bus=kVME,     .type=kCommonStopTDC,     .nchan=32   }, // CAEN V775 TDC
+  { .model=792,  .bus=kVME,     .type=kADC,               .nchan=32   }, // CAEN V792 QDC
+  { .model=1151, .bus=kVME,     .type=kScaler,            .nchan=16   }, // LeCroy 1151 scaler
+  { .model=1182, .bus=kVME,     .type=kADC,               .nchan=8    }, // LeCroy 1182 QDC
+  { .model=1190, .bus=kVME,     .type=kCommonStopTDC,     .nchan=128  }, // CAEN 1190A
+  { .model=1872, .bus=kFastbus, .type=kCommonStartTDC,    .nchan=64   }, // High-res ToF TDC
+  { .model=1875, .bus=kFastbus, .type=kCommonStartTDC,    .nchan=64   }, // High-res Detector TDC
+  { .model=1877, .bus=kFastbus, .type=kCommonStopTDC,     .nchan=96   }, // Multi-hit wire-chamber TDC
+  { .model=1881, .bus=kFastbus, .type=kADC,               .nchan=64   }, // Detector ADC
+  { .model=3123, .bus=kVME,     .type=kADC,               .nchan=16   }, // VMIC 3123 ADC
+  { .model=3201, .bus=kVME,     .type=kMultiFunctionTDC,  .nchan=32   }, // JLab F1 TDC high resolution
+  { .model=3204, .bus=kVME,     .type=kMultiFunctionTDC,  .nchan=32   }, // F1TDC high res
+  { .model=3560, .bus=kVME                                            }, // MPD module VMEv4
+  { .model=3561, .bus=kVME                                            }, // MPD module
+  { .model=3800, .bus=kVME,     .type=kScaler,            .nchan=32   }, // Struck 3800 scaler
+  { .model=3801, .bus=kVME,     .type=kScaler,            .nchan=32   }, // Struck 3801 scaler
+  { .model=4450, .bus=kVME                                            }, // HCAL LED module
+  { .model=6401, .bus=kVME,     .type=kMultiFunctionTDC,  .nchan=64   }, // JLab F1 TDC normal resolution
+  { .model=7510, .bus=kVME,     .type=kADC,               .nchan=8    }  // Struck 7510 (33xx?) Flash ADC (multihit)
+}};
+
+// struct ModelPar_t { UInt_t model, nchan, ndata; };
+// static constexpr array<ModelPar_t, 18> modelpar = {{
+//   { 250,  16,  20000 },
+//   { 550,  512, 1024 },
+//   { 560,  16,   16 },
+//   { 767,  128, 1024 },
+//   { 775,  32,  32 },
+//   { 792,  32,  32 },
+//   { 1151, 16,  16 },
+//   { 1182, 8,   128 },
+//   { 1190, 128, 1024 },
+//   { 1875, 64,  512 },
+//   { 1877, 96,  672 },
+//   { 1881, 64,  64 },
+//   { 3123, 16,  16 },
+//   { 3201, 32,  512 },
+//   { 3800, 32,  32 },
+//   { 3801, 32,  32 },
+//   { 6401, 64,  1024 },
+//   { 7510, 8,   1024 },
+// }};
+
+//_____________________________________________________________________________
+Module::ModuleType::ModuleType( const char* class_name, Int_t ID )
+  : ModuleType(class_name, ID, kUnknown, kUndefined, 0)
+{}
+
+//_____________________________________________________________________________
+Module::ModuleType::ModuleType( const char* class_name, Int_t ID,
+  ECrateCode bus, EModuleType type, UShort_t nchan )
+  : fClassName(class_name)
+  , fModel(ID)
+  , fBus(bus)
+  , fType(type)
+  , fNchan(nchan)
+  , fTClass(nullptr)
+{
+  if( fType == kUndefined || fBus == kUnknown || fNchan == 0 ) {
+    const auto* item =
+      ranges::find_if(module_list,
+        [ID]( const auto& mod ) { return ID == mod.model; });
+    if( item != module_list.end() ) {
+      if( fType == kUndefined ) fType = item->type;
+      if( fBus == kUnknown ) fBus = item->bus;
+      if( fNchan == 0 ) fNchan = item->nchan;
+    }
+  }
+}
+
+//_____________________________________________________________________________
+void Module::ModuleType::Print() const
+{
+  // This must match the order of EModuleType in Decoder.h
+  constexpr const char* kModuleTypeName[] =
+  { "undefined", "ADC", "CommonStopTDC", "CommonStartTDC",
+    "MultiFunctionADC", "MultiFunctionTDC" };
+  cout << fClassName
+    << "\t" << fModel
+    << "\t" << kModuleTypeName[static_cast<int>(fType)]
+    << "\t" << fNchan
+    << endl;
+}
+
 } // namespace Decoder
 
 ClassImp(Decoder::Module)

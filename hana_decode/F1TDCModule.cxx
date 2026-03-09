@@ -20,7 +20,8 @@ namespace Decoder {
   constexpr size_t MAXDATA = NTDCCHAN * MAXHIT;
 
   Module::TypeIter_t F1TDCModule::fgThisType =
-    DoRegister( ModuleType( "Decoder::F1TDCModule" , 3201 ));
+    DoRegister( { "Decoder::F1TDCModule" , 3201,
+      ECrateCode::kVME, EModuleType::kMultiFunctionTDC, 32 });
 
 F1TDCModule::F1TDCModule( UInt_t crate, UInt_t slot ) :
   VmeModule(crate, slot), fNumHits(0), fResol(ILO),

@@ -76,20 +76,20 @@ void THaSlotData::define(UInt_t cra, UInt_t slo, UInt_t nchan,
 }
 
 //_____________________________________________________________________________
-int THaSlotData::loadModule(const THaCrateMap *map) {
+int THaSlotData::loadModule(const THaCrateMap *map)
+{
+  Int_t modelnum = map->getModel(crate, slot);
 
-  UInt_t modelnum = map->getModel(crate, slot);
-
-  // Search for the model number, which is the sorting key for the std::set
-  auto found = Module::fgModuleTypes().find(Module::ModuleType(nullptr, modelnum));
+  // Search for the model number
+  auto found = Module::fgModuleTypes().find(modelnum);
 
   if( found != Module::fgModuleTypes().end() ) {
     const auto& loctype = *found;
-    assert(modelnum == loctype.fMapNum);  // else set::find lied
+    assert(modelnum == loctype.fModel);  // else set::find lied
 
     if (fDebugFile) {
       *fDebugFile << "THaSlotData:: loctype.fClassName  "<< loctype.fClassName<<endl;
-      *fDebugFile << "THaSlotData:: loctype.fMapNum  "<< loctype.fMapNum<<endl;
+      *fDebugFile << "THaSlotData:: loctype.fModel  "<< loctype.fModel<<endl;
       *fDebugFile << "THaSlotData:: fTClass ptr =  "<<loctype.fTClass<<endl;
     }
 

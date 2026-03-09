@@ -32,12 +32,27 @@ namespace Decoder {
 
     class ModuleType {
     public:
-      ModuleType ( const char *c1, UInt_t i1 )
-	: fClassName(c1), fMapNum(i1), fTClass(nullptr) {}
-      ModuleType() : fClassName(nullptr), fMapNum(0), fTClass(nullptr) {} // For ROOT RTTI
-      bool operator<( const ModuleType& rhs ) const { return fMapNum < rhs.fMapNum; }
+      // For calls to DoRegister
+      ModuleType( const char* class_name, Int_t ID, ECrateCode bus,
+        EModuleType type, UShort_t nchan );
+      // For searching fgModuleTypes
+      ModuleType( Int_t ID ) : ModuleType( "", ID,   // NOLINT(*-explicit-constructor, *-explicit-conversions)
+        ECrateCode::kUnknown, EModuleType::kUndefined, 0 ) {}
+      // For ROOT RTTI
+      ModuleType() : fClassName(nullptr), fModel(0)
+                   , fBus(ECrateCode::kUnknown), fType(EModuleType::kUndefined)
+                   , fNchan(0), fTClass(nullptr) {}
+      // v1.7 API, do not use
+      [[deprecated("Use ModuleType(name,ID,bus,type,nchan)")]]
+      ModuleType( const char* class_name, Int_t ID );
+
+      bool operator<( const ModuleType& rhs ) const { return fModel < rhs.fModel; }
+      void Print() const;
       const char*      fClassName;
-      UInt_t           fMapNum;
+      Int_t            fModel;
+      ECrateCode       fBus;
+      EModuleType      fType;
+      UShort_t         fNchan;
       mutable TClass*  fTClass;
     };
     using TypeSet_t = std::set<ModuleType>;

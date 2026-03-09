@@ -22,13 +22,13 @@ using namespace std;
 //#define WITH_DEBUG
 
 namespace Decoder {
-
 constexpr size_t NTDCCHAN = 128;
 constexpr size_t MAXHIT = 100;
 constexpr size_t MAXDATA = NTDCCHAN * MAXHIT;
 
 Module::TypeIter_t Caen1190Module::fgThisType =
-  DoRegister(ModuleType("Decoder::Caen1190Module", 1190));
+  DoRegister({ "Decoder::Caen1190Module", 1190,
+    ECrateCode::kVME, EModuleType::kCommonStopTDC, 128 });
 
 //_____________________________________________________________________________
 Caen1190Module::Caen1190Module( Int_t crate, Int_t slot )

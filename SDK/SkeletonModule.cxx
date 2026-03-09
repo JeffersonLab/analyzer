@@ -15,12 +15,13 @@
 using namespace Decoder;
 using namespace std;
 
-// Define this module's class name and model number. Be sure to match
-// the namespace and class name to your actual module's definition.
-// The model number is an arbitrary unsigned int value, but must be unique
+// Define the class name, model number, and basic parameters of this module.
+// Be sure to match the namespace and class name to the actual definition.
+// The model number is an arbitrary signed int value, but must be unique
 // among all modules defined in all loaded libraries.
 Module::TypeIter_t SkeletonModule::fgThisType =
-  DoRegister( ModuleType( "Decoder::SkeletonModule" , 4444 ));
+  DoRegister({ "Decoder::SkeletonModule", 4444,
+    ECrateCode::kVME, EModuleType::kADC, 32 });
 
 namespace Decoder {
 
@@ -36,7 +37,7 @@ SkeletonModule::SkeletonModule( UInt_t crate, UInt_t slot )
 void SkeletonModule::Init()
 {
   VmeModule::Init();
-  fNumChan = 32;
+  fNumChan = fgThisType->fNchan;  // Use default (see DoRegister above)
   fData.resize(fNumChan);
   fDebugFile = nullptr;
   Clear();

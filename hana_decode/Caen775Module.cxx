@@ -23,7 +23,8 @@ using namespace std;
 namespace Decoder {
 
 Module::TypeIter_t Caen775Module::fgThisType =
-  DoRegister( ModuleType( "Decoder::Caen775Module" , 775 ));
+  DoRegister( { "Decoder::Caen775Module" , 775,
+    ECrateCode::kVME, EModuleType::kCommonStopTDC, 32 });
 
 Caen775Module::Caen775Module( UInt_t crate, UInt_t slot ) :
   VmeModule(crate, slot)

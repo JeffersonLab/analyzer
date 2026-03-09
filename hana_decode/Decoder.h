@@ -58,12 +58,15 @@ namespace Decoder {
 
   // Frontend module types (see Module.h)
   enum class EModuleType : Byte_t { kUndefined, kADC, kCommonStopTDC,
-    kCommonStartTDC, kMultiFunctionADC, kMultiFunctionTDC };
+    kCommonStartTDC, kMultiFunctionADC, kMultiFunctionTDC, kScaler };
 
-  // Access processed data for multi-function modules
+  // Data types that may be available from multifunction modules
   enum EModuleDataType : Byte_t { kSampleADC, kPulseIntegral, kPulseTime,
     kPulsePeak, kPulsePedestal, kCoarseTime, kFineTime };
 
+  // Frontend crate bus types
+  // kScaler is a legacy definition that usually implies VME. We may drop that.
+  enum class ECrateCode : Byte_t { kUnknown, kVME, kFastbus, kCamac, kScalerCrate };
 
 }
 

@@ -16,7 +16,8 @@ using namespace std;
 namespace Decoder {
 
   Module::TypeIter_t Caen792Module::fgThisType =
-    DoRegister( ModuleType( "Decoder::Caen792Module" , 792 ));
+    DoRegister( { "Decoder::Caen792Module" , 792,
+      ECrateCode::kVME, EModuleType::kCommonStopTDC, 32 });
 
   Caen792Module::Caen792Module(Int_t crate, Int_t slot) : Caen775Module(crate, slot) {
     fDebugFile=nullptr;

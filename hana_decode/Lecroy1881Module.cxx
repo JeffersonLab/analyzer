@@ -11,7 +11,8 @@ using namespace std;
 namespace Decoder {
 
 Module::TypeIter_t Lecroy1881Module::fgThisType =
-  DoRegister( ModuleType( "Decoder::Lecroy1881Module" , 1881));
+  DoRegister( { "Decoder::Lecroy1881Module" , 1881,
+    ECrateCode::kFastbus, EModuleType::kADC, 64 });
 
 Lecroy1881Module::Lecroy1881Module( UInt_t crate, UInt_t slot )
   : FastbusModule(crate, slot)

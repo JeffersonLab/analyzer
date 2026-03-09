@@ -84,8 +84,6 @@ public:
   static constexpr UInt_t MAXDATA = 65536;
 
 private:
-  enum ECrateCode : std::int8_t { kUnknown, kFastbus, kVME, kScaler, kCamac };
-
   std::string fDBfileName;     // Database file name
   Long64_t    fInitTime;       // Database time stamp (Unix time)
   UInt_t      fTSROC;          // Crate (aka ROC) of the trigger supervisor
@@ -109,11 +107,12 @@ private:
   class CrateInfo_t {
   public:
     CrateInfo_t();
+    using enum ECrateCode; // from Decoder.h
     Int_t ParseSlotInfo( THaCrateMap* crmap, std::string& line );
     bool  IsFastBus()     const { return crate_code == kFastbus; }
-    bool  IsVME()         const { return crate_code == kVME || crate_code == kScaler; }
+    bool  IsVME()         const { return crate_code == kVME || crate_code == kScalerCrate; }
     bool  IsCamac()       const { return crate_code == kCamac; }
-    bool  IsScalerCrate() const { return crate_code == kScaler; }
+    bool  IsScalerCrate() const { return crate_code == kScalerCrate; }
     void  SetBankInfo();
     void  SetModel( UInt_t slot, Int_t model, UInt_t nchan = MAXCHAN, UInt_t ndata = MAXDATA);
     Int_t SetModelSize( UInt_t slot, UInt_t model );

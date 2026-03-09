@@ -47,6 +47,7 @@ static constexpr size_t kInitialMapSize = 64;
 #endif
 
 using namespace std;
+using enum Decoder::ECrateCode;
 
 //_____________________________________________________________________________
 static string StrError()
@@ -147,7 +148,7 @@ int THaCrateMap::setCrateType( UInt_t crate, const char* type )
   else if( type == "vme"sv )
     cr.crate_code = kVME;
   else if( type == "scaler"sv )
-    cr.crate_code = kScaler;
+    cr.crate_code = kScalerCrate;
   else if( type == "camac"sv )
     cr.crate_code = kCamac;
   else {
@@ -402,7 +403,7 @@ Int_t THaCrateMap::ParseCrateInfo( const std::string& line, UInt_t& crate )
       return CM_OK;
     auto& cr = fCrateDat.at(crate);
     // for a scaler crate, get the 'name' or location as well
-    if( cr.crate_code == kScaler ) {
+    if( cr.crate_code == kScalerCrate ) {
       if( sscanf(line.c_str(), "Crate %*u type %*s %20s", ctype) != 1 ) {
         cerr << "THaCrateMap:: failed to scan scaler name" << endl;
         return CM_ERR;

@@ -12,7 +12,8 @@ using namespace std;
 namespace Decoder {
 
 Module::TypeIter_t Scaler3800::fgThisType =
-  DoRegister( ModuleType( "Decoder::Scaler3800" , 3800 ));
+  DoRegister( { "Decoder::Scaler3800" , 3800,
+    ECrateCode::kVME, EModuleType::kScaler, 32 });
 
 Scaler3800::Scaler3800( UInt_t crate, UInt_t slot)
   : GenScaler(crate, slot)

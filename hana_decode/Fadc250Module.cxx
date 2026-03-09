@@ -76,7 +76,8 @@ namespace Decoder {
 using vsiz_t = vector<int>::size_type;
 
 Module::TypeIter_t Fadc250Module::fgThisType =
-  DoRegister(ModuleType("Decoder::Fadc250Module", 250));
+  DoRegister({ "Decoder::Fadc250Module", 250,
+    ECrateCode::kVME, EModuleType::kMultiFunctionADC, 16 });
 
 //_____________________________________________________________________________
 Fadc250Module::Fadc250Module( UInt_t crate, UInt_t slot )
