@@ -1482,9 +1482,10 @@ Long64_t GetTZOffsetToLocal( UInt_t tloc )
 }
 
 //_____________________________________________________________________________
-#ifdef __clang__
-// Clang appears to make implicitly instantiated template functions private
-// symbols when linking optimized code. Prevent this with explicit instantiations.
+// Explicit instantiations. Needed to prevent these symbols from being made
+// private or optimized out by the linker. They are used outside of the database
+// library. Alternatively, the template code could be moved to the header,
+// but that would require client code to be recompiled to pick up bugfixes.
 template Int_t LoadDBvalue( FILE*, const TDatime&, const string&, Double_t&  );
 template Int_t LoadDBvalue( FILE*, const TDatime&, const string&, Float_t&  );
 template Int_t LoadDBvalue( FILE*, const TDatime&, const string&, Long64_t&  );
@@ -1513,6 +1514,5 @@ template Int_t LoadDBmatrix( FILE*, const TDatime&, const string&,
                              vector<vector<Float_t>>&, UInt_t );
 template Int_t LoadDBmatrix( FILE*, const TDatime&, const string&,
                              vector<vector<Int_t>>&, UInt_t );
-#endif
 
 } // namespace Podd
