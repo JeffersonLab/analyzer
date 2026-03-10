@@ -126,15 +126,19 @@ UInt_t THaCrateMap::GetSize() const
 }
 
 //_____________________________________________________________________________
-UInt_t THaCrateMap::getScalerCrate( UInt_t  /*word*/) const
+UInt_t THaCrateMap::getScalerCrate( UInt_t word ) const
 {
-  for( const auto& [crate, crdat]: fCrateDat ) {
-    if( crdat.IsScalerCrate() ) {
-      // UInt_t headtry = word & 0xfff00000;
-      // UInt_t zero = word & 0x0000ff00;
-      //FIXME
-      // if( (zero == 0) &&
-      //     (headtry == crdat.sltdat[1].header) )
+  // Return number of the crate with a scaler module in slot 1 whose header
+  // matches the topmost 12 bits of word. If not found, or if word has any
+  // bits 8-15 set, return 0. If multiple crates match, it is undefined which
+  // one will be picked.
+  if( (word & 0xff00) == 0 ) {
+    UInt_t headtry = word & 0xfff00000;
+    for( const auto& [crate, crdat]: fCrateDat ) {
+      if( auto slt1 = crdat.sltdat.find(1);
+            slt1 != crdat.sltdat.end()
+            && slt1->second.type == EModuleType::kScaler
+            && headtry == slt1->second.header )
         return crate;
     }
   }
@@ -459,6 +463,7 @@ Int_t THaCrateMap::CrateInfo_t::ParseSlotInfo( THaCrateMap* crmap,
   // Fill slot info with the data we just read
   slt.slot = slot;
   slt.model = imodel;
+  if( have_module ) slt.type = module->fType;
   if( nread == 3 ) {
     // bank decoding, default with CODA 3
     slt.bank = cword;

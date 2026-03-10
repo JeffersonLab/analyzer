@@ -90,7 +90,7 @@ private:
   class SlotInfo_t {
   public:
     SlotInfo_t() : model(0), header(0), headmask(0xffffffff), bank(-1),
-                   nchan(0), slot(0), do_clear(true) {}
+      nchan(0), slot(0), do_clear(true), type(EModuleType::kUndefined) {}
     Int_t    model;
     UInt_t   header;
     UInt_t   headmask;
@@ -98,6 +98,7 @@ private:
     UShort_t nchan;
     UShort_t slot;     // self-reference, redundant but sometimes useful
     bool     do_clear;
+    EModuleType type;
     std::string cfgstr;
   };
 
