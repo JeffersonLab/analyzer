@@ -78,6 +78,13 @@ const char* GetCrateTypeName( Decoder::ECrateCode code )
   return it != type_names.end() ? it->second : "(unknown)";
 }
 
+//_____________________________________________________________________________
+void trim_left( string_view& str )
+{
+  while(!str.empty() && isspace(str.front()))
+    str.remove_prefix(1);
+}
+
 } // namespace
 
 //_____________________________________________________________________________
@@ -144,6 +151,39 @@ UInt_t THaCrateMap::getScalerCrate( UInt_t word ) const
     }
   }
   return 0;
+}
+
+//_____________________________________________________________________________
+std::string THaCrateMap::getConfigStr( UInt_t crate, UInt_t slot ) const
+{
+  // Get the optional configuration string for the module in crate/slot.
+  // If a global default is defined for the module type, use it.
+
+  string cfgstr;
+  if( const auto& slt = FindSlot(crate,slot); slt.model != 0 ) {
+    string_view defstr;
+    if( auto mcfg = fModuleCfg.find(slt.model); mcfg != fModuleCfg.end() )
+      defstr = mcfg->second;
+    if( string_view str = slt.cfgstr; !str.empty() ) {
+      if( str[0] == '+' ) {
+        // If there is a '+', prepend default string
+        if( !defstr.empty() ) {
+          str.remove_prefix(1); // wipe the leading '+'
+          trim_left(str);       // not just OCD, but handles str == "+"
+          cfgstr = defstr;
+          if( !str.empty() )
+            cfgstr.append(" ").append(str);
+        } else
+          cfgstr = str.substr(1);
+      } else
+        // Have cfgstr without '+' -> ignore default string
+        cfgstr = str;
+    } else {
+      // No slot-specific string -> use default
+      cfgstr = defstr;
+    }
+  }
+  return cfgstr;
 }
 
 //_____________________________________________________________________________
@@ -401,7 +441,7 @@ Int_t THaCrateMap::ParseCrateInfo( const std::string& line, UInt_t& crate )
 }
 
 //_____________________________________________________________________________
-Int_t THaCrateMap::CrateInfo_t::ParseSlotInfo( THaCrateMap* crmap,
+Int_t THaCrateMap::CrateInfo_t::ParseSlotInfo( const THaCrateMap* crmap,
                                                string& line )
 {
   // 'line' is expected to be the definition for a single module (slot).
@@ -494,29 +534,7 @@ Int_t THaCrateMap::CrateInfo_t::ParseSlotInfo( THaCrateMap* crmap,
   } else {
     slt.nchan = module.fNchan;
   }
-
-  // If a slot-specific configuration string starts with a '+', append it
-  // to the global configuration for this model, if any.
-  // In any case, erase the '+'.
-  string default_cfgstr;
-  assert(imodel != 0);
-  if( auto mcfg = crmap->fModuleCfg.find(imodel); mcfg != crmap->fModuleCfg.end() )
-    default_cfgstr = mcfg->second;
-  if( !cfgstr.empty() ) {
-    if( cfgstr[0] == '+' ) {
-      // If there is a '+', prepend default string
-      if( !default_cfgstr.empty() ) {
-        cfgstr[0] = ' '; // wipe the leading '+'
-        Podd::Trim(cfgstr); // OCD moment
-        slt.cfgstr = default_cfgstr + ' ' + cfgstr;
-      } else
-        slt.cfgstr = cfgstr.substr(1);
-    } else
-      // Have cfgstr without '+' -> ignore default string
-      slt.cfgstr = std::move(cfgstr);
-  } else
-    // No slot-specific string -> use default
-    slt.cfgstr = std::move(default_cfgstr);
+  slt.cfgstr = std::move(cfgstr);  // global config string applied in getConfigStr
 
   used_slots.insert(slot);
   return CM_OK;
@@ -596,7 +614,6 @@ int THaCrateMap::init(const string& the_map)
         return CM_ERR;
       }
       // Load optional configuration string defaults
-      //TODO reassign cfgstr all modules if a new global string is read after a timestamp
       if( constexpr string_view CONFIG_KEY = "config "; line.starts_with(CONFIG_KEY) ) {
         int model = 0;
         size_t pos;

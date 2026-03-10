@@ -111,7 +111,7 @@ private:
   public:
     CrateInfo_t();
     using enum ECrateCode; // from Decoder.h
-    Int_t ParseSlotInfo( THaCrateMap* crmap, std::string& line );
+    Int_t ParseSlotInfo( const THaCrateMap* crmap, std::string& line );
     bool  IsFastBus()     const { return crate_code == kFastbus; }
     bool  IsVME()         const { return crate_code == kVME || crate_code == kScalerCrate; }
     bool  IsCamac()       const { return crate_code == kCamac; }
@@ -132,6 +132,7 @@ private:
   std::map<Int_t, std::string> fModuleCfg;
 
   CrateInfo_t& FindCrate( UInt_t crate );
+  const SlotInfo_t& FindSlot( UInt_t crate, UInt_t slot ) const;
   Int_t loadConfig( std::string& line, std::string& cfgstr ) const;
   Int_t resetCrate( UInt_t crate );
   Int_t setCrateType( UInt_t crate, const char* stype ); // set the crate type
@@ -263,12 +264,6 @@ std::string THaCrateMap::getScalerLoc( UInt_t crate ) const
 }
 
 inline
-std::string THaCrateMap::getConfigStr( UInt_t crate, UInt_t slot ) const
-{
-  return GetSlotInfo(crate, slot, &SlotInfo_t::cfgstr);
-}
-
-inline
 UInt_t THaCrateMap::getMinSlot( UInt_t crate ) const
 {
   const auto& used = GetCrateInfo(crate, &CrateInfo_t::used_slots);
@@ -308,6 +303,18 @@ inline
 std::set<UInt_t> THaCrateMap::GetUsedSlots( UInt_t crate ) const
 {
   return GetCrateInfo(crate, &CrateInfo_t::used_slots);
+}
+
+inline const THaCrateMap::SlotInfo_t&
+THaCrateMap::FindSlot( UInt_t crate, UInt_t slot ) const
+{
+  static const SlotInfo_t nullslot;
+  if( auto it = fCrateDat.find(crate); it != fCrateDat.end() ) {
+    const auto& slots = it->second.sltdat;
+    if( auto jt = slots.find(slot); jt != slots.end() && jt->second.model != 0 )
+      return jt->second;
+  }
+  return nullslot;
 }
 
 } // namespace Decoder
