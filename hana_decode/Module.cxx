@@ -309,6 +309,24 @@ static constexpr array<ModuleParam_t, 26> module_list = {{
   { .model=7510, .bus=kVME,     .type=kADC,               .nchan=8    }  // Struck 7510 (33xx?) Flash ADC (multihit)
 }};
 
+//_____________________________________________________________________________
+#ifdef PODD_ENABLE_TESTS
+Module::ModuleType Module::GetModuleType( Int_t ID )
+{
+  ModuleType mtyp;
+  const auto* item =
+    ranges::find_if(module_list,
+      [ID]( const auto& mod ) { return ID == mod.model; });
+  if( item != module_list.end() ) {
+    mtyp.fModel = item->model;
+    mtyp.fBus   = item->bus;
+    mtyp.fType  = item->type;
+    mtyp.fNchan = item->nchan;
+  }
+  return mtyp;
+}
+#endif
+
 // struct ModelPar_t { UInt_t model, nchan, ndata; };
 // static constexpr array<ModelPar_t, 18> modelpar = {{
 //   { 250,  16,  20000 },

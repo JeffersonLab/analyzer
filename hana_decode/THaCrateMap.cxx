@@ -90,6 +90,7 @@ THaCrateMap::THaCrateMap( const char* db_filename )
   : fInitTime{0}
   , fTSROC{DEFAULT_TSROC}
   , fIsInit{false}
+  , fDebug(0)
   , fCrateDat(kInitialMapSize)
 {
   // Construct uninitialized crate map. The argument is the name of
@@ -438,19 +439,28 @@ Int_t THaCrateMap::CrateInfo_t::ParseSlotInfo( THaCrateMap* crmap,
 
   // Find the given model in the module registry
   const auto& modtypes = Module::fgModuleTypes();
-  const auto& module = modtypes.find(imodel);
-  bool have_module = true;
-  if( module == modtypes.end() ) {
-    Error(here, "No decoder module with ID = %d defined. "
-          "Slot %u in crate %u will not be decoded.", imodel, slot, crate);
-    //TODO what exactly do we do here?
-    //    return CM_ERR;
-    have_module = false; //TODO temporary, for testing
-  }
-  if( have_module && module->fBus != crate_code ) {
+  auto imodule = modtypes.find(imodel);
+  Module::ModuleType module;
+  if( imodule == modtypes.end() ) {
+#ifdef PODD_ENABLE_TESTS
+    if( crmap->fDebug & kAllowMissingModel ) {
+      // For testing only: get basic module info (but no class) from lookup table
+      module = Module::GetModuleType(imodel);
+      if( module.fModel == 0 ) {
+#endif
+        Error(here, "No decoder module with ID = %d defined. "
+              "Slot %u in crate %u will not be decoded.", imodel, slot, crate);
+        return CM_ERR;
+      }
+#ifdef PODD_ENABLE_TESTS
+    }
+  } else
+#endif
+    module = *imodule;
+  if( module.fBus != crate_code ) {
     Error(here, "Slot %u crate %u: Type \"%s\" of module %d "
           "conflicts with crate type \"%s\".", slot, crate,
-          GetCrateTypeName(module->fBus), imodel, GetCrateTypeName(crate_code));
+          GetCrateTypeName(module.fBus), imodel, GetCrateTypeName(crate_code));
     return CM_ERR;
   }
   // Create or retrieve slot info
@@ -463,7 +473,7 @@ Int_t THaCrateMap::CrateInfo_t::ParseSlotInfo( THaCrateMap* crmap,
   // Fill slot info with the data we just read
   slt.slot = slot;
   slt.model = imodel;
-  if( have_module ) slt.type = module->fType;
+  slt.type = module.fType;
   if( nread == 3 ) {
     // bank decoding, default with CODA 3
     slt.bank = cword;
@@ -475,14 +485,14 @@ Int_t THaCrateMap::CrateInfo_t::ParseSlotInfo( THaCrateMap* crmap,
       slt.headmask = mask;
   }
   if( nread > 5 ) {
-    if( have_module && ichan != module->fNchan ) {
+    if( ichan != module.fNchan ) {
       Warning(here, "Slot %u crate %u: Module %d defines %u channels, "
               "but crate map specifies %hu. Using crate map value.",
-              slot, crate, imodel, module->fNchan, ichan);
+              slot, crate, imodel, module.fNchan, ichan);
     }
     slt.nchan = ichan;
-  } else if( have_module ) {
-    slt.nchan = module->fNchan;
+  } else {
+    slt.nchan = module.fNchan;
   }
 
   // If a slot-specific configuration string starts with a '+', append it

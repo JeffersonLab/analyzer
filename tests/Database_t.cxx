@@ -257,6 +257,7 @@ TEST_CASE("Database functions", "[Database]") // NOLINT(*-function-cognitive-com
 TEST_CASE("Crate Map", "[Database]") // NOLINT(*-function-cognitive-complexity)
 {
   auto crmap = make_unique<Decoder::THaCrateMap>("testmap");
+  crmap->setDebug(Decoder::THaCrateMap::kAllowMissingModel);
 
   SECTION("Initial setup")
   {

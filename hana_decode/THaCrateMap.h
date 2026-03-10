@@ -37,6 +37,7 @@ public:
   int    init( Long64_t tloc = 0 );                    // Initialize by Unix time.
   int    init( FILE* fi, const char* fname );          // Initialize from given file
   void   print( std::ostream& os = std::cout ) const;
+  void   setDebug( Byte_t bits = BIT(0) ) { fDebug = bits; }
 
   bool   isInit() const { return fIsInit; }            // Successfully initialized
   void   Clear();                                      // Clear all data
@@ -81,11 +82,14 @@ public:
   static constexpr UInt_t MAXCHAN = 8192;
   static constexpr UInt_t MAXDATA = 65536;
 
+  enum ECrateMapDebug : Byte_t { kAllowMissingModel = BIT(6) };
+
 private:
   std::string fDBfileName;     // Database file name
   Long64_t    fInitTime;       // Database time stamp (Unix time)
   UInt_t      fTSROC;          // Crate (aka ROC) of the trigger supervisor
   bool        fIsInit;         // Successfully initialized
+  Byte_t      fDebug;          // Enable debugging (bitmask)
 
   class SlotInfo_t {
   public:

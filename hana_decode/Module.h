@@ -59,6 +59,9 @@ namespace Decoder {
     using TypeIter_t = TypeSet_t::iterator;
     static TypeSet_t& fgModuleTypes();
     static TypeIter_t DoRegister( const ModuleType& registration_info );
+#ifdef PODD_ENABLE_TESTS
+    static ModuleType GetModuleType( Int_t ID );
+#endif
 
     Bool_t IsMultiBlockMode() const {return fMultiBlockMode; };
     Bool_t BlockIsDone() const { return fBlockIsDone; };

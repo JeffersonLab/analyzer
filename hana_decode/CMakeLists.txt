@@ -94,6 +94,9 @@ endif()
 if(ONLINE_ET)
   target_compile_definitions(${LIBNAME} PUBLIC ONLINE_ET)
 endif()
+if(PODD_ENABLE_TESTS)
+  target_compile_definitions(${LIBNAME} PUBLIC PODD_ENABLE_TESTS)
+endif()
 
 target_include_directories(${LIBNAME}
   PUBLIC
