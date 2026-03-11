@@ -19,9 +19,7 @@
 #include <type_traits>  // for make_signed_t, is_integral_v, is_signed_v
 #include <vector>       // for vector, operator==
 #include <utility>      // for cmp_less
-#ifndef NDEBUG
-# include <limits>      // for numeric_limits
-#endif
+#include <limits>       // for numeric_limits
 
 #define ALL( c ) (c).begin(), (c).end()
 
@@ -249,6 +247,37 @@ namespace Podd {
     return {};
   }
 
+  //_____________________________________________________________________________
+  // Function to check if source value of type S will fit into target value
+  // of type T. T and S must either both be integer or floating point types.
+  // Trivial case of identical types.
+  template<typename T, typename S> requires std::is_same_v<T, S>
+  bool is_in_range( S )
+  {
+    return true;
+  }
+
+  //_____________________________________________________________________________
+  // Non-trivial case of different types.
+  template<typename T, typename S> requires (not std::is_same_v<T, S> and (
+    (std::is_integral_v<T> and std::is_integral_v<S> ) or
+    (std::is_floating_point_v<T> and std::is_floating_point_v<S>)))
+  bool is_in_range( S val )
+  {
+    bool ret = (val <= std::numeric_limits<T>::max());
+    if( ret ) {
+      if( std::is_integral_v<T> ) {
+        if( std::is_signed_v<S> ) {
+          if( std::is_unsigned_v<T> )
+            ret = (val >= 0);
+          else
+            ret = (val >= std::numeric_limits<T>::min());
+        }
+      } else if( std::is_floating_point_v<T> )
+        ret = (val >= -std::numeric_limits<T>::max());
+    }
+    return ret;
+  }
 
   //_____________________________________________________________________________
   // Get number of printable characters of integer number 'n'

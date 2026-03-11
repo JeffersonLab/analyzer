@@ -16,8 +16,8 @@
 #include "TObjString.h"  // for TObjString
 #include "TString.h"     // for TString, operator!=, operator==, operator+
 #include "TSystem.h"     // for TSystem, gSystem
-#include "Helper.h"      // for MakeVectorFromList
-#include <algorithm>     // for min, __count, __sort, count, sort
+#include "Helper.h"      // for MakeVectorFromList, is_in_range
+#include <algorithm>     // for min, count, sort
 #include <cassert>       // for assert
 #include <cctype>        // for isspace
 #include <cerrno>        // for errno
@@ -27,13 +27,12 @@
 #include <filesystem>    // for path, operator/, operator==, directory_iterator
 #include <iostream>      // for basic_istream, basic_ostream, operator<<, fpos
 #include <iterator>      // for distance
-#include <limits>        // for numeric_limits
 #include <memory>        // for unique_ptr
 #include <ranges>        // for reverse_view, ref_view
 #include <system_error>  // for error_code
 #include <type_traits>   // for is_integral_v, is_same_v, is_floating_point_v
-#include <utility>       // for move
-#include <string_view>
+#include <utility>       // for move, in_range
+#include <string_view>   // for string_view
 
 namespace fs = std::filesystem;
 
@@ -767,39 +766,6 @@ template<typename T> requires is_same_v<T, long double>
 T convert_string( const char* p, char*& end )
 {
   return strtold(p, &end);
-}
-
-//_____________________________________________________________________________
-// Function to check if source value of type S will fit into target value
-// of type T. T and S must either both be integer or floating point types.
-// Trivial case of identical types.
-template<typename T, typename S> requires is_same_v<T, S>
-bool is_in_range( S )
-{
-  return true;
-}
-
-//_____________________________________________________________________________
-// Non-trivial case of different types.
-// Currently only used for like-signed integers.
-template<typename T, typename S> requires (not is_same_v<T, S> and (
-  (is_integral_v<T> and is_integral_v<S> ) or
-  (is_floating_point_v<T> and is_floating_point_v<S>)))
-bool is_in_range( S val )
-{
-  bool ret = (val <= numeric_limits<T>::max());
-  if( ret ) {
-    if( is_integral_v<T> ) {
-      if( is_signed_v<S> ) {
-        if( is_unsigned_v<T> )
-          ret = (val >= 0);
-        else
-          ret = (val >= numeric_limits<T>::min());
-      }
-    } else if( is_floating_point_v<T> )
-      ret = (val >= -numeric_limits<T>::max());
-  }
-  return ret;
 }
 
 } // namespace
