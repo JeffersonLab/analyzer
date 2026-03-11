@@ -97,7 +97,7 @@ TString& GetObjArrayString( const TObjArray* array, Int_t i )
 }
 
 //_____________________________________________________________________________
-int Rewind( FILE* file )
+Int_t Rewind( FILE* file )
 {
   // Rewind file with error detection
   if( !file )
@@ -105,6 +105,32 @@ int Rewind( FILE* file )
   errno = 0;
   clearerr(file);
   return fseeko(file, 0L, SEEK_SET);
+}
+
+//_____________________________________________________________________________
+Int_t ReadFile( FILE* fi, string& text )
+{
+  // Read entire file 'fi' into string 'text'.
+  // Returns CM_OK if successful, otherwise CM_ERR, in which case the
+  // contents of 'text' are undefined.
+  if( !fi )
+    return -1;
+  errno = 0;
+  if( fseeko(fi, 0L, SEEK_END) != 0 )
+    return -1;
+  auto size = ftello(fi);
+  if( size <= 0 || Rewind(fi) != 0 )
+    return -1;
+  try {
+    text.resize(size);
+    auto nread = fread(text.data(), sizeof(char), size, fi);
+    if( std::cmp_not_equal(nread ,size) )
+      return -1;
+  } catch ( ... ) {
+    text.clear();
+    return -1;
+  }
+  return 0;
 }
 
 //_____________________________________________________________________________

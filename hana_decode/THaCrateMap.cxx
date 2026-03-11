@@ -238,32 +238,6 @@ void THaCrateMap::setUnused( UInt_t crate, UInt_t slot )
 }
 
 //_____________________________________________________________________________
-Int_t THaCrateMap::readFile( FILE* fi, string& text )
-{
-  // Read entire file 'fi' into string 'text'.
-  // Returns CM_OK if successful, otherwise CM_ERR, in which case the
-  // contents of 'text' are undefined.
-  if( !fi )
-    return CM_ERR;
-  errno = 0;
-  if( fseeko(fi, 0L, SEEK_END) != 0 )
-    return CM_ERR;
-  auto size = ftello(fi);
-  if( size <= 0 || Podd::Rewind(fi) != 0 )
-    return CM_ERR;
-  try {
-    text.resize(size);
-    auto nread = fread(text.data(), sizeof(char), size, fi);
-    if( std::cmp_not_equal(nread ,size) )
-      return CM_ERR;
-  } catch ( ... ) {
-    text.clear();
-    return CM_ERR;
-  }
-  return CM_OK;
-}
-
-//_____________________________________________________________________________
 int THaCrateMap::init( FILE* fi, const char* fname )
 {
   // Get the crate map definition string from the given database file,
@@ -284,7 +258,7 @@ int THaCrateMap::init( FILE* fi, const char* fname )
   }
   // Build the string to parse
   string db;
-  if( readFile(fi, db) != CM_OK || ferror(fi) ) {
+  if( Podd::ReadFile(fi, db) != 0 || ferror(fi) ) {
     ::Error( here, "Error reading crate map database file %s: %s",
         fname, StrError().c_str() );
     return CM_ERR;
@@ -390,7 +364,7 @@ Int_t THaCrateMap::loadConfig( string& line, string& cfgstr ) const
                 fname.c_str(), StrError().c_str(), line.c_str() );
         return CM_ERR;
       }
-      if( readFile(fi, cfgstr) != CM_OK ) {
+      if( Podd::ReadFile(fi, cfgstr) != 0 ) {
         ::Error(here, "Error reading decoder module database file "
                       "\"db_%s.dat\": %s", fname.c_str(), StrError().c_str());
         (void)fclose(fi);

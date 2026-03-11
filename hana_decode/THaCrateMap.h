@@ -139,8 +139,6 @@ private:
   void  setUsed( UInt_t crate, UInt_t slot );
   Int_t ParseCrateInfo( const std::string& line, UInt_t& crate );
 
-  static Int_t readFile( FILE* fi, std::string& text );
-
   template<class Proj,
     typename Result = std::invoke_result_t<Proj, CrateInfo_t>>
   auto GetCrateInfo( UInt_t crate, const Proj& p, Result defval = {} ) const

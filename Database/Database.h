@@ -29,7 +29,8 @@ namespace Podd {
 
 // Generic utility functions
 TString& GetObjArrayString( const TObjArray* params, Int_t pos );
-int Rewind( FILE* file ); // Rewind file with error detection
+Int_t Rewind( FILE* file ); // Rewind file with error detection
+Int_t ReadFile( FILE* fi, std::string& text ); // Read entire file into string
 
 // File-based database API
 std::vector<std::string> GetDBFileList( const char* name, const TDatime& date,
