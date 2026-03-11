@@ -46,7 +46,7 @@ public:
   Long64_t GetInitTime() const { return fInitTime; }   // Initialization time, if given
   const char* GetName() const { return fDBfileName.c_str(); }
   const std::set<UInt_t>& GetUsedCrates() const;
-  std::set<UInt_t> GetUsedSlots( UInt_t crate ) const;
+  const std::set<UInt_t>& GetUsedSlots( UInt_t crate ) const;
 
   bool   isFastBus( UInt_t crate ) const;              // True if fastbus crate;
   bool   isVme( UInt_t crate ) const;                  // True if VME crate;
@@ -109,7 +109,8 @@ private:
   // Crate information
   class CrateInfo_t {
   public:
-    CrateInfo_t();
+    CrateInfo_t() : crate(kMaxUInt), crate_code(kUnknown), has_banks(false),
+      all_banks(false), sltdat(MAXSLOT) {}
     using enum ECrateCode; // from Decoder.h
     Int_t ParseSlotInfo( const THaCrateMap* crmap, std::string& line );
     bool  IsFastBus()     const { return crate_code == kFastbus; }
@@ -131,10 +132,9 @@ private:
   std::set<UInt_t> fUsedCrates;
   std::map<Int_t, std::string> fModuleCfg;
 
-  CrateInfo_t& FindCrate( UInt_t crate );
+  CrateInfo_t& MakeCrate( UInt_t crate );
   const SlotInfo_t& FindSlot( UInt_t crate, UInt_t slot ) const;
   Int_t loadConfig( std::string& line, std::string& cfgstr ) const;
-  Int_t resetCrate( UInt_t crate );
   Int_t setCrateType( UInt_t crate, const char* stype ); // set the crate type
   void  setUsed( UInt_t crate, UInt_t slot );
   Int_t ParseCrateInfo( const std::string& line, UInt_t& crate );
@@ -156,10 +156,8 @@ private:
   {
     const auto& sl =
       GetCrateInfo( crate, &CrateInfo_t::sltdat );
-    if( !sl.empty() ) {
-      if( auto jt = sl.find(slot); jt != sl.end() )
-        return std::invoke(p, jt->second);
-    }
+    if( auto jt = sl.find(slot); jt != sl.end() )
+      return std::invoke(p, jt->second);
     return defval;
   }
 
@@ -300,9 +298,12 @@ const std::set<UInt_t>& THaCrateMap::GetUsedCrates() const
 }
 
 inline
-std::set<UInt_t> THaCrateMap::GetUsedSlots( UInt_t crate ) const
+const std::set<UInt_t>& THaCrateMap::GetUsedSlots( UInt_t crate ) const
 {
-  return GetCrateInfo(crate, &CrateInfo_t::used_slots);
+  static const std::set<UInt_t> nullset;
+  if( auto it = fCrateDat.find(crate); it != fCrateDat.end() )
+    return it->second.used_slots;
+  return nullset;
 }
 
 inline const THaCrateMap::SlotInfo_t&

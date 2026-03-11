@@ -187,17 +187,10 @@ std::string THaCrateMap::getConfigStr( UInt_t crate, UInt_t slot ) const
 }
 
 //_____________________________________________________________________________
-Int_t THaCrateMap::resetCrate( UInt_t crate )
-{
-  setUnused(crate);
-  return CM_OK;
-}
-
-//_____________________________________________________________________________
 int THaCrateMap::setCrateType( UInt_t crate, const char* type )
 {
-  if( crateUsed(crate) )
-    resetCrate(crate); // FIXME more efficient
+  if( auto it = fCrateDat.find(crate); it != fCrateDat.end() )
+    it->second = {};
   auto& cr = fCrateDat[crate];
   cr.crate = crate;
   if( type == "fastbus"sv )
@@ -209,7 +202,7 @@ int THaCrateMap::setCrateType( UInt_t crate, const char* type )
   else if( type == "camac"sv )
     cr.crate_code = kCamac;
   else {
-    resetCrate(crate);
+    setUnused(crate);
     return type == "unused"sv ? CM_OK : CM_ERR;
   }
   return CM_OK;
@@ -218,7 +211,7 @@ int THaCrateMap::setCrateType( UInt_t crate, const char* type )
 //_____________________________________________________________________________
 void THaCrateMap::setUsed( UInt_t crate, UInt_t slot )
 {
-  auto& cr = FindCrate(crate);
+  auto& cr = MakeCrate(crate);
   auto& slt = cr.sltdat[slot];  // create slot entry if necessary
   slt.slot = slot;
   cr.used_slots.insert(slot);
@@ -234,7 +227,7 @@ void THaCrateMap::setUnused( UInt_t crate )
 //_____________________________________________________________________________
 void THaCrateMap::setUnused( UInt_t crate, UInt_t slot )
 {
-  const auto& elem = fCrateDat.find(crate);
+  auto elem = fCrateDat.find(crate);
   if( elem == fCrateDat.end() )
     return;
   auto& cr = elem->second;
@@ -353,12 +346,14 @@ void THaCrateMap::print(ostream& os) const
 }
 
 //_____________________________________________________________________________
-THaCrateMap::CrateInfo_t& THaCrateMap::FindCrate( UInt_t crate )
+THaCrateMap::CrateInfo_t& THaCrateMap::MakeCrate( UInt_t crate )
 {
   // Find, and if necessary create, an entry for the given crate number
 
+  auto& cr = fCrateDat[crate];
+  cr.crate = crate;
   fUsedCrates.insert(crate);
-  return fCrateDat[crate];
+  return cr;
 }
 
 //_____________________________________________________________________________
@@ -697,15 +692,6 @@ int THaCrateMap::init(const string& the_map)
   fIsInit = true;
   return CM_OK;
 }
-
-//_____________________________________________________________________________
-THaCrateMap::CrateInfo_t::CrateInfo_t()
-  : crate(kMaxUInt)
-  , crate_code(kUnknown)
-  , has_banks(false)
-  , all_banks(false)
-  , sltdat(MAXSLOT)
-{}
 
 } // namespace Decoder
 
