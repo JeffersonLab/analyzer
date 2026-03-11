@@ -88,7 +88,4 @@ protected:
   ClassDef(THaCutList,0)  //Hash list of TCuts with support for blocks of cuts
 };
 
-// Global utility function
-UInt_t IntDigits( Long64_t n );
-
 #endif

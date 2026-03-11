@@ -61,12 +61,11 @@ private:
 };
 
 //_____________________________________________________________________________
+// Trim leading and trailing whitespace from string 'str'.
+// Returns length of trimmed string.
 inline
 size_t Trim( std::string& str )
 {
-  // Trim leading and trailing whitespace from string 'str'.
-  // Returns length of trimmed string.
-
   if( str.empty() )
     return 0;
   const char *s = str.data(), *e = s + str.size() - 1, *p = e;

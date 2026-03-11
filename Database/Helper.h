@@ -250,6 +250,23 @@ namespace Podd {
   }
 
 
+  //_____________________________________________________________________________
+  // Get number of printable characters of integer number 'n'
+  constexpr UInt_t IntDigits( Long64_t n )
+  {
+    if( n == 0 ) return 1;
+    UInt_t j = 0;
+    if( n < 0 ) {
+      ++j;
+      n = -n;
+    }
+    while( n != 0 ) {
+      n /= 10;
+      ++j;
+    }
+    return j;
+  }
+
 ///////////////////////////////////////////////////////////////////////////////
 
 } // end namespace Podd

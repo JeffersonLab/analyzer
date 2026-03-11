@@ -16,6 +16,7 @@
 #include "Textvars.h"
 #include "THaGlobals.h"
 #include "FileInclude.h"
+#include "Helper.h"
 #include "TError.h"
 #include "TList.h"
 #include "TString.h"
@@ -601,25 +602,6 @@ void THaCutList::SetList( THaVarList* lst )
   // Other variable lists can be used for individual cut definitions.
 
   fVarList = lst;
-}
-
-//______________________________________________________________________________
-UInt_t IntDigits( Long64_t n )
-{ 
-  //Get number of printable digits of integer n.
-  //Global utility function.
-
-  if( n == 0 ) return 1;
-  UInt_t j = 0;
-  if( n<0 ) {
-    j++;
-    n = -n;
-  }
-  while( n>0 ) {
-    n /= 10;
-    j++;
-  }
-  return j;
 }
 
 //______________________________________________________________________________
