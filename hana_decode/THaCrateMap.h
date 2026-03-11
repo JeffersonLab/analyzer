@@ -17,16 +17,16 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-
-#include "Decoder.h"
-#include "TDatime.h"
-#include <fstream>
-#include <cstdio>  // for FILE
-#include <iostream>
-#include <string>
-#include <map>
-#include <unordered_map>
-#include <set>
+#include "Decoder.h"      // for ECrateCode, ECrateCode::kScalerCrate, ECrat...
+#include "Rtypes.h"       // for UInt_t, Int_t, Byte_t, Long64_t, BIT, UShort_t
+#include <cstdio>         // for FILE
+#include <functional>     // for invoke
+#include <iostream>       // for cout, ostream
+#include <map>            // for map
+#include <set>            // for set, __tree_node
+#include <string>         // for basic_string, string
+#include <type_traits>    // for invoke_result_t
+#include <unordered_map>  // for unordered_map, operator==
 
 namespace Decoder {
 class THaCrateMap {

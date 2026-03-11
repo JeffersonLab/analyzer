@@ -15,29 +15,28 @@
 /////////////////////////////////////////////////////////////////////
 
 
-#include "Decoder.h"
 #include "THaCrateMap.h"
-#include "Helper.h"
-#include "Database.h"
-#include "Textvars.h"
-#include "Module.h"
-#include "TError.h"
-#include "TSystem.h"
-#include "TString.h"
-#include <cstdio>
-#include <cerrno>  // for errno
-#include <string>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <unistd.h>
-#include <cstring>  // for strerror_r
-#include <memory>   // for unique_ptr
-#include <algorithm> // for std::find, std::sort
-#include <array>
-#include <ranges>
-#include <utility>
-#include <string_view>
+#include "Database.h"   // for OpenDBFile, ReadFile, GetTZOffsetToLocal, IsD...
+#include "Decoder.h"    // for ECrateCode, ECrateCode::kScalerCrate, ECrateC...
+#include "Module.h"     // for Module
+#include "TDatime.h"    // for TDatime
+#include "TError.h"     // for Error, Warning
+#include "TString.h"    // for TString, operator>=
+#include "Textvars.h"   // for Trim
+#include <cassert>      // for assert
+#include <algorithm>    // for all_of, any_of
+#include <cctype>       // for isspace
+#include <cerrno>       // for errno
+#include <cstdio>       // for fclose, sscanf, size_t, FILE, ferror
+#include <cstring>      // for strerror_r
+#include <exception>    // for exception
+#include <iomanip>      // for operator<<, setfill, setw
+#include <iostream>     // for basic_ostream, operator<<, basic_ios, basic_i...
+#include <ranges>       // for operator|, elements_view, values, views
+#include <sstream>      // for basic_istringstream
+#include <string>       // for basic_string, char_traits, string, operator<=>
+#include <string_view>  // for basic_string_view, operator==, operator""sv
+#include <utility>      // for get, operator<=>
 
 static constexpr size_t kInitialMapSize = 64;
 
