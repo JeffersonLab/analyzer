@@ -18,6 +18,7 @@
 #include "THaCrateMap.h"
 #include "Database.h"   // for OpenDBFile, ReadFile, GetTZOffsetToLocal, IsD...
 #include "Decoder.h"    // for ECrateCode, ECrateCode::kScalerCrate, ECrateC...
+#include "Helper.h"     // for ToInt, IntDigits
 #include "Module.h"     // for Module
 #include "TDatime.h"    // for TDatime
 #include "TError.h"     // for Error, Warning
@@ -46,6 +47,7 @@ static constexpr size_t kInitialMapSize = 64;
 #endif
 
 using namespace std;
+using namespace Podd;
 using enum Decoder::ECrateCode;
 
 namespace {
@@ -70,8 +72,8 @@ string StrError()
 const char* GetCrateTypeName( Decoder::ECrateCode code )
 {
   static const std::map<Decoder::ECrateCode, const char*> type_names = {
-    {kUnknown, "(unknown)"}, {kVME, "VME"}, {kFastbus, "Fastbus"},
-    {kCamac, "CAMAC"}, {kScalerCrate, "scaler"}
+    {kUnknown, "(unknown)"}, {kVME, "vme"}, {kFastbus, "fastbus"},
+    {kCamac, "camac"}, {kScalerCrate, "scaler"}
   };
   auto it = type_names.find(code);
   return it != type_names.end() ? it->second : "(unknown)";
@@ -95,6 +97,7 @@ const UInt_t THaCrateMap::DEFAULT_TSROC = 21;
 THaCrateMap::THaCrateMap( const char* db_filename )
   : fInitTime{0}
   , fTSROC{DEFAULT_TSROC}
+  , fTSROCSet{false}
   , fIsInit{false}
   , fDebug(0)
   , fCrateDat(kInitialMapSize)
@@ -117,6 +120,7 @@ void THaCrateMap::Clear()
   fCrateDat.reserve(kInitialMapSize);
   fUsedCrates.clear();
   fTSROC = DEFAULT_TSROC;  // default value, if not found in db_cratemap
+  fTSROCSet = false;
   fIsInit = false;
 }
 
@@ -257,7 +261,7 @@ int THaCrateMap::init( FILE* fi, const char* fname )
   }
   // Build the string to parse
   string db;
-  if( Podd::ReadFile(fi, db) != 0 || ferror(fi) ) {
+  if( ReadFile(fi, db) != 0 || ferror(fi) ) {
     ::Error( here, "Error reading crate map database file %s: %s",
         fname, StrError().c_str() );
     return CM_ERR;
@@ -277,10 +281,10 @@ int THaCrateMap::init( Long64_t tloc )
   int status;
   FILE* fi = nullptr;
   fInitTime = tloc;
-  Podd::gNeedTZCorrection = (Podd::GetTZOffsetToLocal(tloc) != 0);
+  gNeedTZCorrection = (GetTZOffsetToLocal(tloc) != 0);
   WithDefaultTZ(TDatime date = tloc);
   try {
-    fi = Podd::OpenDBFile(GetName(), date, here, "r", 1);
+    fi = OpenDBFile(GetName(), date, here, "r", 1);
     status = init(fi, GetName());
   } catch ( const exception& e ) {
     Error( here, "%s", e.what() );
@@ -293,29 +297,96 @@ int THaCrateMap::init( Long64_t tloc )
 //_____________________________________________________________________________
 void THaCrateMap::print(ostream& os) const
 {
-  // Pretty-print crate map
+  // Pretty-print crate map. The output format is suitable for init().
+
+  if( fTSROCSet )
+    os << "TSROC " << fTSROC << endl;
+  int w_config_model = 1;
+  for( auto model: fModuleCfg | views::keys )
+    w_config_model = std::max(w_config_model, ToInt(IntDigits(model)));
+  for( const auto& [ model, defcfg ]: fModuleCfg ) {
+    if( model != 0 && !defcfg.empty() )
+      os << "config " << left << dec << setw(w_config_model+1) << model
+         << "cfg:" << defcfg << endl;
+  }
+  // Slot parameter field widths. These are all longer than the print width of
+  // the numbers in the columns underneath (except for header & mask), so they
+  // can be const
+  static const int widths[7] = {  // int is what setw() wants
+    ToInt(strlen("slot")),  ToInt(strlen("model")), ToInt(strlen("clear")),
+    ToInt(strlen("bank")),  10 /* "header" */,      10 /* "mask" */,
+    ToInt(strlen("nchan"))
+  };
+  // Shorthands
+  const auto [w_slot, w_model, w_clear, w_bank,
+    w_header, w_mask, w_nchan] = widths;
+  const int spc = 2; // Number of spaces between fields
+  ios::fmtflags oldf = os.setf(ios::left, ios::adjustfield);
   for( auto roc: fUsedCrates ) {
-    const auto& it = fCrateDat.find(roc);
-    assert( it != fCrateDat.end() );
-    const auto& cr = it->second;
+    const auto& iroc = fCrateDat.find(roc);
+    assert( iroc != fCrateDat.end() );
+    const auto& cr = iroc->second;
     os << "==== Crate " << roc << " type " << GetCrateTypeName(cr.crate_code);
     if( !cr.scalerloc.empty() )  os << " \"" << cr.scalerloc << "\"";
     os << endl;
-    os << "#slot\tmodel\tclear\t  header\t  mask  \tnchan\n";
+    os << "#"
+         << setw(w_slot+spc)   << "slot"
+         << setw(w_model+spc)  << "model";
+    if( cr.all_banks ) {
+      if( cr.HasConfig() )
+        os << setw(w_bank+spc);
+      os                          << "bank";
+    } else if( !cr.has_banks )
+      os << setw(w_clear+spc)  << "clear";
+    else {
+      int w_bkcl = std::max(w_bank, w_clear);
+      os << setw(w_bkcl+spc)   << "bk/cl";
+    }
+    if( !cr.all_banks) {
+      os << setw(w_header+spc) << "header"
+         << setw(w_mask+spc)   << "mask";
+      if( cr.HasConfig() )
+        os << setw(w_nchan+spc);
+      os                          << "nchan";
+    }
+    if( cr.HasConfig() )
+      os   << "cfgstr";
+    os << endl;
     for( auto slot: cr.used_slots ) {
       const auto& jt = cr.sltdat.find(slot);
       assert( jt != cr.sltdat.end() );
       const auto& slt = jt->second;
-      os << "  " << slot << "\t" << slt.model << "\t" << slt.do_clear;
-      ios::fmtflags oldf = os.setf(ios::right, ios::adjustfield);
-      os << "\t0x" << hex << setfill('0') << setw(8) << slt.header
-	   << "\t0x" << hex << setfill('0') << setw(8) << slt.headmask
-	   << dec << setfill(' ') << setw(0)
-	   << "\t" << slt.nchan
-	   << endl;
-      os.flags(oldf);
+      bool have_cfg = !slt.cfgstr.empty();
+      os << " "
+         << setw(w_slot+spc)     << slt.slot
+         << setw(w_model+spc)    << slt.model;
+      if( slt.bank >= 0 ) {
+        if( have_cfg )
+          os << setw(w_bank+spc);
+        os                          << slt.bank;
+        if( !cr.all_banks && have_cfg )
+          os << setw(w_header+w_mask+w_nchan+6+w_clear-w_bank) << " ";
+      } else {
+        os << setw(w_clear+spc)  << slt.do_clear
+           << setfill('0')
+           // ios::setfill does not work right with "left" alignment; it fill at
+           // the right (trailing zeros). With "right" alignment, ios::showbase
+           // does not work correctly together with "showbase"; it fill to the
+           // left of the "0x" base indicator. So do it by hand, while we wait
+           // for std::format finally to appear.
+           << "0x" << right << hex << setw(w_header-2) << slt.header   << "  "
+           << "0x" << right << hex << setw(w_mask-2)   << slt.headmask << "  "
+           << setfill(' ') << dec << left;
+           if( have_cfg )
+             os << setw(w_nchan+spc);
+        os << slt.nchan;
+      }
+      if( have_cfg )
+        os << "cfg:" << slt.cfgstr;
+      os << endl;
     }
   }
+  os.flags(oldf);
 }
 
 //_____________________________________________________________________________
@@ -353,17 +424,17 @@ Int_t THaCrateMap::loadConfig( string& line, string& cfgstr ) const
       line.erase(pos1);
     } else {
       string fname = line.substr(pos2 + 7);
-      Podd::Trim(fname);
+      Trim(fname);
       errno = 0;
       WithDefaultTZ(TDatime date = fInitTime);
-      FILE* fi = Podd::OpenDBFile(fname.c_str(), date, here);
+      FILE* fi = OpenDBFile(fname.c_str(), date, here);
       if ( !fi ) {
         ::Error(here, "Error opening decoder module database file "
                       "\"db_%s.dat\": %s\n line = %s",
                 fname.c_str(), StrError().c_str(), line.c_str() );
         return CM_ERR;
       }
-      if( Podd::ReadFile(fi, cfgstr) != 0 ) {
+      if( ReadFile(fi, cfgstr) != 0 ) {
         ::Error(here, "Error reading decoder module database file "
                       "\"db_%s.dat\": %s", fname.c_str(), StrError().c_str());
         (void)fclose(fi);
@@ -372,7 +443,7 @@ Int_t THaCrateMap::loadConfig( string& line, string& cfgstr ) const
       (void)fclose(fi);
       line.erase(pos2);
     }
-    Podd::Trim(cfgstr);
+    Trim(cfgstr);
   }
   return CM_OK;
 }
@@ -517,6 +588,14 @@ void THaCrateMap::CrateInfo_t::SetBankInfo()
 }
 
 //_____________________________________________________________________________
+// Do any slots of this crate have a config string?
+bool THaCrateMap::CrateInfo_t::HasConfig() const
+{
+  auto slot_has_cfg = []( const auto& slt ) { return !slt.cfgstr.empty(); };
+  return ranges::any_of(sltdat | views::values, slot_has_cfg);
+}
+
+//_____________________________________________________________________________
 int THaCrateMap::init(const string& the_map)
 {
   // Initialize the crate map according to the lines in the string 'the_map'
@@ -536,7 +615,7 @@ int THaCrateMap::init(const string& the_map)
   string line; line.reserve(128);
   istringstream s(the_map);
   Long64_t keydate = 0, prevdate = 0;
-  bool do_ignore = false, in_crate = false, found_tscrate = false;
+  bool do_ignore = false, in_crate = false;
   int lineno = 0;
 
   while( getline(s, line) ) {
@@ -544,7 +623,7 @@ int THaCrateMap::init(const string& the_map)
     // Drop comments. For historical reasons, they may start with '!' or '#'
     if( auto pos = line.find_first_of("!#"); pos != string::npos )
       line.erase(pos);
-    Podd::Trim(line);
+    Trim(line);
     if( line.empty() )
       continue; // skip empty or comment-only lines
 
@@ -554,7 +633,7 @@ int THaCrateMap::init(const string& the_map)
     // parameters are updated for a new validity period.
     // To remove a previously-defined crate after a certain time stamp, use
     // crate type "unused".
-    if( Podd::IsDBtimestamp(line, keydate) ) {
+    if( IsDBtimestamp(line, keydate) ) {
       do_ignore = fInitTime > 0 && (keydate > fInitTime || keydate < prevdate);
       in_crate = false;
       continue;
@@ -572,8 +651,8 @@ int THaCrateMap::init(const string& the_map)
           val = stoul(line.substr(TSROC_KEY.length()), &pos);
         } catch( ... ) { err = true; }
         if( !err && pos + TSROC_KEY.length() == line.length() ) {
-          found_tscrate = true;
           fTSROC = val;
+          fTSROCSet = true;
           continue;
         }
         Error(here, "db_%s.dat:%d: Failed to parse line \"%s\". "
@@ -655,7 +734,7 @@ int THaCrateMap::init(const string& the_map)
     return CM_ERR;
   }
 
-  if ( !found_tscrate ) {
+  if ( !fTSROCSet ) {
     // Set fTSROC to > MAXROC to be able to detect non-presence of a definition
     // in the crate map later. In this way, we can avoid printing a warning
     // if we're analyzing CODA 2 data, for which the TSROC doesn't matter.

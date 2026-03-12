@@ -88,6 +88,7 @@ private:
   std::string fDBfileName;     // Database file name
   Long64_t    fInitTime;       // Database time stamp (Unix time)
   UInt_t      fTSROC;          // Crate (aka ROC) of the trigger supervisor
+  bool        fTSROCSet;       // TSROC number explicitly set
   bool        fIsInit;         // Successfully initialized
   Byte_t      fDebug;          // Enable debugging (bitmask)
 
@@ -118,6 +119,7 @@ private:
     bool  IsCamac()       const { return crate_code == kCamac; }
     bool  IsScalerCrate() const { return crate_code == kScalerCrate; }
     void  SetBankInfo();
+    bool  HasConfig() const;
     UInt_t       crate;     // Crate number, redundant but sometimes useful
     ECrateCode   crate_code;
     bool         has_banks;
