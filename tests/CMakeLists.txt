@@ -12,7 +12,7 @@ configure_file(PoddTests.h.in PoddTests.h)
 
 # Sources and headers
 set(SRC ArrayRTTI_t.cxx Formula_t.cxx Textvars_t.cxx Database_t.cxx
-  TestsSetup_t.cxx ArrayRTTI.cxx UnitTest.cxx)
+  CrateMap_t.cxx TestsSetup_t.cxx ArrayRTTI.cxx UnitTest.cxx)
 # string(REPLACE .cxx .h HDR "${SRC}")
 set(HDR ArrayRTTI.h UnitTest.h)
 
