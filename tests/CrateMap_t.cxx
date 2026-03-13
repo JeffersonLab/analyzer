@@ -217,7 +217,7 @@ config 1881 cfg:debug
     const char* testfilename = PODD_TESTS_DBDIR "/testmap.txt";
     FILE* fi = fopen(testfilename, "r");
     REQUIRE(fi != nullptr);
-    auto st = crmap->init(fi, testfilename);
+    int st = crmap->init(fi, testfilename);
     (void) fclose(fi);
     REQUIRE(st == THaCrateMap::CM_OK);
     CHECK(crmap->isInit());
@@ -229,28 +229,31 @@ config 1881 cfg:debug
     CHECK(crmap->GetUsedCrates() == set<UInt_t>{1,2});
   }
 
-  SECTION("Initialization from file via timestamps")
+  // Open tests/DB/db_testmap.dat and extract info for the given date
+  SECTION("Load from file, date = 01-Jan-2020 00:00 EST")
   {
-    // Open tests/DB/db_testmap.dat and extract info for the given date
-
-    //=== Part 1: Date = 01-Jan-2020 00:00 EST -> nothing defined
+    //=== Nothing defined, timestamp date is before first date in file
     time_t tloc = mktloc(2020, 1, 1);
     auto st = crmap->init(tloc);
     REQUIRE(st == THaCrateMap::CM_ERR);
     //TODO check error message
+  }
 
-    //=== Part 2: Date = 0 (1-Jan-1970 UTC)
-    //  -> everything defined (timestamps disabled)
-    st = crmap->init(0);
+  SECTION("Load from file, date = 0 (01-Jan-1970 UTC)")
+  {
+    //=== Everything defined (timestamps disabled)
+    int st = crmap->init(0);
     REQUIRE(st == THaCrateMap::CM_OK);
     CHECK(crmap->isInit());
     CHECK(crmap->GetNcrates() == 32); // 32 crates (some defined and undefined)
     CHECK(crmap->GetSize() == 231);   // Big experiment
+  }
 
-    //=== Part 3: Date = 01-Feb-2021 00:00 EST
-    //  -> 14 crates, defined in first time-stamped block
-    tloc = mktloc(2021, 2, 1);
-    st = crmap->init(tloc);
+  SECTION("Load from file, date = 01-Feb-2021 00:00 EST")
+  {
+    //=== 14 crates, defined in first time-stamped block
+    time_t tloc = mktloc(2021, 2, 1);
+    int st = crmap->init(tloc);
     REQUIRE(st == THaCrateMap::CM_OK);
     CHECK(crmap->isInit());
     CHECK(crmap->GetInitTime() == tloc);
@@ -298,11 +301,13 @@ config 1881 cfg:debug
     CHECK(crmap->slotClear(crate,18));          // n/a -> default value
 
     //....
+  }
 
-    //=== Part 4: Date = 01-May-2024 00:00 EDT
-    //  -> Add crates 28 & 29, redefine crate 7, remove 10
-    tloc = mktloc(2024, 5, 1, true);
-    st = crmap->init(tloc);
+  SECTION("Load from file, date = 01-May-2024 00:00 EDT")
+  {
+    //=== Add crates 28 & 29, redefine crate 7, remove 10
+    time_t tloc = mktloc(2024, 5, 1, true);
+    int st = crmap->init(tloc);
     REQUIRE(st == THaCrateMap::CM_OK);
     CHECK(crmap->isInit());
     CHECK(crmap->GetInitTime() == tloc);
@@ -312,10 +317,11 @@ config 1881 cfg:debug
     CHECK(crmap->GetNcrates() == 15);
     CHECK(crmap->GetSize() == 73+27-1-10+7);
     CHECK(crmap->GetUsedCrates() == set<UInt_t>{1,4,5,6,7,16,17,19,20,22,23,24,25,28,29});
-    nslots.clear();
+    vector<UInt_t> nslots; nslots.reserve(crmap->GetNcrates());
     for( const auto& cr: crmap->GetUsedCrates() )
       nslots.push_back(crmap->getNslot(cr));
     CHECK(nslots == vector<UInt_t>{1,4,9,16,7,18,8,1,1,1,1,1,1,19,8});
+  }
 
     //
     // Date = 01-Aug-2025 00:00 EDT
