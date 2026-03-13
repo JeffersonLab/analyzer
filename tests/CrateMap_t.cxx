@@ -17,15 +17,19 @@
 #endif
 
 #include "THaCrateMap.h"      // for THaCrateMap, Rtypes
+#include "PoddTests.h"        // for PODD_TESTS_DBDIR
+#include <cstdio>             // for fclose, fopen, FILE
 #include <ctime>              // for mktime, time_t, tm
 #include <iostream>           // for ostream, cout, streambuf
 #include <memory>             // for unique_ptr, make_unique
 #include <set>                // for set
+#include <sstream>            // for ostringstream
 #include <string>             // for string
 #include <string_view>        // for string_view
 #include <vector>             // for vector
 
 //#include "TError.h"           // for gErrorIgnoreLevel, kBreak
+#include <fstream>
 
 namespace {
 struct cout_redirect { // NOLINT(*-special-member-functions)
@@ -63,6 +67,62 @@ TEST_CASE("Crate Map", "[Database]") // NOLINT(*-function-cognitive-complexity)
   auto crmap = make_unique<THaCrateMap>("testmap");
   crmap->setDebug(THaCrateMap::kAllowMissingModel);
 
+  static const string testmap = R"TESTMAP(
+# comment
+! Old-style comment
+TSROC 16
+
+config 250  cfg:fw=1
+config 1881 cfg: debug
+
+-------[ 2020-01-01 00:00:00 ] # Test time stamp
+
+
+== Crate 1 type fastbus ignored text
+# slot model clear header mask nchan ndata <- ndata ignored
+6 1877 1  0xf0  0xc000  96 672  this text is ignored too: right, it is
+7 1877  1 0xe0  0x0a    96 672
+
+# Test whitespace lines, space in config, unsorted slots
+
+   16 1881 1 0x0 0x0 64    cfg: +   highres  # trailing comment
+14 1881 1 0x0 0x0 64    !Another inline comment
+15 1881 1 0x0 0x0 64 64 cfg:highres,  double=5
+
+Crate 5 type fastbus
+2 1875 1 0xdeaf0000 0xffff0000
+4 1875 1 0xdeae0000 0xffff0000 64
+== Crate 2 type vme
+#slot model bank
+  2   250   25
+  3   250   25
+  4   250   25
+
+)TESTMAP";
+
+  // Reference formatted printout of the map above. Must not have invisible
+  // trailing spaces at the end of any lines
+  static const string refstr = R"REFSTR(TSROC 16
+config 250  cfg:fw=1
+config 1881 cfg:debug
+==== Crate 1 type fastbus
+#slot  model  clear  header      mask        nchan  cfgstr
+ 6     1877   1      0x000000f0  0x0000c000  96
+ 7     1877   1      0x000000e0  0x0000000a  96
+ 14    1881   1      0x00000000  0x00000000  64
+ 15    1881   1      0x00000000  0x00000000  64     cfg:highres,  double=5
+ 16    1881   1      0x00000000  0x00000000  64     cfg:+   highres
+==== Crate 2 type vme
+#slot  model  bank
+ 2     250    25
+ 3     250    25
+ 4     250    25
+==== Crate 5 type fastbus
+#slot  model  clear  header      mask        nchan
+ 2     1875   1      0xdeaf0000  0xffff0000  64
+ 4     1875   1      0xdeae0000  0xffff0000  64
+)REFSTR";
+
   SECTION("Initial setup")
   {
     CHECK(crmap->GetName() == "testmap"sv);
@@ -73,26 +133,7 @@ TEST_CASE("Crate Map", "[Database]") // NOLINT(*-function-cognitive-complexity)
 
   SECTION("Initialization from string")
   {
-    string testmap = R"TESTMAP(
-# comment
-! Old-style comment
-TSROC 16
-
-config 250  cfg:fw=1
-config 1881 cfg: debug
-
--------[ 2020-01-01 00:00:00 ] # Test time stamp
-
-== Crate 1 type fastbus
-# slot model clear header mask nchan ndata
-6 1877 1  0xf0  0xc000  96 672
-7 1877  1 0xe0  0x0a    96 672
-
-   16 1881 1 0x0 0x0 64 64 cfg: +   highres
-14 1881 1 0x0 0x0 64 64
-15 1881 1 0x0 0x0 64 64 cfg: highres
-)TESTMAP";
-    //TODO VME modules, scalers
+    //TODO scalers
 
     auto st = crmap->init(testmap);
     REQUIRE(st == THaCrateMap::CM_OK);
@@ -100,8 +141,8 @@ config 1881 cfg: debug
     CHECK(crmap->GetInitTime() == 0);
     CHECK(crmap->GetName() == "testmap"sv);
 
-    CHECK(crmap->GetSize() == 5);
-    CHECK(crmap->GetNcrates() == 1);
+    CHECK(crmap->GetSize() == 10);    // 5 + 3 + 2 slots
+    CHECK(crmap->GetNcrates() == 3);  // 3 crates
     CHECK(crmap->getTSROC() == 16);
     CHECK(crmap->getNslot(1) == 5);
     CHECK(crmap->getMinSlot(1) == 6);
@@ -119,21 +160,30 @@ config 1881 cfg: debug
     CHECK(crmap->getModel(1,7) == 1877);
     CHECK(crmap->getModel(1,16) == 1881);
     CHECK(crmap->getNchan(1,6) == 96);
+    CHECK(crmap->getNdata(1,6) == THaCrateMap::MAXDATA);  // deprecated, value in map ignored
+    CHECK(crmap->getHeader(1,6) == 0xf0);  // random nonsense header
+    CHECK(crmap->getHeader(1,7) == 0xe0);  // and mask values
+    CHECK(crmap->getMask(1,6) == 0xc000);
+    CHECK(crmap->getMask(1,7) == 0x000a);
     CHECK(crmap->getMask(1,16) == 0);
+    CHECK(crmap->getHeader(5,2) == 0xdeaf0000);
+    CHECK(crmap->getMask(5,2) == 0xffff0000);
+    CHECK(crmap->getNchan(5,2) == 64);     // automatically retrieved from Module
     CHECK(crmap->getConfigStr(1,6).empty());
     CHECK(crmap->getConfigStr(1,14) == "debug");
-    CHECK(crmap->getConfigStr(1,15) == "highres");
+    CHECK(crmap->getConfigStr(1,15) == "highres,  double=5"); // atm, no in-string whitespace collapsing
     CHECK(crmap->getConfigStr(1,16) == "debug highres");
 
-    auto used_crates = crmap->GetUsedCrates();
-    CHECK(used_crates.size() == 1);
-    CHECK(used_crates == set<UInt_t>{1});
+    const auto& used_crates = crmap->GetUsedCrates();
+    CHECK(used_crates.size() == 3);
+    CHECK(used_crates == set<UInt_t>{1,2,5});
 
-    auto used_slots = crmap->GetUsedSlots(1);
+    const auto& used_slots = crmap->GetUsedSlots(1);
     CHECK(used_slots.size() == 5);
     CHECK(used_slots == set<UInt_t>{6,7,14,15,16});
-
-    crmap->print();
+    const auto& used_slots2 = crmap->GetUsedSlots(5);
+    CHECK(used_slots2.size() == 2);
+    CHECK(used_slots2 == set<UInt_t>{4,2});
 
     crmap->Clear();
     CHECK_FALSE(crmap->isInit());
@@ -141,11 +191,45 @@ config 1881 cfg: debug
     CHECK(crmap->getTSROC() == THaCrateMap::DEFAULT_TSROC);
   }
 
-  //TODO init from file
-  SECTION("Initialization from file")
-  {}
+  SECTION("Print method")
+  {
+    auto st = crmap->init(testmap);
+    REQUIRE(st == THaCrateMap::CM_OK);
+    CHECK(crmap->isInit());
+    // Print normalized map (no comments, no empty lines, sorted crates and
+    // slots, no timestamps)
+    ostringstream oss;
+    crmap->print(oss);
+    CHECK(refstr == oss.str());
+    crmap->Clear();
+    // The output string should be suitable for initializing the map again
+    // with identical results
+    crmap->init(oss.str());
+    REQUIRE(st == THaCrateMap::CM_OK);
+    CHECK(crmap->isInit());
+    oss.str(""); oss.clear();
+    crmap->print(oss);
+    CHECK(oss.str() == refstr);
+  }
 
-  SECTION("Initialization from file with timestamps")
+  SECTION("Initialization from externally-opened file")
+  {
+    const char* testfilename = PODD_TESTS_DBDIR "/testmap.txt";
+    FILE* fi = fopen(testfilename, "r");
+    REQUIRE(fi != nullptr);
+    auto st = crmap->init(fi, testfilename);
+    (void) fclose(fi);
+    REQUIRE(st == THaCrateMap::CM_OK);
+    CHECK(crmap->isInit());
+    CHECK(crmap->GetInitTime() == 0);
+    CHECK(crmap->GetName() == string_view(testfilename));
+
+    CHECK(crmap->GetSize() == 8);     // 5 + 3 slots
+    CHECK(crmap->GetNcrates() == 2);  // 2 crates
+    CHECK(crmap->GetUsedCrates() == set<UInt_t>{1,2});
+  }
+
+  SECTION("Initialization from file via timestamps")
   {
     // Open tests/DB/db_testmap.dat and extract info for the given date
 
@@ -172,7 +256,7 @@ config 1881 cfg: debug
     CHECK(crmap->GetInitTime() == tloc);
     CHECK(crmap->getTSROC() == 21);
     // Overall
-    crmap->print();
+    //crmap->print();
     CHECK(crmap->GetNcrates() == 14);  // 14 crates
     CHECK(crmap->GetSize() == 73);     // 73 slots
     CHECK(crmap->GetUsedCrates() == set<UInt_t>{1,4,5,6,7,10,16,17,19,20,22,23,24,25});

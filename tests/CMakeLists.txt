@@ -16,6 +16,10 @@ set(SRC ArrayRTTI_t.cxx Formula_t.cxx Textvars_t.cxx Database_t.cxx
 # string(REPLACE .cxx .h HDR "${SRC}")
 set(HDR ArrayRTTI.h UnitTest.h)
 
+# Some tests intentionally use deprecated methods
+set_source_files_properties(CrateMap_t.cxx
+  PROPERTIES COMPILE_FLAGS -Wno-deprecated-declarations)
+
 # All tests live in one large executable for now
 add_executable(Catch2Tests_t ${SRC} ${HDR} Catch2TestsDict.cxx)
 target_link_libraries(Catch2Tests_t Podd::HallA)

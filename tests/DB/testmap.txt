@@ -1,0 +1,13 @@
+==== Crate 1 type fastbus
+#slot  model  clear  header      mask        nchan
+ 6     1877   1      0x000000f0  0x0000c000  96
+ 7     1877   1      0x000000e0  0x0000000a  96
+ 14    1881   1      0x00000000  0x00000000  64
+ 15    1881   1      0x00000000  0x00000000  64
+ 16    1881   1      0x00000000  0x00000000  64
+
+==== Crate 2 type vme
+#slot  model  bank
+ 2     250    25
+ 3     250    25
+ 4     250    25
