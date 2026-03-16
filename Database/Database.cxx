@@ -9,30 +9,39 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
+#ifdef __GLIBC__
+// Ensure strptime() and timegm() are available
+#define _DEFAULT_SOURCE
+#define _BSD_SOURCE
+#define _XOPEN_SOURCE 700
+#endif
+
 #include "Database.h"
-#include "TDatime.h"     // for TDatime, operator!=, operator==, operator>=
-#include "TError.h"      // for Error, Warning, Info
+#include "Helper.h"      // for is_in_range, MakeVectorFromList, ToInt
+#include "TDatime.h"     // for TDatime
+#include "TError.h"      // for Error, Info, Warning
 #include "TObjArray.h"   // for TObjArray
 #include "TObjString.h"  // for TObjString
-#include "TString.h"     // for TString, operator!=, operator==, operator+
+#include "TString.h"     // for TString, Rtypes
 #include "TSystem.h"     // for TSystem, gSystem
-#include "Helper.h"      // for MakeVectorFromList, is_in_range
 #include <algorithm>     // for min, count, sort
 #include <cassert>       // for assert
 #include <cctype>        // for isspace
 #include <cerrno>        // for errno
-#include <cstdlib>       // for getenv, strtod, strtof, strtold, strtoll
-#include <cstring>       // for memcpy, strlen, strchr, strerror_r, strncmp
+#include <cstdlib>       // for getenv, strtod, strtof, strtold, strtoll, strtoull
+#include <cstring>       // for memcpy, strchr, strlen, strerror_r, strncmp, strstr
 #include <ctime>         // for tm, localtime_r, mktime, strptime, time_t
-#include <filesystem>    // for path, operator/, operator==, directory_iterator
-#include <iostream>      // for basic_istream, basic_ostream, operator<<, fpos
+#include <filesystem>    // for path, directory_iterator, current_path, directory_entry, filesystem_error, is_directory
+#include <iostream>      // for istream, ostream, fpos, cout, endl, getline, cerr, ios_base
 #include <iterator>      // for distance
 #include <memory>        // for unique_ptr
 #include <ranges>        // for reverse_view, ref_view
-#include <system_error>  // for error_code
-#include <type_traits>   // for is_integral_v, is_same_v, is_floating_point_v
-#include <utility>       // for move, in_range
+#include <stdexcept>     // for runtime_error
 #include <string_view>   // for string_view
+#include <system_error>  // for error_code
+#include <type_traits>   // for is_same_v, is_arithmetic_v, is_integral_v, is_signed_v, is_unsigned_v
+#include <utility>       // for move, cmp_greater, cmp_not_equal
+#include <version>       // for __cpp_lib_string_contains
 
 namespace fs = std::filesystem;
 
@@ -313,78 +322,95 @@ thread_local int loaddb_depth = 0; // Recursion depth in LoadDB
 thread_local string loaddb_prefix; // Actual prefix of object in LoadDB (for err msg)
 
 //_____________________________________________________________________________
+Int_t IsDBdateImpl( const char* line, size_t lpos, size_t rpos,
+                    Long64_t& date, bool warn )
+{
+  const char *ts = line + lpos + 1, *endp = line + rpos;
+  bool err = false;
+  tm tmc{};
+  time_t ldate = 0;
+  if( strptime(ts, " %Y-%m-%d %H:%M:%S %z ", &tmc) == endp ) {
+#ifdef __GLIBC__
+    // With glibc, strptime puts the parsed values verbatim into struct tm. In
+    // particular, the gmtoff field contains the parsed time zone offset as is.
+    // No adjustments are made. While this is straightforward, it also means
+    // that the output cannot be used directly as input for mktime() or timegm()
+    // to get Unix time unless gmtoff happens to be either the offset of the
+    // local time zone or zero for UTC. In the general case, the parsed time
+    // needs to be shifted by the time zone offset.
+    if( tmc.tm_gmtoff != 0 ) {
+      int tzdiff = ToInt(tmc.tm_gmtoff);
+      tmc.tm_hour -= tzdiff / 3600;
+      tmc.tm_min -= (tzdiff % 3600) / 60;
+    }
+    tmc.tm_isdst = 0;
+    ldate = timegm(&tmc);  // Normalizes tmc (e.g. hour >= 24 wraps, etc.)
+#else
+    // On macOS, strptime converts the parsed time to locatime. The reported
+    // gmtoff is that of the local time zone, not the offset in the string.
+    // As a result, we can feed the output directly to mktime to get Unix time.
+    ldate = mktime(&tmc);
+#endif
+  } else {
+    // Conversion failed. Maybe no time zone field? Try again without it.
+    // This provides compatibility with old databases.
+    WithDefaultTZ(
+      if( strptime(ts, " %Y-%m-%d %H:%M:%S ", &tmc) == endp ) {
+        // If this succeeds, assume the value represents time in the
+        // default timezone
+        tmc.tm_isdst = -1;
+        ldate = mktime(&tmc);
+      } else
+      err = true;
+  )
+}
+  if( ldate == -1 )
+    err = true;
+  if( err || tmc.tm_year < 95 ) {
+    if( warn ) {
+      // If 'warn', then the user expects timestamps to be valid. If one isn't,
+      // say due to a typo, then possibly significant mistakes can creep into
+      // the database. So we shouldn't just print a feeble warning here, but
+      // rather bail out and let them fix it. However, there is a tiny chance
+      // that the line is actually a text string, ill-advised as it may be, say
+      //    mytext = [ some info in brackets xyz x1 x2 x3 ]
+      // so let's check for an '=' ahead of the '[' before crying foul.
+      if( const char* c = strchr(line, '=');
+            !c || cmp_greater(c - line, lpos) || c - line == 0 ) {
+        // Does not look like a string definition
+        string msg = "Error in <Podd::IsDBdate>: Invalid date tag ";
+        msg += line;
+        throw std::runtime_error(msg);
+      }
+    }
+    return 0;
+  }
+  date = ldate;
+  errno = 0;  // strptime() may set errno to spurious values despite succeeding
+  return 1;
+}
+
+//_____________________________________________________________________________
 Int_t IsDBdate( const string& line, Long64_t& date, bool warn = true )
 {
   // Check if 'line' contains a valid database time stamp. If so,
   // parse the line, set 'date' to the extracted time stamp, and return 1.
   // Else return 0;
   // Time stamps must be in SQL format: [ yyyy-mm-dd hh:mi:ss gmtoffset]
+  // where gmtoffset is optional (if missing, local time is assumed).
 
+  // This initial check is time-critical since it is run on every single non-
+  // comment line in a database file. Instead of doing an expensive regex match,
+  // all we do is to ensure that there are at least 14 characters between the
+  // square brackets, which is the minimum for strptime below to succeed. This
+  // works well since our databases do not usually contain '[]' pairs elsewhere.
   auto lbrk = line.find('[');
-  if( lbrk == string::npos || lbrk >= line.size() - 12 ) return 0;
-  auto rbrk = line.find(']', lbrk);
-  if( rbrk == string::npos || rbrk <= lbrk + 11 ) return 0;
-  string ts = line.substr(lbrk+1,rbrk-lbrk-1);
-
-  bool err = false;
-  tm tmc{};
-  time_t ldate = 0;
-  if( const char* c = strptime(ts.c_str(), " %Y-%m-%d %H:%M:%S %z ", &tmc);
-        c && c == ts.c_str()+ts.size() ) {
-#ifdef __GLIBC__
-    // With glibc, strptime does not apply the given time zone offset to the
-    // result. It parses the offset and fills the gmtoff field, but does not
-    // adjust tm_hour/tm_min accordingly. In short, handling of the %z field is
-    // currently not fully implemented in glibc. So we need to do this by hand.
-    struct tm tml = tmc;
-    tml.tm_isdst = -1;
-    // Get localtime GMT offset at the specified date.
-    ldate = mktime(&tml);
-    if( ldate != -1 ) {
-      // tmc holds the GMT offset from the parsed string (%z).
-      // tml holds the GMT offset of the local system time zone.
-      // tmc.tm_{hour,min} come directly from the parsed string w/o adjustments
-      // mktime ignores the tm_gmtime field and interprets the time as local
-      // time. However, the time is actually given not in the local time zone,
-      // but as having tml.tm_gmtoff GMT offset. So we need to shift the parsed
-      // time from that offset to the GMT offset of the local time zone. Then
-      // mktime sees actual local time and returns the correct Unix time.
-      long tzdiff = tml.tm_gmtoff - tmc.tm_gmtoff;
-      if( tzdiff != 0 ) {
-        tmc.tm_hour += (int) (tzdiff / 3600);
-        tmc.tm_min += (int) ((tzdiff % 3600) / 60);
-        tmc.tm_isdst = tml.tm_isdst;
-        ldate = mktime(&tmc);  // Normalizes tmc (e.g. hour >= 24 wraps, etc.)
-      }
-    }
-#else
-    // This just works on macOS
-    ldate = mktime(&tmc);
-#endif
-  } else {
-    // No time zone field: try again without that field.
-    // We allow this for compatibility with old databases.
-    WithDefaultTZ(
-      c = strptime(ts.c_str(), " %Y-%m-%d %H:%M:%S ", &tmc);
-      if( c && c == ts.c_str()+ts.size() ) {
-        // If this succeeds, assume the value represents time in the
-        // default timezone
-        tmc.tm_isdst = -1;
-        ldate = mktime(&tmc);
-      } else
-        err = true;
-    )
-  }
-  if( ldate == -1 )
-    err = true;
-  if( err || tmc.tm_year < 95 ) {
-    if( warn )
-      ::Warning("IsDBdate()", "Invalid date tag %s", line.c_str());
+  if( lbrk == string::npos || lbrk + 15 >= line.size() ) [[likely]]
     return 0;
-  }
-  date = ldate;
-  errno = 0;  // strptime() may set errno to spurious values despite succeeding
-  return 1;
+  auto rbrk = line.find(']', lbrk);
+  if( rbrk == string::npos || rbrk <= lbrk + 14 )
+    return 0;
+  return IsDBdateImpl(line.c_str(), lbrk, rbrk, date, warn);
 }
 
 //_____________________________________________________________________________
