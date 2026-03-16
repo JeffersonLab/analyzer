@@ -297,10 +297,87 @@ int THaCrateMap::init( Long64_t tloc )
 }
 
 //_____________________________________________________________________________
+void THaCrateMap::print_header( ostream& os, const array<int,8>& widths,
+                                UInt_t roc, const CrateInfo_t& cr )
+{
+  // Print header for crate 'cr'
+
+  const auto [spc, w_slot, w_model, w_clear, w_bank,
+    w_header, w_mask, w_nchan] = widths;
+
+  os << "==== Crate " << roc << " type " << GetCrateTypeName(cr.crate_code);
+  if( !cr.scalerloc.empty() )  os << " \"" << cr.scalerloc << "\"";
+  os << endl;
+  os << "#"
+       << setw(w_slot+spc)   << "slot"
+       << setw(w_model+spc)  << "model";
+  if( cr.all_banks ) {
+    if( cr.HasConfig() )
+      os << setw(w_bank+spc);
+    os                          << "bank";
+  } else if( !cr.has_banks )
+    os << setw(w_clear+spc)  << "clear";
+  else {
+    int w_bkcl = std::max(w_bank, w_clear);
+    os << setw(w_bkcl+spc)   << "bk/cl";
+  }
+  if( !cr.all_banks) {
+    os << setw(w_header+spc) << "header"
+       << setw(w_mask+spc)   << "mask";
+    if( cr.HasConfig() )
+      os << setw(w_nchan+spc);
+    os                          << "nchan";
+  }
+  if( cr.HasConfig() )
+    os   << "cfgstr";
+  os << endl;
+}
+
+//_____________________________________________________________________________
+void THaCrateMap::print_slot( ostream& os, const array<int,8>& widths,
+  const CrateInfo_t& cr, const SlotInfo_t& slt )
+{
+  // Print info for slot 'slt' in one line
+
+  const auto [spc, w_slot, w_model, w_clear, w_bank,
+    w_header, w_mask, w_nchan] = widths;
+
+  bool have_cfg = !slt.cfgstr.empty();
+  os << " "
+     << setw(w_slot+spc)     << slt.slot
+     << setw(w_model+spc)    << slt.model;
+  if( slt.bank >= 0 ) {
+    if( have_cfg )
+      os << setw(w_bank+spc);
+    os                          << slt.bank;
+    if( !cr.all_banks && have_cfg )
+      os << setw(w_header+w_mask+w_nchan+6+w_clear-w_bank) << " ";
+  } else {
+    os << setw(w_clear+spc)  << slt.do_clear
+       << setfill('0')
+       // ios::setfill does not work right with "left" alignment; it fill at
+       // the right (trailing zeros). With "right" alignment, ios::showbase
+       // does not work correctly together with "showbase"; it fill to the
+       // left of the "0x" base indicator. So do it by hand, while we wait
+       // for std::format finally to appear.
+       << "0x" << right << hex << setw(w_header-2) << slt.header   << "  "
+       << "0x" << right << hex << setw(w_mask-2)   << slt.headmask << "  "
+       << setfill(' ') << dec << left;
+    if( have_cfg )
+      os << setw(w_nchan+spc);
+    os << slt.nchan;
+  }
+  if( have_cfg )
+    os << "cfg:" << slt.cfgstr;
+  os << endl;
+}
+
+//_____________________________________________________________________________
 void THaCrateMap::print(ostream& os) const
 {
   // Pretty-print crate map. The output format is suitable for init().
 
+  // Print global configuration parameters
   if( fTSROCSet )
     os << "TSROC " << fTSROC << endl;
   int w_config_model = 1;
@@ -313,79 +390,23 @@ void THaCrateMap::print(ostream& os) const
   }
   // Slot parameter field widths. These are all longer than the print width of
   // the numbers in the columns underneath (except for header & mask), so they
-  // can be const
-  static const int widths[7] = {  // int is what setw() wants
+  // can be const. Type int is what setw() wants.
+  static const array widths = { 2, // 2 = number of spaces between fields
     ToInt(strlen("slot")),  ToInt(strlen("model")), ToInt(strlen("clear")),
     ToInt(strlen("bank")),  10 /* "header" */,      10 /* "mask" */,
     ToInt(strlen("nchan"))
   };
-  // Shorthands
-  const auto [w_slot, w_model, w_clear, w_bank,
-    w_header, w_mask, w_nchan] = widths;
-  const int spc = 2; // Number of spaces between fields
+  // Print the map
   ios::fmtflags oldf = os.setf(ios::left, ios::adjustfield);
   for( auto roc: fUsedCrates ) {
     const auto& iroc = fCrateDat.find(roc);
     assert( iroc != fCrateDat.end() );
     const auto& cr = iroc->second;
-    os << "==== Crate " << roc << " type " << GetCrateTypeName(cr.crate_code);
-    if( !cr.scalerloc.empty() )  os << " \"" << cr.scalerloc << "\"";
-    os << endl;
-    os << "#"
-         << setw(w_slot+spc)   << "slot"
-         << setw(w_model+spc)  << "model";
-    if( cr.all_banks ) {
-      if( cr.HasConfig() )
-        os << setw(w_bank+spc);
-      os                          << "bank";
-    } else if( !cr.has_banks )
-      os << setw(w_clear+spc)  << "clear";
-    else {
-      int w_bkcl = std::max(w_bank, w_clear);
-      os << setw(w_bkcl+spc)   << "bk/cl";
-    }
-    if( !cr.all_banks) {
-      os << setw(w_header+spc) << "header"
-         << setw(w_mask+spc)   << "mask";
-      if( cr.HasConfig() )
-        os << setw(w_nchan+spc);
-      os                          << "nchan";
-    }
-    if( cr.HasConfig() )
-      os   << "cfgstr";
-    os << endl;
+    print_header(os, widths, roc, cr );
     for( auto slot: cr.used_slots ) {
       const auto& jt = cr.sltdat.find(slot);
       assert( jt != cr.sltdat.end() );
-      const auto& slt = jt->second;
-      bool have_cfg = !slt.cfgstr.empty();
-      os << " "
-         << setw(w_slot+spc)     << slt.slot
-         << setw(w_model+spc)    << slt.model;
-      if( slt.bank >= 0 ) {
-        if( have_cfg )
-          os << setw(w_bank+spc);
-        os                          << slt.bank;
-        if( !cr.all_banks && have_cfg )
-          os << setw(w_header+w_mask+w_nchan+6+w_clear-w_bank) << " ";
-      } else {
-        os << setw(w_clear+spc)  << slt.do_clear
-           << setfill('0')
-           // ios::setfill does not work right with "left" alignment; it fill at
-           // the right (trailing zeros). With "right" alignment, ios::showbase
-           // does not work correctly together with "showbase"; it fill to the
-           // left of the "0x" base indicator. So do it by hand, while we wait
-           // for std::format finally to appear.
-           << "0x" << right << hex << setw(w_header-2) << slt.header   << "  "
-           << "0x" << right << hex << setw(w_mask-2)   << slt.headmask << "  "
-           << setfill(' ') << dec << left;
-           if( have_cfg )
-             os << setw(w_nchan+spc);
-        os << slt.nchan;
-      }
-      if( have_cfg )
-        os << "cfg:" << slt.cfgstr;
-      os << endl;
+      print_slot(os, widths, cr, jt->second);
     }
   }
   os.flags(oldf);

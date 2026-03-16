@@ -148,6 +148,12 @@ private:
   void  PostInit();
   void  SoftReset();
 
+  // These are member functions so they can see CrateInfo_t and SlotInfo_t
+  static void print_header( std::ostream& os, const std::array<int,8>& widths,
+    UInt_t roc, const CrateInfo_t& cr );
+  static void print_slot( std::ostream& os, const std::array<int,8>& widths,
+    const CrateInfo_t& cr, const SlotInfo_t& slt );
+
   template<class Proj,
     typename Result = std::invoke_result_t<Proj, CrateInfo_t>>
   auto GetCrateInfo( UInt_t crate, const Proj& p, Result defval = {} ) const
