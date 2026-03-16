@@ -489,6 +489,8 @@ Int_t THaCrateMap::ParseCrateInfo( const std::string& line,
       cerr << "THaCrateMap:: Unknown crate type \"" << ctype << "\"" << endl;
       return CM_ERR;
     }
+    if( !crateUsed(crate) )  // type = "unused"
+      crate = kMaxUInt;
     if( ctype != "scaler"sv )
       return CM_OK;
     auto& cr = fCrateDat.at(crate);
