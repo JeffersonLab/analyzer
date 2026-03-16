@@ -549,5 +549,7 @@ UInt_t THaQWEAKHelicity::RanBit30( UInt_t& ranseed ) const
   return newbit;
 }
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaQWEAKHelicity)
+#endif
 

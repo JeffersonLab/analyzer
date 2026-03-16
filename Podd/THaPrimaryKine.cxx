@@ -24,7 +24,9 @@
 using namespace std;
 using namespace Podd;
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaPrimaryKine)
+#endif
 
 //_____________________________________________________________________________
 THaPrimaryKine::THaPrimaryKine( const char* name, const char* description,

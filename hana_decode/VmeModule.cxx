@@ -57,4 +57,6 @@ UInt_t VmeModule::LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer,
 
 }
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Decoder::VmeModule)
+#endif

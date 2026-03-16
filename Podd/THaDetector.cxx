@@ -112,4 +112,6 @@ Int_t THaDetector::End( THaRunBase* run )
 }
 
 //_____________________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaDetector)
+#endif

@@ -91,4 +91,6 @@ void THaNamedList::SetNameTitle( const Text_t* name, const Text_t* title )
 }
 
 //_____________________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaNamedList)
+#endif

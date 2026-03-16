@@ -64,4 +64,6 @@ Int_t THaVDCHit::Compare( const TObject* obj ) const
 }
 
 //_____________________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaVDCHit)
+#endif

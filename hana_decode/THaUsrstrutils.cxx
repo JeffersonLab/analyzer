@@ -211,5 +211,7 @@ void THaUsrstrutils::string_from_file(const char *ffile_name)
 
 }
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Decoder::THaUsrstrutils)
+#endif
 

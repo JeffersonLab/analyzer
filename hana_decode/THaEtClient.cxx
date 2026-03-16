@@ -492,4 +492,6 @@ int THaEtClient::EvET::read_no_copy( const uint32_t** outputBuffer,
 //______________________________________________________________________________
 } // end namespace Decoder
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Decoder::THaEtClient)
+#endif

@@ -267,7 +267,9 @@ void MCTrackPoint::Print( Option_t* ) const
 
 } // end namespace Podd
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Podd::MCHitInfo)
 ClassImp(Podd::MCTrack)
 ClassImp(Podd::MCTrackPoint)
 ClassImp(Podd::SimDecoder)
+#endif

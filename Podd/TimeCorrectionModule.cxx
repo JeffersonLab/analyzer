@@ -90,5 +90,7 @@ Int_t TimeCorrectionModule::ReadDatabase( const TDatime& date )
 
 } // namespace HallA
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Podd::TimeCorrectionModule)
+#endif
 

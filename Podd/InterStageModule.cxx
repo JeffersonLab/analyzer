@@ -64,4 +64,6 @@ Int_t InterStageModule::DefineVariables( EMode mode )
 
 } // namespace Podd
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Podd::InterStageModule)
+#endif

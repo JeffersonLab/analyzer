@@ -381,4 +381,6 @@ string Caen1190Module::Here( const char* function )
 
 } // namespace Decoder
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Decoder::Caen1190Module)
+#endif

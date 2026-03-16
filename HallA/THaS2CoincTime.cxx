@@ -226,6 +226,8 @@ Int_t THaS2CoincTime::Process( const THaEvData& evdata )
   return 0;
 }
   
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaS2CoincTime)
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////

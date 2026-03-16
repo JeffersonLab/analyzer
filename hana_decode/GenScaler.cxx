@@ -336,4 +336,6 @@ UInt_t GenScaler::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer, const UI
 
 }
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Decoder::GenScaler)
+#endif

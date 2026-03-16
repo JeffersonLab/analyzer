@@ -165,4 +165,6 @@ int THaVDCSimDecoder::LoadEvent(const UInt_t* evbuffer )
 }
 
 //-----------------------------------------------------------------------------
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaVDCSimDecoder)
+#endif

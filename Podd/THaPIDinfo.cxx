@@ -162,4 +162,6 @@ void THaPIDinfo::SetSize( UInt_t ndet, UInt_t npart )
 }
 
 //_____________________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaPIDinfo)
+#endif

@@ -302,4 +302,6 @@ Int_t THaVDCChamber::FineTrack()
 }
 
 //_____________________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaVDCChamber)
+#endif

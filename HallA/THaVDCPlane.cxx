@@ -924,4 +924,6 @@ Bool_t THaVDCPlane::IsInActiveArea( Double_t x, Double_t y ) const
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaVDCPlane)
+#endif

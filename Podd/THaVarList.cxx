@@ -67,7 +67,9 @@
 #include <tuple>             // for get, tuple
 #include <utility>           // for move, cmp_greater_equal
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaVarList)
+#endif
 
 using namespace std;
 using Podd::MakeVectorFromList;

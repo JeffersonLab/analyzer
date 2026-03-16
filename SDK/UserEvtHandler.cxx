@@ -200,4 +200,6 @@ THaAnalysisObject::EStatus UserEvtHandler::Init(const TDatime& /* date */ )
   return kOK;
 }
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(UserEvtHandler)
+#endif

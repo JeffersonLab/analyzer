@@ -42,4 +42,6 @@ void THaPhysicsModule::PrintInitError( const char* here )
 
 //_____________________________________________________________________________
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaPhysicsModule)
+#endif

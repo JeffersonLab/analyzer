@@ -156,4 +156,6 @@ Int_t THaTwoarmVertex::Process( const THaEvData& )
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaTwoarmVertex)
+#endif

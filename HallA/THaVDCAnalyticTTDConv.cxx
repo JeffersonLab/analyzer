@@ -7,7 +7,9 @@
 #include "THaVDCAnalyticTTDConv.h"
 #include "TError.h"
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(VDC::AnalyticTTDConv)
+#endif
 
 using namespace std;
 

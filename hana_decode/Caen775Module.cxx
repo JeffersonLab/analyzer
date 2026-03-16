@@ -146,4 +146,6 @@ void Caen775Module::Clear(Option_t* opt) {
 
 }
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Decoder::Caen775Module)
+#endif

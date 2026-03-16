@@ -129,4 +129,6 @@ Int_t THaOnlRun::OpenConnection( const char* computer, const char* session,
 }
 
 //______________________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaOnlRun)
+#endif

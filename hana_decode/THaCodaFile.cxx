@@ -275,4 +275,6 @@ Int_t THaCodaFile::filterToFile( const char* output_file )
 }
 
 //_____________________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Decoder::THaCodaFile)
+#endif

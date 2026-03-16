@@ -28,8 +28,10 @@
 #include "TClass.h"
 #include <cstring>   // for memcpy
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaEventHeader)
 ClassImp(THaEvent)
+#endif
 
 //_____________________________________________________________________________
 THaEvent::THaEvent() : fInit(false)

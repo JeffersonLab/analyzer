@@ -11,7 +11,9 @@
 
 #include "THaElectronKine.h"
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaElectronKine)
+#endif
 
 constexpr Double_t electron_mass = 0.511e-3;
 

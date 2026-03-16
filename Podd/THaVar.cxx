@@ -302,4 +302,6 @@ template THaVar::THaVar( const char*, const char*, vector<double>&, const Int_t*
 template THaVar::THaVar( const char*, const char*, vector<float>&, const Int_t* );
 
 //_____________________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaVar)
+#endif

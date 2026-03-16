@@ -234,5 +234,7 @@ Int_t FADCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
 
 } // namespace HallA
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(HallA::FADCData)
+#endif
 

@@ -1575,6 +1575,8 @@ const std::string& MultiFileRun::StreamInfo::GetFilename() const
 
 } //namespace Podd
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Podd::MultiFileRun::StreamInfo)
 ClassImp(Podd::MultiFileRun::FileInfo)
 ClassImp(Podd::MultiFileRun)
+#endif

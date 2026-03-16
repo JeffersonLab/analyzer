@@ -212,5 +212,7 @@ void THaPhotoReaction::SetBeam( const char* name )
     PrintInitError("SetBeam()");
 }
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaPhotoReaction)
+#endif
 

@@ -175,4 +175,6 @@ UInt_t F1TDCModule::LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer,
 
 }
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Decoder::F1TDCModule)
+#endif

@@ -306,4 +306,6 @@ void EvtBuffer::reset()
 
 }  // namespace Decoder
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Decoder::THaCodaData)
+#endif

@@ -329,4 +329,6 @@ Int_t THaQWEAKHelicityReader::SetROCinfo( EROC which, UInt_t roc,
 }
 
 //____________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaQWEAKHelicityReader)
+#endif

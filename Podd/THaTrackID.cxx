@@ -26,6 +26,8 @@
 
 #include "THaTrackID.h"
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaTrackID)
+#endif
 
 //_____________________________________________________________________________

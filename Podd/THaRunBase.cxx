@@ -654,4 +654,6 @@ const string& THaRunBase::GetDAQConfigValue( size_t i, const std::string& key ) 
 }
 
 //_____________________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaRunBase)
+#endif

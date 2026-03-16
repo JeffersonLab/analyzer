@@ -36,4 +36,6 @@ void Lecroy1877Module::Init()
 
 }
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Decoder::Lecroy1877Module)
+#endif

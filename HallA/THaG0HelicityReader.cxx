@@ -186,4 +186,6 @@ Int_t THaG0HelicityReader::ReadData( const THaEvData& evdata )
 }
 
 //____________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaG0HelicityReader)
+#endif

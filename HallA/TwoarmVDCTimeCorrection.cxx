@@ -223,5 +223,7 @@ void TwoarmVDCTimeCorrection::MakeBlockName()
 
 } // namespace HallA
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(HallA::TwoarmVDCTimeCorrection)
+#endif
 

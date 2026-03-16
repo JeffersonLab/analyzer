@@ -16,7 +16,9 @@
 #include "THaBeam.h"
 #include "TMath.h"
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaReacPointFoil)
+#endif
 
 //_____________________________________________________________________________
 THaReacPointFoil::THaReacPointFoil( const char* name, const char* description,

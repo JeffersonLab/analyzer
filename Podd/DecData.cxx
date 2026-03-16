@@ -448,4 +448,6 @@ void DecData::Print( Option_t* opt ) const
 
 } // end namespace Podd
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Podd::DecData)
+#endif

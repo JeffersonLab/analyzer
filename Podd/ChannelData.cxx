@@ -444,6 +444,8 @@ Int_t TDCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
 
 } // namespace Podd
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Podd::ChannelData)
 ClassImp(Podd::PMTData)
 ClassImp(Podd::ADCData)
+#endif

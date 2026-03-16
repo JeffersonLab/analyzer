@@ -594,5 +594,7 @@ Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
 }
 
 //_____________________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaSpectrometer)
+#endif
 

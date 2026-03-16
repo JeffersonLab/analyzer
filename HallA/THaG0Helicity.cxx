@@ -746,4 +746,6 @@ Bool_t THaG0Helicity::CompHel() const
   return false;
 }
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaG0Helicity)
+#endif

@@ -198,4 +198,6 @@ Int_t THaTriggerTime::DefineVariables( EMode mode )
 }
 
 //____________________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaTriggerTime)
+#endif

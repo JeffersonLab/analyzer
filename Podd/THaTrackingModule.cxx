@@ -51,4 +51,6 @@ const vector<RVarDef> THaTrackingModule::GetRVarDef()
 }
 
 //_____________________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaTrackingModule)
+#endif

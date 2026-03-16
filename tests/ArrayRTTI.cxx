@@ -106,4 +106,6 @@ Int_t ArrayRTTI::DefineVariables( EMode mode )
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Podd::Tests::ArrayRTTI)
+#endif

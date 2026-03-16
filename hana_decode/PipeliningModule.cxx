@@ -309,4 +309,6 @@ void PipeliningModule::PrintBlock( const uint32_t* codabuffer,
 //_____________________________________________________________________________
 } //namespace Decoder
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Decoder::PipeliningModule)
+#endif

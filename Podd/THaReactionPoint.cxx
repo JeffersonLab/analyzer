@@ -28,7 +28,9 @@
 #include "THaBeam.h"
 #include "TMath.h"
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaReactionPoint)
+#endif
 
 //_____________________________________________________________________________
 THaReactionPoint::THaReactionPoint( const char* name, const char* description,

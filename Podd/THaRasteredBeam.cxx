@@ -13,7 +13,9 @@
 #include "THaRaster.h"
 #include "TList.h"
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaRasteredBeam)
+#endif
 
 //_____________________________________________________________________________
 THaRasteredBeam::THaRasteredBeam( const char* name, const char* description,

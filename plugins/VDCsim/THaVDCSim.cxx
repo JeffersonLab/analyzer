@@ -5,10 +5,12 @@
 #include "THaAnalysisObject.h"
 #include "TDatime.h"
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaVDCSimWireHit)
 ClassImp(THaVDCSimEvent)
 ClassImp(THaVDCSimConditions)
 ClassImp(THaVDCSimTrack)
+#endif
 
 #include <iostream>
 #include <cstdio>

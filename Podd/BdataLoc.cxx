@@ -371,8 +371,10 @@ void RoclenLoc::Load( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(BdataLoc)
 ClassImp(CrateLoc)
 ClassImp(CrateLocMulti)
 ClassImp(WordLoc)
 ClassImp(RoclenLoc)
+#endif

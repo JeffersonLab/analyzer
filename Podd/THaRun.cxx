@@ -494,4 +494,6 @@ Bool_t THaRun::StdFindSegmentNumber( const TString& filename, TString& stem,
 }
 
 //_____________________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaRun)
+#endif

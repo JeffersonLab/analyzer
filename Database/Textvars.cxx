@@ -342,4 +342,6 @@ Int_t Textvars::Substitute( StrVec_t& lines, bool do_multi ) const
 
 //_____________________________________________________________________________
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Podd::Textvars)
+#endif

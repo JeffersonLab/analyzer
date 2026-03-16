@@ -220,4 +220,6 @@ Int_t THaDebugModule::Process( const THaEvData& evdata )
   return 0;
 }
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaDebugModule)
+#endif

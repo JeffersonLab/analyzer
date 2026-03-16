@@ -67,4 +67,6 @@ CodaRawDecoder::~CodaRawDecoder()
 
 } // namespace Podd
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Podd::CodaRawDecoder)
+#endif

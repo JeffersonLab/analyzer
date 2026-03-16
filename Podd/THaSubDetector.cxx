@@ -11,7 +11,9 @@
 #include "TString.h"
 #include "TError.h"
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaSubDetector)
+#endif
 
 //_____________________________________________________________________________
 THaSubDetector::THaSubDetector( const char* name, const char* description,

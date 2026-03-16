@@ -30,4 +30,6 @@ void Scaler3800::Init()
 
 }
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(Decoder::Scaler3800)
+#endif

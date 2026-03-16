@@ -19,7 +19,9 @@
 #include <cstdlib>  // strtol
 #include <limits>
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,36,0)
 ClassImp(THaPrintOption)
+#endif
 
 using namespace std;
 
