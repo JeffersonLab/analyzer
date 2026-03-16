@@ -33,6 +33,7 @@ namespace Decoder {
 class THaCrateMap {
 public:
   explicit THaCrateMap( const char* db = "cratemap" ); // Construct uninitialized
+  void SetDBfileName( const char* db_filename ); // Set file name before init()
 
   int    init( const std::string& the_map );           // Initialize from text-block
   int    init( Long64_t tloc = 0 );                    // Initialize by Unix time.

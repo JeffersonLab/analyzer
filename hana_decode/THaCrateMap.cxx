@@ -105,10 +105,15 @@ THaCrateMap::THaCrateMap( const char* db_filename )
 {
   // Construct uninitialized crate map. The argument is the name of
   // the database file to use for initialization
+  SetDBfileName(db_filename);
+}
 
+//_____________________________________________________________________________
+void THaCrateMap::SetDBfileName( const char* db_filename )
+{
   if( !db_filename || !*db_filename ) {
-    ::Warning( "THaCrateMap", "Undefined database file name, "
-	       "using default \"db_cratemap.dat\"" );
+    Warning( "THaCrateMap::SetDBfileName", "Undefined database file name, "
+             "using default \"db_cratemap.dat\"" );
     db_filename = "cratemap";
   }
   fDBfileName = db_filename;
