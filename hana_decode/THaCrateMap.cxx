@@ -99,6 +99,7 @@ THaCrateMap::THaCrateMap( const char* db_filename )
   , fTSROC{DEFAULT_TSROC}
   , fTSROCSet{false}
   , fIsInit{false}
+  , fDoReset{false}
   , fDebug(0)
   , fCrateDat(kInitialMapSize)
 {
@@ -116,12 +117,13 @@ THaCrateMap::THaCrateMap( const char* db_filename )
 //_____________________________________________________________________________
 void THaCrateMap::Clear()
 {
-  fCrateDat.clear();
+  SoftReset();   // Clear fCrateDat and fUsedCrates
   fCrateDat.reserve(kInitialMapSize);
-  fUsedCrates.clear();
   fTSROC = DEFAULT_TSROC;  // default value, if not found in db_cratemap
   fTSROCSet = false;
+  fModuleCfg.clear();
   fIsInit = false;
+  fDoReset = false;
 }
 
 //_____________________________________________________________________________
@@ -449,12 +451,14 @@ Int_t THaCrateMap::loadConfig( string& line, string& cfgstr ) const
 }
 
 //_____________________________________________________________________________
-Int_t THaCrateMap::ParseCrateInfo( const std::string& line, UInt_t& crate )
+Int_t THaCrateMap::ParseCrateInfo( const std::string& line,
+                                   size_t pos, UInt_t& crate )
 {
   static const char* const here = "THaCrateMap::ParseCrateInfo";
 
+  const char* cstr = line.c_str();
   char ctype[21];
-  if( sscanf(line.c_str(), "Crate %u type %20s", &crate, ctype) == 2 ) {
+  if( sscanf(cstr + pos, "Crate %u type %20s", &crate, ctype) == 2 ) {
     if( setCrateType(crate, ctype) != CM_OK ) {
       cerr << "THaCrateMap:: Unknown crate type \"" << ctype << "\"" << endl;
       return CM_ERR;
@@ -464,7 +468,7 @@ Int_t THaCrateMap::ParseCrateInfo( const std::string& line, UInt_t& crate )
     auto& cr = fCrateDat.at(crate);
     // for a scaler crate, get the 'name' or location as well
     if( cr.crate_code == kScalerCrate ) {
-      if( sscanf(line.c_str(), "Crate %*u type %*s %20s", ctype) != 1 ) {
+      if( sscanf(cstr, "Crate %*u type %*s %20s", ctype) != 1 ) {
         cerr << "THaCrateMap:: failed to scan scaler name" << endl;
         return CM_ERR;
       }
@@ -474,9 +478,125 @@ Int_t THaCrateMap::ParseCrateInfo( const std::string& line, UInt_t& crate )
     }
     return CM_OK;
   }
-  Error(here, "Invalid/incomplete Crate definition: \"%s\"",
-        line.c_str());
+  Error(here, "Invalid/incomplete Crate definition: \"%s\"", cstr);
   return CM_ERR;
+}
+
+//_____________________________________________________________________________
+Int_t THaCrateMap::ParseHeader( const string& line, int lineno, bool& do_continue )
+{
+  const char* const here = "THaCrateMap::ParseHeader";
+
+  constexpr array headers =
+    {"TSROC "sv, "config "sv, "reset"sv, "always_reset"sv};
+  const auto [TSROC_KEY, CONFIG_KEY, RESET_KEY,
+    ALWAYS_RESET_KEY] = headers;
+
+  // Parse optional TSROC definition at start of map (or right after a timestamp)
+  if( line.starts_with(TSROC_KEY) ) {
+    size_t pos;
+    unsigned long val = DEFAULT_TSROC;
+    bool err = false; try {
+      val = stoul(line.substr(TSROC_KEY.length()), &pos);
+    } catch( ... ) { err = true; }
+    if( !err && pos + TSROC_KEY.length() == line.length() ) {
+      fTSROC = val;
+      fTSROCSet = true;
+      do_continue = true;
+      return CM_OK;
+    }
+    Error(here, "db_%s.dat:%d: Failed to parse line \"%s\". "
+          "Expected \"TSROC <ROC number>\".",
+          GetName(), lineno, line.c_str());
+    return CM_ERR;
+  }
+  // Load optional configuration string defaults
+  if( line.starts_with(CONFIG_KEY) ) {
+    int model = 0;
+    size_t pos;
+    bool err = false; try {
+      model = stoi(line.substr(CONFIG_KEY.length()), &pos);
+    } catch( ... ) { err = true; }
+    if( !err && pos > 0 && model != 0 ) {
+      if( string cfgstr, ln = line; loadConfig(ln, cfgstr) == CM_OK ) {
+        if( cfgstr.empty() )
+          fModuleCfg.erase(model); // no config string -> clear the entry
+        else
+          fModuleCfg[model] = cfgstr;
+        do_continue = true;
+        return CM_OK;
+      }
+    }
+    Error(here, "db_%s.dat:%d: Failed to parse line \"%s\". "
+          "Expected \"config <model number != 0> cfg:<parameters>\". ",
+          GetName(), lineno, line.c_str());
+    return CM_ERR;
+  }
+  // Clear out crate map, except header directives
+  if( line == RESET_KEY ) {
+    SoftReset();
+    do_continue = true;
+    return CM_OK;
+  }
+  if( line == ALWAYS_RESET_KEY ) {
+    fDoReset = true;
+    do_continue = true;
+  }
+  return CM_OK;
+}
+
+//_____________________________________________________________________________
+Int_t THaCrateMap::ParseCrateHeader( const std::string& line, int lineno,
+  UInt_t& crate, bool& in_crate, bool& do_continue )
+{
+  const char* const here = "THaCrateMap::ParseCrateHeader";
+
+  if( auto pos = line.find("Crate"); pos != string::npos ) {
+    // Bugcheck: When starting a new crate, ensure that the previous crate
+    // (if any) either has defined slots or is not in fUsedCrates
+    assert(crate == kMaxUInt || getNslot(crate) > 0 || !fUsedCrates.contains(crate));
+    // Set the next CRATE number and type
+    if( ParseCrateInfo(line, pos, crate) != CM_OK )
+      return CM_ERR;
+    do_continue = in_crate = true;
+    return CM_OK;
+  }
+  if( crate == kMaxUInt || !in_crate ) {
+    const char* msg = in_crate ? "." : " or preamble keyword.";
+    Error(here, "db_%s.dat:%d: Expected Crate definition%s\n"
+          "For example: \"==== Crate 5 type vme\". Found instead: \"%s\"",
+          GetName(), lineno, msg, line.c_str());
+    return CM_ERR;
+  }
+  return CM_OK;
+}
+
+//_____________________________________________________________________________
+void THaCrateMap::PostInit()
+{
+  // Post-init processing:
+  // - Remove crates without slots
+  // - Set bank status flags for each crate
+
+  for( auto it = fCrateDat.begin(); it != fCrateDat.end(); ) {
+    auto& cr = it->second;
+    if( cr.sltdat.empty() ) {
+      UInt_t crate = it->first;
+      assert(!fUsedCrates.contains(crate));
+      it = fCrateDat.erase(it);
+    } else {
+      cr.SetBankInfo();
+      ++it;
+    }
+  }
+}
+
+//_____________________________________________________________________________
+void THaCrateMap::SoftReset()
+{
+  // Reset only crate data, not any other flags in the map
+  fCrateDat.clear();
+  fUsedCrates.clear();
 }
 
 //_____________________________________________________________________________
@@ -632,101 +752,46 @@ int THaCrateMap::init(const string& the_map)
     // This may lead to certain crates being defined multiple times as its
     // parameters are updated for a new validity period.
     // To remove a previously-defined crate after a certain time stamp, use
-    // crate type "unused".
+    // crate type "unused" or, if many crates need to be removed, "reset".
     if( IsDBtimestamp(line, keydate) ) {
       do_ignore = fInitTime > 0 && (keydate > fInitTime || keydate < prevdate);
       in_crate = false;
+      if( !do_ignore ) {
+        prevdate = keydate;
+        if( fDoReset )
+          SoftReset();
+      }
       continue;
     }
     if( do_ignore )
       continue;
-    prevdate = keydate;
 
+    bool do_continue = false;
     if( !in_crate ) {
-      // Parse optional TSROC definition at start of map (or right after a timestamp)
-      if( constexpr string_view TSROC_KEY = "TSROC "; line.starts_with(TSROC_KEY) ) {
-        size_t pos;
-        unsigned long val;
-        bool err = false; try {
-          val = stoul(line.substr(TSROC_KEY.length()), &pos);
-        } catch( ... ) { err = true; }
-        if( !err && pos + TSROC_KEY.length() == line.length() ) {
-          fTSROC = val;
-          fTSROCSet = true;
-          continue;
-        }
-        Error(here, "db_%s.dat:%d: Failed to parse line \"%s\". "
-              "Expected \"TSROC <ROC number>\".",
-              GetName(), lineno, line.c_str());
-        return CM_ERR;
-      }
-      // Load optional configuration string defaults
-      if( constexpr string_view CONFIG_KEY = "config "; line.starts_with(CONFIG_KEY) ) {
-        int model = 0;
-        size_t pos;
-        bool err = false; try {
-          model = stoi(line.substr(CONFIG_KEY.length()), &pos);
-        } catch( ... ) { err = true; }
-        if( !err && pos > 0 && model != 0 ) {
-          if( string cfgstr; loadConfig(line, cfgstr) == CM_OK ) {
-            if( cfgstr.empty() )
-              fModuleCfg.erase(model); // no config string -> clear the entry
-            else
-              fModuleCfg[model] = cfgstr;
-            continue;
-          }
-        }
-        Error(here, "db_%s.dat:%d: Failed to parse line \"%s\". "
-              "Expected \"config <model number != 0> cfg:<parameters>\". ",
-              GetName(), lineno, line.c_str());
-        return CM_ERR;
-      }
+      if( ParseHeader(line, lineno, do_continue) != CM_OK )
+        return CM_ERR;  // Error already printed
+      if( do_continue )
+        continue;       // Header line found -> next line
     }
 
-    if( auto pos = line.find("Crate"); pos != string::npos ) {
-      // Bugcheck: When starting a new crate, ensure that the previous crate
-      // (if any) either has defined slots or is not in fUsedCrates
-      assert(crate == kMaxUInt || getNslot(crate) > 0 || !fUsedCrates.contains(crate));
-      // Make the line "==== Crate" not care about how many "=" chars or other
-      // chars before "Crate", except that lines beginning with '#' or '!' are
-      // still a comment (filtered out above).
-      line.erase(0, pos);
-      // Set the next CRATE number and type
-      if( ParseCrateInfo(line, crate) != CM_OK )
-        return CM_ERR;
-      in_crate = crateUsed(crate);  // false for crate type "unused"
-      continue; // onto the next line
-    }
-    if( crate == kMaxUInt || !in_crate ) {
-      Error(here, "db_%s.dat:%d: Expected Crate definition.\n"
-                  "For example: \"==== Crate 5 type vme\". "
-                  "Found instead: \"%s\"",
-            GetName(), lineno, line.c_str());
-      return CM_ERR;
-    }
+    // Check for "=== Crate <num> type <type>"
+    if( ParseCrateHeader(line, lineno, crate, in_crate, do_continue) != CM_OK )
+      return CM_ERR;    // Error already printed
+    if( do_continue )
+      continue;         // New crate header found -> next line
     assert(fCrateDat.contains(crate));
 
+    // Interpret lines following "=== Crate" as slot definitions
     if( fCrateDat[crate].ParseSlotInfo(this, line) != CM_OK )
       return CM_ERR;
+
     // At least one slot successfully defined
     fUsedCrates.insert(crate);
 
   } // while getline
 
-  // Post-processing:
-  // - Remove crates without slots
-  // - Set bank status flags for each crate
-  for( auto it = fCrateDat.begin(); it != fCrateDat.end(); ) {
-    auto& cr = it->second;
-    if( cr.sltdat.empty() ) {
-      crate = it->first;
-      assert(!fUsedCrates.contains(crate));
-      it = fCrateDat.erase(it);
-    } else {
-      cr.SetBankInfo();
-      ++it;
-    }
-  }
+  // Remove empty crates and set crate status flags
+  PostInit();
 
   if( fUsedCrates.empty() ) {
     Error(here, "db_%s.dat: No valid crate map entries loaded. "

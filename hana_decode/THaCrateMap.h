@@ -19,6 +19,7 @@
 
 #include "Decoder.h"      // for ECrateCode, ECrateCode::kScalerCrate, ECrat...
 #include "Rtypes.h"       // for UInt_t, Int_t, Byte_t, Long64_t, BIT, UShort_t
+#include <array>          // for array
 #include <cstdio>         // for FILE
 #include <functional>     // for invoke
 #include <iostream>       // for cout, ostream
@@ -90,6 +91,7 @@ private:
   UInt_t      fTSROC;          // Crate (aka ROC) of the trigger supervisor
   bool        fTSROCSet;       // TSROC number explicitly set
   bool        fIsInit;         // Successfully initialized
+  bool        fDoReset;        // Clear map at new timestamps
   Byte_t      fDebug;          // Enable debugging (bitmask)
 
   class SlotInfo_t {
@@ -139,7 +141,12 @@ private:
   Int_t loadConfig( std::string& line, std::string& cfgstr ) const;
   Int_t setCrateType( UInt_t crate, const char* stype ); // set the crate type
   void  setUsed( UInt_t crate, UInt_t slot );
-  Int_t ParseCrateInfo( const std::string& line, UInt_t& crate );
+  Int_t ParseCrateInfo( const std::string& line, size_t pos, UInt_t& crate );
+  Int_t ParseHeader( const std::string& line, int lineno, bool& do_continue );
+  Int_t ParseCrateHeader( const std::string& line, int lineno, UInt_t& crate,
+    bool& in_crate, bool& do_continue );
+  void  PostInit();
+  void  SoftReset();
 
   template<class Proj,
     typename Result = std::invoke_result_t<Proj, CrateInfo_t>>
