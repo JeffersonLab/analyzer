@@ -18,7 +18,7 @@
 #include <stdexcept>    // for out_of_range
 #include <type_traits>  // for make_signed_t, is_integral_v, is_signed_v
 #include <vector>       // for vector, operator==
-#include <utility>      // for cmp_less
+#include <utility>      // for cmp_less, in_range
 #include <limits>       // for numeric_limits
 
 #define ALL( c ) (c).begin(), (c).end()
@@ -28,7 +28,7 @@ namespace Podd {
 //___________________________________________________________________________
   // Cast unsigned to signed where unsigned is expected to be within signed range
   template<typename T> requires (std::is_integral_v<T> and std::is_unsigned_v<T>)
-  std::make_signed_t<T> SINT( T uint )
+  constexpr std::make_signed_t<T> SINT( T uint )
   {
     if( std::cmp_greater(uint,
       std::numeric_limits<std::make_signed_t<T>>::max()) ) [[unlikely]]
@@ -45,24 +45,17 @@ namespace Podd {
   auto SSIZE( const Container& c ) { return std::ssize(c); }
 
   // Force safe conversion to int from any integer
-  template<typename T> requires (std::is_integral_v<T> and std::is_unsigned_v<T>)
-  int ToInt( T uint )
+  template<typename T>
+    requires (not std::is_same_v<T,int> and std::is_integral_v<T>)
+  constexpr int ToInt( T val )
   {
-    if( std::cmp_greater(uint, std::numeric_limits<int>::max()) ) [[unlikely]]
-      throw std::out_of_range("Unsigned integer out of int range");
-    return static_cast<int>(uint);
+    if( !std::in_range<int>(val) ) [[unlikely]]
+      throw std::out_of_range("Integer value out of int range");
+    return static_cast<int>(val);
   }
-  template<typename T> requires (std::is_integral_v<T> and std::is_signed_v<T>)
-  int ToInt( T sint )
-  {
-    if( sint > std::numeric_limits<int>::max() ||
-        sint < std::numeric_limits<int>::min() ) [[unlikely]]
-      throw std::out_of_range("Unsigned integer out of int range");
-    return static_cast<int>(sint);
-  }
-  // Trivial case
+  // Trivial case - no-op
   template<typename T> requires std::is_same_v<T,int>
-  int ToInt( T sint ) { return sint; }
+  constexpr int ToInt( T sint ) { return sint; }
 
   //___________________________________________________________________________
   template< typename VectorElem >
@@ -191,7 +184,7 @@ namespace Podd {
   }
 
   //___________________________________________________________________________
-  inline Int_t NumberOfSetBits( UInt_t v )
+  constexpr Int_t NumberOfSetBits( UInt_t v )
   {
     // Count number of bits set in 32-bit integer. From
     // http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
@@ -252,7 +245,7 @@ namespace Podd {
   // of type T. T and S must either both be integer or floating point types.
   // Trivial case of identical types.
   template<typename T, typename S> requires std::is_same_v<T, S>
-  bool is_in_range( S )
+  constexpr bool is_in_range( S )
   {
     return true;
   }
@@ -262,7 +255,7 @@ namespace Podd {
   template<typename T, typename S> requires (not std::is_same_v<T, S> and (
     (std::is_integral_v<T> and std::is_integral_v<S> ) or
     (std::is_floating_point_v<T> and std::is_floating_point_v<S>)))
-  bool is_in_range( S val )
+  constexpr bool is_in_range( S val )
   {
     bool ret = (val <= std::numeric_limits<T>::max());
     if( ret ) {

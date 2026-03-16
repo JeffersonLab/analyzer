@@ -190,7 +190,12 @@ vector<string> GetDBFileList( const char* name, const TDatime& date,
   // If name contains a directory separator, we take the name verbatim
   vector<string> fnames;
   string filename = name;
-  if( filename.find(fs::path::preferred_separator) != string::npos ) {
+#ifdef __cpp_lib_string_contains // C++23
+  if( filename.contains(fs::path::preferred_separator) )
+#else
+  if( filename.find(fs::path::preferred_separator) != string::npos )
+#endif
+  {
     fnames.push_back(filename);
     return fnames;
   }

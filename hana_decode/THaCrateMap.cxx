@@ -729,9 +729,9 @@ Int_t THaCrateMap::CrateInfo_t::ParseSlotInfo( const THaCrateMap* crmap,
 //_____________________________________________________________________________
 void THaCrateMap::CrateInfo_t::SetBankInfo()
 {
-  auto slot_is_bank = []( const auto& slt ) { return slt.second.bank >= 0; };
-  has_banks = ranges::any_of(sltdat, slot_is_bank);
-  all_banks = ranges::all_of(sltdat, slot_is_bank);
+  auto slot_is_bank = []( const auto& slt ) { return slt.bank >= 0; };
+  has_banks = ranges::any_of(sltdat | views::values, slot_is_bank);
+  all_banks = ranges::all_of(sltdat | views::values, slot_is_bank);
 }
 
 //_____________________________________________________________________________
