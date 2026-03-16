@@ -16,15 +16,19 @@
 # include <catch2/catch.hpp>
 #endif
 
-#include "Database.h"    // for DBRequest, VarType, LoadDatabase
+#include "Database.h"    // for DBRequest, VarType, IsDBtimestamp,  LoadDatabase,
+                         // OpenDBFile, LoadDBarray, LoadDBvalue
 #include "PoddTests.h"   // for PODD_TESTS_DBDIR
 #include "TDatime.h"     // for TDatime
 #include "TError.h"      // for gErrorIgnoreLevel, kBreak
+#include "TString.h"     // for TString
+#include "TSystem.h"     // for TSystem, gSystem
 #include <algorithm>     // for all_of
 #include <cstdio>        // for fclose, FILE
 #include <cstring>       // for memset
-#include <string>        // for allocator, string
-#include <vector>        // for vector, operator==
+#include <string>        // for string
+#include <string_view>   // for operator""sv
+#include <vector>        // for vector
 
 using namespace std;
 
@@ -34,7 +38,87 @@ using namespace std;
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-TEST_CASE("Database functions", "[Database]") // NOLINT(*-function-cognitive-complexity)
+TEST_CASE("Timestamp parsing & timezone handling", "[Database]") // NOLINT(*-function-cognitive-complexity)
+{
+  TString cur_tz = gSystem->Getenv("TZ");
+  gSystem->Setenv("TZ", "Asia/Tel_Aviv");  // IST/IDT GMT=+0200/+0300
+#ifdef __GLIBC__
+  tzset();
+#endif
+
+  //gErrorIgnoreLevel = kBreak;  // Suppress ROOT messages from Error/Warning/Info
+
+  string line = "----[ 2020-06-30 12:55:16 -0400]----";
+  Long64_t ldate;
+  bool st = Podd::IsDBtimestamp(line, ldate);
+  CHECK(st == true);
+  CHECK(ldate == 1593536116);                  // Tue Jun 30 12:55:16 EDT 2020
+
+  line = "[ 2020-06-30   12:55:16 -0400   ] any text here";
+  st = Podd::IsDBtimestamp(line, ldate);
+  CHECK(st == true);
+  CHECK(ldate == 1593536116);                  // Tue Jun 30 12:55:16 EDT 2020
+
+  TDatime datime;
+  st = Podd::IsDBtimestamp(line, datime);
+  CHECK(st == true);
+  CHECK(datime.AsSQLString() == "2020-06-30 12:55:16"sv);
+  CHECK_FALSE(datime.Convert() == 1593536116); // Only if TZ=US/Eastern
+  CHECK(datime.Convert() == 1593510916);       // Tue Jun 30 12:55:16 IDT 2020
+
+  line = "----[ 2020-06-30 12:55:16]----";     // No timezone offset -> localtime
+  st = Podd::IsDBtimestamp(line, ldate);
+  CHECK(st == true);
+  CHECK(ldate == 1593536116);  // Podd internally assumes TZ=US/Eastern
+
+  // Conversion error (bad timezone offset) -> throws runtime_error
+  line = "----[ 2020-06-30 12:55:16 +200 ]----";
+  ldate = 999;
+  REQUIRE_THROWS(st = Podd::IsDBtimestamp(line, ldate));
+  CHECK(ldate == 999);  // if error, value unchanged
+
+  // Conversion error (invalid value for month)
+  line = "----[ 2020-15-30 12:55:16 -0800 ]----";
+  ldate = 1999;
+  REQUIRE_THROWS(st = Podd::IsDBtimestamp(line, ldate));
+  CHECK(ldate == 1999);
+
+  // Conversion error (unsupported year)
+  line = "----[ 1990-05-30 00:00:00 -0400 ]----";
+  ldate = 2999;
+  REQUIRE_THROWS(st = Podd::IsDBtimestamp(line, ldate));
+  CHECK(ldate == 2999);
+
+  // Not a DB time stamp, but not a date format error -> no exception
+  line = "text = define [ x1 x2 more text here ]";
+  st = true;
+  ldate = 3999;
+  REQUIRE_NOTHROW(st = Podd::IsDBtimestamp(line, ldate));
+  CHECK(st == false);
+  CHECK(ldate == 3999);
+
+  // But these are fatal errors
+  line = "===== [ x1 x2 more stuff here a123 ]";
+  REQUIRE_THROWS(st = Podd::IsDBtimestamp(line, ldate));
+  line = "---- [ 2020-09-55 11:30:00 +0000 ] = 100";
+  REQUIRE_THROWS(st = Podd::IsDBtimestamp(line, ldate));
+
+  // No year 2038 problem
+  line = "----[ 2050-07-04 16:50:42 -0400 ]----";
+  st = Podd::IsDBtimestamp(line, ldate);
+  CHECK(st == true);
+  CHECK(ldate == 2540580642);
+
+  if( !cur_tz.IsNull() )
+    gSystem->Setenv("TZ", cur_tz);
+  else
+    gSystem->Unsetenv("TZ");
+#ifdef __GLIBC__
+  tzset();
+#endif
+}
+
+TEST_CASE("File I/O functions", "[Database]") // NOLINT(*-function-cognitive-complexity)
 {
   TDatime now;
   string openpath;
