@@ -22,7 +22,6 @@
 #include "Module.h"     // for Module
 #include "TDatime.h"    // for TDatime
 #include "TError.h"     // for Error, Warning
-#include "TString.h"    // for TString, operator>=
 #include "Textvars.h"   // for Trim
 #include <cassert>      // for assert
 #include <algorithm>    // for all_of, any_of
@@ -500,9 +499,9 @@ Int_t THaCrateMap::ParseCrateInfo( const std::string& line,
         cerr << "THaCrateMap:: failed to scan scaler name" << endl;
         return CM_ERR;
       }
-      TString scaler_name(ctype);
-      scaler_name.ReplaceAll("\"", ""); // drop extra quotes
-      cr.scalerloc = scaler_name;
+      string scaler_name{ctype};
+      std::erase(scaler_name, '\"'); // drop extra quotes
+      cr.scalerloc = std::move(scaler_name);
     }
     return CM_OK;
   }
