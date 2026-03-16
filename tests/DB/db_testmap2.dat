@@ -1,0 +1,110 @@
+# Test crate map #2
+# For software testing only. Does not reflect an actual DAQ configuration.
+#
+# Ole Hansen, Mar 2026
+#
+
+-------[ 2021-01-01 00:00:00 -0500 ]
+
+TSROC 19
+config 250 cfg:thresh=250,window=70
+
+always_reset
+
+==== Crate 4 type fastbus
+# slot model clear header mask nchan
+  1 	1881	1	0x0	0x0
+  2 	1881	1	0x0	0x0
+  3 	1881	1	0x0	0x0	64
+  4 	1881	1	0x0	0x0	64
+
+==== Crate 5 type vme
+# slot model bank
+  2   1190  1190
+  3   1190  1190
+  4   1190  1190
+ 14    250 	250
+ 15    250 	250
+ 16    250 	250
+ 17    250  250
+ 18    250  250
+ 19    250  250
+
+-------[ 2022-06-01 00:00:00 -0400 ]
+
+==== Crate 6 type vme
+# slot  model   bank
+  3      250     3
+  4      250     3
+  5      250     3
+  6      250     3
+  7      250     3
+  8      250     3
+  9      250     3
+  10     250     3
+  13     250     3
+  14     250     3
+  15     250     3
+  16     250     3
+  17     250     3
+  18     250     3
+  19     250     3
+  20     250     3
+
+
+==== Crate 7 type vme
+# slot model clear header mask     nchan
+  17    792  1 0x000 0xffffffff    32     2048
+  18    792  1 0x000 0xffffffff    32     2048 12345 ignoring extra fields
+  13    250     250
+  14    250     250  cfg:debug
+  15    250     250
+  16    250     250
+
+# Time zone test
+-------[ 2023-10-15 23:45:00 +0000 ]------
+
+-------[ 2023-10-16 08:25:00 +0830 ]------
+
+==== Crate 2 type vme
+## slot model bank 
+    10  250   3
+    12  250   3
+
+-------[ 2023-10-15 19:05:00 -0500 ]------
+
+==== Crate 4 type vme
+## slot model bank
+    14  250   250
+
+==== Crate 1 type vme
+## slot model bank 
+    20  250   250     
+
+==== Crate 16 type vme
+# slot  model  bank
+   2    250     3
+   3    250     3
+   4    250     3
+   5    250     3
+   6    250     3
+   7    250     3
+   8    250     3
+   9    250     3
+  10    250     3
+  13    250     3
+  14    250     3
+  15    250     3
+  16    250     3
+  17    250     3
+  18    250     3
+  19    250     3
+  20    250     3
+
+
+==== Crate 3 type vme
+# slot  model  bank
+  18    250     3
+  19    250     3
+  20    250     3
+

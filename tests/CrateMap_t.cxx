@@ -18,35 +18,25 @@
 
 #include "THaCrateMap.h"      // for THaCrateMap, Rtypes
 #include "PoddTests.h"        // for PODD_TESTS_DBDIR
+#include "TError.h"           // for gErrorIgnoreLevel, kBreak
 #include <cstdio>             // for fclose, fopen, FILE
-#include <ctime>              // for mktime, time_t, tm
-#include <iostream>           // for ostream, cout, streambuf
+#include <ctime>              // for time_t, timegm, tm
 #include <memory>             // for unique_ptr, make_unique
 #include <set>                // for set
 #include <sstream>            // for ostringstream
-#include <string>             // for string
+#include <string>             // for string, string_literals
 #include <string_view>        // for string_view
 #include <vector>             // for vector
 
-//#include "TError.h"           // for gErrorIgnoreLevel, kBreak
-#include <fstream>
-
 namespace {
-struct cout_redirect { // NOLINT(*-special-member-functions)
-  explicit cout_redirect( std::streambuf* newbuf )
-    : savebuf_{std::cout.rdbuf(newbuf)} {}
-  ~cout_redirect() { std::cout.rdbuf(savebuf_); }
-private:
-  std::streambuf* savebuf_;
-};
-
-time_t mktloc( int year, int month, int day, bool dst = false )
+time_t mktloc( int year, int month, int day )
 {
+  // Return Unix time value for midnight UTC at given date
   tm tval{
     .tm_mday = day, .tm_mon = month - 1 /* sic */,
-    .tm_year = year - 1900, .tm_isdst = dst
+    .tm_year = year - 1900, .tm_isdst = 0
   };
-  return mktime(&tval);
+  return timegm(&tval);
 }
 }
 
@@ -65,7 +55,7 @@ using namespace Decoder;
 TEST_CASE("Crate Map", "[Database]") // NOLINT(*-function-cognitive-complexity)
 {
   auto crmap = make_unique<THaCrateMap>("testmap");
-  crmap->setDebug(THaCrateMap::kAllowMissingModel);
+  gErrorIgnoreLevel = kBreak;  // Suppress ROOT messages from Error/Warning/Info
 
   static const string testmap = R"TESTMAP(
 # comment
@@ -121,6 +111,37 @@ config 1881 cfg:debug
 #slot  model  clear  header      mask        nchan
  2     1875   1      0xdeaf0000  0xffff0000  64
  4     1875   1      0xdeae0000  0xffff0000  64
+)REFSTR";
+
+  static const string refstr2 = R"REFSTR(TSROC 22
+config 3561 cfg:thresh=250,window=70
+==== Crate 3 type vme
+#slot  model  bank  cfgstr
+ 11    3561   3561  cfg:+debug
+==== Crate 58 type vme
+#slot  model  bank
+ 11    3561   3561
+==== Crate 64 type vme
+#slot  model  bank
+ 11    514    86
+==== Crate 65 type vme
+#slot  model  bank
+ 11    514    86
+==== Crate 66 type vme
+#slot  model  bank
+ 11    514    86
+==== Crate 67 type vme
+#slot  model  bank
+ 11    514    86
+==== Crate 68 type vme
+#slot  model  bank
+ 11    514    86
+==== Crate 69 type vme
+#slot  model  bank
+ 11    514    86
+==== Crate 70 type vme
+#slot  model  bank
+ 11    514    86
 )REFSTR";
 
   SECTION("Initial setup")
@@ -223,7 +244,6 @@ config 1881 cfg:debug
     CHECK(crmap->isInit());
     CHECK(crmap->GetInitTime() == 0);
     CHECK(crmap->GetName() == string_view(testfilename));
-
     CHECK(crmap->GetSize() == 8);     // 5 + 3 slots
     CHECK(crmap->GetNcrates() == 2);  // 2 crates
     CHECK(crmap->GetUsedCrates() == set<UInt_t>{1,2});
@@ -236,30 +256,32 @@ config 1881 cfg:debug
     time_t tloc = mktloc(2020, 1, 1);
     auto st = crmap->init(tloc);
     REQUIRE(st == THaCrateMap::CM_ERR);
-    //TODO check error message
+    //TODO check error message (how?)
   }
 
   SECTION("Load from file, date = 0 (01-Jan-1970 UTC)")
   {
-    //=== Everything defined (timestamps disabled)
+    //=== Everything defined (timestamps disabled), unless there's a reset
+    crmap->setDebug(THaCrateMap::kAllowMissingModel);
     int st = crmap->init(0);
     REQUIRE(st == THaCrateMap::CM_OK);
     CHECK(crmap->isInit());
-    CHECK(crmap->GetNcrates() == 32); // 32 crates (some defined and undefined)
-    CHECK(crmap->GetSize() == 231);   // Big experiment
+//    CHECK(crmap->GetNcrates() == 32); // 32 crates (some defined and undefined)
+//    CHECK(crmap->GetSize() == 231);   // Big experiment
+    CHECK(crmap->GetNcrates() == 9);  // Only last 9 definitions, after reset
+    CHECK(crmap->GetSize() == 9);
   }
 
   SECTION("Load from file, date = 01-Feb-2021 00:00 EST")
   {
     //=== 14 crates, defined in first time-stamped block
+    crmap->setDebug(THaCrateMap::kAllowMissingModel);
     time_t tloc = mktloc(2021, 2, 1);
     int st = crmap->init(tloc);
     REQUIRE(st == THaCrateMap::CM_OK);
     CHECK(crmap->isInit());
     CHECK(crmap->GetInitTime() == tloc);
     CHECK(crmap->getTSROC() == 21);
-    // Overall
-    //crmap->print();
     CHECK(crmap->GetNcrates() == 14);  // 14 crates
     CHECK(crmap->GetSize() == 73);     // 73 slots
     CHECK(crmap->GetUsedCrates() == set<UInt_t>{1,4,5,6,7,10,16,17,19,20,22,23,24,25});
@@ -277,7 +299,6 @@ config 1881 cfg:debug
     CHECK(crmap->isBankStructure(crate));
     CHECK(crmap->isAllBanks(crate));
     CHECK(crmap->getNslot(crate) == 1);
-
     CHECK(crmap->getModel(crate, cr1slot) == 250);
     CHECK(crmap->getNchan(crate, cr1slot) == 16);
     CHECK(crmap->getMask(crate, cr1slot) == -1);     // 0xFF FF FF FF
@@ -306,14 +327,13 @@ config 1881 cfg:debug
   SECTION("Load from file, date = 01-May-2024 00:00 EDT")
   {
     //=== Add crates 28 & 29, redefine crate 7, remove 10
-    time_t tloc = mktloc(2024, 5, 1, true);
+    crmap->setDebug(THaCrateMap::kAllowMissingModel);
+    time_t tloc = mktloc(2024, 5, 1);
     int st = crmap->init(tloc);
     REQUIRE(st == THaCrateMap::CM_OK);
     CHECK(crmap->isInit());
     CHECK(crmap->GetInitTime() == tloc);
     CHECK(crmap->getTSROC() == 21);
-
-    //crmap->print();
     CHECK(crmap->GetNcrates() == 15);
     CHECK(crmap->GetSize() == 73+27-1-10+7);
     CHECK(crmap->GetUsedCrates() == set<UInt_t>{1,4,5,6,7,16,17,19,20,22,23,24,25,28,29});
@@ -323,10 +343,86 @@ config 1881 cfg:debug
     CHECK(nslots == vector<UInt_t>{1,4,9,16,7,18,8,1,1,1,1,1,1,19,8});
   }
 
-    //
-    // Date = 01-Aug-2025 00:00 EDT
-    //TODO
+  SECTION("Load from file, with reset, date = 01-Aug-2025 00:00 EDT")
+  {
+    //=== Resets map, then defines crates 3, 58, 64-70.
+    crmap->setDebug(THaCrateMap::kAllowMissingModel);
+    time_t tloc = mktloc(2025, 8, 1);
+    int st = crmap->init(tloc);
+    REQUIRE(st == THaCrateMap::CM_OK);
+    CHECK(crmap->isInit());
+    CHECK(crmap->GetInitTime() == tloc);
+    CHECK(crmap->getTSROC() == 22);  // Not reset
+    CHECK(crmap->GetSize() == 9);
+    CHECK(crmap->GetNcrates() == 9);
+    CHECK(crmap->GetUsedCrates() == std::set<UInt_t>{3,58,64,65,66,67,68,69,70});
+    CHECK_FALSE(crmap->crateUsed(5));
+    CHECK(crmap->getNslot(58) == 1);
+    CHECK(crmap->GetUsedSlots(58) == std::set<UInt_t>{11});
+    CHECK(crmap->getModel(58,11) == 3561);
+    CHECK(crmap->getBank(58,11) == 3561);
+    // Global string set in earlier section, before "reset", is not cleared.
+    CHECK(crmap->getConfigStr(58,11) == "thresh=250,window=70");
+    // and it is available for prefixing a per-module string
+    CHECK(crmap->getConfigStr(3,11) == "thresh=250,window=70 debug");
+    CHECK(crmap->getNslot(64) == 1);
+    CHECK(crmap->getModel(64,11) == 514);
+    CHECK(crmap->getBank(64,11) == 86);
+    CHECK(crmap->getConfigStr(64,11).empty());
+
+    ostringstream oss;
+    crmap->print(oss);
+    CHECK(refstr2 == oss.str());  // Better than a few dozen individual CHECKs
   }
 
+  SECTION("Load from file with always_reset flag")
+  {
+    //=== Several timestamp sections, with always_reset
+    crmap->SetDBfileName("testmap2");
+    CHECK(crmap->GetName() == "testmap2"sv);
+    time_t tloc = mktloc(2021, 2, 1);
+    int st = crmap->init(tloc);
+    REQUIRE(st == THaCrateMap::CM_OK);
+    CHECK(crmap->isInit());
+    CHECK(crmap->GetNcrates() == 2);
+    CHECK(crmap->GetSize() == 13);
+    CHECK(crmap->GetUsedCrates() == std::set<UInt_t>{4,5});
+    CHECK(crmap->getNchan(4,1) == 64);
+    CHECK(crmap->getNchan(4,4) == 64);
+
+    tloc = mktloc(2022, 8, 1);
+    st = crmap->init(tloc);
+    REQUIRE(st == THaCrateMap::CM_OK);
+    CHECK(crmap->GetNcrates() == 2);
+    CHECK(crmap->GetSize() == 22);
+    CHECK(crmap->GetUsedCrates() == std::set<UInt_t>{6,7});
+
+    tloc = mktloc(2023, 12, 1);
+    st = crmap->init(tloc);
+    REQUIRE(st == THaCrateMap::CM_OK);
+    CHECK(crmap->getTSROC() == 19);
+    CHECK(crmap->GetNcrates() == 4);
+    CHECK(crmap->GetSize() == 22);
+    CHECK(crmap->GetUsedCrates() == std::set<UInt_t>{4,1,16,3});
+    CHECK(crmap->getConfigStr(4,14) == "thresh=250,window=70");
+  }
+
+  SECTION("Time zone handling in file timestamps")
+  {
+    crmap->SetDBfileName("testmap2");
+    time_t tloc = mktloc(2023, 10, 16); // 2023-10-16 00:00:00 UTC
+    int st = crmap->init(tloc);
+    REQUIRE(st == THaCrateMap::CM_OK);
+    CHECK(crmap->GetNcrates() == 1);
+    CHECK(crmap->GetSize() == 2);
+    CHECK(crmap->GetUsedCrates() == std::set<UInt_t>{2});
+
+    tloc += 600; // 2023-10-16 00:10:00 UTC
+    st = crmap->init(tloc);
+    REQUIRE(st == THaCrateMap::CM_OK);
+    CHECK(crmap->GetNcrates() == 4);
+    CHECK(crmap->GetSize() == 22);
+    CHECK(crmap->GetUsedCrates() == std::set<UInt_t>{1,3,4,16});
+  }
 }
 

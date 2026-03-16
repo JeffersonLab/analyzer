@@ -7,6 +7,7 @@
 -------[ 2021-01-01 00:00:00 ] # beginning of SBS history
 
  TSROC 21
+ config 3561 cfg:thresh=250,window=70
 
 ==== Crate 4 type fastbus
 # Old-style Fastbus ADCs
@@ -53,17 +54,17 @@
 ==== Crate 7 type vme Bank Decoding
 # TDCs for GRINCH - VETROCModule (id 526)
 # slot model clear header mask     nchan ndata
-  3    526  1 0x00000000 0x00000000 128 12800
+  3    526  1 0x00000000 0x00000000 128
   4    526  1 0x00000000 0x00000000 128 12800
   5    526  1 0x00000000 0x00000000 128 12800
   6    526  1 0x00000000 0x00000000 128 12800
 # v792 QDC for GRINCH
   17    792  1 0x000 0xffffffff 32  2048
   18    792  1 0x000 0xffffffff 32  2048
-  13    250     250  # GRINCH FADC
-  14    250     250  # GRINCH FADC
-  15    250     250  # GRINCH FADC
-  16    250     250  # GRINCH FADC
+  13    250     250                # GRINCH FADC
+  14    250     250  cfg:debug     # GRINCH FADC
+  15    250     250                # GRINCH FADC
+  16    250     250                # GRINCH FADC
 
 
 # LHRS crate (includes beam line signals) 
@@ -175,7 +176,6 @@
 
 # Redefine Crate 7. This resets all crate parameters, in particular, it clears
 # all previously defined slots in that crate
-
 ==== Crate 7 type vme Bank Decoding
 # switch former GRINCH adc channels in crate 7 to new usage:
 # v792 QDC for GRINCH
@@ -192,11 +192,11 @@
 # Undefine Crate 10 again, for testing
 ==== Crate 10 type unused
 ## slot model bank
-#TODO make this work
 #    14  250   250
 
-
 -------[ 2024-10-01 00:00:00 ] # Start GEP
+
+TSROC 22
 
 ==== Crate 38 type vme			
 # slot	model	bank	
@@ -344,6 +344,8 @@
 ---------[ 2025-01-01 00:00:00 ] # Adding new GEM VTP
 # SBS GEMs.
 
+reset
+
 ==== Crate 58 type vme
 11 3561 3561
 
@@ -372,4 +374,4 @@
 # For Test Lab Histogrammingn CM test-bench data.
 ==== Crate 3 type vme Bank Decoding
 # slot  model   bank
-  11    3561    3561
+  11    3561    3561   cfg:+debug
