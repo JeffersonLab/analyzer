@@ -38,10 +38,8 @@ Int_t THaDetMap::InitCmap( Long64_t tloc )
     return THaCrateMap::CM_OK;
   if( !fgCrateMap ) {
     TString cmap_name;
-    auto* analyzer = THaAnalyzer::GetInstance();
-    if( analyzer ) {
-      auto* decoder = analyzer->GetDecoder();
-      if( decoder )
+    if( auto* analyzer = THaAnalyzer::GetInstance() ) {
+      if( auto* decoder = analyzer->GetDecoder() )
         cmap_name = decoder->GetCrateMapName();
     }
     if( cmap_name.IsNull() )
@@ -200,10 +198,11 @@ THaDetMap::Module* THaDetMap::Find( UInt_t crate, UInt_t slot,
   // Since the map is usually small and not necessarily sorted, a simple
   // linear search is done.
 
-  auto found = find_if( ALL(fMap), [crate,slot,chan](const unique_ptr<Module>& d)
-  { return ( d->crate == crate && d->slot == slot &&
-             d->lo <= chan && chan <= d->hi );
-  });
+  auto found = ranges::find_if( fMap,
+    [crate,slot,chan](const unique_ptr<Module>& d)
+    { return ( d->crate == crate && d->slot == slot &&
+               d->lo <= chan && chan <= d->hi );
+    });
 
   return (found != fMap.end()) ? found->get() : nullptr;
 }
@@ -359,10 +358,8 @@ void THaDetMap::GetMinMaxChan( UInt_t& min, UInt_t& max, ECountMode mode ) const
   for( const auto& m : fMap ) {
     UInt_t m_min = do_ref ? m->refindex : m->first;
     UInt_t m_max = do_ref ? m->refindex : m->first + m->hi - m->lo;
-    if( m_min < min )
-      min = m_min;
-    if( m_max > max )
-      max = m_max;
+    min = std::min(m_min, min);
+    max = std::max(m_max, max);
   }
 }
 
@@ -408,8 +405,7 @@ void THaDetMap::Sort()
 {
   // Sort the map by crate/slot/low channel
 
-  sort( ALL(fMap),
-	[]( const unique_ptr<Module>& a, const unique_ptr<Module>& b) {
+  ranges::sort(fMap, []( const auto& a, const auto& b ) {
     if( a->crate < b->crate ) return true;
     if( a->crate > b->crate ) return false;
     if( a->slot  < b->slot )  return true;
