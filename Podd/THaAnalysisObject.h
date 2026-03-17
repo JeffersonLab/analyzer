@@ -11,6 +11,7 @@
 #include "TDatime.h"
 #include "Database.h"
 #include "DataType.h"
+#include "Helper.h"
 #include "OptionalType.h"
 #include "THaVarList.h"
 
@@ -78,7 +79,8 @@ public:
                           Int_t search = 0,
                           const char* here = "THaAnalysisObject::LoadDB" )
   {
-    return Podd::LoadDatabase(file, date, request, prefix, search, here);
+    return Podd::LoadDatabase(file, date,
+      Podd::MakeVectorFromList(request), prefix, search, here);
   }
   [[deprecated("Use LoadDatabase")]]
   static Int_t    LoadDB( FILE* file, const TDatime& date,

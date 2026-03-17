@@ -828,7 +828,8 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 
   TString here(GetClassName());
   here.Append("::LoadDB");
-  return LoadDatabase(f, date, req, GetPrefix(), search, here.Data());
+  return LoadDatabase(f, date, MakeVectorFromList(req), GetPrefix(),
+                      search, here.Data());
 }
 
 //_____________________________________________________________________________
