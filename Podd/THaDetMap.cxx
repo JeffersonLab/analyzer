@@ -14,6 +14,7 @@
 #include "THaCrateMap.h"
 #include "Decoder.h"
 #include "Helper.h"
+#include "Module.h"
 #include <iostream>
 #include <iomanip>
 #include <stdexcept>
@@ -27,30 +28,6 @@
 using namespace std;
 using namespace Decoder;
 using namespace Podd;
-
-// "Database" of known frontend module numbers and types
-// FIXME: load from db_cratemap
-class ModuleDef {
-public:
-  Int_t       model; // model identifier
-  EModuleType type;  // Module type
-};
-
-static const vector<ModuleDef> module_list {
-  { 1875, EModuleType::kCommonStopTDC },
-  { 1877, EModuleType::kCommonStopTDC },
-  { 1881, EModuleType::kADC },
-  { 1872, EModuleType::kCommonStopTDC },
-  { 3123, EModuleType::kADC },
-  { 1182, EModuleType::kADC },
-  { 792,  EModuleType::kADC },
-  { 775,  EModuleType::kCommonStopTDC },
-  { 767,  EModuleType::kCommonStopTDC },
-  { 3201, EModuleType::kCommonStopTDC },
-  { 6401, EModuleType::kCommonStopTDC },
-  { 1190, EModuleType::kCommonStopTDC },
-  { 250,  EModuleType::kMultiFunctionADC },
-};
 
 static unique_ptr<THaCrateMap> fgCrateMap = nullptr;
 
@@ -85,11 +62,13 @@ THaCrateMap* THaDetMap::GetCrateMap()
 void THaDetMap::Module::SetModel( Int_t mod )
 {
   model = mod;
-  auto it = find_if(ALL(module_list),
-                    [mod]( const ModuleDef& m ) { return m.model == mod; });
-  if( it != module_list.end() )
-    type = it->type;
-  else
+  // Find the model number in the module registry
+  const auto& modtypes = Decoder::Module::fgModuleTypes();
+  if( auto it = modtypes.find(mod); it != modtypes.end() ) {
+    auto module = *it;
+    type = module.fType;
+    //TODO other parameters, e.g. resolution
+  } else
     type = EModuleType::kUndefined;
 }
 
@@ -202,12 +181,7 @@ Int_t THaDetMap::AddModule( UInt_t crate, UInt_t slot,
   // If the model is not predefined, this can be done manually later with
   // calls to MakeADC()/MakeTDC().
   if( model != 0 ) {
-    auto it = find_if(ALL(module_list),
-                      [model]( const ModuleDef& m ) { return m.model == model; });
-    if( it != module_list.end() )
-      m.type = it->type;
-    else
-      m.type = EModuleType::kUndefined;
+    m.SetModel( model );
       //      return -1;  // Unknown module TODO do when module_list is in a database
   } else
     m.type = EModuleType::kUndefined;
