@@ -70,13 +70,13 @@ Int_t THaDetMap::InitCmap( Long64_t tloc )
     if( cmap_name.IsNull() )
       cmap_name = THaEvData::GetDefaultCrateMapName();
     assert(!cmap_name.IsNull());
-    fgCrateMap = make_unique<Decoder::THaCrateMap>(cmap_name);
+    fgCrateMap = make_unique<THaCrateMap>(cmap_name);
   }
   return fgCrateMap->init(tloc);
 }
 
 //_____________________________________________________________________________
-Decoder::THaCrateMap* THaDetMap::GetCrateMap()
+THaCrateMap* THaDetMap::GetCrateMap()
 {
   return fgCrateMap.get();
 }
@@ -560,7 +560,7 @@ void THaDetMap::Iterator::reset()
 }
 
 //_____________________________________________________________________________
-THaDetMap::MultiHitIterator::MultiHitIterator( THaDetMap& detmap,
+THaDetMap::MultiHitIterator::MultiHitIterator( const THaDetMap& detmap,
                                                const THaEvData& evdata,
                                                bool do_init )
   : Iterator(detmap, evdata, false), fIHit(-1)

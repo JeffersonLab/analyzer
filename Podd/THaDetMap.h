@@ -80,7 +80,7 @@ public:
   };
 
   // Flags for GetMinMaxChan()
-  enum ECountMode {
+  enum ECountMode : Byte_t {
     kLogicalChan         = 0,
     kRefIndex            = 1
   };
@@ -103,8 +103,8 @@ public:
   THaDetMap& operator=( THaDetMap&& ) = default;
   virtual ~THaDetMap() = default;
 
-  THaDetMap::Iterator MakeIterator( const THaEvData& evdata );
-  THaDetMap::MultiHitIterator MakeMultiHitIterator( const THaEvData& evdata );
+  Iterator MakeIterator( const THaEvData& evdata );
+  MultiHitIterator MakeMultiHitIterator( const THaEvData& evdata );
 
   virtual Int_t     AddModule( UInt_t crate, UInt_t slot,
                                UInt_t chan_lo, UInt_t chan_hi,
@@ -247,16 +247,17 @@ public:
 
   class MultiHitIterator : public Iterator, public IncrOp<MultiHitIterator> {
   public:
-    MultiHitIterator( THaDetMap& detmap, const THaEvData& evdata,
+    MultiHitIterator( const THaDetMap& detmap, const THaEvData& evdata,
                       bool do_init = true );
     MultiHitIterator() = delete;
-    explicit virtual operator bool() const {
+    explicit operator bool() const override
+    {
       return Iterator::operator bool() and fIHit >= 0 and
              std::cmp_less(fIHit, fHitInfo.nhit);
     }
     using IncrOp<MultiHitIterator>::operator++;
-    virtual void incr();
-    virtual void reset();
+    void incr() override;
+    void reset() override;
   protected:
     Int_t fIHit;         // Current raw hit number
   };
@@ -271,17 +272,17 @@ inline THaDetMap::Module* THaDetMap::GetModule( UInt_t i ) const {
   return i<fMap.size() ? uGetModule(i) : nullptr;
 }
 
-inline Bool_t THaDetMap::IsADC(Module* d) {
+inline Bool_t THaDetMap::IsADC( const Module* d ) {
   if( !d ) return false;
   return d->IsADC();
 }
 
-inline Bool_t THaDetMap::IsTDC(Module* d) {
+inline Bool_t THaDetMap::IsTDC( const Module* d ) {
   if( !d ) return false;
   return d->IsTDC();
 }
 
-inline Int_t THaDetMap::GetModel(Module* d) {
+inline Int_t THaDetMap::GetModel( const Module* d ) {
   if( !d ) return 0;
   return d->GetModel();
 }
