@@ -553,14 +553,8 @@ string THaVform::StripPrefix(const char* expr)
 
 // If the variable is like "L.s1.lt[I]" strip the [I]
 // from the end since it is implicit
-  constexpr string eye = "[I]";
-  string stemp = result;
-  auto pos1 = result.find(ToUpper(eye),0);
-  auto pos2 = result.find(ToLower(eye),0);
-  auto pos = string::npos;
-  if (pos1 != string::npos) pos = pos1;
-  if (pos2 != string::npos) pos = pos2;
-  if (pos  != string::npos) result = stemp.substr(0,pos);
+  auto pos = std::min(result.find("[I]"), result.find("[i]"));
+  if (pos != string::npos) result.erase(pos);
   return result;
 }
 
