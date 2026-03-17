@@ -608,8 +608,7 @@ void THaCrateMap::PostInit()
   for( auto it = fCrateDat.begin(); it != fCrateDat.end(); ) {
     auto& cr = it->second;
     if( cr.sltdat.empty() ) {
-      UInt_t crate = it->first;
-      assert(!fUsedCrates.contains(crate));
+      assert(!fUsedCrates.contains(it->first));
       it = fCrateDat.erase(it);
     } else {
       cr.SetBankInfo();
