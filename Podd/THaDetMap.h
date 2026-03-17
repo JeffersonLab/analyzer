@@ -101,52 +101,51 @@ public:
   THaDetMap( THaDetMap&& ) = default;
   THaDetMap& operator=( const THaDetMap& );
   THaDetMap& operator=( THaDetMap&& ) = default;
-  virtual ~THaDetMap() = default;
+  ~THaDetMap() = default;
 
   Iterator MakeIterator( const THaEvData& evdata );
   MultiHitIterator MakeMultiHitIterator( const THaEvData& evdata );
 
-  virtual Int_t     AddModule( UInt_t crate, UInt_t slot,
-                               UInt_t chan_lo, UInt_t chan_hi,
-                               UInt_t first = 0, Int_t model = 0,
-                               Int_t refindex = -1, Int_t refchan = -1,
-                               UInt_t plane = 0, UInt_t signal = 0 );
-          void      Clear()  { fMap.clear(); }
-  virtual Module*   Find( UInt_t crate, UInt_t slot, UInt_t chan );
-  virtual Int_t     Fill( const std::vector<Int_t>& values, UInt_t flags = 0 );
-          void      GetMinMaxChan( UInt_t& min, UInt_t& max,
-                                   ECountMode mode = kLogicalChan ) const;
-          Module*   GetModule( UInt_t i ) const;
-          UInt_t    GetNchan( UInt_t i ) const;
-          UInt_t    GetTotNumChan() const;
-          UInt_t    GetSize() const { return fMap.size(); }
+  Int_t   AddModule( UInt_t crate, UInt_t slot, UInt_t chan_lo, UInt_t chan_hi,
+                     UInt_t first = 0, Int_t model = 0,
+                     Int_t refindex = -1, Int_t refchan = -1,
+                     UInt_t plane = 0, UInt_t signal = 0 );
+  void    Clear()  { fMap.clear(); }
+  Module* Find( UInt_t crate, UInt_t slot, UInt_t chan );
+  Int_t   Fill( const std::vector<Int_t>& values, UInt_t flags = 0 );
+  void    GetMinMaxChan( UInt_t& min, UInt_t& max,
+                         ECountMode mode = kLogicalChan ) const;
+  Module* GetModule( UInt_t i ) const;
+  UInt_t  GetNchan( UInt_t i ) const;
+  UInt_t  GetTotNumChan() const;
+  UInt_t  GetSize() const { return fMap.size(); }
+  Int_t   GetModel( UInt_t i ) const;
+  Bool_t  IsADC( UInt_t i ) const;
+  Bool_t  IsTDC( UInt_t i ) const;
 
-          Int_t     GetModel( UInt_t i ) const;
-          Bool_t    IsADC( UInt_t i ) const;
-          Bool_t    IsTDC( UInt_t i ) const;
-  static  Int_t     GetModel( const Module* d );
-  static  Bool_t    IsADC( const Module* d );
-  static  Bool_t    IsTDC( const Module* d );
+  void    Print( Option_t* opt="" ) const;
+  void    Reset();
+  void    Sort();
 
-  virtual void      Print( Option_t* opt="" ) const;
-  virtual void      Reset();
-  virtual void      Sort();
+  void    SetStartAtZero( Bool_t value ) { fStartAtZero = value; }
 
-  void SetStartAtZero( Bool_t value ) { fStartAtZero = value; }
+  static  Int_t  GetModel( const Module* d );
+  static  Bool_t IsADC( const Module* d );
+  static  Bool_t IsTDC( const Module* d );
+  static  Int_t  InitCmap( Long64_t tloc = 0 );
+  static  Decoder::THaCrateMap* GetCrateMap();
 
-  static  Int_t     InitCmap( Long64_t tloc = 0 );
-  static Decoder::THaCrateMap* GetCrateMap();
-
-protected:
+private:
   using ModuleVec_t = std::vector<std::unique_ptr<Module>>;
-  ModuleVec_t fMap;     // Modules of this detector map
+  ModuleVec_t fMap;          // Modules of this detector map
+  Bool_t      fStartAtZero;  // Channels in this map start counting at 0
 
   Module* uGetModule( UInt_t i ) const { return fMap[i].get(); }
-  void CopyMap( const ModuleVec_t& map );
+  void    CopyMap( const ModuleVec_t& map );
 
-  // Channels in this map start counting at 0. Used by hit iterators.
-  Bool_t fStartAtZero;
+  ClassDefNV(THaDetMap,2) // List of frontend modules associated with a detector
 
+  //========================= Hit Iterators =====================================
 public:
   // CRTP mix-in to get the right operator signatures ...
   template<class Derived>
@@ -261,8 +260,6 @@ public:
   protected:
     Int_t fIHit;         // Current raw hit number
   };
-
-  ClassDef(THaDetMap,1)   //The standard detector map
 };
 
 using DigitizerHitInfo_t = THaDetMap::Iterator::HitInfo_t;
