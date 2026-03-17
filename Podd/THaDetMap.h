@@ -151,19 +151,21 @@ public:
   // CRTP mix-in to get the right operator signatures ...
   template<class Derived>
   struct IncrOp {
+  private:
+    IncrOp() = default;
+  public:
     Derived& operator++() {
       auto* obj = static_cast<Derived*>(this);
-      obj->incr();
+      obj->Derived::incr();
       return *obj;
     }
-    // For the rationale behind the const return type here, see
-    // https://releases.llvm.org/15.0.0/tools/clang/tools/extra/docs/clang-tidy/checks/cert/dcl21-cpp.html
-    const Derived operator++(int) {
+    Derived operator++(int) & {
       auto* obj = static_cast<Derived*>(this);
       Derived clone(*obj);
       ++(*obj);
       return clone;
     }
+    friend Derived;
   };
   //___________________________________________________________________________
   // Utility classes for iterating over active channels in current event data
