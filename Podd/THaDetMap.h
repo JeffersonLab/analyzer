@@ -44,7 +44,6 @@ public:
     UInt_t   hi;
     UInt_t   first;      // logical number of first channel
     Int_t    model;      // model number of module (for ADC/TDC identification).
-    Decoder::EModuleType type;
     UInt_t   plane;      // Detector plane
     UInt_t   signal;     // (eg. PosADC, NegADC, PosTDC, NegTDC)
     Int_t    refchan;    // for pipeline TDCs: reference channel number
@@ -52,6 +51,7 @@ public:
     Double_t resolution; // Resolution (s/chan) for TDCs
     Bool_t   reverse;    // Indicates that "first" corresponds to hi, not lo
     Bool_t   cmnstart;   // TDC in common start mode (default false)
+    Decoder::EModuleType type;
 
     bool   operator==( const Module& rhs ) const
     { return crate == rhs.crate && slot == rhs.slot; }
@@ -124,9 +124,9 @@ public:
           Int_t     GetModel( UInt_t i ) const;
           Bool_t    IsADC( UInt_t i ) const;
           Bool_t    IsTDC( UInt_t i ) const;
-  static  Int_t     GetModel( Module* d );
-  static  Bool_t    IsADC( Module* d );
-  static  Bool_t    IsTDC( Module* d );
+  static  Int_t     GetModel( const Module* d );
+  static  Bool_t    IsADC( const Module* d );
+  static  Bool_t    IsTDC( const Module* d );
 
   virtual void      Print( Option_t* opt="" ) const;
   virtual void      Reset();
@@ -231,13 +231,13 @@ public:
   protected:
     const THaDetMap* fDetMap;
     const THaEvData* fEvData;
-    const THaDetMap::Module* fMod;
+    const Module*    fMod;
+    HitInfo_t        fHitInfo;   // Current state of this iterator
     UInt_t fNMod;         // Number of modules in detector map (cached)
     UInt_t fNTotChan;     // Total number of detector map channels (cached)
     UInt_t fNChan;        // Number of channels active in current module
     Int_t  fIMod;         // Current module index in detector map
     Int_t  fIChan;        // Current channel
-    HitInfo_t fHitInfo;   // Current state of this iterator
 
     // Formatter for exception messages
     std::string msg( const char* txt ) const;
