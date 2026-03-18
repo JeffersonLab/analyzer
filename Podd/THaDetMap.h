@@ -47,6 +47,7 @@ public:
     UInt_t   signal;     // (eg. PosADC, NegADC, PosTDC, NegTDC)
     Int_t    refchan;    // for pipeline TDCs: reference channel number
     Int_t    refindex;   // for pipeline TDCs: index into reference channel map
+    char     tag[5];     // Tag for grouping modules (4 chars max)
     Bool_t   reverse;    // Indicates that "first" corresponds to hi, not lo
     Bool_t   cmnstart;   // TDC in common start mode (default false)
     Decoder::EModuleType type;
@@ -98,7 +99,7 @@ public:
     kInvalidNumber, kFormatError, kUnknownTag, kUnknownModel, kIndexOutOfBounds
   };
 
-  THaDetMap() : fStartAtZero(false) {}
+  THaDetMap() : fStartAtZero(false), fHasTags(false) {}
   THaDetMap( const THaDetMap& );
   THaDetMap( THaDetMap&& ) = default;
   THaDetMap& operator=( const THaDetMap& );
@@ -111,8 +112,9 @@ public:
   Int_t   AddModule( UInt_t crate, UInt_t slot, UInt_t chan_lo, UInt_t chan_hi,
                      UInt_t first = 0, Int_t model = 0,
                      Int_t refindex = -1, Int_t refchan = -1,
-                     UInt_t plane = 0, UInt_t signal = 0 );
-  void    Clear()  { fMap.clear(); }
+                     UInt_t plane = 0, UInt_t signal = 0,
+                     const std::string& tag = {} );
+  void    Clear();
   Module* Find( UInt_t crate, UInt_t slot, UInt_t chan );
   Int_t   Fill( const std::vector<Int_t>& values, UInt_t flags = 0 );
   Int_t   Fill( std::string_view dbtxt, UInt_t flags = 0 );
@@ -127,7 +129,6 @@ public:
   Bool_t  IsTDC( UInt_t i ) const;
 
   void    Print( Option_t* opt="" ) const;
-  void    Reset();
   void    Sort();
 
   void    SetStartAtZero( Bool_t value ) { fStartAtZero = value; }
@@ -142,6 +143,7 @@ private:
   using ModuleVec_t = std::vector<std::unique_ptr<Module>>;
   ModuleVec_t fMap;          // Modules of this detector map
   Bool_t      fStartAtZero;  // Channels in this map start counting at 0
+  Bool_t      fHasTags;      // At least one module has a tag string
 
   Module* uGetModule( UInt_t i ) const { return fMap[i].get(); }
   void    CopyMap( const ModuleVec_t& map );

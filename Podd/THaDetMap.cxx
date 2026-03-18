@@ -116,7 +116,7 @@ void THaDetMap::CopyMap( const ModuleVec_t& map )
 
 //_____________________________________________________________________________
 THaDetMap::THaDetMap( const THaDetMap& rhs )
-  : fStartAtZero(rhs.fStartAtZero)
+  : fStartAtZero(rhs.fStartAtZero), fHasTags(rhs.fHasTags)
 {
   // Copy constructor
 
@@ -132,6 +132,7 @@ THaDetMap& THaDetMap::operator=( const THaDetMap& rhs )
     fMap.clear();
     CopyMap(rhs.fMap);
     fStartAtZero = rhs.fStartAtZero;
+    fHasTags = rhs.fHasTags;
   }
   return *this;
 }
@@ -140,7 +141,8 @@ THaDetMap& THaDetMap::operator=( const THaDetMap& rhs )
 Int_t THaDetMap::AddModule( UInt_t crate, UInt_t slot,
                             UInt_t chan_lo, UInt_t chan_hi,
                             UInt_t first, Int_t model, Int_t refindex,
-                            Int_t refchan, UInt_t plane, UInt_t signal )
+                            Int_t refchan, UInt_t plane, UInt_t signal,
+                            const string& tag )
 {
   // Add a module to the map.
 
@@ -174,6 +176,12 @@ Int_t THaDetMap::AddModule( UInt_t crate, UInt_t slot,
   m.refchan  = refchan;
   m.plane = plane;
   m.signal = signal;
+
+  // Assign tag. Only up to 4 characters to keep the structure small.
+  auto sz = std::min(tag.size(), sizeof(m.tag) - 1);
+  std::copy_n(tag.begin(), sz, m.tag);
+  m.tag[sz] = '\0'; // ensure m.tag[] is a C-string
+
   m.reverse = reverse;
   m.cmnstart = false;
 
@@ -365,10 +373,11 @@ THaDetMap::FillImpl( string_view dbtxt, UInt_t flags )
 
     // Parse optional "tag". If present, it must start with a letter
     std::size_t idx = 0;
-    string tag; // TODO add this to module
+    string tag;
     auto c = tok[0].at(0);
     if( isalpha(c) ) {
       tag = tok[idx++];
+      fHasTags = true;
     }
 
     // Must have at least 4 numbers after the optional tag
@@ -438,7 +447,7 @@ THaDetMap::FillImpl( string_view dbtxt, UInt_t flags )
       model = fgCrateMap->getModel(crate, slot);
 
     ret = AddModule(crate, slot, ch_lo, ch_hi,
-                    first, model, ref, rchan, plane, signal);
+                    first, model, ref, rchan, plane, signal, tag);
     if( ret <= 0 ) {
       return {.err = kUnknownModel, .ret = ret, .field = to_string(model)};
     }
@@ -565,12 +574,14 @@ void THaDetMap::Print( Option_t* ) const
 }
 
 //_____________________________________________________________________________
-void THaDetMap::Reset()
+void THaDetMap::Clear()
 {
-  // Clear() the map and reset the array size to zero, freeing memory.
+  // Clear the map and reset the array size to zero.
 
-  Clear();
+  fMap.clear();
   fMap.shrink_to_fit(); // FWIW
+  fStartAtZero = false;
+  fHasTags = false;
 }
 
 //_____________________________________________________________________________
