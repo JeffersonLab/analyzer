@@ -43,10 +43,10 @@ public:
     UInt_t   hi;
     UInt_t   first;      // logical number of first channel
     Int_t    model;      // model number of module (for ADC/TDC identification).
-    UInt_t   plane;      // Detector plane
-    UInt_t   signal;     // (eg. PosADC, NegADC, PosTDC, NegTDC)
     Int_t    refchan;    // for pipeline TDCs: reference channel number
     Int_t    refindex;   // for pipeline TDCs: index into reference channel map
+    UInt_t   plane;      // Detector plane
+    UInt_t   signal;     // (eg. PosADC, NegADC, PosTDC, NegTDC)
     char     tag[5];     // Tag for grouping modules (4 chars max)
     Bool_t   reverse;    // Indicates that "first" corresponds to hi, not lo
     Bool_t   cmnstart;   // TDC in common start mode (default false)
