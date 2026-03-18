@@ -370,11 +370,12 @@ THaDetMap::FillImpl( string_view dbtxt, UInt_t flags )
   for( const auto& line: lines ) {
     vector<string_view> tok;
     Tokenize(line," \t\n\r\v\f",tok);
+    assert(!tok.empty());  // else bug in LoadDBvalue or Tokenize
 
     // Parse optional "tag". If present, it must start with a letter
     std::size_t idx = 0;
     string tag;
-    auto c = tok[0].at(0);
+    auto c = tok.at(0).at(0);
     if( isalpha(c) ) {
       tag = tok[idx++];
       fHasTags = true;
@@ -387,7 +388,7 @@ THaDetMap::FillImpl( string_view dbtxt, UInt_t flags )
     // Parse crate, slot, chan_lo, chan_hi
     Int_t tup[4];
     for( std::size_t i = 0; i < std::size(tup); ++i, ++idx ) {
-      if( ParseInt(tok[idx], tup[i]) )
+      if( ParseInt(tok.at(idx), tup[i]) )
         return {.err = kConversionError, .ret = ret, .field = string(tok[idx])};
       // For compatibility with old maps, crate < 0 (actually any of
       // crate/slot/lo/hi < 0) means end of data
@@ -409,7 +410,7 @@ THaDetMap::FillImpl( string_view dbtxt, UInt_t flags )
     // "I" (ref index), "P" (plane), "S" (signal). Defaults follow:
     Int_t plane = 0, signal = 0, model = 0, rchan = -1, ref = -1;
     for( ; idx < tok.size(); ++idx ) {
-      const auto& t = tok[idx];
+      const auto& t = tok.at(idx);
       c = t.at(0);
       if( t.size() < 3 || !isalpha(c) || t.at(1) != ':' )
         return {.err = kFormatError, .ret = ret, .field = string(t)};
