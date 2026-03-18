@@ -74,15 +74,9 @@ void THaDetMap::Module::SetModel( Int_t mod )
   if( auto it = modtypes.find(mod); it != modtypes.end() ) {
     auto module = *it;
     type = module.fType;
-    //TODO other parameters, e.g. resolution
+    //TODO other parameters?
   } else
     type = EModuleType::kUndefined;
-}
-
-//_____________________________________________________________________________
-void THaDetMap::Module::SetResolution( Double_t res )
-{
-  resolution = res;
 }
 
 //_____________________________________________________________________________
@@ -180,7 +174,6 @@ Int_t THaDetMap::AddModule( UInt_t crate, UInt_t slot,
   m.refchan  = refchan;
   m.plane = plane;
   m.signal = signal;
-  m.SetResolution(0.0);
   m.reverse = reverse;
   m.cmnstart = false;
 
@@ -565,7 +558,6 @@ void THaDetMap::Print( Option_t* ) const
       cout << setw(4) << " TDC";
     cout << setw(5) << m->refchan
          << setw(5) << m->refindex
-         << setw(8) << m->resolution
          << setw(5) << m->plane
          << setw(5) << m->signal
          << endl;

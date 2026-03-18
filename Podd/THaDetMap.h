@@ -36,10 +36,7 @@ public:
   class MultiHitIterator;
 
   // Configuration data for a frontend module
-  class Module {
-  public:
-    Module() = default;
-
+  struct Module {
     UInt_t   crate;
     UInt_t   slot;
     UInt_t   lo;
@@ -50,7 +47,6 @@ public:
     UInt_t   signal;     // (eg. PosADC, NegADC, PosTDC, NegTDC)
     Int_t    refchan;    // for pipeline TDCs: reference channel number
     Int_t    refindex;   // for pipeline TDCs: index into reference channel map
-    Double_t resolution; // Resolution (s/chan) for TDCs
     Bool_t   reverse;    // Indicates that "first" corresponds to hi, not lo
     Bool_t   cmnstart;   // TDC in common start mode (default false)
     Decoder::EModuleType type;
@@ -70,7 +66,6 @@ public:
         type == Decoder::EModuleType::kMultiFunctionADC; }
     Bool_t IsCommonStart() const { return cmnstart; }
     void   SetModel( Int_t model );
-    void   SetResolution( Double_t resolution );
     // For legacy modules
     void   SetTDCMode( Bool_t cstart );
     void   MakeTDC();
