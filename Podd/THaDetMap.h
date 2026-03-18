@@ -52,10 +52,6 @@ public:
     Bool_t   cmnstart;   // TDC in common start mode (default false)
     Decoder::EModuleType type;
 
-    bool   operator==( const Module& rhs ) const
-    { return crate == rhs.crate && slot == rhs.slot; }
-    bool   operator!=( const Module& rhs ) const
-    { return !(*this==rhs); }
     UInt_t GetNchan() const { return hi-lo+1; }
     Int_t  GetModel() const { return model; }
     Bool_t IsTDC()    const { return
