@@ -9,21 +9,30 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaDetMap.h"
-#include "THaEvData.h"
-#include "THaAnalyzer.h"
-#include "THaCrateMap.h"
-#include "Decoder.h"
-#include "Helper.h"
-#include "Module.h"
-#include <iostream>
-#include <iomanip>
-#include <stdexcept>
-#include <sstream>
-#include <vector>
-#include <algorithm>
-#include <memory>
-#include <cassert>
-#include <utility>
+#include "Decoder.h"      // for EModuleType
+#include "Helper.h"       // for ToInt, ALL
+#include "Module.h"       // for Module
+#include "TError.h"       // for Error
+#include "THaAnalyzer.h"  // for THaAnalyzer
+#include "THaCrateMap.h"  // for THaCrateMap
+#include "THaEvData.h"    // for THaEvData
+#include "TString.h"      // for TString
+#include "Textvars.h"     // for Tokenize
+#include <algorithm>      // for min, copy_n, max, find_if, sort
+#include <cassert>        // for assert
+#include <cctype>         // for isalpha, isdigit
+#include <charconv>       // for from_chars
+#include <iomanip>        // for setw
+#include <iostream>       // for cout, endl, dec, right
+#include <iterator>       // for size
+#include <memory>         // for unique_ptr, make_unique
+#include <set>            // for operator!=
+#include <sstream>        // for ostringstream
+#include <stdexcept>      // for logic_error, out_of_range, invalid_argument
+#include <system_error>   // for errc
+#include <type_traits>    // for is_integral_v
+#include <utility>        // for cmp_greater_equal, operator<=>, move, operator==
+#include <vector>         // for vector
 
 using namespace std;
 using namespace Decoder;
@@ -329,6 +338,178 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
   }
 
   return ret;
+}
+
+//_____________________________________________________________________________
+namespace {
+template<typename T> requires std::is_integral_v<T>
+Int_t ParseInt( const string_view str, T& val )
+{
+  constexpr auto noerr = std::errc{}; // NOLINT(*-invalid-enum-default-initialization)
+  auto [ptr, ec] = std::from_chars(ALL(str), val);
+  return ptr != str.end() || ec != noerr;
+}
+}
+
+//_____________________________________________________________________________
+THaDetMap::FillResult
+THaDetMap::FillImpl( string_view dbtxt, UInt_t flags )
+{
+  // Parser for v2 detector map definitions
+
+  Int_t ret = 0;
+  // For historical reasons, logical channel numbers start at 1
+  UInt_t first = 0, prev_first = 1, prev_nchan = 0;
+
+  if( (flags & kDoNotClear) == 0 )
+    Clear();
+
+  vector<string_view> lines;
+  Tokenize(dbtxt,",",lines);
+  for( const auto& line: lines ) {
+    vector<string_view> tok;
+    Tokenize(line," \t\n\r\v\f",tok);
+
+    // Parse optional "tag". If present, it must start with a letter
+    std::size_t idx = 0;
+    string tag; // TODO add this to module
+    auto c = tok[0].at(0);
+    if( isalpha(c) ) {
+      tag = tok[idx++];
+    }
+
+    // Must have at least 4 numbers after the optional tag
+    if( tok.size() < 4U + !tag.empty() )
+      return {.err = kNotEnoughData, .ret = ret, .field = string(dbtxt)};
+
+    // Parse crate, slot, chan_lo, chan_hi
+    Int_t tup[4];
+    for( std::size_t i = 0; i < std::size(tup); ++i, ++idx ) {
+      if( ParseInt(tok[idx], tup[i]) )
+        return {.err = kConversionError, .ret = ret, .field = string(tok[idx])};
+      // For compatibility with old maps, crate < 0 (actually any of
+      // crate/slot/lo/hi < 0) means end of data
+      if( tup[i] < 0 )
+        return {.err = kOK, .ret = ret};
+    }
+
+    // Logical channel: optional 5th number
+    if( idx < tok.size() && isdigit(tok[idx].at(0)) ) {
+      if( ParseInt(tok[idx], first) )
+        return {.err = kConversionError, .ret = ret, .field = string(tok[idx])};
+      ++idx;
+      if( first == 0 )
+        fStartAtZero = true;
+    } else
+      first = prev_first + prev_nchan;
+
+    // Optional tagged parameters: "M" (model), "R" (ref channel),
+    // "I" (ref index), "P" (plane), "S" (signal). Defaults follow:
+    Int_t plane = 0, signal = 0, model = 0, rchan = -1, ref = -1;
+    for( ; idx < tok.size(); ++idx ) {
+      const auto& t = tok[idx];
+      c = t.at(0);
+      if( t.size() < 3 || !isalpha(c) || t.at(1) != ':' )
+        return {.err = kFormatError, .ret = ret, .field = string(t)};
+      Int_t val;
+      if( ParseInt(t.substr(2), val) )
+        return {.err = kConversionError, .ret = ret, .field = string(t)};
+      switch( c ) {
+        case 'M':
+          model = val;
+          break;
+        case 'R':
+          rchan = val;
+          break;
+        case 'I':
+          ref = val;
+          break;
+        case 'P':
+          if( val < 0 )
+            return {.err = kInvalidNumber, .ret = ret, .field = string(t)};
+          plane = val;
+          break;
+        case 'S':
+          if( val < 0 )
+            return {.err = kInvalidNumber, .ret = ret, .field = string(t)};
+          signal = val;
+          break;
+        default:
+          // unsupported token
+          return {.err = kUnknownTag, .ret = ret, .field = string(t)};
+      }
+    }
+    auto [crate , slot, ch_lo, ch_hi] = tup; // for readability
+    //TODO handle case when the model number here disagrees with the crate map
+    if( model == 0 && fgCrateMap )
+      model = fgCrateMap->getModel(crate, slot);
+
+    ret = AddModule(crate, slot, ch_lo, ch_hi,
+                    first, model, ref, rchan, plane, signal);
+    if( ret <= 0 ) {
+      return {.err = kUnknownModel, .ret = ret, .field = to_string(model)};
+    }
+    prev_first = first;
+    prev_nchan = GetNchan(ret - 1);
+  }
+
+  return {.err = kOK, .ret = ret };
+}
+
+//_____________________________________________________________________________
+Int_t THaDetMap::Fill( string_view dbtxt, UInt_t flags )
+{
+  FillResult st{};
+  Int_t prev_size = (flags & kDoNotClear) ? ToInt(GetSize()) : 0;
+  try {
+    st = FillImpl(dbtxt, flags);
+  }
+  catch( const std::out_of_range& e ) {
+    st.err = kIndexOutOfBounds; // should never happen
+    st.field = e.what();
+  }
+  if( st.err != kOK ) {
+    string errtxt; errtxt.reserve(64);
+    switch( st.err ) {
+      case kNotEnoughData:
+        errtxt = "not enough values";
+        break;
+      case kConversionError:
+        errtxt = "conversion error";
+        break;
+      case kInvalidNumber:
+        errtxt = "number must be positive";
+        break;
+      case kFormatError:
+        errtxt = "format error";
+        break;
+      case kUnknownModel:
+        errtxt = "unknown model";
+        break;
+      case kUnknownTag:
+        errtxt = "unknown tag";
+        break;
+      case kIndexOutOfBounds:
+        errtxt = "index out of bounds";
+        break;
+      default:
+        errtxt = "unknown error code "; // not reached
+        errtxt += to_string(st.err);
+        break;
+    }
+    errtxt += ": \"";
+    errtxt += st.field;
+    errtxt += "\"";
+    Error("THaDetMap::Fill<string>", "Fill failed: %s", errtxt.c_str());
+    if( st.ret > prev_size ) {
+      // Put the map back in the previous state (usually empty)
+      Int_t n_add = st.ret - prev_size;
+      auto to_erase = std::min(n_add, ToInt(fMap.size()));
+      fMap.erase(fMap.end() - to_erase, fMap.end());
+    }
+    st.ret = -st.err;
+  }
+  return st.ret;  // Current map size
 }
 
 //_____________________________________________________________________________

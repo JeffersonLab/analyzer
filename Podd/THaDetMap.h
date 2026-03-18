@@ -19,13 +19,15 @@
 // "resolution", as well as the "model map" in AddModule. We should get it from
 // there -  to ensure consistency and have one less maintenance headache.
 
-#include "THaEvData.h"
-#include "Decoder.h"
-#include "Helper.h"
-#include <vector>
-#include <string>
-#include <memory>
-#include <utility>
+#include "Decoder.h"    // for EModuleType, Rtypes
+#include "Helper.h"     // for ToInt
+#include <memory>       // for unique_ptr
+#include <string>       // for string
+#include <string_view>  // for string_view
+#include <utility>      // for cmp_less
+#include <vector>       // for vector
+
+class THaEvData;
 
 class THaDetMap {
 
@@ -84,8 +86,8 @@ public:
     kLogicalChan         = 0,
     kRefIndex            = 1
   };
-  // Flags for Fill()
-  enum EFillFlags {
+  // Flags for Fill(). Fill(string_view) ignores all except kDoNotClear
+  enum EFillFlags { // NOLINT(*-enum-size)
     kDoNotClear          = BIT(0),    // Don't clear the map first
     kSkipLogicalChannel  = BIT(9),    // Parse but ignore the logical channel number
     kFillLogicalChannel  = BIT(10),   // Parse the logical channel number
@@ -94,6 +96,11 @@ public:
     kFillRefChan         = BIT(13),   // Parse the reference channel
     kFillPlane           = BIT(14),   // Parse the detector plane (for Hall C)
     kFillSignal          = BIT(15)    // Parse the signal type (for Hall C)
+  };
+
+  // Return codes from Fill() (returns negative EFillStatus values if error)
+  enum EFillStatus : Byte_t { kOK, kNotEnoughData, kConversionError,
+    kInvalidNumber, kFormatError, kUnknownTag, kUnknownModel, kIndexOutOfBounds
   };
 
   THaDetMap() : fStartAtZero(false) {}
@@ -113,6 +120,7 @@ public:
   void    Clear()  { fMap.clear(); }
   Module* Find( UInt_t crate, UInt_t slot, UInt_t chan );
   Int_t   Fill( const std::vector<Int_t>& values, UInt_t flags = 0 );
+  Int_t   Fill( std::string_view dbtxt, UInt_t flags = 0 );
   void    GetMinMaxChan( UInt_t& min, UInt_t& max,
                          ECountMode mode = kLogicalChan ) const;
   Module* GetModule( UInt_t i ) const;
@@ -142,6 +150,13 @@ private:
 
   Module* uGetModule( UInt_t i ) const { return fMap[i].get(); }
   void    CopyMap( const ModuleVec_t& map );
+
+  struct FillResult {
+    EFillStatus err;
+    Int_t       ret{0};
+    std::string field;
+  };
+  FillResult FillImpl( std::string_view dbtxt, UInt_t flags );
 
   ClassDefNV(THaDetMap,2) // List of frontend modules associated with a detector
 
