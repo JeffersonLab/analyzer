@@ -105,6 +105,26 @@ void Tokenize( string_view s, string_view delim, vector<string>& tokens )
 }
 
 //_____________________________________________________________________________
+void Tokenize( string_view s, string_view delim, vector<string_view>& tokens )
+{
+  // Tokenize string 's' on delimiter(s) in 'delim'. Put results in 'tokens'.
+
+  tokens.clear();
+  if( s.empty() ) {
+    return;
+  }
+  auto start = s.find_first_not_of(delim);
+  auto pos   = s.find_first_of(delim, start);
+
+  while( start != string::npos ) {
+    const auto *endp = pos != string::npos ? s.begin() + pos : s.end();
+    tokens.emplace_back(s.begin() + start, endp);
+    start = s.find_first_not_of(delim, pos);
+    pos = s.find_first_of(delim, start);
+  }
+}
+
+//_____________________________________________________________________________
 vector<string> vsplit( const string& s )
 {
   // Utility function to split a string into whitespace-separated strings
