@@ -553,24 +553,47 @@ void THaDetMap::Print( Option_t* ) const
 {
   // Print the contents of the map
 
-  cout << "Size: " << GetSize() << endl;
+  cout << "THaDetMap: size = " << GetSize() << endl;
+  if( !fMap.empty() ) {
+    cout << " Crate  Slot Start   End  Logi  Model  Type  Flg RefCh RefIx "
+      "Plane  Sgnl";
+    if( fHasTags )
+      cout << "   Tag";
+    cout << endl;
+  }
   for( const auto& m : fMap ) {
-    cout << " "
-         << setw(5) << m->crate
-         << setw(5) << m->slot
-         << setw(5) << m->lo
-         << setw(5) << m->hi
-         << setw(5) << m->first
-         << setw(5) << m->model;
-    if( m->IsADC() )
-      cout << setw(4) << " ADC";
-    if( m->IsTDC() )
-      cout << setw(4) << " TDC";
-    cout << setw(5) << m->refchan
-         << setw(5) << m->refindex
-         << setw(5) << m->plane
-         << setw(5) << m->signal
-         << endl;
+    cout << right << dec << " "
+         << setw(5) << m->crate    << " "
+         << setw(5) << m->slot     << " "
+         << setw(5) << m->lo       << " "
+         << setw(5) << m->hi       << " "
+         << setw(5) << m->first    << " "
+         << setw(6) << m->model    << " ";
+    if( m->IsADC() ) {
+      if( m->type == EModuleType::kMultiFunctionADC )
+        cout << setw(6) << "SMPL ";
+      else
+        cout << setw(6) << " ADC ";
+    } else if( m->IsTDC() ) {
+      if( m->type == EModuleType::kMultiFunctionTDC )
+        cout << setw(6) << "PTDC ";
+      else
+        cout << setw(6) << " TDC ";
+    } else if( m->type == EModuleType::kScaler )
+      cout   << setw(6) << "SCLR ";
+    else
+      cout   << setw(6) << " ??? ";
+    string flags;
+    if( m->reverse  )   flags += "R";
+    if( m->cmnstart )   flags += "C";
+    cout << setw(4) << flags       << " "
+         << setw(5) << m->refchan  << " "
+         << setw(5) << m->refindex << " "
+         << setw(5) << m->plane    << " "
+         << setw(5) << m->signal;
+    if( m->tag[0] != '\0' )
+      cout << " " << setw(5) << m->tag;
+    cout << endl;
   }
 }
 
