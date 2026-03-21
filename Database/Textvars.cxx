@@ -153,16 +153,14 @@ Int_t Textvars::Add( const string& name, const string& value )
   if( tokens.empty() )
     tokens.emplace_back("");
 
-  auto it = fVars.find(name);
-
-  if( it != fVars.end() ) {  // already exists?
+  if( auto it = fVars.find(name); it != fVars.end() ) {  // already exists?
     it->second.swap(tokens);
   } else {                   // if not, add a new one
 #ifndef NDEBUG
-    pair<Textvars_t::iterator,bool> ret =
+    auto [pos, success] =
 #endif
       fVars.insert( make_pair(name,tokens) );
-    assert( ret.second );
+    assert( success );
   }
   return 1;
 }
@@ -178,16 +176,14 @@ Int_t Textvars::AddVerbatim( const string& name, const string& value )
 
   StrVec_t values( 1, value );
 
-  auto it = fVars.find(name);
-
-  if( it != fVars.end() ) {  // already exists?
+  if( auto it = fVars.find(name); it != fVars.end() ) {  // already exists?
     it->second.swap(values);
   } else {                   // if not, add a new one
 #ifndef NDEBUG
-    pair<Textvars_t::iterator,bool> ret =
+    auto [pos, success] =
 #endif
       fVars.insert( make_pair(name,values) );
-    assert( ret.second );
+    assert( success );
   }
   return 1;
 }
@@ -236,8 +232,8 @@ Textvars::StrVec_t Textvars::GetNames() const
 
   StrVec_t names;
   names.reserve(fVars.size());
-  for( const auto& var: fVars )
-    names.push_back(var.first);
+  for( const auto& name: fVars | views::keys )
+    names.push_back(name);
 
   return names;
 }
@@ -262,15 +258,14 @@ void Textvars::Print( Option_t* /*opt*/ ) const
 {
   // Print all text variables
 
-  size_t maxw = 0;
-  for( const auto& var : fVars ) {
-    size_t len = var.first.length();
-    if( len > maxw )
-      maxw = len;
+  int maxw = 0;
+  for( const auto& name: fVars | views::keys ) {
+    int len = ToInt(name.length());
+    maxw = std::max(len, maxw);
   }
-  for( const auto& var : fVars ) {
-    cout << "Textvar:  " << setw(int(maxw)) << var.first << " = "
-         << ValStr(var.second) << endl;
+  for( const auto& [name, vals] : fVars ) {
+    cout << "Textvar:  " << setw(maxw) << name << " = "
+         << ValStr(vals) << endl;
   }
 }
 
@@ -292,8 +287,7 @@ Int_t Textvars::Substitute( string& line ) const
   // If any multi-valued variables are encountered, treat it as an error
 
   StrVec_t lines( 1, line );
-  Int_t ret = Substitute( lines, false );
-  if( ret )
+  if( Int_t ret = Substitute( lines, false ) )
     return ret;
   assert( lines.size() == 1 );
   line = std::move(lines[0]);
