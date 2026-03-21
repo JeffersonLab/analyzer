@@ -530,7 +530,7 @@ UInt_t THaDetMap::GetTotNumChan() const
 
 
 //_____________________________________________________________________________
-void THaDetMap::GetMinMaxChan( UInt_t& min, UInt_t& max, ECountMode mode ) const
+void THaDetMap::GetMinMaxChan( Int_t& min, Int_t& max, ECountMode mode ) const
 {
   // Put the minimum and maximum logical or reference channel numbers
   // into min and max. If refidx is true, check refindex, else check logical
@@ -538,13 +538,21 @@ void THaDetMap::GetMinMaxChan( UInt_t& min, UInt_t& max, ECountMode mode ) const
 
   min = kMaxInt;
   max = kMinInt;
+  Int_t minposref = kMaxInt;
   bool do_ref = (mode == kRefIndex);
   for( const auto& m : fMap ) {
-    UInt_t m_min = do_ref ? m->refindex : m->first;
-    UInt_t m_max = do_ref ? m->refindex : m->first + m->hi - m->lo;
+    Int_t m_min = do_ref ? m->refindex : ToInt(m->first);
+    Int_t m_max = do_ref ? m->refindex : ToInt(m->first + m->hi - m->lo);
+    Int_t m_minpos = m->refindex >= 0 ? m->refindex : kMaxInt;
     min = std::min(m_min, min);
     max = std::max(m_max, max);
+    minposref = std::min(m_minpos, minposref);
   }
+  // If at least one refindex is valid (not negative), report the range
+  // of valid refindexes. Otherwise, both min and max < 0, and there are no
+  // valid refindexes.
+  if( do_ref && max >= 0 )
+    min = minposref;
 }
 
 

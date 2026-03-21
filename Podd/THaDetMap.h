@@ -114,7 +114,7 @@ public:
   Module* Find( UInt_t crate, UInt_t slot, UInt_t chan );
   Int_t   Fill( const std::vector<Int_t>& values, UInt_t flags = 0 );
   Int_t   Fill( std::string_view dbtxt, UInt_t flags = 0 );
-  void    GetMinMaxChan( UInt_t& min, UInt_t& max,
+  void    GetMinMaxChan( Int_t& min, Int_t& max,
                          ECountMode mode = kLogicalChan ) const;
   Module* GetModule( UInt_t i ) const;
   UInt_t  GetNchan( UInt_t i ) const;
