@@ -345,6 +345,9 @@ Int_t Textvars::Substitute( StrVec_t& lines, bool do_multi ) const
               line.substr(pos, ext).c_str());
         good = false;
       }
+    } else if( !newlines.empty() ) {
+      // If replacements are ongoing, keep adding unmodified lines to the output
+      newlines.push_back(line);
     }
   }
 
