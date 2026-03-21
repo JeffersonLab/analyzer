@@ -20,7 +20,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
   #--------------------------------------------------------------------------
   # Find ROOT (using our custom FindROOT.cmake)
-  set(minimum_root_version 6.04)
+  set(minimum_root_version 6.30)
   find_package(ROOT ${minimum_root_version} REQUIRED)
   # Register this dependency - it's in our public interface
   config_add_dependency(ROOT ${minimum_root_version})
