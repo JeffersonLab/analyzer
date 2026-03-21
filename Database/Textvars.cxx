@@ -19,13 +19,17 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "Textvars.h"
-#include "TError.h"  // for Error
-#include <cassert>   // for assert
-#include <cstring>   // for strchr, size_t
-#include <iomanip>   // for operator<<, setw
-#include <iostream>  // for basic_ostream, operator<<, cout, endl
-#include <utility>   // for pair, make_pair, move
-#include <string_view>
+#include "Helper.h"     // for ToInt
+#include "TError.h"     // for Error
+#include <algorithm>    // for max, move
+#include <cassert>      // for assert
+#include <cstring>      // for strchr, size_t
+#include <iomanip>      // for setw
+#include <iostream>     // for ostream, operator<<, cout, endl
+#include <iterator>     // for make_move_iterator
+#include <ranges>       // for operator|, elements_view, keys, views
+#include <string_view>  // for string_view
+#include <utility>      // for move, make_pair, pair
 
 using namespace std;
 
@@ -309,56 +313,66 @@ Int_t Textvars::Substitute( StrVec_t& lines, bool do_multi ) const
 
   static const char* const here = "Textvars::Substitute";
 
-  bool good = true;
-
   StrVec_t newlines;
-  for( auto li = lines.begin(); li != lines.end() && good; ++li ) {
-    const string& line = *li;
-    ssiz_t ext = 0, pos = Index( line, ext/*, 0 */);
-    if( pos != string::npos ) {
+  for( auto li = lines.begin(); li != lines.end(); ++li ) {
+    string& line = *li;
+    ssiz_t ext = 0;
+    if( ssiz_t pos = Index(line, ext); pos != string::npos ) {
+      // We have a ${key}
       assert( ext >= 3 );
-      Textvars_t::const_iterator it;
-      if( ext > 3 &&
-	  (it = fVars.find(line.substr(pos+2,ext-3))) != fVars.end() ) {
-	const StrVec_t& repl = it->second;
-	assert( !repl.empty() );
+      if( Textvars_t::const_iterator it;
+          ext > 3 &&
+          (it = fVars.find(line.substr(pos+2,ext-3))) != fVars.end() ) {
+        // "key" found
+        const StrVec_t& repl = it->second;
+	assert( !repl.empty() );  // else bug in Add()
 	if( !do_multi && repl.size() > 1 ) {
           Error(here, "multivalue variable %s = %s not supported in this "
                 "context: \"%s\"", line.substr(pos, ext).c_str(),
                 ValStr(repl).c_str(), line.c_str());
-	  good = false;
+	  return 1;
 	}
-	if( good ) { // stop replacing once an error has been detected
-	  // Found a valid replacement, so we actually need to do something
-	  if( newlines.empty() ) {
-	    // Guess that every line gets replaced similarly
-	    newlines.reserve( lines.size()*repl.size() );
-	    newlines.assign( lines.begin(), li );
-	  }
-          for( const auto& jt : repl ) {
-            newlines.push_back(line);
-            newlines.back().replace(pos, ext, jt);
-          }
+        // Found a valid replacement, so start building a new output
+        if( newlines.empty() ) {
+          // To estimate the size, guess that every line gets replaced similarly
+          newlines.reserve(lines.size() * repl.size());
+          // Move any unmodified lines before the current one to the output
+          newlines.insert( newlines.end(),
+            make_move_iterator(lines.begin()),make_move_iterator(li));
+        }
+        // Make the replacement(s) in the current line
+        for( const auto& newstr : repl ) {
+          string newline{line};
+          newline.replace(pos, ext, newstr);
+          newlines.push_back(std::move(newline));
         }
       } else {
-        Error(here, "unknown text variable %s",
-              line.substr(pos, ext).c_str());
-        good = false;
+        // "key" not found in our dictionary
+        string errtxt{line};
+        string badtoken = line.substr(pos, ext);
+        // Highlight the location in the error message
+        errtxt.replace(pos, ext, "\e[31m" + badtoken + "\e[0m");
+        Error(here, "unknown text variable %s at pos %lu: \"%s\"",
+              badtoken.c_str(), pos, errtxt.c_str());
+        return 1;
       }
     } else if( !newlines.empty() ) {
-      // If replacements are ongoing, keep adding unmodified lines to the output
-      newlines.push_back(line);
+      // If replacements are ongoing, keep moving unmodified lines to the output
+      newlines.push_back(std::move(line));
     }
   }
 
-  if( !newlines.empty() && good ) {
+  if( !newlines.empty() ) {
     // Rescan for multiple and/or nested replacements
-    good = ( Substitute( newlines, do_multi ) == 0 );
-    if( good )
-      lines.swap( newlines );
+    // This is a bit of a cheap way out, but in practice the overhead typically
+    // is some extra stack allocation plus a single extra call to Index().
+    if( Substitute( newlines, do_multi ) == 0 )
+      lines = std::move(newlines);
+    else
+      return 1;
   }
 
-  return (good ? 0 : 1);
+  return 0;
 }
 
 } // namespace Podd
