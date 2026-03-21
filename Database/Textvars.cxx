@@ -55,25 +55,25 @@ string ValStr( const vector <string>& s )
 }
 
 //_____________________________________________________________________________
-ssiz_t Index( const string& s, ssiz_t& ext /*, ssiz_t start*/ )
+ssiz_t Index( const string& s, ssiz_t& ext )
 {
   // Find index of text variable pattern in string 's'. 'ext' is the length
-  // of the pattern. Search starts at 'start'.
-  // This is equivalent to searching for regexp "\$\{[^\{\}]*\}"
+  // of the pattern. This is equivalent to searching for regexp "\$\{[^\{\}]*\}".
 
-  if( s.empty() || /*start == string::npos || start+*/2 >= s.length() )
+  if( s.length() < 3 )
     return string::npos;
 
-  const char* c = s.c_str() /*+ start*/, *end;
-  if( (c = strchr(c,'$')) && *(++c) == '{' ) {
-    if( !(end = strchr(++c,'}')) ) return string::npos;
-    const char *c2;
-    do {
-      // Find innermost bracket, allowing nesting
-      if( (c2 = strchr(c,'$')) && *(++c2) != '{' ) c2 = nullptr;
-    } while( c2 && ++c2 < end && (c = c2) );
-  } else
+  // This is written in plain C for performance reasons
+  const char* c = strchr(s.c_str(),'$'), *end;
+  if( !c || *++c != '{' || !(end = strchr(++c, '}')) )
     return string::npos;
+
+  // Find innermost opening bracket, allowing nesting.
+  // The unlikely case c == end (i.e. "${}") is caught by ++c2 <= end below.
+  // We do want to report this case as a match so an error is printed.
+  const char* c2;
+  while( (c2 = strchr(c, '$')) && *++c2 == '{' && ++c2 <= end )
+    c = c2; // save last valid location
 
   c -= 2;   // Point to beginning of pattern: ${
   assert( end>c );
