@@ -10,19 +10,19 @@
 
 #ifdef HAVE_CATCH3
 # include <catch2/catch_test_macros.hpp>
-# include <catch2/generators/catch_generators.hpp>
-# include <catch2/matchers/catch_matchers_floating_point.hpp>
 #else
 # include <catch2/catch.hpp>
 #endif
 
-#include "Textvars.h"
-#include <string>
-#include <utility>
-#include <algorithm>
-#include <iostream>
-#include <sstream>
-#include <memory>
+#include "Textvars.h"                    // for Textvars, Tokenize, Trim, Rtypes
+#include "TError.h"                      // for gErrorIgnoreLevel, kBreak
+#include <algorithm>                     // for find
+#include <iostream>                      // for cout, streambuf, stringstream
+#include <memory>                        // for unique_ptr, make_unique
+#include <sstream>                       // for stringstream, stringbuf
+#include <string>                        // for string, to_string
+#include <string_view>                   // for operator""sv, string_view
+#include <vector>                        // for vector, operator==
 
 using namespace std;
 
@@ -42,7 +42,7 @@ private:
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-TEST_CASE("Textvars string substitution", "[Database]") // NOLINT(*-function-cognitive-complexity)
+TEST_CASE("Textvars string substitution", "[Utilities]") // NOLINT(*-function-cognitive-complexity)
 {
   // Use private instance
   auto tvars = make_unique<Podd::Textvars>();
@@ -52,14 +52,15 @@ TEST_CASE("Textvars string substitution", "[Database]") // NOLINT(*-function-cog
   tvars->Add("ind1", "key1");
   tvars->AddVerbatim("key2", "value21, value22, value23  ");
   tvars->Add("key3", "value31,value32,value33");
+  tvars->Add("x","xval");
   // Set() is just a synonym for Add()
   tvars->Set("key4", "value41, value42 ,   value43,a word here,value45  ");
 
   const vector<string> refs =
-    {"value41", " value42 ", "   value43", "a word here", "value45  "};
+  {"value41", " value42 ", "   value43", "a word here", "value45  "};
 
   SECTION("Construction") {
-    REQUIRE(tvars->Size() == 5);
+    REQUIRE(tvars->Size() == 6);
   }
 
   SECTION("Single-value substitution") {
@@ -80,6 +81,35 @@ TEST_CASE("Textvars string substitution", "[Database]") // NOLINT(*-function-cog
     ret = tvars->Substitute(s);
     CHECK(ret == 0);
     CHECK(s == "nested key1 = value1");
+
+    // Multiple replacements
+    s = "multiples ${ind1}${${ind1}} ${x} ${key2} ";
+    ret = tvars->Substitute(s);
+    CHECK(ret == 0);
+    CHECK(s == "multiples key1value1 xval value21, value22, value23   ");
+
+    // Incomplete key delimiters
+    s = "nothing replaced ${junk$$ more $hello";
+    ret = tvars->Substitute(s);
+    CHECK(ret == 0);
+    CHECK(s == "nothing replaced ${junk$$ more $hello");
+
+    // Multiple lines
+    vector<string> lines = {
+      "# Test data",
+      "",
+      "key1 = ${key1}",
+      "key1 = ${${ind1}} and more",
+      "",
+      "# End of test",
+    };
+    auto ref = lines;
+    ref[2] = "key1 = value1";
+    ref[3] = "key1 = value1 and more";
+    ret = tvars->Substitute(lines);
+    CHECK(ret == 0);
+    CHECK(lines.size() == 6);
+    CHECK(lines == ref);
   }
 
   SECTION("Multi-value substitution") {
@@ -89,8 +119,8 @@ TEST_CASE("Textvars string substitution", "[Database]") // NOLINT(*-function-cog
     CHECK(ret == 0);
     CHECK(lines.size() == 3);
     for( size_t i = 1; const auto& s: lines) {
-      const string ref = "key3 = value3";
-      CHECK(s == ref + to_string(i));
+      const string ref = "key3 = value3" + to_string(i);
+      CHECK(s == ref);
       ++i;
     }
 
@@ -134,6 +164,7 @@ Textvar:  key1 = "value1"
 Textvar:  key2 = "value21, value22, value23  "
 Textvar:  key3 = "value31","value32","value33"
 Textvar:  key4 = "value41"," value42 ","   value43","a word here","value45  "
+Textvar:     x = "xval"
 )";
       stringstream buf;
       cout_redirect guard(buf.rdbuf());
@@ -143,7 +174,7 @@ Textvar:  key4 = "value41"," value42 ","   value43","a word here","value45  "
 
     // Remove()
     auto val1 = tvars->Remove("key1");
-    CHECK(tvars->Size() == 4);
+    CHECK(tvars->Size() == 5);
     CHECK(val1.size() == 1);
     CHECK(val1[0] == "value1");
 
@@ -154,8 +185,65 @@ Textvar:  key4 = "value41"," value42 ","   value43","a word here","value45  "
     CHECK(tvars->GetArray("key2").empty());
   }
 
-  SECTION("String utilities")
+  SECTION("Failures")
   {
+    // Suppress ROOT error message. TODO capture and check messages
+    gErrorIgnoreLevel = kBreak;
+
+    // Degenerate case: Empty replacement
+    string s = "empty key ${key1}${}${key2}";
+    string ref = s;
+    Int_t ret = tvars->Substitute(s);
+    CHECK(ret != 0);
+    CHECK(s == ref); // unchanged
+
+    // Nested empty
+    s = "empty = ${${}}";
+    ref = s;
+    ret = tvars->Substitute(s);
+    CHECK(ret != 0);
+    CHECK(s == ref); // unchanged
+  }
+}
+
+TEST_CASE("Textvars string utilities", "[Utilities]") // NOLINT(*-function-cognitive-complexity)
+{
+  SECTION("Tokenize")
+  {
+    vector<string> tokens;
+    const vector<string> ref1{"a","b","c"};
+    Podd::Tokenize("",",",tokens);
+    CHECK(tokens.empty());
+    Podd::Tokenize("a,b,c", ",", tokens);
+    CHECK(tokens.size() == 3);
+    CHECK(tokens == ref1);
+    Podd::Tokenize("a,,b,c", ",", tokens);
+    CHECK(tokens.size() == 3);
+    CHECK(tokens == ref1);
+    Podd::Tokenize("a,b,c,", ",", tokens);
+    CHECK(tokens.size() == 3);
+    CHECK(tokens == ref1);
+    Podd::Tokenize("a,b,c,,", ",", tokens);
+    CHECK(tokens.size() == 3);
+    CHECK(tokens == ref1);
+    Podd::Tokenize("a:b,;c::", ",:;", tokens);
+    CHECK(tokens.size() == 3);
+    CHECK(tokens == ref1);
+    Podd::Tokenize("a,  ,b,c", ",", tokens);
+    CHECK(tokens.size() == 4);
+    CHECK(tokens == vector<string>({"a","  ", "b","c"}));
+
+    vector<string_view> svtokens;
+    const vector<string_view> ref2{"hello"sv, "my"sv, "dear"sv, "friend"sv};
+    Podd::Tokenize("hello my dear friend", " \t\n\r", svtokens);
+    CHECK(svtokens.size() == 4);
+    CHECK(svtokens == ref2);
+    Podd::Tokenize("\thello   \rmy\r dear friend\n\n", " \t\n\r", svtokens);
+    CHECK(svtokens.size() == 4);
+    CHECK(svtokens == ref2);
+  }
+
+  SECTION("Trim") {
     // Podd::Trim()
     string s;
     Podd::Trim(s);
