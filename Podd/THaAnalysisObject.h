@@ -32,9 +32,9 @@ class TObjArray;
 class THaAnalysisObject : public TNamed {
 
 public:
-  enum EStatus { kOK = 0, kInitError = -8, kFileError = -9, kNotinit = -10 };
-  enum EType   { kVarDef, kRVarDef };
-  enum EMode   { kDefine, kDelete };
+  enum EStatus : Char_t { kOK = 0, kInitError = -8, kFileError = -9, kNotinit = -10 };
+  enum EType   : Byte_t { kVarDef, kRVarDef };
+  enum EMode   : Byte_t { kDefine, kDelete };
 
   THaAnalysisObject();  // only for ROOT I/O
   THaAnalysisObject( const THaAnalysisObject& ) = delete;
@@ -127,21 +127,21 @@ public:
 
 protected:
 
-  enum EProperties { kNeedsRunDB = BIT(0), kConfigOverride = BIT(1) };
+  enum EProperties { kNeedsRunDB = BIT(0), kConfigOverride = BIT(1) }; // NOLINT(*-enum-size)
 
   // General status variables
   char*           fPrefix;    // Name prefix for global variables
-  EStatus         fStatus;    // Initialization status flag
   Int_t           fDebug;     // Debug level
+  EStatus         fStatus;    // Initialization status flag
   Bool_t          fIsInit;    // Flag indicating that ReadDatabase done
   Bool_t          fIsSetup;   // Flag indicating that DefineVariables done.
-  TString         fConfig;    // Configuration to use from database
-  UInt_t          fProperties;// Properties of this object (see EProperties)
   Bool_t          fOKOut;     // Flag indicating object-output prepared
+  TString         fConfig;    // Configuration to use from database
   TDatime         fInitDate;  // Date passed to Init
 
   std::map<std::string,UInt_t> fMessages; // Warning messages & count
   UInt_t          fNEventsWithWarnings;   // Events with warnings
+  UInt_t          fProperties;// Properties of this object (see EProperties)
 
   TObject*        fExtra;     // Additional member data (for binary compat.)
 
