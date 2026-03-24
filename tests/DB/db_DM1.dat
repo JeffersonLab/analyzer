@@ -1,0 +1,11 @@
+# Database for DetMap_t test with detector name DM1
+
+# v1 detector map
+DM1.detmap =
+# cr  sl  lo hi  log model refchan refidx (tag not supported)
+  8   2   0  31  0   1881  -1        1
+  8   12  0  15  64  1877  -1        2
+  8   13  0  15  80  250    7       -1
+
+# Cross-check
+DM1.number = 42

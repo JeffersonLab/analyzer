@@ -1,0 +1,11 @@
+# Database for DetMap_t test with detector name DM2
+
+# v2 detector map
+DM2.detector_map =
+# tag    cr  sl  lo hi  log  refidx  model
+  LS     6   2   0  31  0    I:1     M:1881 ,
+  v1955  6   12  0  15  64   I:2     M:1877 ,
+         6   13  0  15       R:7     M:250  # trailing comma ignored if present
+
+# Cross-check
+DM2.number = 142
