@@ -47,8 +47,8 @@ public:
   TVector3         TrackToDetCoord( const TVector3& point ) const;
 
   Int_t            FillDetMap( const std::vector<Int_t>& values,
-			       UInt_t flags=0,
-			       const char* here = "FillDetMap" );
+                               UInt_t flags = 0,
+                               const char* here = "FillDetMap" ) const;
   void             PrintDetMap( Option_t* opt="") const;
 
   virtual Int_t    GetView( const DigitizerHitInfo_t& hitinfo ) const;
@@ -85,7 +85,7 @@ protected:
                               const DigitizerHitInfo_t& hitinfo );
   virtual void      PrintDecodedData( const THaEvData& evdata ) const;
 
-  void DebugWarning( const char* here, const char* msg, ULong64_t evnum );
+  void DebugWarning( const char* here, const char* msg, ULong64_t evnum ) const;
   void MultipleHitWarning( const DigitizerHitInfo_t& hitinfo, const char* here );
   void DataLoadWarning( const DigitizerHitInfo_t& hitinfo, const char* here );
 

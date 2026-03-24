@@ -122,7 +122,7 @@ Int_t THaDetectorBase::GetView( const DigitizerHitInfo_t& hitinfo ) const
 
 //_____________________________________________________________________________
 Int_t THaDetectorBase::FillDetMap( const vector<Int_t>& values, UInt_t flags,
-				   const char* here )
+				   const char* here ) const
 {
   // Utility function to fill this detector's detector map.
   // See THaDetMap::Fill for documentation.
@@ -226,8 +226,7 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
     { .name = "angle", .var = &angles, .type = kDoubleV,
       .optional = true, .descript = "\"angle\" (detector angles(s) [deg]"      },
   };
-  Int_t err = LoadDB( file, date, request );
-  if( err )
+  if( LoadDB(file, date, request) )
     return kInitError;
 
   if( !position.empty() ) {
@@ -301,7 +300,7 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
 
 //_____________________________________________________________________________
 void THaDetectorBase::DebugWarning( const char* here, const char* msg,
-                                    ULong64_t evnum )
+                                    ULong64_t evnum ) const
 {
   if( fDebug > 0 ) {
     Warning( Here(here), "Event %llu: %s", evnum, msg );
@@ -342,8 +341,7 @@ Int_t THaDetectorBase::DefineVariables( EMode mode )
 {
   // Define variables. Calls DefineVariables for all objects in fChannelData
 
-  Int_t ret = THaAnalysisObject::DefineVariables(mode);
-  if( ret )
+  if( Int_t ret = THaAnalysisObject::DefineVariables(mode); ret != kOK )
     return ret;
 
   for( auto& chanData : fChannelData )
@@ -358,8 +356,7 @@ Int_t THaDetectorBase::ReadDatabase( const TDatime& date )
 {
   // Read database. Resets all objects in fChannelData
 
-  Int_t status = THaAnalysisObject::ReadDatabase(date);
-  if( status != kOK )
+  if( Int_t status = THaAnalysisObject::ReadDatabase(date); status != kOK )
     return status;
 
   for( auto& chanData : fChannelData )
