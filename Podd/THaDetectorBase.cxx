@@ -299,6 +299,48 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
 }
 
 //_____________________________________________________________________________
+Int_t THaDetectorBase::ReadDetMap( FILE* file, const TDatime& date,
+                                   UInt_t flags ) const
+{
+  // Read detector map
+
+  const char* const here = "ReadDetMap";
+
+  string detmap_v2;
+  detmap_v2.reserve( 2048 );
+  vector<DBRequest> request = {
+    { .name = "detector_map", .var = &detmap_v2, .type = kString,
+      .optional = true, .descript = "Detector map v2 definition string" },
+  };
+  Int_t err = LoadDB( file, date, request );
+  if( err )
+    return kInitError;
+
+  if( !detmap_v2.empty() ) {
+    if( fDetMap->Fill( detmap_v2 ) <= 0 )
+      return kInitError; // error already printed
+    return kOK;
+  }
+  detmap_v2.shrink_to_fit();
+
+  // Not found -> try legacy format (to be deprecated at some point)
+  vector<Int_t> detmap;
+  detmap.reserve(256);
+  request = {
+    { .name = "detmap", .var = &detmap, .type = kIntV,
+      .descript = "Detector map v1 definition values" },
+  };
+  err = LoadDB( file, date, request );
+  if( err )
+    return kInitError;
+
+  if( FillDetMap(detmap, flags, here) <= 0 )
+    return kInitError; // error already printed
+
+  return kOK;
+}
+
+//_____________________________________________________________________________
 void THaDetectorBase::DebugWarning( const char* here, const char* msg,
                                     ULong64_t evnum ) const
 {

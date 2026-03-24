@@ -78,6 +78,8 @@ protected:
           Int_t ReadDatabase( const TDatime& date ) override;
   virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
 			      Bool_t required = false );
+  virtual Int_t ReadDetMap( FILE* file, const TDatime& date,
+                            UInt_t flags = 0 ) const;
 
   // Callbacks from Decode()
   virtual Int_t     StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
