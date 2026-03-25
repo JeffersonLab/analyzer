@@ -10,7 +10,7 @@
 
 #include "THaDetMap.h"
 #include "Decoder.h"      // for EModuleType
-#include "Helper.h"       // for ToInt, ALL
+#include "Helper.h"       // for ToInt, ParseInt, ALL
 #include "Module.h"       // for Module
 #include "TError.h"       // for Error
 #include "THaAnalyzer.h"  // for THaAnalyzer
@@ -21,7 +21,7 @@
 #include <algorithm>      // for min, copy_n, max, find_if, sort
 #include <cassert>        // for assert
 #include <cctype>         // for isalpha, isdigit
-#include <charconv>       // for from_chars
+#include <cstddef>        // for size_t
 #include <iomanip>        // for setw
 #include <iostream>       // for cout, endl, dec, right
 #include <iterator>       // for size
@@ -29,8 +29,6 @@
 #include <set>            // for operator!=
 #include <sstream>        // for ostringstream
 #include <stdexcept>      // for logic_error, out_of_range, invalid_argument
-#include <system_error>   // for errc
-#include <type_traits>    // for is_integral_v
 #include <utility>        // for cmp_greater_equal, operator<=>, move, operator==
 #include <vector>         // for vector
 
@@ -339,17 +337,6 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
   }
 
   return ret;
-}
-
-//_____________________________________________________________________________
-namespace {
-template<typename T> requires std::is_integral_v<T>
-Int_t ParseInt( const string_view str, T& val )
-{
-  constexpr auto noerr = std::errc{}; // NOLINT(*-invalid-enum-default-initialization)
-  auto [ptr, ec] = std::from_chars(ALL(str), val);
-  return ptr != str.end() || ec != noerr;
-}
 }
 
 //_____________________________________________________________________________

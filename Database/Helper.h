@@ -13,9 +13,12 @@
 #include <cstddef>      // for size_t
 #include <algorithm>    // for for_each, copy
 #include <cassert>      // for assert
+#include <charconv>     // for from_chars
 #include <iostream>     // for basic_ostream, operator<<, cout, char_traits
 #include <iterator>     // for ostream_iterator, ssize
 #include <stdexcept>    // for out_of_range
+#include <string_view>  // for string_view
+#include <system_error> // for errc
 #include <type_traits>  // for make_signed_t, is_integral_v, is_signed_v
 #include <vector>       // for vector, operator==
 #include <utility>      // for cmp_less, in_range
@@ -56,6 +59,18 @@ namespace Podd {
   // Trivial case - no-op
   template<typename T> requires std::is_same_v<T,int>
   constexpr int ToInt( T sint ) { return sint; }
+
+  //___________________________________________________________________________
+  // Error-detecting conversion of string to integer (any type).
+  // Returns 0 on success, 1 on error.
+  template<typename T> requires std::is_integral_v<T>
+  Int_t ParseInt( const std::string_view str, T& val )
+  {
+    constexpr auto noerr = std::errc{}; // NOLINT(*-invalid-enum-default-initialization)
+    auto [ptr, ec] = std::from_chars(ALL(str), val);
+    return ptr != str.end() || ec != noerr;
+  }
+
 
   //___________________________________________________________________________
   template< typename VectorElem >
