@@ -28,15 +28,15 @@
 #include "TMath.h"
 #include "VarDef.h"
 #include "THaApparatus.h"
-#include "Helper.h"
 
 #include <cstring>
 #include <vector>
 #include <iostream>
 #include <cassert>
 #include <stdexcept>
-#include <set>
+#include <algorithm>
 #include <iomanip>
+#include <utility>
 
 #ifdef CLUST_RAWDATA_HACK
 #include <fstream>
@@ -128,22 +128,35 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   // Load VDCPlane parameters from database
 
   const char* const here = "ReadDatabase";
+  constexpr Int_t kDefaultNwires = 368;  // Default for Hall A VDC planes
 
-  FILE* file = OpenFile(date);
+  Podd::CFile file = OpenFile(date);
   if( !file ) return kFileError;
 
   // Read fCenter and fSize
   Int_t err = ReadGeometry(file, date);
-  if( err ) {
-    (void)fclose(file);
+  if( err )
     return err;
+
+  err = ReadDetMap(file, date, THaDetMap::kFillLogicalChannel);
+  if( err )
+    return err;
+
+  // All our frontend modules are common stop TDCs
+  UInt_t nmodules = fDetMap->GetSize();
+  for( UInt_t i = 0; i < nmodules; i++ ) {
+    THaDetMap::Module* d = fDetMap->GetModule(i);
+    d->MakeTDC();
+    d->SetTDCMode(false);
   }
 
   // Read configuration parameters
-  vector<Int_t> detmap, bad_wirelist;
+  vector<Int_t> bad_wires;
   vector<Double_t> ttd_param;
   vector<Float_t> tdc_offsets;
   TString ttd_conv = "AnalyticTTDConv";
+  ttd_param.reserve(16);
+  tdc_offsets.reserve(kDefaultNwires);
   // Default values for optional parameters
   fTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
   fT0Resolution = 6e-8; // 60 ns --- crude guess
@@ -156,12 +169,11 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   fMaxTdiff = 2.0e-7; // 200ns -> ~67 deg track angle
   fMaxThits = 6;      // current TDC setting is to record only the last 6 hits
   const vector<DBRequest> request = {
-    { .name = "detmap",         .var = &detmap,         .type = kIntV                                    },
     { .name = "nwires",         .var = &fNelem,         .type = kInt,                       .search = -1 },
     { .name = "wire.start",     .var = &fWBeg                                                            },
     { .name = "wire.spacing",   .var = &fWSpac,                                             .search = -1 },
     { .name = "wire.angle",     .var = &fWAngle                                                          },
-    { .name = "wire.badlist",   .var = &bad_wirelist,   .type = kIntV,    .optional = true               },
+    { .name = "wire.badlist",   .var = &bad_wires,      .type = kIntV,    .optional = true               },
     { .name = "driftvel",       .var = &fDriftVel,                                          .search = -1 },
     { .name = "tdc.min",        .var = &fMinTime,       .type = kInt,     .optional = true, .search = -1 },
     { .name = "tdc.max",        .var = &fMaxTime,       .type = kInt,     .optional = true, .search = -1 },
@@ -180,20 +192,8 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   };
 
   err = LoadDB(file, date, request);
-  (void)fclose(file);
   if( err )
     return err;
-
-  if( FillDetMap(detmap, THaDetMap::kFillLogicalChannel, here) <= 0 )
-    return kInitError; // Error already printed by FillDetMap
-
-  // All our frontend modules are common stop TDCs
-  UInt_t nmodules = fDetMap->GetSize();
-  for( UInt_t i = 0; i < nmodules; i++ ) {
-    THaDetMap::Module* d = fDetMap->GetModule(i);
-    d->MakeTDC();
-    d->SetTDCMode(false);
-  }
 
   err = ReadDatabaseErrcheck(tdc_offsets, here);
   if( err )
@@ -217,10 +217,6 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   } else
     DefineAxes(0);
 
-  // Searchable list of bad wire numbers, if any (usually none :-) )
-  set<Int_t> bad_wires(ALL(bad_wirelist));
-  bad_wirelist.clear();
-  bad_wirelist.shrink_to_fit();
 
   // Create time-to-distance converter
   if( !ttd_conv.Contains("::") )
@@ -233,7 +229,11 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   for( int i = 0; i < fNelem; i++ ) {
     auto* wire = new((*fWires)[i])
       THaVDCWire(i, fWBeg + i * fWSpac, tdc_offsets[i], fTTDConv);
-    if( bad_wires.contains(i) )
+#ifdef __cpp_lib_ranges_contains  // C++23
+    if( ranges::contains(bad_wires, i) )
+#else
+    if( ranges::find(bad_wires, i) != bad_wires.end() )
+#endif
       wire->SetFlag(1);
   }
 
@@ -326,19 +326,18 @@ Int_t THaVDCPlane::ReadDatabaseErrcheck( const vector<Float_t>& tdc_offsets,
     Error(Here(here), "Invalid number of wires: %d", fNelem);
     return kInitError;
   }
-  UInt_t nwires = fNelem;
   UInt_t nchan = fDetMap->GetTotNumChan();
-  if( nchan != nwires ) {
+  if( std::cmp_not_equal(nchan, fNelem) ) {
     Error(Here(here),
           "Number of detector map channels (%u) disagrees with "
-          "number of wires (%u)", nchan, nwires);
+          "number of wires (%d)", nchan, fNelem);
     return kInitError;
   }
   nchan = tdc_offsets.size();
-  if( nchan != nwires ) {
+  if( std::cmp_not_equal(nchan, fNelem) ) {
     Error(Here(here),
           "Number of TDC offset values (%u) disagrees with "
-          "number of wires (%u)", nchan, nwires);
+          "number of wires (%d)", nchan, fNelem);
     return kInitError;
   }
 

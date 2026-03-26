@@ -85,6 +85,26 @@ Long64_t GetTZOffsetToLocal( UInt_t tloc );
 extern TString  gDefaultTZ;
 extern Bool_t   gNeedTZCorrection;
 
+// Helper object for database readers
+class CFile {
+public:
+  CFile(FILE* f) : f_(f) {} // NOLINT(*-explicit-constructor, *-explicit-conversions)
+  CFile() = delete;
+  CFile( const CFile& ) = delete;
+  CFile& operator=( const CFile& ) = delete;
+  CFile& operator=( FILE* f )
+    { if(f_) (void) fclose(f_); f_ = f; return *this; }
+  CFile( CFile&& rhs ) noexcept
+    : f_(rhs.f_) { rhs.f_ = nullptr; }
+  CFile& operator=( CFile&& rhs ) noexcept
+    { f_ = rhs.f_; rhs.f_ = nullptr; return *this; }
+  ~CFile() { if(f_) (void) fclose(f_); }
+  operator FILE* () const { return  f_; } // NOLINT(*-explicit-constructor, *-explicit-conversions)
+  explicit operator bool() const { return  f_ != nullptr; }
+private:
+  FILE* f_;
+};
+
 }  // namespace Podd
 
 // Macro for running arbitrary code ("cmd") with TZ set to gDefaultTZ.

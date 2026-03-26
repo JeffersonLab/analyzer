@@ -37,7 +37,6 @@ THaRaster::THaRaster( const char* name, const char* description,
   fRaw2Pos[2].ResizeTo(NPOS, NBPM);
 }
 
-
 //_____________________________________________________________________________
 Int_t THaRaster::ReadDatabase( const TDatime& date )
 {
@@ -46,27 +45,13 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
   //                otherwise                              -> kOk
 
   const char* const here = "ReadDatabase";
-  vector<Int_t> detmap;
-  Double_t zpos[NPOS];
-  Double_t freq[NBPM], rped[NBPM], sped[NBPM];
-  Double_t raw2posA[NBPM*NPOS], raw2posB[NBPM*NPOS], raw2posT[NBPM*NPOS];
 
-  FILE* file = OpenFile( date );
+  Podd::CFile file = OpenFile( date );
   if( !file )
     return kInitError;
 
   // fOrigin.SetXYZ(0,0,0);
   //Int_t err = ReadGeometry( file, date );
-
-//  if( !err ) {
-  memset(zpos, 0, sizeof(zpos));
-  // Read configuration parameters
-  const vector<DBRequest> config_request = {
-    {.name = "detmap", .var = &detmap, .type = kIntV},
-    {.name = "zpos",   .var = zpos,    .nelem = NPOS, .optional = true},
-  };
-  Int_t err = LoadDB(file, date, config_request);
-//  }
 
   // Fill the detector map. It must specify NBPM(=2) channels for the x/y
   // position readouts. Another NBPM(=2) channels for the x/y raw slopes are
@@ -80,41 +65,49 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
   // channel number altogether here. Alternatively, we could use it, but then
   // many old databases would become invalid, causing confusion and errors.
   UInt_t flags = THaDetMap::kSkipLogicalChannel | THaDetMap::kFillModel;
-  if( !err && FillDetMap(detmap, flags, here) <= 0 ) {
-    err = kInitError;  // Error already printed by FillDetMap
+  Int_t err = ReadDetMap(file, date, flags);
+  if( err )
+    return kInitError;
+
+  UInt_t nchan = fDetMap->GetTotNumChan();
+  if( nchan != NBPM && nchan != NCHAN ) {
+    Error(Here(here), "Incorrect number of channels = %u defined in "
+          "detector map. Must be either %u or %u. Fix database.",
+          nchan, NBPM, NCHAN);
+    return kInitError;
   }
-  if( !err ) {
-    UInt_t nchan = fDetMap->GetTotNumChan();
-    if( nchan != NBPM && nchan != NCHAN ) {
-      Error(Here(here), "Incorrect number of channels = %u defined in "
-                        "detector map. Must be either %u or %u. Fix database.",
-            nchan, NBPM, NCHAN);
-      err = kInitError;
-    } else if( fDebug > 0 && nchan == NBPM ) {
-      Warning( Here(here), "Only %u channels defined in detector map. Raster "
-                           "slope information will not be available", nchan);
-    }
+  if( fDebug > 0 && nchan == NBPM ) {
+    Warning( Here(here), "Only %u channels defined in detector map. Raster "
+             "slope information will not be available", nchan);
   }
 
-  if( !err ) {
-    fPosOff[0].SetZ( zpos[0] );
-    fPosOff[1].SetZ( zpos[1] );
-    fPosOff[2].SetZ( zpos[2] );
+  Double_t zpos[NPOS];
+  memset(zpos, 0, sizeof(zpos));
+  // Read configuration parameters
+  const vector<DBRequest> config_request = {
+    {.name = "zpos",   .var = zpos,    .nelem = NPOS, .optional = true},
+  };
+  err = LoadDB(file, date, config_request);
+  if( err )
+    return err;
 
-    memset( rped, 0, sizeof(rped) );
-    memset( sped, 0, sizeof(sped) );
+  fPosOff[0].SetZ( zpos[0] );
+  fPosOff[1].SetZ( zpos[1] );
+  fPosOff[2].SetZ( zpos[2] );
 
-    const vector<DBRequest> calib_request = {
-      { .name = "freqs",      .var = freq,     .nelem = NBPM },
-      { .name = "rast_peds",  .var = rped,     .nelem = NBPM, .optional = true },
-      { .name = "slope_peds", .var = sped,     .nelem = NBPM, .optional = true },
-      { .name = "raw2posA",   .var = raw2posA, .nelem = NBPM*NPOS },
-      { .name = "raw2posB",   .var = raw2posB, .nelem = NBPM*NPOS },
-      { .name = "raw2posT",   .var = raw2posT, .nelem = NBPM*NPOS },
-    };
-    err = LoadDB( file, date, calib_request );
-  }
-  (void)fclose(file);
+  Double_t freq[NBPM], rped[NBPM], sped[NBPM];
+  Double_t raw2posA[NBPM*NPOS], raw2posB[NBPM*NPOS], raw2posT[NBPM*NPOS];
+  memset( rped, 0, sizeof(rped) );
+  memset( sped, 0, sizeof(sped) );
+  const vector<DBRequest> calib_request = {
+    {.name = "freqs", .var = freq, .nelem = NBPM},
+    {.name = "rast_peds", .var = rped, .nelem = NBPM, .optional = true},
+    {.name = "slope_peds", .var = sped, .nelem = NBPM, .optional = true},
+    {.name = "raw2posA", .var = raw2posA, .nelem = NBPM * NPOS},
+    {.name = "raw2posB", .var = raw2posB, .nelem = NBPM * NPOS},
+    {.name = "raw2posT", .var = raw2posT, .nelem = NBPM * NPOS},
+  };
+  err = LoadDB(file, date, calib_request);
   if( err )
     return err;
 

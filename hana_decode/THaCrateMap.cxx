@@ -454,7 +454,7 @@ Int_t THaCrateMap::loadConfig( string& line, string& cfgstr ) const
       Trim(fname);
       errno = 0;
       WithDefaultTZ(TDatime date = fInitTime);
-      FILE* fi = OpenDBFile(fname.c_str(), date, here);
+      CFile fi = OpenDBFile(fname.c_str(), date, here);
       if ( !fi ) {
         ::Error(here, "Error opening decoder module database file "
                       "\"db_%s.dat\": %s\n line = %s",
@@ -464,10 +464,8 @@ Int_t THaCrateMap::loadConfig( string& line, string& cfgstr ) const
       if( ReadFile(fi, cfgstr) != 0 ) {
         ::Error(here, "Error reading decoder module database file "
                       "\"db_%s.dat\": %s", fname.c_str(), StrError().c_str());
-        (void)fclose(fi);
         return CM_ERR;
       }
-      (void)fclose(fi);
       line.erase(pos2);
     }
     Trim(cfgstr);

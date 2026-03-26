@@ -32,7 +32,7 @@ DetMapFromDB::~DetMapFromDB()
 // functionality to be tested.
 Int_t DetMapFromDB::ReadDatabase( const TDatime& date )
 {
-  FILE* file = OpenFile(date);
+  CFile file = OpenFile(date);
   if( !file )
     return kFileError;
 
@@ -41,10 +41,8 @@ Int_t DetMapFromDB::ReadDatabase( const TDatime& date )
   UInt_t flags = THaDetMap::kFillLogicalChannel | THaDetMap::kFillModel |
     THaDetMap::kFillRefIndex | THaDetMap::kFillRefChan;
   Int_t err = ReadDetMap( file, date, flags );
-  if( err ) {
-    (void)fclose(file);
+  if( err )
     return kInitError;
-  }
 
   // Sanity check whether the above call had unexpected side effects
   fNumber = -1;
@@ -52,7 +50,6 @@ Int_t DetMapFromDB::ReadDatabase( const TDatime& date )
     { .name = "number", .var = &fNumber, .type = kInt }
   } ;
   err = LoadDB( file, date, req );
-  (void)fclose(file);
   if( err )
     return kInitError;
 

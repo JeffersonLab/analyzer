@@ -45,44 +45,33 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
   //                or entry for bpms is missing           -> kInitError
   //                otherwise                              -> kOk
 
-  const char* const here = "ReadDatabase";
-
-  vector<Int_t> detmap;
   Double_t pedestals[NCHAN], rotations[NCHAN], offsets[2];
 
-  FILE* file = OpenFile( date );
+  Podd::CFile file = OpenFile( date );
   if( !file )
     return kInitError;
 
   fOrigin.SetXYZ(0,0,0);
   Int_t err = ReadGeometry( file, date );
+  if( err )
+    return err;
 
-  if( !err ) {
-    // Read configuration parameters
-    const vector<DBRequest> config_request = {
-      { .name = "detmap",  .var = &detmap,  .type = kIntV },
-    };
-    err = LoadDB( file, date, config_request );
-  }
-
+  // Read configuration parameters
   UInt_t flags = THaDetMap::kFillLogicalChannel | THaDetMap::kFillModel;
-  if( !err && FillDetMap(detmap, flags, here) <= 0 ) {
-    err = kInitError;  // Error already printed by FillDetMap
-  }
+  err = ReadDetMap(file, date, flags);
+  if( err )
+    return err;
 
-  if( !err ) {
-    memset( pedestals, 0, sizeof(pedestals) );
-    memset( rotations, 0, sizeof(rotations) );
-    memset( offsets  , 0, sizeof( offsets ) );
-    const vector<DBRequest> calib_request = {
-      { .name = "calib_rot",   .var = &fCalibRot },
-      { .name = "pedestals",   .var = pedestals, .nelem = NCHAN, .optional = true },
-      { .name = "rotmatrix",   .var = rotations, .nelem = NCHAN, .optional = true },
-      { .name = "offsets"  ,   .var = offsets,   .nelem = 2    , .optional = true },
-    };
-    err = LoadDB( file, date, calib_request );
-  }
-  (void)fclose(file);
+  memset( pedestals, 0, sizeof(pedestals) );
+  memset( rotations, 0, sizeof(rotations) );
+  memset( offsets  , 0, sizeof( offsets ) );
+  const vector<DBRequest> calib_request = {
+    { .name = "calib_rot",   .var = &fCalibRot },
+    { .name = "pedestals",   .var = pedestals, .nelem = NCHAN, .optional = true },
+    { .name = "rotmatrix",   .var = rotations, .nelem = NCHAN, .optional = true },
+    { .name = "offsets"  ,   .var = offsets,   .nelem = 2    , .optional = true },
+  };
+  err = LoadDB( file, date, calib_request );
   if( err )
     return err;
 

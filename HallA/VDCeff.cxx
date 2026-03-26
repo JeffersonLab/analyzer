@@ -261,7 +261,7 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
   constexpr const char* separators = ", \t";
   constexpr Int_t NPAR = 3;
 
-  FILE* f = OpenFile( date );
+  CFile f = OpenFile( date );
   if( !f ) return kFileError;
 
   TString configstr;
@@ -270,22 +270,14 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
   fMaxOcc = 0.25;
 
   Int_t status = kOK;
-  try {
-      const vector<DBRequest> request = {
-      { .name = "vdcvars",  .var = &configstr, .type = kTString },
-      { .name = "cycle",    .var = &fCycle,    .type = kInt,     .optional = true },
-      { .name = "maxocc",   .var = &fMaxOcc,   .type = kDouble,  .optional = true },
-    };
-    status = LoadDB( f, date, request );
-  }
-  catch(...) {
-    (void)fclose(f);
-    throw;
-  }
-  (void)fclose(f);
-  if( status != kOK ) {
+  const vector<DBRequest> request = {
+    { .name = "vdcvars",  .var = &configstr, .type = kTString },
+    { .name = "cycle",    .var = &fCycle,    .type = kInt,     .optional = true },
+    { .name = "maxocc",   .var = &fMaxOcc,   .type = kDouble,  .optional = true },
+  };
+  status = LoadDB( f, date, request );
+  if( status != kOK )
     return status;
-  }
 
   if( configstr.Length() == 0 ) {
     Error( Here(here), "No VDC variables defined. Fix database." );

@@ -77,93 +77,17 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   if( err )
     return err;
 
-  FILE* file = OpenFile( date );
+  CFile file = OpenFile( date );
   if( !file ) return kFileError;
 
   // Read fOrigin and fSize (required!)
   err = ReadGeometry( file, date, true );
-  if( err ) {
-    (void)fclose(file);
+  if( err )
     return err;
-  }
 
-  vector<Int_t> detmap, chanmap;
-  vector<Double_t> xy, dxy;
-  Int_t ncols = 0, nrows = 0;
-
-  // Read mapping/geometry/configuration parameters
-  const vector<DBRequest> config_request = {
-    { .name = "detmap",  .var = &detmap,  .type = kIntV },
-    { .name = "chanmap", .var = &chanmap, .type = kIntV,  .optional = true },
-    { .name = "ncols",   .var = &ncols,   .type = kInt },
-    { .name = "nrows",   .var = &nrows,   .type = kInt },
-    { .name = "xy",      .var = &xy,      .type = kDoubleV, .nelem = 2 },  // center pos of block 1
-    { .name = "dxdy",    .var = &dxy,     .type = kDoubleV, .nelem = 2 },  // dx and dy block spacings
-    { .name = "emin",    .var = &fEmin,   .type = kDataType },
-  };
-  err = LoadDatabase( file, date, config_request, fPrefix );
-
-  // Sanity checks
-  if( !err && (nrows <= 0 || ncols <= 0) ) {
-    Error( Here(here), "Illegal number of rows or columns: %d %d. Must be > 0. "
-	   "Fix database.", nrows, ncols );
-    err = kInitError;
-  }
-
-  Int_t nelem = ncols * nrows; 
-  Int_t nclbl = TMath::Min( 3, nrows ) * TMath::Min( 3, ncols );
-
-  // Reinitialization only possible for same basic configuration
-  if( !err ) {
-    if( fIsInit && nelem != fNelem ) {
-      Error( Here(here), "Cannot re-initialize with different number of blocks or "
-	     "blocks per cluster (was: %d, now: %d). Detector not re-initialized.",
-	     fNelem, nelem );
-      err = kInitError;
-    } else {
-      fNelem = nelem;
-      fNrows = nrows;
-    }
-  }
-  assert( fNelem >= 0 );
-  const UInt_t nval = fNelem;
-
-  if( !err ) {
-    // Clear out the old channel map before reading a new one
-    fChanMap.clear();
-    if( FillDetMap(detmap, 0, here) <= 0 ) {
-      err = kInitError;  // Error already printed by FillDetMap
-    } else {
-      UInt_t tot_nchan = fDetMap->GetTotNumChan();
-      if( tot_nchan != nval ) {
-        Error(Here(here), "Number of detector map channels (%u) "
-                          "inconsistent with number of blocks (%u)",
-              tot_nchan, nval);
-        err = kInitError;
-      }
-    }
-  }
-  if( !err && !chanmap.empty() ) {
-    // If a map is found in the database, ensure it has the correct size
-    size_t cmapsize = chanmap.size();
-    if( cmapsize != nval ) {
-      Error(Here(here), "Channel map size (%lu) and number of detector "
-                        "channels (%u) must be equal. Fix database.",
-            cmapsize, nval);
-      err = kInitError;
-    }
-    if( !err ) {
-      // Set up the new channel map. The index into the map is the physical
-      // channel (sequence number in the detector map), the value at that index,
-      // the logical channel. If the map is empty, the mapping is 1-1.
-      fChanMap.assign(chanmap.begin(), chanmap.end());
-    }
-  }
-
-  if( err ) {
-    (void)fclose(file);
+  err = ReadDetMap( file, date, 0 );
+  if( err )
     return err;
-  }
 
   // All DAQ modules are assumed to be ADCs
   UInt_t nmodules = fDetMap->GetSize();
@@ -174,7 +98,69 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     }
   }
 
-  fBlockPos.clear(); fBlockPos.resize(nval);
+  vector<Int_t> chanmap;
+  vector<Double_t> xy, dxy;
+  Int_t ncols = 0, nrows = 0;
+
+  // Read mapping/geometry/configuration parameters
+  const vector<DBRequest> config_request = {
+    { .name = "chanmap", .var = &chanmap, .type = kIntV,  .optional = true },
+    { .name = "ncols",   .var = &ncols,   .type = kInt },
+    { .name = "nrows",   .var = &nrows,   .type = kInt },
+    { .name = "xy",      .var = &xy,      .type = kDoubleV, .nelem = 2 },  // center pos of block 1
+    { .name = "dxdy",    .var = &dxy,     .type = kDoubleV, .nelem = 2 },  // dx and dy block spacings
+    { .name = "emin",    .var = &fEmin,   .type = kDataType },
+  };
+  err = LoadDatabase( file, date, config_request, fPrefix );
+  if( err )
+    return err;
+
+  // Sanity checks
+  if( nrows <= 0 || ncols <= 0 ) {
+    Error( Here(here), "Illegal number of rows or columns: %d %d. Must be > 0. "
+           "Fix database.", nrows, ncols );
+    return kInitError;
+  }
+
+  Int_t nelem = ncols * nrows; 
+  Int_t nclbl = TMath::Min( 3, nrows ) * TMath::Min( 3, ncols );
+
+  // Reinitialization only possible for same basic configuration
+  if( fIsInit && nelem != fNelem ) {
+    Error( Here(here), "Cannot re-initialize with different number of blocks or "
+           "blocks per cluster (was: %d, now: %d). Detector not re-initialized.",
+           fNelem, nelem );
+    return  kInitError;
+  }
+  fNelem = nelem;
+  fNrows = nrows;
+
+  assert( fNelem >= 0 );
+  const auto N = static_cast<UInt_t>(fNelem);
+
+  // Clear out the old channel map before reading a new one
+  fChanMap.clear();
+  if( UInt_t tot_nchan = fDetMap->GetTotNumChan(); tot_nchan != N ) {
+    Error(Here(here), "Number of detector map channels (%u) "
+          "inconsistent with number of blocks (%d)", tot_nchan, nelem);
+    return kInitError;
+  }
+
+  if( !chanmap.empty() ) {
+    // If a map is found in the database, ensure it has the correct size
+    if( size_t cmapsize = chanmap.size(); cmapsize != N ) {
+      Error(Here(here), "Channel map size (%lu) and number of detector "
+                        "channels (%d) must be equal. Fix database.",
+            cmapsize, nelem);
+      return kInitError;
+    }
+    // Set up the new channel map. The index into the map is the physical
+    // channel (sequence number in the detector map), the value at that index,
+    // the logical channel. If the map is empty, the mapping is 1-1.
+    fChanMap.assign(chanmap.begin(), chanmap.end());
+  }
+
+  fBlockPos.clear(); fBlockPos.resize(nelem);
   fClBlk.clear();    fClBlk.reserve(nclbl);
   fChannelData.clear();
   auto detdata =
@@ -199,19 +185,18 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   // Read ADC pedestals and gains
   // (in order of **logical** channel number = block number)
   vector<Data_t> ped, gain;
-  ped.assign(nval, 0.0);
-  gain.assign(nval, 1.0);
+  ped.assign(nelem, 0.0);
+  gain.assign(nelem, 1.0);
   const vector<DBRequest> calib_request = {
-    { .name = "pedestals", .var = &ped,  .type = kDataTypeV, .nelem = nval, .optional = true },
-    { .name = "gains",     .var = &gain, .type = kDataTypeV, .nelem = nval, .optional = true },
+    { .name = "pedestals", .var = &ped,  .type = kDataTypeV, .nelem = N, .optional = true },
+    { .name = "gains",     .var = &gain, .type = kDataTypeV, .nelem = N, .optional = true },
   };
   err = LoadDB( file, date, calib_request );
-  (void)fclose(file);
   if( err )
     return err;
 
   if( !(ped.empty() && gain.empty()) ) {
-    for( UInt_t i = 0; i < nval; ++i ) {
+    for( UInt_t i = 0; i < N; ++i ) {
       auto& calib = fADCData->GetCalib(i);
       if( !ped.empty() )
         calib.ped = ped[i];
@@ -223,7 +208,6 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
 #ifdef WITH_DEBUG
   // Debug printout
   if ( fDebug > 2 ) {
-    const auto N = static_cast<UInt_t>(fNelem);
     Double_t pos[3]; fOrigin.GetXYZ(pos);
     const vector<DBRequest> list = {
       { .name = "Number of blocks",       .var = &fNelem,  .type = kInt                   },

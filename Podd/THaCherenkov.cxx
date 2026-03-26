@@ -17,7 +17,6 @@
 #include "TMath.h"
 
 #include <cstdlib>
-#include <cstdint>
 #include <cassert>
 #include <iostream>
 #include <iomanip>
@@ -62,63 +61,56 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   if( err )
     return err;
 
-  FILE* file = OpenFile( date );
+  CFile file = OpenFile( date );
   if( !file ) return kFileError;
 
   // Read fOrigin and fSize (required!)
   err = ReadGeometry( file, date, true );
-  if( err ) {
-    (void)fclose(file);
+  if( err )
     return err;
-  }
 
-  enum : std::int8_t { kModeUnset = -1, kCommonStop = 0, kCommonStart = 1 };
+  UInt_t flags = THaDetMap::kFillLogicalChannel | THaDetMap::kFillModel;
+  err = ReadDetMap( file, date, flags );
+  if( err )
+    return err;
 
-  vector<Int_t> detmap;
+  enum : Char_t { kModeUnset = -1, kCommonStop = 0, kCommonStart = 1 };
+
   Int_t nelem = 0;
   Int_t tdc_mode = kModeUnset;
   Data_t tdc2t = 5e-10;  // TDC resolution (s/channel)
 
   // Read configuration parameters
   const vector<DBRequest> config_request = {
-    { .name = "detmap",       .var = &detmap,   .type = kIntV },
     { .name = "npmt",         .var = &nelem,    .type = kInt  },
     { .name = "tdc.res",      .var = &tdc2t,    .type = kDataType, .optional = true }, // optional to support old DBs
     { .name = "tdc.cmnstart", .var = &tdc_mode, .type = kInt,      .optional = true },
   };
   err = LoadDatabase( file, date, config_request, fPrefix );
+  if( err )
+    return err;
 
   // Sanity checks
-  if( !err && nelem <= 0 ) {
+  if( nelem <= 0 ) {
     Error( Here(here), "Invalid number of PMTs: %d. Must be > 0. "
 	   "Fix database.", nelem );
-    err = kInitError;
+    return kInitError;
   }
 
   // Reinitialization only possible for same basic configuration
-  if( !err ) {
-    if( fIsInit && nelem != fNelem ) {
-      Error( Here(here), "Cannot re-initialize with different number of PMTs. "
-	     "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
-      err = kInitError;
-    } else
-      fNelem = nelem;
+  if( fIsInit && nelem != fNelem ) {
+    Error( Here(here), "Cannot re-initialize with different number of PMTs. "
+           "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
+    return kInitError;
   }
+  fNelem = nelem;
 
-  UInt_t flags = THaDetMap::kFillLogicalChannel | THaDetMap::kFillModel;
-  if( !err && FillDetMap(detmap, flags, here) <= 0 ) {
-    err = kInitError;  // Error already printed by FillDetMap
-  }
-
-  const UInt_t nval = fNelem;
-  if( !err ) {
-    UInt_t tot_nchan = fDetMap->GetTotNumChan();
-    if( tot_nchan != 2*nval ) {
-      Error(Here(here), "Number of detector map channels (%u) "
-                        "inconsistent with 2*number of PMTs (%d)",
-            tot_nchan, 2*fNelem);
-      err = kInitError;
-    }
+  const auto N = static_cast<UInt_t>(fNelem);
+  if( UInt_t tot_nchan = fDetMap->GetTotNumChan(); tot_nchan != 2 * N ) {
+    Error(Here(here), "Number of detector map channels (%u) "
+          "inconsistent with 2*number of PMTs (%d)",
+          tot_nchan, 2 * nelem);
+    return kInitError;
   }
 
   // Deal with the TDC mode (common stop (default) vs. common start).
@@ -152,11 +144,6 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
     }
   }
 
-  if( err ) {
-    (void)fclose(file);
-    return err;
-  }
-
   fChannelData.clear();
   auto detdata = make_unique<TDCData>(GetPrefixName(), fTitle, nval);
   fPMTData = detdata.get();
@@ -165,18 +152,17 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 
   // Read calibration parameters
   vector<Data_t> off, ped, gain;
-  off.reserve(nval), ped.reserve(nval), gain.reserve(nval);
+  off.reserve(nelem), ped.reserve(nelem), gain.reserve(nelem);
   const vector<DBRequest> calib_request = {
-    { .name = "tdc.offsets",   .var = &off,  .type = kDataTypeV, .nelem = nval, .optional = true },
-    { .name = "adc.pedestals", .var = &ped,  .type = kDataTypeV, .nelem = nval, .optional = true },
-    { .name = "adc.gains",     .var = &gain, .type = kDataTypeV, .nelem = nval, .optional = true },
+    { .name = "tdc.offsets",   .var = &off,  .type = kDataTypeV, .nelem = N, .optional = true },
+    { .name = "adc.pedestals", .var = &ped,  .type = kDataTypeV, .nelem = N, .optional = true },
+    { .name = "adc.gains",     .var = &gain, .type = kDataTypeV, .nelem = N, .optional = true },
   };
   err = LoadDB( file, date, calib_request );
-  (void)fclose(file);
   if( err )
     return err;
 
-  for( UInt_t i = 0; i < nval; ++i ) {
+  for( UInt_t i = 0; i < N; ++i ) {
     auto& calib = fPMTData->GetCalib(i);
     // calib.tdc2t  = tdc2t;
     // if( !off.empty() )
@@ -190,7 +176,6 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 #ifdef WITH_DEBUG
   // Debug printout
   if ( fDebug > 2 ) {
-    const auto N = static_cast<UInt_t>(fNelem);
     Double_t pos[3]; fOrigin.GetXYZ(pos);
     const vector<DBRequest> list = {
       { .name = "Number of mirrors", .var = &fNelem, .type = kInt                    },

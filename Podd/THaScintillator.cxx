@@ -67,70 +67,56 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   constexpr VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;
   constexpr VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
 
-  FILE* file = OpenFile(date);
+  CFile file = OpenFile(date);
   if( !file )
     return kFileError;
 
   // Read fOrigin and fSize (required!)
   Int_t err = ReadGeometry( file, date, true );
-  if( err ) {
-    (void)fclose(file);
+  if( err )
     return err;
-  }
+
+  UInt_t flags = THaDetMap::kFillLogicalChannel | THaDetMap::kFillModel;
+  err = ReadDetMap( file, date, flags );
+  if( err )
+    return err;
 
   enum : Char_t { kModeUnset = -1, kCommonStop = 0, kCommonStart = 1 };
 
-  vector<Int_t> detmap;
   Int_t nelem = 0;
   Int_t tdc_mode = kModeUnset;
   Data_t tdc2t = 5e-10;  // TDC resolution (s/channel), for reference, required anyway
-  detmap.reserve(24);
 
   // Read configuration parameters
   const vector<DBRequest> config_request = {
-    { .name = "detmap",       .var = &detmap,   .type = kIntV },
     { .name = "npaddles",     .var = &nelem,    .type = kInt  },
     { .name = "tdc.res",      .var = &tdc2t,    .type = kDataType },
     { .name = "tdc.cmnstart", .var = &tdc_mode, .type = kInt, .optional = true },
   };
   err = LoadDB( file, date, config_request );
+  if( err )
+    return err;
 
   // Sanity checks
-  if( !err && nelem <= 0 ) {
+  if( nelem <= 0 ) {
     Error( Here(here), "Invalid number of paddles: %d", nelem );
-    err = kInitError;
+    return kInitError;
   }
+  const auto N = static_cast<UInt_t>(nelem); // unsigned version, needed later
 
   // Reinitialization only possible for same basic configuration
-  if( !err ) {
-    if( fIsInit && nelem != fNelem ) {
-      Error( Here(here), "Cannot re-initialize with different number of paddles. "
-	     "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
-      err = kInitError;
-    } else
-      fNelem = nelem;
+  if( fIsInit && nelem != fNelem ) {
+    Error( Here(here), "Cannot re-initialize with different number of paddles. "
+           "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
+    return kInitError;
   }
+  fNelem = nelem;
 
-  if( !err ) {
-    if( UInt_t flags = THaDetMap::kFillLogicalChannel | THaDetMap::kFillModel;
-        FillDetMap(detmap, flags, here) <= 0 ) {
-      err = kInitError;  // Error already printed by FillDetMap
-    }
-  }
-
-  const UInt_t nval = fNelem;
-  if( !err ) {
-    if( UInt_t tot_nchan = fDetMap->GetTotNumChan(); tot_nchan != 4 * nval ) {
-      Error(Here(here), "Number of detector map channels (%u) "
-                        "inconsistent with 4*number of paddles (%u)",
-            tot_nchan, 4 * nval);
-      err = kInitError;
-    }
-  }
-
-  if( err ) {
-    (void)fclose(file);
-    return err;
+  if( UInt_t tot_nchan = fDetMap->GetTotNumChan(); tot_nchan != 4 * N ) {
+    Error(Here(here), "Number of detector map channels (%u) "
+          "inconsistent with 4*number of paddles (%d)",
+          tot_nchan, 4 * nelem);
+    return kInitError;
   }
 
   // Deal with the TDC mode (common stop (default) vs. common start).
@@ -180,8 +166,8 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     assert(pmtData->GetSize() == nval);
     fChannelData.emplace_back(std::move(detdata));
   }
-  fPadData.resize(nval);
-  fHits.reserve(nval);
+  fPadData.resize(nelem);
+  fHits.reserve(nelem);
 
   // Read calibration parameters
 
@@ -199,29 +185,28 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
 
   vector<Data_t> loff, roff, lped, rped, lgain, rgain, twalk;
   const vector<DBRequest> calib_request = {
-    { .name = "L.off",            .var = &loff,         .type = kDataTypeV, .nelem = nval,   .optional = true },
-    { .name = "R.off",            .var = &roff,         .type = kDataTypeV, .nelem = nval,   .optional = true },
-    { .name = "L.ped",            .var = &lped,         .type = kDataTypeV, .nelem = nval,   .optional = true },
-    { .name = "R.ped",            .var = &rped,         .type = kDataTypeV, .nelem = nval,   .optional = true },
-    { .name = "L.gain",           .var = &lgain,        .type = kDataTypeV, .nelem = nval,   .optional = true },
-    { .name = "R.gain",           .var = &rgain,        .type = kDataTypeV, .nelem = nval,   .optional = true },
+    { .name = "L.off",            .var = &loff,         .type = kDataTypeV, .nelem = N,   .optional = true },
+    { .name = "R.off",            .var = &roff,         .type = kDataTypeV, .nelem = N,   .optional = true },
+    { .name = "L.ped",            .var = &lped,         .type = kDataTypeV, .nelem = N,   .optional = true },
+    { .name = "R.ped",            .var = &rped,         .type = kDataTypeV, .nelem = N,   .optional = true },
+    { .name = "L.gain",           .var = &lgain,        .type = kDataTypeV, .nelem = N,   .optional = true },
+    { .name = "R.gain",           .var = &rgain,        .type = kDataTypeV, .nelem = N,   .optional = true },
     { .name = "Cn",               .var = &fCn,          .type = kDataType },
-    { .name = "MIP",              .var = &adcmip,       .type = kDataType,  .nelem = 0,      .optional = true },
+    { .name = "MIP",              .var = &adcmip,       .type = kDataType,  .nelem = 0,   .optional = true },
     // timewalk coefficients for tw = coeff*(1./sqrt(ADC-Ped)-1./sqrt(ADCMip))
     // TODO: Perhaps the timewalk parameters should be split into L/R blocks?
     // Currently, these need to be 2*nelem numbers, first nelem for the RPMTs,
     // then another nelem for the LPMTs. Easy to mix up.
-    { .name = "timewalk_params",  .var = &twalk,        .type = kDataTypeV, .nelem = 2*nval, .optional = true },
-    { .name = "avgres",           .var = &fResolution,  .type = kDataType,  .nelem = 0,      .optional = true },
-    { .name = "atten",            .var = &fAttenuation, .type = kDataType,  .nelem = 0,      .optional = true },
+    { .name = "timewalk_params",  .var = &twalk,        .type = kDataTypeV, .nelem = 2*N, .optional = true },
+    { .name = "avgres",           .var = &fResolution,  .type = kDataType,  .nelem = 0,   .optional = true },
+    { .name = "atten",            .var = &fAttenuation, .type = kDataType,  .nelem = 0,   .optional = true },
   };
   err = LoadDB( file, date, calib_request );
-  (void)fclose(file);
   if( err )
     return err;
 
   // Copy calibration constants to the PMTData in fChannelData
-  for( UInt_t i = 0; i < nval; ++i ) {
+  for( UInt_t i = 0; i < N; ++i ) {
     auto& calibR = fRightPMTs->GetCalib(i);
     auto& calibL = fLeftPMTs->GetCalib(i);
     // calibR.tdc2t   = tdc2t;
@@ -242,7 +227,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     // calibR.mip     = adcmip;
     // if( !twalk.empty() ) {
     //   calibR.twalk = twalk[i];
-    //   calibL.twalk = twalk[nval+i];
+    //   calibL.twalk = twalk[N+i];
     // } else {
     //   calibR.twalk = calibL.twalk = 0;
     // }
@@ -253,7 +238,6 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
 #ifdef WITH_DEBUG
   // Debug printout
   if ( fDebug > 2 ) {
-    const auto N = static_cast<UInt_t>(fNelem);
     Double_t pos[3]; fOrigin.GetXYZ(pos);
     const vector<DBRequest> list = {
       { .name = "Number of paddles",    .var = &fNelem,       .type = kInt                     },

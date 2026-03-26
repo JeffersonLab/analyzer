@@ -237,15 +237,13 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 
   const char* const here = "ReadDatabase";
 
-  FILE* file = OpenFile( date );
+  CFile file = OpenFile( date );
   if( !file ) return kFileError;
 
   // Read fOrigin and fSize (currently unused)
   Int_t err = ReadGeometry( file, date );
-  if( err ) {
-    (void)fclose(file);
+  if( err )
     return err;
-  }
 
   // Read TRANSPORT matrices
   //FIXME: move to HRS
@@ -286,40 +284,31 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
     { .name = "time_cor",    .var = &TCmodule, .type = kString, .optional = true },
   };
   err = LoadDB( file, date, request1 );
-  if( err ) {
-    (void)fclose(file);
+  if( err )
     return err;
-  }
   if( MEstring.empty() ) {
     Error( Here(here), "No matrix elements defined. Set \"maxtrixelem\" in database." );
-    (void)fclose(file);
     return kInitError;
   }
   // Parse the matrix elements
   err = ParseMatrixElements( MEstring, matrix_map, fPrefix );
-  if( err ) {
-    (void)fclose(file);
+  if( err )
     return err;
-  }
   MEstring.clear();
 
   // Ensure that we have all three focal plane matrix elements, else we cannot
   // do anything sensible with the tracks
   if( fFPMatrixElems[T000].order == 0 ) {
     Error( Here(here), "Missing FP matrix element t000. Fix database." );
-    err = kInitError;
+    return kInitError;
   }
   if( fFPMatrixElems[Y000].order == 0 ) {
     Error( Here(here), "Missing FP matrix element y000. Fix database." );
-    err = kInitError;
+    return kInitError;
   }
   if( fFPMatrixElems[P000].order == 0 ) {
     Error( Here(here), "Missing FP matrix element p000. Fix database." );
-    err = kInitError;
-  }
-  if( err ) {
-    (void)fclose(file);
-    return err;
+    return kInitError;
   }
 
   // If given, find the module for calculating an event-by-event
@@ -371,7 +360,6 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   };
 
   err = LoadDB( file, date, request );
-  (void)fclose(file);
   if( err )
     return err;
 

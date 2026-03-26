@@ -135,10 +135,10 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
 
   const char* const here = "ReadDatabase";
 
-  FILE* file = OpenFile( date );
+  CFile file = OpenFile( date );
   if( !file ) {
     // look for more general coincidence-timing database
-    file = Podd::OpenDBFile("CT", date);
+    file = OpenDBFile("CT", date);
   }
   if ( !file )
     return kFileError;
@@ -149,8 +149,7 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
   // at creation time as "{spec2Name}by{spec1Name}"
   // and the inverse
 
-  Int_t err = 0;
-  for( int i=0; i<2 && !err; i++) {
+  for( int i=0; i<2; i++) {
     vector<Int_t> detmap;
     fTdcOff[i] = 0.0;
     const vector<DBRequest> request = {
@@ -159,36 +158,31 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
       { .name = "tdc_offset",  .var = &fTdcOff[i], .nelem = 1 },
     };
     TString pref(fPrefix); pref.Append(fTdcLabels[i]); pref.Append(".");
-    err = LoadDatabase({.file = file, .date = date, .prefix = pref,
+    Int_t err = LoadDatabase({.file = file, .date = date, .prefix = pref,
                          .here = "THaCoincTime::ReadDatabase"}, request);
+    if( err )
+      return kInitError;
 
-    if( !err ) {
-      if( detmap.size() != 6 ) {
-	Error( Here(here), "Invalid number of detector map values = %lu for "
-	       "database key %sdetmap. Must be exactly 6. Fix database.",
-	       detmap.size(), pref.Data() );
-	err = kInitError;
-      } else {
-	if( detmap[2] != detmap[3] ) {
-	  Warning( Here(here), "Detector map %sdetmap must have exactly 1 "
-		   "channel. Setting last = first. Fix database.",
-		   pref.Data() );
-	  detmap[3] = detmap[2];
-	}
-	Int_t ret =
-	  fDetMap->Fill( detmap, THaDetMap::kDoNotClear|THaDetMap::kFillModel|
-			 THaDetMap::kFillLogicalChannel );
-	if( ret <= 0 ) {
-	  Error( Here(here), "Error %d filling detector map element %d",
-		 ret, i );
-	  err = kInitError;
-	}
-      }
+    if( detmap.size() != 6 ) {
+      Error( Here(here), "Invalid number of detector map values = %lu for "
+             "database key %sdetmap. Must be exactly 6. Fix database.",
+             detmap.size(), pref.Data() );
+      return kInitError;
+    }
+    if( detmap[2] != detmap[3] ) {
+      Warning( Here(here), "Detector map %sdetmap must have exactly 1 "
+               "channel. Setting last = first. Fix database.",
+               pref.Data() );
+      detmap[3] = detmap[2];
+    }
+    Int_t ret =
+      fDetMap->Fill( detmap, THaDetMap::kDoNotClear|THaDetMap::kFillModel|
+                             THaDetMap::kFillLogicalChannel );
+    if( ret <= 0 ) {
+      Error( Here(here), "Error %d filling detector map element %d", ret, i );
+      return kInitError;
     }
   }
-  (void)fclose(file);
-  if( err )
-    return err;
 
   if( fDetMap->GetSize() != 2 ) {
     Error( Here(here), "Unexpected number of detector map modules = %d. "

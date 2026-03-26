@@ -37,6 +37,7 @@
 #include <vector>
 
 using namespace std;
+using namespace Podd;
 
 //_____________________________________________________________________________
 UserScintillator::UserScintillator( const char* name, const char* description,
@@ -93,7 +94,7 @@ Int_t UserScintillator::ReadDatabase( const TDatime& date )
     return ret;
 
   // Read our parameters. For detailed comments, see UserDetector.cxx.
-  FILE* file = OpenFile( date );
+  CFile file = OpenFile( date );    // closes file when exiting this routine
   if( !file ) return kFileError;
 
   // Storage and default values for data from database.
@@ -102,25 +103,16 @@ Int_t UserScintillator::ReadDatabase( const TDatime& date )
   // extensive examples.
   Int_t stop = 1;
 
-  // Read the database. This may throw exceptions, so we put it in a try block.
-  Int_t err = 0;
-  try {
-    // Set up an array of database requests. See VarDef.h for details.
-    const vector<DBRequest> request = {
-      { .name = "stop", .var = &stop, .type = kInt },    // Common stop mode (1=yes)
-    };
+  // Read the database
+  // Set up an array of database requests. See VarDef.h for details.
+  const vector<DBRequest> request = {
+    { .name = "stop", .var = &stop, .type = kInt },    // Common stop mode (1=yes)
+  };
 
-    // Read the requested values
-    err = LoadDB( file, date, request );
-  }
-  // Catch exceptions here so that we can close the file and clean up
-  catch(...) {
-    (void)fclose(file);
-    throw;
-  }
+  // Read the requested values
+  Int_t err = LoadDB( file, date, request );
 
-  // Normal end of reading the database
-  (void)fclose(file);
+  // Quit if error
   if( err != kOK )
     return err;
 

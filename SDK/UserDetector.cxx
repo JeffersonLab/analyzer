@@ -26,6 +26,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <vector>
+#include <utility>
 
 using namespace std;
 using namespace Podd;
@@ -82,8 +83,25 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
   // file named db_<fPrefix><fName>.dat (fPrefix is in THaAnalysisObject
   // and is typically the name of the apparatus containing this detector;
   // fName is the name of this object in TNamed).
-  FILE* file = OpenFile( date );
+  CFile file = OpenFile( date );  // closes file upon exiting this function
   if( !file ) return kFileError;
+
+  // Read the detector map. The result will be in fDetMap.
+  // In the database, this is a matrix of numerical values with format:
+  //  detmap = <crate1> <slot1> <first channel1> <last channel1> <first logical ch1>
+  //           <crate2> <slot2> <first channel2> <last channel2> <first logical ch2>
+  //  etc.
+  // The "first logical channel" is the one assigned to the first hardware channel.
+  //
+  // Alternatively, and perhaps better, use the moderinzed format (see
+  // the documentation for THaDetMap for details):
+  //  detector_map = <crate1> <slot1> <first channel1> <last channel1> <first logical ch1>
+  // etc.
+  // ReadDetMap supports both formats. The flags (3rd argument) are ignored
+  // with the modernized format.
+  Int_t err = ReadDetMap(file, date, THaDetMap::kFillLogicalChannel);
+  if( err )
+    return err;
 
   // All vectors should be cleared and all conditions variables should be set
   // to default values here.
@@ -94,56 +112,28 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
   fPed.clear();
   fGain.clear();
 
-  // The detector map.
-  // This is a matrix of numerical values. Multiple lines are allowed.
-  // The format is:
-  //  detmap  <crate1> <slot1> <first channel1> <last channel1> <first logical ch1>
-  //          <crate2> <slot2> <first channel2> <last channel2> <first logical ch2>
-  //  etc.
-  // The "first logical channel" is the one assigned to the first hardware channel.
-  vector<Int_t> detmap;
+  // Read the database
+  // Automatically determine which data type constants correspond to Data_t.
+  // This can be ignored/removed if the member variables are hardcoded as
+  // Float_t or Double_t.
+  //  VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;
+  VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
 
-  // Read the database. This may throw exceptions, so we put it in a try block.
-  Int_t err;
-  try {
-    // Automatically determine which data type constants correspond to Data_t.
-    // This can be ignored/removed if the member variables are hardcoded as
-    // Float_t or Double_t.
-//  VarType kDataType  = std::is_same_v<Data_t, Float_t> ? kFloat  : kDouble;
-    VarType kDataTypeV = std::is_same_v<Data_t, Float_t> ? kFloatV : kDoubleV;
+  // Set up an array of database requests. See VarDef.h for details.
+  // If an optional parameter is not found in the database, the value of its
+  // associated variable remains unchanged.
+  const vector<DBRequest> request = {
+    // Required items. Type kDouble is the default and can be omitted.
+    { .name = "nelem",     .var = &nelem,  .type = kInt,       .search = -1     }, // Number of elements (e.g. PMTs)
+    // Optional items
+    { .name = "angle",     .var = &angle,/*.type = kDouble,*/  .optional = true }, // Rotation angle about y (deg)
+    { .name = "pedestals", .var = &fPed,   .type = kDataTypeV, .optional = true }, // Pedestals (optional)
+    { .name = "gains",     .var = &fGain,  .type = kDataTypeV, .optional = true }, // Gains (optional)
+  };
 
-    // Set up an array of database requests. See VarDef.h for details.
-    // If an optional parameter is not found in the database, the value of its
-    // associated variable remains unchanged.
-    const vector<DBRequest> request = {
-      // Required items. Type kDouble is the default and can be omitted.
-      { .name = "detmap",    .var = &detmap, .type = kIntV },                        // Detector map
-      { .name = "nelem",     .var = &nelem,  .type = kInt,       .search = -1     }, // Number of elements (e.g. PMTs)
-      // Optional items
-      { .name = "angle",     .var = &angle,/*.type = kDouble,*/  .optional = true }, // Rotation angle about y (deg)
-      { .name = "pedestals", .var = &fPed,   .type = kDataTypeV, .optional = true }, // Pedestals (optional)
-      { .name = "gains",     .var = &fGain,  .type = kDataTypeV, .optional = true }, // Gains (optional)
-    };
-
-    // Read the requested values
-    err = LoadDB( file, date, request );
-
-    // If no error, parse the detector map. See THaDetMap::Fill for details.
-    if( err == kOK ) {
-      if( FillDetMap( detmap, THaDetMap::kFillLogicalChannel, here ) <= 0 ) {
-	err = kInitError;
-      }
-    }
-  }
-  // Catch exceptions here so that we can close the file and clean up
-  catch(...) {
-    (void)fclose(file);
-    throw; // Just rethrow the exception to exit, unless we have a better idea
-  }
-
-  // Normal end of reading the database
-  (void)fclose(file);
-  if( err != kOK )
+  // Read the requested values
+  err = LoadDB(file, date, request);
+  if( err )
     return err;
 
   // Check all configuration values for sanity. This is the more tedious, but
@@ -182,28 +172,28 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
   // Check detector map size. We assume that each detector element (e.g. paddle)
   // has exactly one hardware channel. This could be different, e.g. if each PMT
   // is read by an ADC and a TDC, etc. Modify as appropriate.
-  UInt_t nchan = fDetMap->GetTotNumChan(), nval = nelem;
-  if( nchan != nval ) {
+  UInt_t nchan = fDetMap->GetTotNumChan();
+  if( std::cmp_not_equal(nchan, nelem) ) { // type-safe integer comparison
     ostringstream ostr;
     ostr << "Incorrect number of detector map channels = " << nchan
-         << ". Must equal nelem = " << nval << ". Fix database.";
+         << ". Must equal nelem = " << nelem << ". Fix database.";
     Error( Here(here), "%s", ostr.str().c_str() );
     return kInitError;
   }
 
   // Check if the sizes of the arrays we read make sense.
   // NB: If we have an empty vector here, there was no database entry for it.
-  if( !fPed.empty() && fPed.size() != nval) {
+  if( !fPed.empty() && std::ssize(fPed) != nelem) {
     ostringstream ostr;
     ostr << "Incorrect number of pedestal values = " << fPed.size()
-         << ". Must match nelem = " << nval << ". Fix database.";
+         << ". Must match nelem = " << nelem << ". Fix database.";
     Error( Here(here), "%s", ostr.str().c_str() );
     return kInitError;
   }
-  if( !fGain.empty() && fGain.size() != nval) {
+  if( !fGain.empty() && std::ssize(fGain) != nelem) {
     ostringstream ostr;
     ostr << "Incorrect number of gain values = " << fGain.size()
-         << ". Must match nelem = " << nval << ". Fix database.";
+         << ". Must match nelem = " << nelem << ". Fix database.";
     Error( Here(here), "%s", ostr.str().c_str() );
     return kInitError;
   }
