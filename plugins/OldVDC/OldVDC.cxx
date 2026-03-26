@@ -32,6 +32,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
+#include <vector>
 
 #ifdef WITH_DEBUG
 #include <iostream>
@@ -225,15 +226,13 @@ Int_t OldVDC::ReadDatabase( const TDatime& date )
 
   const char* const here = "ReadDatabase";
 
-  FILE* file = OpenFile( date );
+  Podd::CFile file = OpenFile( date );
   if( !file ) return kFileError;
 
   // Read fOrigin and fSize (currently unused)
   Int_t err = ReadGeometry( file, date );
-  if( err ) {
-    fclose(file);
+  if( err )
     return err;
-  }
 
   // Read TRANSPORT matrices
   //FIXME: move to HRS
@@ -269,45 +268,35 @@ Int_t OldVDC::ReadDatabase( const TDatime& date )
   matrix_map["L"]   = MEdef_t( 4, &fLMatrixElems );
 
   string MEstring;
-  DBRequest request1[] = {
+  vector<DBRequest> request1 = {
     { "matrixelem",  &MEstring, kString },
-    { nullptr }
   };
-  err = LoadDB( file, date, request1, fPrefix );
-  if( err ) {
-    fclose(file);
+  err = LoadDB(file, date, request1);
+  if( err )
     return err;
-  }
   if( MEstring.empty() ) {
     Error( Here(here), "No matrix elements defined. Set \"maxtrixelem\" in database." );
-    fclose(file);
     return kInitError;
   }
   // Parse the matrix elements
   err = ParseMatrixElements( MEstring, matrix_map, fPrefix );
-  if( err ) {
-    fclose(file);
+  if( err )
     return err;
-  }
   MEstring.clear();
 
   // Ensure that we have all three focal plane matrix elements, else we cannot
   // do anything sensible with the tracks
   if( fFPMatrixElems[T000].order == 0 ) {
     Error( Here(here), "Missing FP matrix element t000. Fix database." );
-    err = kInitError;
+    return kInitError;
   }
   if( fFPMatrixElems[Y000].order == 0 ) {
     Error( Here(here), "Missing FP matrix element y000. Fix database." );
-    err = kInitError;
+    return kInitError;
   }
   if( fFPMatrixElems[P000].order == 0 ) {
     Error( Here(here), "Missing FP matrix element p000. Fix database." );
-    err = kInitError;
-  }
-  if( err ) {
-    fclose(file);
-    return err;
+    return kInitError;
   }
 
   // Compute derived geometry quantities
@@ -330,7 +319,7 @@ Int_t OldVDC::ReadDatabase( const TDatime& date )
   Int_t do_tdc_hardcut = 1, do_tdc_softcut = 0, ignore_negdrift = 0;
   string coord_type;
 
-  DBRequest request[] = {
+  vector<DBRequest> request = {
     { "max_matcherr",      &fErrorCutoff,      kDouble, 0, true },
     { "num_iter",          &fNumIter,          kInt,    0, true },
     { "coord_type",        &coord_type,        kString, 0, true },
@@ -340,11 +329,9 @@ Int_t OldVDC::ReadDatabase( const TDatime& date )
     { "do_tdc_hardcut",    &do_tdc_hardcut,    kInt,    0, true },
     { "do_tdc_softcut",    &do_tdc_softcut,    kInt,    0, true },
     { "ignore_negdrift",   &ignore_negdrift,   kInt,    0, true },
-    { nullptr }
   };
 
-  err = LoadDB( file, date, request, fPrefix );
-  fclose(file);
+  err = LoadDB(file, date, request);
   if( err )
     return err;
 

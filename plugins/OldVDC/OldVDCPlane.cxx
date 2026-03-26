@@ -29,11 +29,13 @@
 #include "THaTriggerTime.h"
 #include "Helper.h"
 
+#include <algorithm>
 #include <cstring>
 #include <cassert>
 #include <vector>
 #include <iostream>
 #include <iomanip>
+#include <utility>
 
 using namespace std;
 
@@ -98,11 +100,15 @@ void OldVDCPlane::MakePrefix()
 }
 
 //_____________________________________________________________________________
-Int_t OldVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
+Int_t OldVDCPlane::ReadDatabase( const TDatime& date )
 {
   // Allocate TClonesArray objects and load plane parameters from database
 
   const char* const here = "ReadDatabase";
+  constexpr Int_t kDefaultNwires = 368;  // Default for Hall A VDC planes
+
+  Podd::CFile file = OpenFile( date );
+  if( !file ) return kFileError;
 
   // Read fOrigin and fSize
   Int_t err = ReadGeometry( file, date );
@@ -111,44 +117,43 @@ Int_t OldVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
   }
   fZ = fOrigin.Z();
 
+  // Read fDetMap
+  err = ReadDetMap(file, date, THaDetMap::kFillLogicalChannel);
+  if( err )
+    return err;
+
   // Read configuration parameters
-  vector<Int_t> detmap, bad_wirelist;
+  vector<Int_t> bad_wires;
   vector<Double_t> ttd_param;
   vector<Float_t> tdc_offsets;
   Int_t maxgap  = kDefaultNMaxGap;
   Int_t mintime = kDefaultMinTime;
   Int_t maxtime = kDefaultMaxTime;
   Double_t tdcres = kDefaultTDCRes;
+  ttd_param.reserve(16);
+  tdc_offsets.reserve(kDefaultNwires);
 
-  DBRequest request[] = {
-    { "detmap",         &detmap,         kIntV },
+  vector<DBRequest> request = {
     { "nwires",         &fNelem,         kInt,     0, false, -1 },
     { "wire.start",     &fWBeg,          kDouble },
     { "wire.spacing",   &fWSpac,         kDouble,  0, false, -1 },
     { "wire.angle",     &fWAngle,        kDouble,  0, false },
-    { "wire.badlist",   &bad_wirelist,   kIntV,    0, true },
+    { "wire.badlist",   &bad_wires,      kIntV,    0, true },
     { "driftvel",       &fDriftVel,      kDouble,  0, false, -1 },
-    { "maxgap",         &maxgap,         kInt,     0, true, -1 },
-    { "tdc.min",        &mintime,        kInt,     0, true, -1 },
-    { "tdc.max",        &maxtime,        kInt,     0, true, -1 },
+    { "maxgap",         &maxgap,         kInt,     0, true,  -1 },
+    { "tdc.min",        &mintime,        kInt,     0, true,  -1 },
+    { "tdc.max",        &maxtime,        kInt,     0, true,  -1 },
     { "tdc.res",        &tdcres,         kDouble,  0, false, -1 },
     { "tdc.offsets",    &tdc_offsets,    kFloatV },
     { "ttd.param",      &ttd_param,      kDoubleV, 0, false, -1 },
     { "description",    &fTitle,         kTString, 0, true },
-    { nullptr }
   };
 
-  err = LoadDB( file, date, request, fPrefix );
+  err = LoadDB(file, date, request);
   if( err )
     return err;
 
-  if( FillDetMap(detmap, THaDetMap::kFillLogicalChannel, here) <= 0 )
-    return kInitError; // Error already printed by FillDetMap
-
   fWAngle *= TMath::DegToRad(); // Convert to radians
-
-  set<Int_t> bad_wires( ALL(bad_wirelist) );
-  bad_wirelist.clear();
 
   // Sanity checks
   if( fNelem <= 0 ) {
@@ -156,15 +161,15 @@ Int_t OldVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
     return kInitError;
   }
 
-  Int_t nchan = fDetMap->GetTotNumChan();
-  if( nchan != fNelem ) {
-    Error( Here(here), "Number of detector map channels (%d) "
+  UInt_t nchan = fDetMap->GetTotNumChan();
+  if( std::cmp_not_equal(nchan, fNelem) ) {
+    Error( Here(here), "Number of detector map channels (%u) "
 	   "disagrees with number of wires (%d)", nchan, fNelem );
     return kInitError;
   }
   nchan = tdc_offsets.size();
-  if( nchan != fNelem ) {
-    Error( Here(here), "Number of TDC offset values (%d) "
+  if( std::cmp_not_equal(nchan, fNelem) ) {
+    Error( Here(here), "Number of TDC offset values (%u) "
 	   "disagrees with number of wires (%d)", nchan, fNelem );
     return kInitError;
   }
@@ -208,7 +213,7 @@ Int_t OldVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
   for (int i = 0; i < fNelem; i++) {
     auto* wire = new((*fWires)[i])
       OldVDCWire( i, fWBeg+i*fWSpac, tdc_offsets[i], fTTDConv );
-    if( bad_wires.find(i) != bad_wires.end() )
+    if( std::find(ALL(bad_wires), i) != bad_wires.end() )
       wire->SetFlag(1);
   }
 
@@ -231,7 +236,7 @@ Int_t OldVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
   if( fDebug > 2 ) {
     Double_t pos[3]; fOrigin.GetXYZ(pos);
     Double_t angle = fWAngle*TMath::RadToDeg();
-    DBRequest list[] = {
+    vector<DBRequest> list = {
       { "Number of wires",         &fNelem,     kInt       },
       { "Detector position",       pos,         kDouble, 3 },
       { "Detector size",           fSize,       kFloat,  3 },
@@ -243,7 +248,6 @@ Int_t OldVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
       { "Max gap in cluster",      &fNMaxGap,   kInt       },
       { "Min TDC raw time",        &fMinTime,   kInt       },
       { "Max TDC raw time",        &fMaxTime,   kInt       },
-      { nullptr }
     };
     DebugPrint( list );
   }
@@ -254,28 +258,13 @@ Int_t OldVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t OldVDCPlane::ReadDatabase( const TDatime& date )
-{
-  // Wrapper around actual database reader. Using a wrapper makes it much
-  // to close the input file in case of an error.
-
-  FILE* fi = OpenFile( date );
-  if( !fi ) return kFileError;
-
-  Int_t ret = DoReadDatabase( fi, date );
-
-  fclose(fi);
-  return ret;
-}
-
-//_____________________________________________________________________________
 Int_t OldVDCPlane::DefineVariables( EMode mode )
 {
   // initialize global variables
 
   // Register variables in global list
 
-  RVarDef vars[] = {
+  vector<RVarDef> vars = {
     { "nhit",   "Number of hits",             "GetNHits()" },
     { "wire",   "Active wire numbers",        "fHits.OldVDCHit.GetWireNum()" },
     { "rawtime","Raw TDC values of wires",    "fHits.OldVDCHit.fRawTime" },
@@ -296,7 +285,6 @@ Int_t OldVDCPlane::DefineVariables( EMode mode )
     { "clchi2", "Cluster chi2",               "fClusters.OldVDCCluster.fChi2" },
     { "clndof", "Cluster NDoF",               "fClusters.OldVDCCluster.fNDoF" },
     { "cltcor", "Cluster Time correction",    "fClusters.OldVDCCluster.fTimeCorrection" },
-    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 
