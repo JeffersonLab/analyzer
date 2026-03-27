@@ -111,27 +111,16 @@ private:
 #ifdef __GLIBC__
 // glibc seems to require an explicit call to tzset() to pick up a change of TZ
 #include <ctime>
-#define WithDefaultTZ(cmd)                   \
- TString cur_tz;                             \
- if( Podd::gNeedTZCorrection ) {             \
-   cur_tz = gSystem->Getenv("TZ");           \
-   gSystem->Setenv("TZ", Podd::gDefaultTZ);  \
-   tzset();                                  \
- }                                           \
- cmd;                                        \
- if( Podd::gNeedTZCorrection ) {             \
-   if( !cur_tz.IsNull() )                    \
-     gSystem->Setenv("TZ", cur_tz );         \
-   else                                      \
-     gSystem->Unsetenv("TZ");                \
-   tzset();                                  \
- }
+# define WDTZSET tzset();
 #else
+# define WDTZSET
+#endif
 #define WithDefaultTZ(cmd)                   \
  TString cur_tz;                             \
  if( Podd::gNeedTZCorrection ) {             \
    cur_tz = gSystem->Getenv("TZ");           \
    gSystem->Setenv("TZ", Podd::gDefaultTZ);  \
+   WDTZSET                                   \
  }                                           \
  cmd;                                        \
  if( Podd::gNeedTZCorrection ) {             \
@@ -139,7 +128,7 @@ private:
      gSystem->Setenv("TZ", cur_tz );         \
    else                                      \
      gSystem->Unsetenv("TZ");                \
+   WDTZSET                                   \
  }
-#endif
 
 #endif //Podd_Database_h_
