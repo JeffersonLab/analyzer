@@ -300,7 +300,7 @@ MakeChanDat( const TDatime& date, THaDetectorBase* det )
   // Configure ChanDat using the detector's database. However, don't bother
   // if the concrete ChanDat class doesn't implement its own database reader.
   if constexpr( not std::is_same_v
-    <decltype(&ChanDat::ReadConfig), decltype(&Podd::ChannelData::ReadConfig)> )
+    <decltype(&ChanDat::ReadConfig), decltype(&ChannelData::ReadConfig)> )
   {
     auto err = chandat->ReadConfig(det, date, nullptr);
     if( err != kOK ) {
