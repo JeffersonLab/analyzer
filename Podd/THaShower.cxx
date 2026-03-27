@@ -157,7 +157,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     // Set up the new channel map. The index into the map is the physical
     // channel (sequence number in the detector map), the value at that index,
     // the logical channel. If the map is empty, the mapping is 1-1.
-    fChanMap.assign(chanmap.begin(), chanmap.end());
+    fChanMap = std::move(chanmap);
   }
 
   fBlockPos.clear(); fBlockPos.resize(nelem);
@@ -214,7 +214,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
       { .name = "Number of blocks",       .var = &fNelem,  .type = kInt                   },
       { .name = "Detector center",        .var = pos,                          .nelem = 3 },
       { .name = "Detector size",          .var = fSize,    .type = kDouble,    .nelem = 3 },
-      { .name = "Channel map",            .var = &chanmap, .type = kIntV                  },
+      { .name = "Channel map",            .var = &fChanMap,.type = kIntV                  },
       { .name = "Position of block 1",    .var = &xy,      .type = kDoubleV               },
       { .name = "Block x/y spacings",     .var = &dxy,     .type = kDoubleV               },
       { .name = "Minimum cluster energy", .var = &fEmin,   .type = kDataType,  .nelem = 1 },
