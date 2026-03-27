@@ -197,9 +197,10 @@ Int_t UserScintillator::FineProcess( TClonesArray& tracks )
 
   // Compute y-position from TDC data
   else {
-    Data_t ltdc = fLeftPMTs ->GetPMT(fPaddle).tdc_c;
-    Data_t rtdc = fRightPMTs->GetPMT(fPaddle).tdc_c;
-    fYtdc = 0.5 * fCn * ((fCommonStop) ? rtdc - ltdc : ltdc - rtdc);
+    //FIXME
+    // Data_t ltdc = fLeftPMTs ->GetPMT(fPaddle).tdc_c;
+    // Data_t rtdc = fRightPMTs->GetPMT(fPaddle).tdc_c;
+    // fYtdc = 0.5 * fCn * ((fCommonStop) ? rtdc - ltdc : ltdc - rtdc);
   }
 
   return 0;
