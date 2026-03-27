@@ -159,12 +159,11 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // Per-event data
   fChannelData.clear();
   for( int i = kRight; i <= kLeft; ++i ) {
-    auto detdata = make_unique<TDCData>(this);
     // Keep pointers to the elements around for convenient access
     TDCData*& pmtData = (i == kRight) ? fRightPMTs : fLeftPMTs;
-    pmtData = detdata.get();
-    assert(pmtData->GetSize() == nval);
-    fChannelData.emplace_back(std::move(detdata));
+    fChannelData.push_back(make_unique<TDCData>(this));
+    pmtData = dynamic_cast<TDCData*>(fChannelData.back().get());
+    assert(pmtData && pmtData->GetSize() == N);
   }
   fPadData.resize(nelem);
   fHits.reserve(nelem);
@@ -353,7 +352,7 @@ Int_t THaScintillator::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data 
   fHitIdx.emplace(side, pad);
 
   // Store data for either left or right PMTs, as determined by 'side'
-  Podd::TDCData* pmtData = (side == kRight) ? fRightPMTs : fLeftPMTs;
+  TDCData* pmtData = (side == kRight) ? fRightPMTs : fLeftPMTs;
   if( !pmtData->HitDone() )
     pmtData->StoreHit(hitinfo, data);
 

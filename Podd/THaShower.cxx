@@ -163,12 +163,12 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   fBlockPos.clear(); fBlockPos.resize(nelem);
   fClBlk.clear();    fClBlk.reserve(nclbl);
   fChannelData.clear();
-  auto detdata =
-    make_unique<ShowerADCData>(GetPrefixName(), fTitle, nval, fChanMap);
-  fADCData = detdata.get();
-  fChannelData.emplace_back(std::move(detdata));
+
+  fChannelData.push_back(
+    make_unique<ShowerADCData>(GetPrefixName(), fTitle, N, fChanMap));
+  fADCData = dynamic_cast<ShowerADCData*>(fChannelData.back().get());
+  assert( fADCData && fADCData->GetSize() == N );
   fIsInit = true;
-  assert( fADCData->GetSize() == nval );
 
   // Compute block positions
   for( int c=0; c<ncols; c++ ) {
@@ -184,11 +184,12 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
 
   // Read ADC pedestals and gains
   // (in order of **logical** channel number = block number)
-  vector<Data_t> ped, gain;
+  vector<Int_t> ped;
+  vector<Data_t> gain;
   ped.assign(nelem, 0.0);
   gain.assign(nelem, 1.0);
   const vector<DBRequest> calib_request = {
-    { .name = "pedestals", .var = &ped,  .type = kDataTypeV, .nelem = N, .optional = true },
+    { .name = "pedestals", .var = &ped,  .type = kIntV,      .nelem = N, .optional = true },
     { .name = "gains",     .var = &gain, .type = kDataTypeV, .nelem = N, .optional = true },
   };
   err = LoadDB( file, date, calib_request );
@@ -199,7 +200,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     for( UInt_t i = 0; i < N; ++i ) {
       auto& calib = fADCData->GetCalib(i);
       if( !ped.empty() )
-        calib.ped = ped[i];
+        calib.ped = TMath::Max(ped[i], 0);
       if( !gain.empty() )
         calib.gain = gain[i];
     }
@@ -217,7 +218,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
       { .name = "Position of block 1",    .var = &xy,      .type = kDoubleV               },
       { .name = "Block x/y spacings",     .var = &dxy,     .type = kDoubleV               },
       { .name = "Minimum cluster energy", .var = &fEmin,   .type = kDataType,  .nelem = 1 },
-      { .name = "ADC pedestals",          .var = &ped,     .type = kDataTypeV, .nelem = N },
+      { .name = "ADC pedestals",          .var = &ped,     .type = kIntV,      .nelem = N },
       { .name = "ADC gains",              .var = &gain,    .type = kDataTypeV, .nelem = N },
     };
     DebugPrint( list );

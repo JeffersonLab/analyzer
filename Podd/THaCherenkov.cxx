@@ -145,10 +145,9 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   }
 
   fChannelData.clear();
-  auto detdata = make_unique<TDCData>(GetPrefixName(), fTitle, nval);
-  fPMTData = detdata.get();
-  fChannelData.emplace_back(std::move(detdata));
-  assert(fPMTData->GetSize() == nval);
+  fChannelData.push_back(make_unique<TDCData>(GetPrefixName(), fTitle, N));
+  fPMTData = dynamic_cast<TDCData*>(fChannelData.back().get());
+  assert(fPMTData && fPMTData->GetSize() == N);
 
   // Read calibration parameters
   vector<Data_t> off, ped, gain;
