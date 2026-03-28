@@ -417,17 +417,6 @@ void THaCrateMap::print(ostream& os) const
 }
 
 //_____________________________________________________________________________
-THaCrateMap::CrateInfo_t& THaCrateMap::MakeCrate( UInt_t crate )
-{
-  // Find, and if necessary create, an entry for the given crate number
-
-  auto& cr = fCrateDat[crate];
-  cr.crate = crate;
-  fUsedCrates.insert(crate);
-  return cr;
-}
-
-//_____________________________________________________________________________
 Int_t THaCrateMap::loadConfig( string& line, string& cfgstr ) const
 {
   // Check if module configuration option is specified in 'line' and,

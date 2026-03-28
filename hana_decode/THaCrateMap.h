@@ -17,16 +17,13 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "Decoder.h"      // for ECrateCode, ECrateCode::kScalerCrate, ECrat...
-#include "Rtypes.h"       // for UInt_t, Int_t, Byte_t, Long64_t, BIT, UShort_t
+#include "Decoder.h"      // for Rtypes, BIT, ECrateCode, EModuleType, kMaxUInt, ClassDefNV
 #include <array>          // for array
-#include <cstdio>         // for FILE
-#include <functional>     // for invoke
-#include <iostream>       // for cout, ostream
+#include <cstdio>         // for FILE, size_t
+#include <iostream>       // for ostream, cout
 #include <map>            // for map
-#include <set>            // for set, __tree_node
-#include <string>         // for basic_string, string
-#include <type_traits>    // for invoke_result_t
+#include <set>            // for set
+#include <string>         // for string
 #include <unordered_map>  // for unordered_map, operator==
 
 namespace Decoder {
@@ -138,6 +135,7 @@ private:
   std::map<Int_t, std::string> fModuleCfg;
 
   CrateInfo_t& MakeCrate( UInt_t crate );
+  const CrateInfo_t& FindCrate( UInt_t crate ) const;
   const SlotInfo_t& FindSlot( UInt_t crate, UInt_t slot ) const;
   Int_t loadConfig( std::string& line, std::string& cfgstr ) const;
   Int_t setCrateType( UInt_t crate, const char* stype ); // set the crate type
@@ -155,181 +153,204 @@ private:
   static void print_slot( std::ostream& os, const std::array<int,8>& widths,
     const CrateInfo_t& cr, const SlotInfo_t& slt );
 
-  template<class Proj,
-    typename Result = std::invoke_result_t<Proj, CrateInfo_t>>
-  auto GetCrateInfo( UInt_t crate, const Proj& p, Result defval = {} ) const
-  {
-    if( auto it = fCrateDat.find(crate); it != fCrateDat.end() )
-      return std::invoke(p, it->second);
-    return defval;
-  }
-
-  template<class Proj,
-    typename Result = std::invoke_result_t<Proj, SlotInfo_t>>
-  auto GetSlotInfo( UInt_t crate, UInt_t slot, const Proj& p, Result defval = {} ) const
-  {
-    const auto& sl =
-      GetCrateInfo( crate, &CrateInfo_t::sltdat );
-    if( auto jt = sl.find(slot); jt != sl.end() )
-      return std::invoke(p, jt->second);
-    return defval;
-  }
-
   ClassDefNV(THaCrateMap, 0) // Map of modules in DAQ crates
 };
 
 //=============== inline functions ================================
+
+inline const THaCrateMap::CrateInfo_t&
+THaCrateMap::FindCrate( UInt_t crate ) const
+{
+  auto it = fCrateDat.find(crate);
+  if( it == fCrateDat.end() ) {
+    static const CrateInfo_t nullcrate;
+    return nullcrate;
+  }
+  return it->second;
+}
+
+//_____________________________________________________________________________
+inline const THaCrateMap::SlotInfo_t&
+THaCrateMap::FindSlot( UInt_t crate, UInt_t slot ) const
+{
+  const auto& slots = FindCrate(crate).sltdat;
+  auto jt = slots.find(slot);
+  if( jt == slots.end() || jt->second.model == 0 ) {
+    static const SlotInfo_t nullslot;
+    return nullslot;
+  }
+  return jt->second;
+}
+
+//_____________________________________________________________________________
+inline THaCrateMap::CrateInfo_t& THaCrateMap::MakeCrate( UInt_t crate )
+{
+  // Find, and if necessary create, an entry for the given crate number
+
+  auto& cr = fCrateDat[crate];
+  cr.crate = crate;
+  fUsedCrates.insert(crate);
+  return cr;
+}
+
+//_____________________________________________________________________________
 inline
 UInt_t THaCrateMap::GetNcrates() const
 {
   return fUsedCrates.size();
 }
 
+//_____________________________________________________________________________
 inline
 bool THaCrateMap::isFastBus( UInt_t crate ) const
 {
-  return GetCrateInfo(crate, &CrateInfo_t::IsFastBus);
+  return FindCrate(crate).IsFastBus();
 }
 
+//_____________________________________________________________________________
 inline
 bool THaCrateMap::isVme( UInt_t crate ) const
 {
-  return GetCrateInfo(crate, &CrateInfo_t::IsVME);
+  return FindCrate(crate).IsVME();
 }
 
+//_____________________________________________________________________________
 inline
 bool THaCrateMap::isCamac( UInt_t crate ) const
 {
-  return GetCrateInfo(crate, &CrateInfo_t::IsCamac);
+  return FindCrate(crate).IsCamac();
 }
 
+//_____________________________________________________________________________
 inline
 bool THaCrateMap::isScalerCrate( UInt_t crate ) const
 {
-  return GetCrateInfo(crate, &CrateInfo_t::IsScalerCrate);
+  return FindCrate(crate).IsScalerCrate();
 }
 
+//_____________________________________________________________________________
 inline
 bool THaCrateMap::isBankStructure( UInt_t crate ) const
 {
-  return GetCrateInfo(crate, &CrateInfo_t::has_banks);
+  return FindCrate(crate).has_banks;
 }
 
+//_____________________________________________________________________________
 inline
 bool THaCrateMap::isAllBanks( UInt_t crate ) const
 {
-  return GetCrateInfo(crate, &CrateInfo_t::all_banks);
+  return FindCrate(crate).all_banks;
 }
 
+//_____________________________________________________________________________
 inline
 bool THaCrateMap::crateUsed( UInt_t crate ) const
 {
   return fCrateDat.contains(crate);
 }
 
+//_____________________________________________________________________________
 inline
 bool THaCrateMap::slotUsed( UInt_t crate, UInt_t slot ) const
 {
-  return GetCrateInfo(crate, &CrateInfo_t::sltdat).contains(slot);
+  return FindCrate(crate).sltdat.contains(slot);
 }
 
+//_____________________________________________________________________________
 inline
 bool THaCrateMap::slotClear( UInt_t crate, UInt_t slot ) const
 {
-  return GetSlotInfo(crate, slot, &SlotInfo_t::do_clear, true );
+  return FindSlot(crate, slot).do_clear;
 }
 
+//_____________________________________________________________________________
 inline
 Int_t THaCrateMap::getModel( UInt_t crate, UInt_t slot ) const
 {
-  return GetSlotInfo(crate, slot, &SlotInfo_t::model );
+  return FindSlot(crate,slot).model;
 }
 
+//_____________________________________________________________________________
 inline
 UInt_t THaCrateMap::getMask( UInt_t crate, UInt_t slot ) const
 {
-  return GetSlotInfo(crate, slot, &SlotInfo_t::headmask, 0xffffffff );
+  return FindSlot(crate,slot).headmask;
 }
 
+//_____________________________________________________________________________
 inline
 Int_t THaCrateMap::getBank( UInt_t crate, UInt_t slot ) const
 {
-  return GetSlotInfo(crate, slot, &SlotInfo_t::bank, -1 );
+  return FindSlot(crate,slot).bank;
 }
 
+//_____________________________________________________________________________
 inline
 UInt_t THaCrateMap::getNchan( UInt_t crate, UInt_t slot ) const
 {
-  return GetSlotInfo(crate, slot, &SlotInfo_t::nchan );
+  return FindSlot(crate,slot).nchan;
 }
 
+//_____________________________________________________________________________
 inline
 UInt_t THaCrateMap::getNslot( UInt_t crate ) const
 {
-  return GetCrateInfo(crate, &CrateInfo_t::sltdat).size();
+  return FindCrate(crate).sltdat.size();
 }
 
+//_____________________________________________________________________________
 inline
 std::string THaCrateMap::getScalerLoc( UInt_t crate ) const
 {
-  return GetCrateInfo(crate, &CrateInfo_t::scalerloc);
+  return FindCrate(crate).scalerloc;
 }
 
+//_____________________________________________________________________________
 inline
 UInt_t THaCrateMap::getMinSlot( UInt_t crate ) const
 {
-  const auto& used = GetCrateInfo(crate, &CrateInfo_t::used_slots);
+  const auto& used = FindCrate(crate).used_slots;
   if( used.empty() )
     return kMaxUInt;
   return *used.begin();
 }
 
+//_____________________________________________________________________________
 inline
 UInt_t THaCrateMap::getMaxSlot( UInt_t crate ) const
 {
-  const auto& used = GetCrateInfo(crate, &CrateInfo_t::used_slots);
+  const auto& used = FindCrate(crate).used_slots;
   if( used.empty() )
     return 0;
   return *used.rbegin();
 }
 
+//_____________________________________________________________________________
 inline
 UInt_t THaCrateMap::getTSROC() const
 {
   return fTSROC;
 }
 
+//_____________________________________________________________________________
 inline
 UInt_t THaCrateMap::getHeader( UInt_t crate, UInt_t slot ) const
 {
-  return GetSlotInfo(crate, slot, &SlotInfo_t::header );
+  return FindSlot(crate,slot).header;
 }
 
+//_____________________________________________________________________________
 inline
 const std::set<UInt_t>& THaCrateMap::GetUsedCrates() const
 {
   return fUsedCrates;
 }
 
+//_____________________________________________________________________________
 inline
 const std::set<UInt_t>& THaCrateMap::GetUsedSlots( UInt_t crate ) const
 {
-  static const std::set<UInt_t> nullset;
-  if( auto it = fCrateDat.find(crate); it != fCrateDat.end() )
-    return it->second.used_slots;
-  return nullset;
-}
-
-inline const THaCrateMap::SlotInfo_t&
-THaCrateMap::FindSlot( UInt_t crate, UInt_t slot ) const
-{
-  static const SlotInfo_t nullslot;
-  if( auto it = fCrateDat.find(crate); it != fCrateDat.end() ) {
-    const auto& slots = it->second.sltdat;
-    if( auto jt = slots.find(slot); jt != slots.end() && jt->second.model != 0 )
-      return jt->second;
-  }
-  return nullslot;
+  return FindCrate(crate).used_slots;
 }
 
 } // namespace Decoder
