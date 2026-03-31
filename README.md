@@ -3,7 +3,12 @@ Hall A C++ Analyzer
 
 This is the standard data analysis software for
 [Hall A](http://hallaweb.jlab.org/) at [Jefferson Lab](https://www.jlab.org).
-The current stable version is 1.7.0.
+The current stable version is
+[1.7.19](https://github.com/JeffersonLab/analyzer/releases/tag/Release-1719)
+on branch `Release-170_patches`. The master branch (this branch) holds the
+current development version, 1.8, which is not always fully tested and
+therefore may be buggy.
+
 This software is also known as "Podd".
 
 Overview
@@ -34,33 +39,33 @@ in Hall A,
 More documentation can be found in the 
 [Wiki](https://redmine.jlab.org/projects/podd/wiki/).
 
-System Requirements
--------------------
-* Linux or macOS with a C++11-capable compiler (gcc 4.8+ or clang 9+).
+System Requirements for analyzer 1.8
+------------------------------------
+* Linux or macOS with a **C++20**-capable compiler (gcc 11+ or clang 16+).
+  RHEL9, Fedora 34, Ubuntu 22.04, Debian 12 (Bookworm), and macOS 13.5 Ventura
+  with Xcode 15 or higher are compatible, for example.
 * Essentially any hardware powerful enough to support ROOT 6 will
   support the analyzer as well.
 
+The requirements for version 1.7 are lower, so if you are stuck on an old
+machine, consider using that version.
+
 Dependencies
 ------------
-* [ROOT](https://root.cern.ch) version 6 or higher. The latest version
-  is recommended. For the analyzer to find ROOT,
+* [ROOT](https://root.cern) version **6.30** or higher **compiled for C++20**.
+  The latest stable version is recommended. For the analyzer to find ROOT,
   either `$ROOTSYS` must point to the top of the ROOT installation
   or the `root-config` script must be in your PATH.
 
-* [EVIO](https://coda.jlab.org/drupal/content/event-io-evio) version 4.0
+* [EVIO](https://coda.jlab.org/drupal/content/event-io-evio) version 5
   or higher. If not installed, the build system will download and build
   a copy of EVIO automatically. This requires Internet access.
   If using a preinstalled version, `$CODA` must point to the top of its
   installation location.
 
-* [CMake](https://cmake.org) 3.5 or higher (3.15 or newer recommended). 
+* For building: [CMake](https://cmake.org) **3.19** or higher in combination
+  with a suitable build tool such as make or [ninja](https://ninja-build.org/).
 
-* GNU make or [ninja](https://ninja-build.org/).
-
-* Instead of CMake and make/ninja, [SCons](https://scons.org) 2.3 or newer
-  (3.0 or newer recommended) in combination with Python 2.7 or newer
-  can be used (see below).
-  
 Building
 --------
 The build system is a standard CMake setup. In the top-level analyzer
@@ -106,19 +111,6 @@ The modulefiles may also be copied to a central location for such files, e.g.
 The binaries are built with `RPATH` set for the build or install location, as
 applicable, so including the library directory in `(DY)LD_LIBRARY_PATH` should 
 not be necessary.
-
-### Building with SCons (deprecated)
-
-For backward compatibility, the [SCons](https://scons.org) build system is 
-still supported in this version of the analyzer, although it is no longer
-recommended and will be removed in a future version. SCons requires Python. 
-The following steps will accomplish the same as the CMake example above:
-
-```bash
-export SCONS_INSTALL_PREFIX=$HOME/local/analyzer
-scons -j8
-scons install
-```
 
 Documentation
 -------------
