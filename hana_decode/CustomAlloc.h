@@ -3,7 +3,9 @@
 
 // Custom allocators for Decoder package
 
+#include "Rtypes.h"
 #include <memory>
+#include <vector>
 
 namespace Decoder {
 //--------------------------------------------------------------------------
