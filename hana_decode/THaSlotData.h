@@ -19,18 +19,17 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "Decoder.h"
-#include "Module.h"
-#include "CustomAlloc.h"
-#include <cassert>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <memory>
+#include "CustomAlloc.h"  // for default_init_allocator, VectorUIntNI, VectorUInt
+#include "Decoder.h"      // for UInt_t, Int_t, Bool_t, ClassDefNV, THaCrateMap
+#include "Module.h"       // for Module
+#include <cassert>        // for assert
+#include <iostream>       // for cout, ostream
+#include <memory>         // for unique_ptr
+#include <string>         // for string
 
 const int SD_WARN = -2;
 const int SD_ERR = -1;
-const int SD_OK = 1;
+const int SD_OK = 0;
 
 namespace Decoder {
 
@@ -44,10 +43,10 @@ public:
 
        THaSlotData();
        THaSlotData(UInt_t crate, UInt_t slot);
-       virtual ~THaSlotData();
        const char* devType() const;                  // "adc", "tdc", "scaler"
+       void setDevType( const char* devtype ) { if(devtype) device = devtype; }
        Int_t  loadModule( const THaCrateMap* map );
-       UInt_t getNumRaw() const { return numraw; };  // Amount of raw CODA data
+       UInt_t getNumRaw() const { return rawData.size(); } // Amount of raw CODA data
        UInt_t getRawData(UInt_t ihit) const;         // Returns raw data words
        UInt_t getRawData(UInt_t chan, UInt_t hit) const;
        UInt_t getNumHits(UInt_t chan) const;         // Num hits on a channel
@@ -68,15 +67,12 @@ public:
        Bool_t IsMultiBlockMode() { if (fModule) return fModule->IsMultiBlockMode(); return false; };
        Bool_t BlockIsDone() { if (fModule) return fModule->BlockIsDone(); return false; };
 
-       void SetDebugFile(std::ofstream *file) { fDebugFile = file; };
        Module* GetModule() { return fModule.get(); };
 
        // Define crate, slot
        void define( UInt_t crate, UInt_t slot, UInt_t nchan = DEFNCHAN,
                     UInt_t ndata = DEFNDATA, UInt_t nhitperchan = DEFNHITCHAN );
-       void print() const;
-       void print_to_file() const;
-       void compressdataindex(UInt_t numidx);
+       void print( std::ostream& os = std::cout ) const;
 
 private:
 
@@ -85,33 +81,35 @@ private:
        std::string device;
        std::unique_ptr<Module> fModule;
        UInt_t numhitperchan; // expected number of hits per channel
-       UInt_t numraw;        // Hit counters (numraw, numHits, numchanhit)
        UInt_t numchanhit;    // can be zero'd by clearEvent each event.
        UInt_t firstfreedataidx;  // pointer to first free space in dataindex array
        UInt_t numholesdataidx;
        VectorUInt   numHits;     // numHits[channel]
        VectorUIntNI chanlist;    // chanlist[hitindex]
        VectorUIntNI idxlist;     // [channel] pointer to 1st entry in dataindex
-       VectorUIntNI chanindex;   // [channel] gives hitindex
        VectorUIntNI dataindex;   // [idxlist] pointer to rawdata and data
        VectorUIntNI numMaxHits;  // [channel] current maximum number of hits
        VectorUIntNI rawData;     // rawData[hit] (all bits)
        VectorUIntNI data;        // data[hit] (only data bits)
-       std::ofstream *fDebugFile; // debug output to this file, if nonzero
        bool didini;         // true if object initialized via define()
        UInt_t fNchan;       // Number of channels for this device
 
-       void compressdataindexImpl(UInt_t numidx);
+       bool checkdataindex( UInt_t numidx );
+       bool compressdataindex( UInt_t numidx );
 
-       ClassDef(THaSlotData,0)   //  Data in one slot of fastbus, vme, camac
+       ClassDefNV(THaSlotData,0)   //  Data in one slot of fastbus, vme, camac
 };
 
 //______________ inline functions _____________________________________________
 inline UInt_t THaSlotData::getRawData(UInt_t hit) const {
   // Returns the raw data (all bits)
+  auto numraw = getNumRaw();
   assert( hit < numraw );
-  if (hit < numraw) return rawData[hit];
-  return 0;
+#ifdef NDEBUG
+  if (hit >= numraw)
+    return 0;
+#endif
+  return rawData[hit];
 }
 
 //_____________________________________________________________________________
@@ -119,12 +117,18 @@ inline UInt_t THaSlotData::getRawData(UInt_t hit) const {
 inline
 UInt_t THaSlotData::getRawData(UInt_t chan, UInt_t hit) const {
   assert(chan < fNchan && hit < numHits[chan] );
-  if ( chan >= fNchan || numHits[chan] <= hit)
+#ifdef NDEBUG
+  if ( chan >= fNchan || hit >= numHits[chan] )
     return 0;
+#endif
   UInt_t index = dataindex[idxlist[chan]+hit];
+  auto numraw = getNumRaw();
   assert(index < numraw);
-  if (index < numraw) return rawData[index];
-  return 0;
+#ifdef NDEBUG
+  if (index >= numraw)
+    return 0;
+#endif
+  return rawData[index];
 }
 
 //_____________________________________________________________________________
@@ -132,7 +136,11 @@ inline
 UInt_t THaSlotData::getNumHits(UInt_t chan) const {
   // Num hits on a channel
   assert(chan < fNchan );
-  return (chan < fNchan) ? numHits[chan] : 0;
+#ifdef NDEBUG
+  if (chan >= fNchan)
+    return 0;
+#endif
+  return numHits[chan];
 }
 
 //_____________________________________________________________________________
@@ -147,9 +155,11 @@ inline
 UInt_t THaSlotData::getNextChan(UInt_t index) const {
   // List of unique channels hit
   assert(index < numchanhit);
-  if (index < numchanhit)
-    return chanlist[index];
-  return 0;
+#ifdef NDEBUG
+  if (index >= numchanhit)
+    return 0;
+#endif
+  return chanlist[index];
 }
 
 //_____________________________________________________________________________
@@ -157,12 +167,18 @@ UInt_t THaSlotData::getNextChan(UInt_t index) const {
 inline
 UInt_t THaSlotData::getData(UInt_t chan, UInt_t hit) const {
   assert(chan < fNchan && hit < numHits[chan] );
-  if ( chan >= fNchan || numHits[chan] <= hit)
+#ifdef NDEBUG
+  if ( chan >= fNchan || hit >= numHits[chan] )
     return 0;
+#endif
   UInt_t index = dataindex[idxlist[chan]+hit];
+  auto numraw = getNumRaw();      // List of channels with hits
   assert(index < numraw);
-  if (index < numraw) return data[index];
-  return 0;
+#ifdef NDEBUG
+  if ( index >= numraw )
+    return 0;
+#endif
+  return data[index];
 }
 
 //_____________________________________________________________________________
@@ -175,20 +191,22 @@ const char* THaSlotData::devType() const {
 //_____________________________________________________________________________
 inline
 void THaSlotData::clearEvent() {
-  // Only the minimum is cleared; e.g. data array is not cleared.
+  // Only the minimum is cleared
   // CAUTION: this code is critical for performance
-  numraw = 0;
   firstfreedataidx=0;
   numholesdataidx=0;
   while( numchanhit>0 ) numHits[chanlist[--numchanhit]] = 0;
+  rawData.clear();  // should be O(1) (trivial destructor)
+  data.clear();
 }
 
 //_____________________________________________________________________________
 inline
-void THaSlotData::compressdataindex(UInt_t numidx) {
-
+bool THaSlotData::checkdataindex( UInt_t numidx ) {
+  // Ensure that there are at least numidx free words in dataindex
   if( firstfreedataidx+numidx >= dataindex.size() )
-    compressdataindexImpl(numidx);
+    return compressdataindex(numidx);
+  return false;
 }
 
 }

@@ -328,7 +328,6 @@ void THaEvData::makeidx( UInt_t crate, UInt_t slot )
            crateslot[idx]->getSlot() == slot);
   }
 #endif
-  if (fDebugFile) crateslot[idx]->SetDebugFile(fDebugFile);
   if( !fMap ) return;
   if( fMap->crateUsed(crate) && fMap->slotUsed(crate,slot)) {
     crateslot[idx]
