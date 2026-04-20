@@ -141,10 +141,11 @@ public:
   // Methods to find position, length, and parameters of a CODA bank in
   // the current event buffer. Must call LoadEvent first.
   BankDat_t FindBank( UInt_t roc, Int_t bank ) const;
-  BankInfo  GetBank( const BankDat_t& bank ) {
-    return GetBank( buffer, bank.pos, bank.len );
+  BankInfo  GetBank( const BankDat_t& bank ) const {
+    if(bank.pos < 2) return {};
+    return GetBank( buffer, bank.pos-2, bank.len+2 );
   }
-  BankInfo  GetBank( UInt_t roc, Int_t bank ) {
+  BankInfo  GetBank( UInt_t roc, Int_t bank ) const {
     auto dat = FindBank(roc, bank);
     if( !dat ) return {};
     return GetBank(dat);
