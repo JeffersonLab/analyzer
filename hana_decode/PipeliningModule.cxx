@@ -16,6 +16,7 @@
 #include <utility>     // for std::swap
 
 using namespace std;
+using namespace Podd;
 
 namespace Decoder {
 
@@ -82,7 +83,7 @@ Long64_t PipeliningModule::VerifyBlockTrailer(
   if( iend > 0 ) {
     // Verify that the word count reported in the block trailer agrees with
     // the trailer's position in the buffer.
-    UInt_t nwords_inblock = evbuffer[iend] & 0x3FFFFF;
+    UInt_t nwords_inblock = bitval(evbuffer[iend], 0, 21);
     if( ibeg + nwords_inblock == iend + 1 )
       // All good
       return iend;
@@ -120,7 +121,7 @@ Long64_t PipeliningModule::FindBlockHeader( const uint32_t* buf, size_t start,
     pos = FindIDWord(buf, ibeg, len + start - ibeg, kBlockHeader);
     if( pos == -1 )
       return -1;
-    auto this_slot = (buf[pos] >> 22) & 0x1F;
+    auto this_slot = bitval(buf[pos], 22, 26);
     if( this_slot == slot )
       break;
     pos = FindIDWord(buf, pos + 1, len + start - (pos + 1),
@@ -157,7 +158,7 @@ UInt_t PipeliningModule::LoadBank( THaSlotData* sldat,
   fBlockHeader = evbuffer[ibeg];  // save for convenience
 
   // Multi-block event?
-  block_size = (evbuffer[ibeg] & 0xFF);  // Number of events in block
+  block_size = bitval(evbuffer[ibeg], 0, 7); // Number of events in block
   fMultiBlockMode = ( block_size > 1 );
 
   if( fMultiBlockMode ) {
@@ -273,28 +274,28 @@ void PipeliningModule::PrintBlock( const uint32_t* codabuffer,
     if( idx == pos+len )
       break;
     uint32_t data = codabuffer[idx];
-    uint32_t type = (data >> 27) & 0xF;
+    uint32_t type = bitval(data, 27, 30);
     switch( type ) {
       case 0:
         cout << "Block header"
              << " idx = " << idx
-             << " slot = " << ((data >> 22) & 0x1F)
-             << " blksz = " << ((data >> 0) & 0xFF)
-             << " iblkn = " << ((data >> 8) & 0x3FF);
+             << " slot = " << bitval(data,22, 26)
+             << " blksz = " << bitval(data, 0, 7)
+             << " iblkn = " << bitval(data, 8, 17);
         break;
       case 1:
         cout << "Block trailer"
              << " idx = " << idx
-             << " slot = " << ((data >> 22) & 0x1F)
-             << " nwords = " << (data & 0x3FFFFF);
+             << " slot = " << bitval(data, 22, 26)
+             << " nwords = " << bitval( data, 0, 21);
         break;
       case 2:
         cout << " Event header"
              << " idx = " << idx
-             << " slot = " << ((data >> 22) & 0x1F)
+             << " slot = " << bitval(data, 22, 26)
              //             << " nevt = " << (data & 0x3FFFFF);
-             << " time = " << ((data >>12) & 0x3FF)
-             << " trignum = " << (data & 0xFFF);
+             << " time = " << bitval(data, 12, 21)
+             << " trignum = " << bitval( data, 0, 11);
         break;
       default:
         cout << "  Type = " << type
