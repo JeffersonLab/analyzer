@@ -247,6 +247,44 @@ Int_t THaAnalyzer::AddPostProcess( THaPostProcess* module )
 }
 
 //_____________________________________________________________________________
+Int_t THaAnalyzer::AddEvtTypeHandler( THaEvtTypeHandler* handler )
+{
+  // Add 'handler' to the list of event type handlers. The handler object
+  // will subsequently be owned by THaAnalyzer; do not delete it.
+  // Adding handler is only possible if no analysis is in progress.
+  // If the Analyzer has been initialized, but no analysis has been started yet,
+  // the handler will be initialized immediately for the current run time.
+
+  // No handler, nothing to do
+  if( !handler )
+    return 0;
+
+  // Can't add handlers in the middle of things
+  if( fAnalysisStarted ) {
+    Error( "AddEvtTypeHandler", "Cannot add analysis handlers while analysis "
+           "is in progress. Close() this analysis first." );
+    return 237;
+  }
+
+  // Init this handler if Analyzer already initialized. Otherwise, the
+  // handler will be initialized in Init() later.
+  if( fIsInit ) {
+    // FIXME: debug
+    if( !fRun || !fRun->IsInit()) {
+      Error("AddEvtTypeHandler","fIsInit, but bad fRun?!?");
+      return 236;
+    }
+    TDatime run_time = fRun->GetDate();
+    Int_t retval = handler->Init(run_time);
+    if( retval )
+      return retval;
+  }
+
+  fEvtHandlers.push_back(handler);
+  return 0;
+}
+
+//_____________________________________________________________________________
 void THaAnalyzer::ClearCounters()
 {
   // Clear statistics counters
@@ -1435,6 +1473,7 @@ Int_t THaAnalyzer::MainAnalysis()
   }
 
   //FIXME Move to "OtherAnalysis"?
+  //FIXME EpicsHandler is part of this list, but analyzed again below?
   for( auto* obj : fEvtHandlers ) {
     try {
       obj->Analyze(fEvData);
