@@ -1264,7 +1264,8 @@ UInt_t Fadc250Module::LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer,
       break;  // block trailer found
   }
 
-  LoadTHaSlotDataObj(sldat);
+  if( sldat )
+    LoadTHaSlotDataObj(sldat);
 
   return fWordsSeen = p - (evbuffer + pos);
 }

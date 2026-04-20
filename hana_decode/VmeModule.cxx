@@ -48,7 +48,7 @@ UInt_t VmeModule::LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer,
       if (p > pstop) break;
       UInt_t rdata = *p;
       UInt_t mdata = rdata;
-      sldat->loadData(ichan, mdata, rdata);
+      if( sldat ) sldat->loadData(ichan, mdata, rdata);
       if (ichan < fData.size()) fData[ichan]=rdata;
     }
   }
