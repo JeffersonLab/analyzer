@@ -9,20 +9,24 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Rtypes.h"     // for UInt_t, Int_t
-#include <cstddef>      // for size_t
-#include <algorithm>    // for for_each, copy
-#include <cassert>      // for assert
-#include <charconv>     // for from_chars
-#include <iostream>     // for basic_ostream, operator<<, cout, char_traits
-#include <iterator>     // for ostream_iterator, ssize
-#include <stdexcept>    // for out_of_range
-#include <string_view>  // for string_view
-#include <system_error> // for errc
-#include <type_traits>  // for make_signed_t, is_integral_v, is_signed_v
-#include <vector>       // for vector, operator==
-#include <utility>      // for cmp_less, in_range
-#include <limits>       // for numeric_limits
+#include "Rtypes.h"      // for UInt_t, Int_t, Long64_t
+#include <algorithm>     // for for_each, copy
+#include <cassert>       // for assert
+#include <charconv>      // for from_chars
+#include <cstddef>       // for size_t
+#include <iostream>      // for ostream, cout, char_traits, operator<<, endl
+#include <iterator>      // for ostream_iterator, ssize
+#include <limits>        // for numeric_limits
+#include <stdexcept>     // for out_of_range
+#include <string_view>   // for string_view
+#include <system_error>  // for errc
+#include <type_traits>   // for is_integral_v, is_same_v, is_floating_point_v, make_signed_t, is_signed_v, is_unsigned_v
+#include <utility>       // for cmp_greater, cmp_less, in_range
+#include <vector>        // for vector, operator==
+#include <version>       // for __cpp_lib_bitops
+#if __cpp_lib_bitops >= 201907L
+#include <bit>           // for popcount
+#endif
 
 #define ALL( c ) (c).begin(), (c).end()
 
@@ -201,12 +205,27 @@ namespace Podd {
   //___________________________________________________________________________
   constexpr Int_t NumberOfSetBits( UInt_t v )
   {
-    // Count number of bits set in 32-bit integer. From
+    // Count number of bits set in 32-bit integer
+#if __cpp_lib_bitops >= 201907L
+    return std::popcount(v);
+#else
+    // From
     // http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
-
     v = v - ((v >> 1) & 0x55555555);
     v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
     return SINT((((v + (v >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24);
+#endif
+  }
+
+  //___________________________________________________________________________
+  // Return the value of the bits in the range [first,last] (inclusive).
+  // The number of bits considered is last-first+1.
+  template<typename T> requires std::is_unsigned_v<T>
+  constexpr T bitval(const T b, const unsigned first, const unsigned last)
+  {
+    if( first >= sizeof(T) << 3U || last < first ) return 0U;
+    if( last + 1 >= sizeof(T) << 3U ) return b >> first;
+    return (b & (1ULL << (last + 1)) - 1) >> first;
   }
 
   //___________________________________________________________________________
