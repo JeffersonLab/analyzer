@@ -221,7 +221,7 @@ namespace Podd {
   {
     if( first >= sizeof(T) << 3U || last < first ) return 0U;
     if( last + 1 >= sizeof(T) << 3U ) return b >> first;
-    return (b & (1ULL << (last + 1)) - 1) >> first;
+    return (b & ((1ULL << (last + 1)) - 1)) >> first;
   }
 
   //___________________________________________________________________________
