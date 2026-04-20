@@ -161,7 +161,8 @@ UInt_t F1TDCModule::LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer,
              <<"  0x"<<hex<<raw<<dec<<endl;
        }
 #endif
-       /*Int_t status = */sldat->loadData("tdc",chan,raw,raw);
+       /*Int_t status = */
+       if( sldat ) sldat->loadData("tdc",chan,raw,raw);
        UInt_t idx = chan * MAXHIT + 0;  // 1 hit per chan ???
        if( idx < MAXDATA ) fTdcData[idx] = raw;
        fWordsSeen++;

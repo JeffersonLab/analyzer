@@ -287,9 +287,11 @@ UInt_t GenScaler::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer, const UI
           return 0;
         }
 	Decode(p);
-        for( UInt_t ichan = 0; ichan < fNumChan; ichan++ ) {
-          sldat->loadData(ichan, fDataArray[ichan], fDataArray[ichan]);
-	}
+        if( sldat ) {
+          for( UInt_t ichan = 0; ichan < fNumChan; ichan++ ) {
+            sldat->loadData(ichan, fDataArray[ichan], fDataArray[ichan]);
+          }
+        }
 	fWordsSeen = fNumChan;
 	return fWordsSeen;
       }
@@ -322,11 +324,12 @@ UInt_t GenScaler::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer, const UI
                 fCrate, fSlot, fNumChan);
           return 0;
         }
-        Decode(evbuffer+index);
-        for( UInt_t ichan = 0; ichan < fNumChan; ichan++ ) {
-          sldat->loadData(ichan, fDataArray[ichan], fDataArray[ichan]);
+        fWordsSeen += Decode(evbuffer+index);
+        if( sldat ) {
+          for( UInt_t ichan = 0; ichan < fNumChan; ichan++ ) {
+            sldat->loadData(ichan, fDataArray[ichan], fDataArray[ichan]);
+          }
         }
-        fWordsSeen += (fNumChan + 1);
         break;
       }
       fWordsSeen += (fNumChan + 1); // Skip to next header

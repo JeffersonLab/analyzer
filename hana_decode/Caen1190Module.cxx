@@ -124,7 +124,10 @@ Int_t Caen1190Module::Decode( const UInt_t* p )
         tdc_data.chan = (*p & 0x03f80000) >> 19; // bits 25-19
         tdc_data.raw = *p & 0x0007ffff;      // bits 18-0
         tdc_data.opt = (*p & 0x04000000) >> 26;      // bit 26
-        tdc_data.status = fSlotData->loadData("tdc", tdc_data.chan, tdc_data.raw, tdc_data.opt);
+        if( fSlotData )
+          tdc_data.status =
+            fSlotData->loadData("tdc", tdc_data.chan,
+                                tdc_data.raw, tdc_data.opt);
 #ifdef WITH_DEBUG
         if( fDebugFile )
           *fDebugFile << "Caen1190Module:: 1190 MEASURED DATA >> data = "
