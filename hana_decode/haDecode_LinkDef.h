@@ -21,6 +21,7 @@
 #pragma link C++ class Decoder::Scaler3800+;
 #pragma link C++ class Decoder::Scaler3801+;
 #pragma link C++ class Decoder::Scaler560+;
+#pragma link C++ class Decoder::Scaler9250+;
 #pragma link C++ class Decoder::Fadc250Module+;
 #pragma link C++ class Decoder::F1TDCModule+;
 #pragma link C++ class Decoder::Caen1190Module+;
