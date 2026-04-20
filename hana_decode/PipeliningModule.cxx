@@ -46,7 +46,7 @@ void PipeliningModule::Init( const char* configstr )
   vector<ConfigStrReq> req = { { .name = "debug", .data = debug } };
   ParseConfigStr(configstr, req);
 
-  fDebug = static_cast<Int_t>(debug);
+  fDebug = ToInt(debug);
 }
 
 //_____________________________________________________________________________
@@ -92,21 +92,20 @@ Long64_t PipeliningModule::VerifyBlockTrailer(
     goto notfound;
   }
   // Apparent mis-identification: keep searching until hitting the buffer end
-  if( ++iend < pos+len ) {
+  if( ++iend; std::cmp_less(iend, pos + len) ) {
     cerr << "WARNING: Block trailer misidentification, slot " << fSlot
          << ", roc " << fCrate << ", data 0x" << hex << evbuffer[iend-1] << dec
          << ". Attempting recovery." << endl;
     return -iend;
-  } else {
- notfound:
-    cerr << "ERROR: Block trailer NOT found, slot " << fSlot
-         << ", roc " << fCrate << ". Corrupt data. Giving up." << endl;
-#ifdef WITH_DEBUG
-    cout << "Block data:" << endl;
-    PrintBlock(evbuffer, pos, len);
-#endif
-    return 0;
   }
+notfound:
+  cerr << "ERROR: Block trailer NOT found, slot " << fSlot
+    << ", roc " << fCrate << ". Corrupt data. Giving up." << endl;
+#ifdef WITH_DEBUG
+  cout << "Block data:" << endl;
+  PrintBlock(evbuffer, pos, len);
+#endif
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -116,8 +115,8 @@ Long64_t PipeliningModule::FindBlockHeader( const uint32_t* buf, size_t start,
   // Find block header for given slot. Ignore any control words within blocks
   // for other slots.
 
-  Long64_t ibeg = start, pos = -1;
-  while( true ) {
+  Long64_t ibeg = SINT(start), pos;
+  for( ;; ) {
     pos = FindIDWord(buf, ibeg, len + start - ibeg, kBlockHeader);
     if( pos == -1 )
       return -1;
@@ -167,7 +166,7 @@ UInt_t PipeliningModule::LoadBank( THaSlotData* sldat,
     // then proceed with decoding the first block
     evtblk.reserve(block_size + 1);
     Long64_t iend = ibeg+1;
-    while( true ) {
+    for( ;; ) {
       iend = FindEventsInBlock(evbuffer, iend, len+pos-iend,
                                kEventHeader, kBlockTrailer, evtblk, fSlot);
       if( (iend = VerifyBlockTrailer(evbuffer, pos, len, ibeg, iend)) > 0 )
@@ -176,7 +175,8 @@ UInt_t PipeliningModule::LoadBank( THaSlotData* sldat,
         return 0;
       iend = -iend;
     }
-    assert( ibeg >= pos && iend > ibeg && iend < pos+len ); // trivially
+    assert(std::cmp_greater_equal(ibeg, pos) && iend > ibeg &&
+      std::cmp_less(iend, pos+len)); // trivially
 
     if( evtblk.empty() )
       //TODO missing event headers, should not happen
@@ -193,29 +193,27 @@ UInt_t PipeliningModule::LoadBank( THaSlotData* sldat,
     memcpy(fBuffer.data(), evbuffer+ibeg, blklen * sizeof(fBuffer[0]));
     // Adjust the saved event header locations such that they reference the
     // corresponding locations in fBuffer
-    transform(ALL(evtblk), evtblk.begin(),
-              [ibeg]( UInt_t pos ) { return pos-ibeg; });
+    ranges::transform(evtblk, evtblk.begin(),
+                      [ibeg]( UInt_t ipos ) { return ipos - ibeg; });
 
     index_buffer = 0;
     return LoadNextEvBuffer(sldat);
-
-  } else {
-    // Single block: Find end of block and let the module decode the event
-    Long64_t iend = ibeg+1;
-    while( true ) {
-      iend = FindIDWord(evbuffer, iend, len+pos-iend,
-                        kBlockTrailer, fSlot);
-      if( (iend = VerifyBlockTrailer(evbuffer, pos, len, ibeg, iend)) > 0 )
-        break;
-      if( iend == 0 )
-        return 0;
-      iend = -iend;
-    }
-    assert( ibeg >= pos && iend > ibeg && iend < pos+len ); // trivially
-
-    return LoadSlot(sldat, evbuffer, ibeg, iend+1-ibeg);
   }
-  // not reached
+  // Single block: Find end of block and let the module decode the event
+  Long64_t iend = ibeg+1;
+  for( ;; ) {
+    iend = FindIDWord(evbuffer, iend, len+pos-iend,
+                      kBlockTrailer, fSlot);
+    if( (iend = VerifyBlockTrailer(evbuffer, pos, len, ibeg, iend)) > 0 )
+      break;
+    if( iend == 0 )
+      return 0;
+    iend = -iend;
+  }
+  assert( std::cmp_greater_equal(ibeg, pos) && iend > ibeg &&
+    std::cmp_less(iend, pos+len) ); // trivially
+
+  return LoadSlot(sldat, evbuffer, ibeg, iend+1-ibeg);
 }
 
 //_____________________________________________________________________________
@@ -229,7 +227,7 @@ UInt_t PipeliningModule::LoadNextEvBuffer( THaSlotData* sldat )
   // ibeg = event header, iend = one past last word of this event ( = next
   // event header if more events pending)
   auto ibeg = evtblk[ii], iend = evtblk[ii+1];
-  assert(ibeg > 0 && iend > ibeg && static_cast<size_t>(iend) <= fBuffer.size());
+  assert(ibeg > 0 && iend > ibeg && std::cmp_less_equal(iend, fBuffer.size()));
 
   // Let ibeg point to the block header, or one before event header
   if( ii == 0 )
