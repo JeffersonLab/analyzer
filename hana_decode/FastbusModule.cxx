@@ -70,7 +70,7 @@ UInt_t FastbusModule::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
     } else {
       Decode(p);
       if (fDebugFile) *fDebugFile << "FastbusModule:: chan "<<dec<<fChan<<"  data "<<fData<<"   raw "<<hex<<*p<<dec<<endl;
-      sldat->loadData(fChan, fData, fRawData);
+      if( sldat) sldat->loadData(fChan, fData, fRawData);
     }
     fWordsSeen++;
     p++;
