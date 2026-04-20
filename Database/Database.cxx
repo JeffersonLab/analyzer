@@ -134,7 +134,7 @@ vector<string> GetDBFileList( const char* name, const TDatime& date,
   // Return the database file searchlist as a vector of strings.
   // The file names are relative to the current directory.
 
-  static constexpr string defaultdir = "DEFAULT";
+  static const string defaultdir = "DEFAULT";
 
   if( !name || !*name )
     return {};
@@ -623,7 +623,7 @@ Int_t LoadDBvalue( FILE* file, const TDatime& datime, const char* key,
 
   if( !file || !key ) return -255;
 
-  static constexpr string here("LoadDBvalue");
+  static const string here("LoadDBvalue");
   constexpr Int_t bufsiz = 256;
   unique_ptr<char[]> buf{new char[bufsiz]};
   char* const bufp = buf.get();
