@@ -5,22 +5,35 @@
 //    Object-oriented version of decoder
 //    Sept, 2014    R. Michaels
 //
+// The data format is described in
+//  https://coda.jlab.org/drupal/system/files/eventbuilding.pdf
+// and
+//  https://jeffersonlab.github.io/evio/doc-5.3/users_guide/evio_Users_Guide.pdf
+//
 /////////////////////////////////////////////////////////////////////
 
 #include "CodaDecoder.h"
-#include "THaCrateMap.h"
-#include "THaBenchmark.h"
-#include "THaUsrstrutils.h"
-#include "Helper.h"
-#include "TError.h"
-#include "TList.h"
-#include <iostream>
-#include <stdexcept>
-#include <algorithm>
-#include <utility>
-#include <cstring>   // memcpy
-#include <sstream>
-#include <iomanip>
+#include "DAQConfigString.h"  // for DAQConfigString
+#include "Helper.h"           // for ALL
+#include "Module.h"           // for Module
+#include "TBits.h"            // for TBits
+#include "THaBenchmark.h"     // for THaBenchmark
+#include "THaCrateMap.h"      // for THaCrateMap
+#include "THaSlotData.h"      // for THaSlotData
+#include "THaUsrstrutils.h"   // for THaUsrstrutils
+#include "TString.h"          // for Form
+#include <cstdio>             // for printf
+#include <algorithm>          // for find, for_each, min, reverse, sort
+#include <cstring>            // for size_t, memcpy
+#include <exception>          // for exception
+#include <fstream>            // for ofstream
+#include <iomanip>            // for operator<<, setw
+#include <iostream>           // for ostream, operator<<, endl, cout, dec, hex, cerr
+#include <memory>             // for unique_ptr
+#include <set>                // for set
+#include <sstream>            // for ostringstream
+#include <stdexcept>          // for logic_error, invalid_argument
+#include <utility>            // for pair, move
 
 using namespace std;
 
@@ -326,7 +339,7 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer)
   tsEvType = 0;
 
   bank_tag   = (evbuffer[1] & 0xffff0000) >> 16;
-  data_type  = (evbuffer[1] & 0xff00) >> 8;
+  data_type  = (evbuffer[1] & 0x3f00) >> 8;
   block_size = evbuffer[1] & 0xff;
 
   event_type = InterpretBankTag(bank_tag);
@@ -397,15 +410,17 @@ Int_t CodaDecoder::LoadTrigBankInfo( UInt_t i )
   // in event block buffer. index_buffer must be < block size.
 
   assert(i < tbank.blksize);
+#ifdef NDEBUG
   if( i >= tbank.blksize )
     return -1;
+#endif
   tsEvType = tbank.evType[i];      // event type (configuration-dependent)
   if( tbank.evTS )
     evt_time = tbank.GetEvTS(i);   // event time (4ns clock, I think)
   else if( tbank.TSROC ) {
     size_t struct_size = tbank.withTriggerBits() ? 3 : 2;
     memcpy(&evt_time, tbank.TSROC + struct_size * i, sizeof(evt_time));
-    // Only the lower 48 bits seem to contain the time
+    // Only the lower 48 bits contain the time
     evt_time &= 0x0000FFFFFFFFFFFF;
   }
   if( tbank.withTriggerBits() )
@@ -463,19 +478,20 @@ Int_t CodaDecoder::trigBankDecode( const UInt_t* evbuffer )
 }
 
 //_____________________________________________________________________________
-Int_t CodaDecoder::BankInfo::Fill(             // NOLINT(misc-no-recursion)
-  const UInt_t* evbuf, UInt_t pos, UInt_t len )
+Int_t CodaDecoder::BankInfo::Fill(
+  // NOLINT(misc-no-recursion)
+  const UInt_t* evbuf, UInt_t pos, UInt_t len, bool recurse )
 {
-  if( !evbuf ) {
+  if( !evbuf )
     return status_ = kBadArg;
-  }
-  if( len < 3 ) {  // Expect at least 1 bank header + 1 payload word
+
+  if( len < 3 )    // Expect at least 1 bank header + 1 payload word
     return status_ = kBadArg;
-  }
+
   // Bank length
   const auto* p = evbuf + pos;
   UInt_t blen = *p;  // number of 32-bit words following this length word
-  if( blen < 2 || blen + 1 > len ) {
+  if( blen == 0 || blen >= len ) {
     len_ = blen;
     return status_ = kBadLen;
   }
@@ -485,17 +501,16 @@ Int_t CodaDecoder::BankInfo::Fill(             // NOLINT(misc-no-recursion)
   UInt_t tag   = (*p & 0xFFFF0000) >> 16;
   UInt_t npad  = (*p & 0x0000C000) >> 14;
   UInt_t dtyp  = (*p & 0x00003F00) >> 8;
-  UInt_t blksz = (*p & 0x000000FF);
-  // First word of payload
-  ++p;
+  UInt_t num   = (*p & 0x000000FF);
+
   status_ = kOK;
   switch( dtyp ) {
-    case 0x08: // float64_t (double)
-    case 0x09: // int64_t
-    case 0x0A: // uint64_t
     case 0x00: // 32-bit unknown
     case 0x01: // uint32_t
     case 0x02: // float32_t
+    case 0x08: // float64_t (double)
+    case 0x09: // int64_t
+    case 0x0A: // uint64_t
     case 0x0B: // int32_t
       if( npad != 0 ) {
         npad_   = npad;
@@ -516,13 +531,23 @@ Int_t CodaDecoder::BankInfo::Fill(             // NOLINT(misc-no-recursion)
     case 0x07: // uint8_t  (unsigned char)
       break;
 
+    case 0x0E: // Bank
     case 0x10: // Bank
-      if( otag_ == 0 )
-        otag_ = tag;
-      return Fill(evbuf, pos+2, blen-1);
+      if( recurse ) {
+        if( otag_ == 0 )
+          otag_ = tag;
+        return Fill(evbuf, pos+2, blen-1);
+      }
       break;
 
-    default: // Segments, composite, etc. not yet supported
+    case 0x0C: // Tag segment
+    case 0x0D: // Segment
+    case 0x0F: // Composite
+    case 0x20: // Segment
+      // Report the bank info, then use GetSegment to decode segment header, etc.
+      break;
+
+    default:
       dtyp_ = dtyp;
       return status_ = kUnsupType;
   }
@@ -531,7 +556,90 @@ Int_t CodaDecoder::BankInfo::Fill(             // NOLINT(misc-no-recursion)
   tag_   = tag;
   dtyp_  = dtyp;
   npad_  = npad;
-  blksz_ = blksz;
+  num_   = num;
+  return status_;
+}
+
+//_____________________________________________________________________________
+Int_t CodaDecoder::BankInfo::FillSegment( const UInt_t* evbuf, UInt_t pos,
+                                          UInt_t len, UInt_t dtype )
+{
+  // Decode Segment/Tag segment header in given bank
+
+  if( !evbuf )
+    return status_ = kBadArg;
+
+  const auto* p = evbuf + pos;
+
+  UInt_t tag, npad, dtyp, slen;
+  switch( dtype ) {
+    case 0x0D:  // Segment
+    case 0x20:
+      tag   = (*p & 0xFF000000) >> 24;
+      npad  = (*p & 0x00C00000) >> 22;
+      dtyp  = (*p & 0x003F0000) >> 16;
+      slen  = (*p & 0x0000FFFF);
+      break;
+    case 0x0C: // Tag segment (Hall B custom data blob, needs its own complex decoder to unpack)
+      tag   = (*p & 0xFFF00000) >> 20;
+      npad  = 0;  // not available, use caution, see CODA documentation
+      dtyp  = (*p & 0x000F0000) >> 16;
+      slen  = (*p & 0x0000FFFF);
+    default:
+      return status_ = kUnsupType;
+  }
+
+  if( slen == 0 || slen >= len ) {
+    len_ = slen;
+    return status_ = kBadLen;
+  }
+
+  status_ = kOK;
+  switch( dtyp ) {
+    case 0x00: // 32-bit unknown
+    case 0x01: // uint32_t
+    case 0x02: // float32_t
+    case 0x08: // float64_t (double)
+    case 0x09: // int64_t
+    case 0x0A: // uint64_t
+    case 0x0B: // int32_t
+      if( npad != 0 ) {
+        npad_   = npad;
+        status_ = kBadPad;
+      }
+      break;
+
+    case 0x04: // int16_t
+    case 0x05: // uint16_t
+      if( npad != 0 && npad != 2 ) {
+        npad_ = npad;
+        status_ = kBadPad;
+      }
+      break;
+
+    case 0x03: // int8_t   (char)
+    case 0x06: // int8_t   (signed char)
+    case 0x07: // uint8_t  (unsigned char)
+      break;
+
+    case 0x0C: // Tag segment
+    case 0x0D: // Segment
+    case 0x0E: // Bank
+    case 0x0F: // Composite
+    case 0x10: // Bank
+    case 0x20: // Segment
+      // CODA will not produce such structures, according to the docs
+      throw coda_format_error("Bank, segment, or composite within segment");
+
+    default:
+      dtyp_ = dtyp;
+      return status_ = kUnsupType;
+  }
+  pos_   = pos+1;
+  len_   = slen;
+  tag_   = tag;
+  dtyp_  = dtyp;
+  npad_  = npad;
   return status_;
 }
 
@@ -581,74 +689,8 @@ const char* CodaDecoder::BankInfo::Typtxt() const
     return typtxt[dtyp_];
   if( dtyp_ == 0x20 )
     return "SEGMENT";
-  if( dtyp_ == 0x21 )
-    return "Hollerit";
-  if( dtyp_ == 0x22 )
-    return "N value";
   return "Unknown";
 }
-
-//_____________________________________________________________________________
-CodaDecoder::BankInfo::EDataSize CodaDecoder::BankInfo::GetDataSize() const
-{
-  switch( dtyp_ ) {
-    case 0x08: // float64_t (double)
-    case 0x09: // int64_t
-    case 0x0A: // uint64_t
-      return k64bit;
-    case 0x00: // 32-bit unknown
-    case 0x01: // uint32_t
-    case 0x02: // float32_t
-    case 0x0B: // int32_t
-      return k32bit;
-    case 0x04: // int16_t
-    case 0x05: // uint16_t
-      return k16bit;
-    case 0x03: // int8_t   (char)
-    case 0x06: // int8_t   (signed char)
-    case 0x07: // uint8_t  (unsigned char)
-      return k8bit;
-    default:
-      return kUndef;
-  }
-}
-
-//_____________________________________________________________________________
-CodaDecoder::BankInfo::EIntFloat CodaDecoder::BankInfo::GetFloat() const
-{
-  switch( dtyp_ ) {
-    case 0x02: // float32_t (float)
-      return kFloat;
-    case 0x08: // float64_t (double)
-      return kDouble;
-    default:
-      return kInteger;
-  }
-}
-
-//_____________________________________________________________________________
-CodaDecoder::BankInfo::ESigned CodaDecoder::BankInfo::GetSigned() const
-{
-  switch( dtyp_ ) {
-    case 0x02: // float32_t
-    case 0x04: // int16_t
-    case 0x06: // int8_t   (signed char)
-    case 0x08: // float64_t (double)
-    case 0x09: // int64_t
-    case 0x0B: // int32_t
-      return kSigned;
-    case 0x01: // uint32_t
-    case 0x05: // uint16_t
-    case 0x07: // uint8_t  (unsigned char)
-    case 0x0A: // uint64_t
-      return kUnsigned;
-    case 0x00: // 32-bit unknown
-    case 0x03: // int8_t   (char)
-    default:
-      return kUnknown;
-  }
-}
-
 
 //_____________________________________________________________________________
 Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
@@ -683,7 +725,7 @@ Int_t CodaDecoder::daqConfigDecode( const UInt_t* evbuf )
     pos = bankinfo.pos_;
     size_t len = bankinfo.len_;
     assert(pos + len <= event_length);
-    if( bankinfo.GetDataSize() == BankInfo::k8bit ) {
+    if( bankinfo.GetDataSize() == 1 ) {
       UInt_t crate = bankinfo.tag_;  // The bank tag is the crate number
       const auto* c = reinterpret_cast<const char*>(evbuf + pos); // NOLINT(*-pro-type-reinterpret-cast)
       DAQConfigString cfg{raw_event_num, event_type, crate,
@@ -765,7 +807,7 @@ void CodaDecoder::PrintBankInfo() const
   std::sort(ALL(banks), []( const BankDat_t& a, const BankDat_t& b ) -> bool {
     if( (a.key >> 16) < (b.key >> 16) )
       return true;
-    else if( (a.key >> 16) > (b.key >> 16) )
+    if( (a.key >> 16) > (b.key >> 16) )
       return false;
     return a.pos < b.pos;
   });
@@ -795,63 +837,76 @@ uint32_t CodaDecoder::TBOBJ::Fill( const uint32_t* evbuffer,
 
   if( blkSize == 0 )
     throw std::invalid_argument("CODA block size must be > 0");
-  start = evbuffer;
   blksize = blkSize;
   len = evbuffer[0] + 1;
-  tag = evbuffer[1] >> 16;
-  nrocs = evbuffer[1] & 0xff;
   runInfo = 0;
 
-  const uint32_t* p = evbuffer + 2;
+  // Iterate through bank of segments
+  BankDataIterator it( evbuffer, 0, len );
+  if( !it || !it.header().IsSegment() )
+    throw coda_format_error("Invalid trigger bank header");
+
+  tag = it.header().tag_;
+  nrocs = it.header().num_;
+  // Trigger bank tags are reserved from 0xFF10 to 0xFF4F, but 0xFF27 is
+  // currently the largest defined value. 0xFF1X are "raw trigger" banks
+  // that should not be present in our "built" data files. TODO confirm
+  if( tag < 0xFF20 || tag > 0xFF27 )
+    throw coda_format_error("Invalid trigger bank tag");
+
   // Segment 1:
   //  uint64_t event_number
   //  uint64_t time_stamp[blkSize]     if withTimeStamp
   //  uint64_t run_info                if withRunInfo
-  {
-    uint32_t slen = *p & 0xffff;  // segment length in 32-bit words
-    if( slen != 2*(1 + withTimeStamp() * blkSize + withRunInfo()) )
-      throw coda_format_error("Invalid length for Trigger Bank seg 1");
-    memcpy(&evtNum, p + 1, sizeof(evtNum));
-    evTS = withTimeStamp() ? p + 3 : nullptr;
-    if( withRunInfo() )
-      memcpy(&runInfo, p + 3 + withTimeStamp() * 2UL * blksize, sizeof(runInfo));
-    p += slen + 1;
-  }
-  if( p-evbuffer >= len )
+
+  if( it->GetDataSize() != sizeof(uint64_t) )
+    throw coda_format_error("Invalid data type Trigger Bank seg 1");
+  if( it->len_ != 2U * (1 + withTimeStamp() * blkSize + withRunInfo()) )
+    throw coda_format_error("Invalid length for Trigger Bank seg 1");
+
+  EBid = it->tag_;
+  const uint32_t* p = it.ptr();
+  memcpy(&evtNum, p, sizeof(evtNum));
+  evTS = withTimeStamp() ? p + 2 : nullptr;
+  if( withRunInfo() )
+    memcpy(&runInfo, p + 2 + withTimeStamp() * 2U * blksize, sizeof(runInfo));
+
+  if( !++it )
     throw coda_format_error("Past end of bank after Trigger Bank seg 1");
 
   // Segment 2:
   //  uint16_t event_type[blkSize]
   //  padded to next 32-bit boundary
-  {
-    uint32_t slen = *p & 0xffff;
-    if( slen != (blkSize-1)/2 + 1 )
-      throw coda_format_error("Invalid length for Trigger Bank seg 2");
-    evType = (const uint16_t*) (p + 1);
-    p += slen + 1;
-  }
+  if( it->GetDataSize() != sizeof(uint16_t) )
+    throw coda_format_error("Invalid data type Trigger Bank seg 2");
+  if( it->len_ != (blkSize-1)/2 + 1 )
+    throw coda_format_error("Invalid length for Trigger Bank seg 2");
 
-  // nroc ROC segments containing timestamps and optional
+  evType = (const uint16_t*) it.ptr();
+
+  // nrocs ROC segments containing timestamps and optional
   // data like trigger latch bits:
   // struct {
-  //   uint64_t roc_time_stamp;     // Lower 48 bits only seem to be the time.
-  //   uint32_t roc_trigger_bits;   // Optional. Typically only in TSROC.
+  //   uint64_t roc_time_stamp;     // Only lower 48 bits are used
+  //   uint32_t roc_trigger_bits;   // Optional. Typically only in TSROC
   // } roc_segment[blkSize];
   TSROC = nullptr;
   tsrocLen = 0;
-  for( uint32_t i = 0; i < nrocs; ++i ) {
-    if( p-evbuffer >= len )
-      throw coda_format_error("Past end of bank while scanning trigger bank segments");
-    uint32_t slen = *p & 0xffff;
-    uint32_t rocnum = *p >> 24;
+  int32_t n = nrocs;
+  while( ++it && n-- > 0 ) {
+    if( it->GetDataSize() != sizeof(uint32_t) )
+      throw coda_format_error("Invalid data type Trigger Bank ROC segment");
+
+    uint32_t rocnum = it->tag_;
     if( rocnum == tsroc ) {
-      TSROC = p + 1;
-      tsrocLen = slen;
+      TSROC = it.ptr();
+      tsrocLen = it->len_;
       break;
     }
-    p += slen + 1;
   }
-
+  if( it && n == 0 )
+    throw coda_format_error
+      ("Past end of bank while scanning trigger bank ROC segments");
   return len;
 }
 
@@ -1164,6 +1219,65 @@ CodaDecoder::BankDat_t CodaDecoder::FindBank( UInt_t roc, Int_t bank ) const
 }
 
 //_____________________________________________________________________________
+void CodaDecoder::BankDataIterator::parse_container_header( UInt_t nextpos )
+{
+  assert(current().IsContainer());
+  do {
+    // Descend into sub-banks or segments, or a combination thereof
+    UInt_t len = endpos_ - nextpos;
+    if( current().IsBank() ) {
+      // Bank of banks
+      banks_.push_back(GetBank(evbuf_, nextpos, len, false));
+      if( !banks_.back() )
+        throw coda_format_error("Invalid bank header in op++");
+    }
+    if( current().IsSegment() or current().IsComposite() ) {
+      // Bank of segments. Or bank of composite, which starts with a segment
+      banks_.push_back(GetSegment(evbuf_, nextpos, len, current().dtyp_));
+      if( !banks_.back() )
+        throw coda_format_error("Invalid segment header in op++");
+    }
+    nextpos = 111;
+  } while( current().IsContainer() );
+}
+
+//_____________________________________________________________________________
+CodaDecoder::BankDataIterator& CodaDecoder::BankDataIterator::operator++()
+{
+  // Advance to next payload
+
+  assert(!current().IsContainer()); // The iterator always points to a payload
+  UInt_t nextpos = current().pos_ + current().len_;
+  if( nextpos >= endpos_ || banks_.size() == 1 ) {
+    if( banks_.size() == 1 && nextpos < endpos_ ) {
+      // Whoops. Wrong bank size TODO trivially always false?
+      throw coda_format_error("Wrong bank size"); // TODO
+    }
+    // Reached the end of the outermost bank
+    endpos_ = 0;  // Make operator bool() report false
+    return  *this;
+  }
+  // Data left
+  banks_.pop_back();
+  assert(!banks_.empty());     // else check above incorrect
+  parse_container_header(nextpos);
+  return *this;
+}
+
+//_____________________________________________________________________________
+void CodaDecoder::BankDataIterator::reset()
+{
+  banks_.clear();
+  banks_.reserve(2); // typical size
+  banks_.push_back(GetBank(evbuf_, startpos_, len_, false));
+  if( !current() )
+    throw coda_format_error("BankDataIterator: Invalid outer bank");
+  endpos_ = current().pos_ + current().len_;
+  if( *this && current().IsContainer() )
+    parse_container_header(current().pos_);  // Advance to first payload
+}
+
+//_____________________________________________________________________________
  Int_t CodaDecoder::FillBankData( UInt_t *rdat, UInt_t roc, Int_t bank,
                                   UInt_t offset, UInt_t num ) const
 {
@@ -1355,7 +1469,7 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
           <<"  Len = "<<rocdat[irn[i]].len<<endl;
     }
     *fDebugFile << "    Trigger BANK INFO,  TAG = "<<hex<<tbank.tag<<dec<<endl;
-    *fDebugFile << "    start "<<hex<<tbank.start<<"      blksize "<<dec<<tbank.blksize
+    *fDebugFile << "      blksize "<<dec<<tbank.blksize
         <<"  len "<<tbank.len<<"   tag "<<tbank.tag<<"   nrocs "<<tbank.nrocs<<"   evtNum "<<tbank.evtNum;
     *fDebugFile << endl;
     *fDebugFile << "         Event #       Time Stamp       Event Type"<<endl;

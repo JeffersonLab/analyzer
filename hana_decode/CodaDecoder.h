@@ -10,12 +10,14 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "THaEvData.h"
-#include <vector>
-#include <cstdint>
-#include <stdexcept>
-#include <string>
-#include <cstring> // for memcpy
+#include "THaEvData.h"  // for THaEvData, Rtypes, MAX_PSFACT
+#include <array>        // for array
+#include <cassert>      // for assert
+#include <cstdint>      // for uint32_t, uint64_t, uint16_t, uint8_t
+#include <cstring>      // for size_t, memcpy, memset
+#include <stdexcept>    // for runtime_error
+#include <string>       // for string
+#include <vector>       // for vector
 
 namespace Decoder {
 
@@ -56,32 +58,69 @@ public:
   static UInt_t InterpretBankTag( UInt_t tag );
 
   struct BankInfo {
-    BankInfo() : pos_{0}, len_{0}, tag_{0}, otag_{0}, dtyp_{0}, npad_{0},
-                 blksz_{0}, status_{kOK} {}
-    enum EBankErr  { kOK = 0, kBadArg, kBadLen, kBadPad, kUnsupType };
-    enum EDataSize { kUndef = 0, k8bit = 1, k16bit = 2, k32bit = 4, k64bit = 8 };
-    enum EIntFloat { kInteger = 0, kFloat, kDouble };
-    enum ESigned   { kUnknown = 0, kUnsigned, kSigned };
-    explicit operator bool() const { return status_ == kOK && len_ > 0; }
-    bool operator!() const { return !((bool)*this); }
-    Int_t Fill( const UInt_t* evbuf, UInt_t pos, UInt_t len );
-    EDataSize GetDataSize() const; // Size of data in bytes/element
-    EIntFloat GetFloat()    const;
-    ESigned   GetSigned()   const;
-    const char* Errtxt()    const;
-    const char* Typtxt()    const;
+    enum EBankErr  : Byte_t { kOK = 0, kBadArg, kBadLen, kBadPad, kUnsupType };
+    enum EDataType : Byte_t {
+      kUnknown = 0, kUInt = 1, kFloat = 2, kChar = 3,
+      kShort = 4, kUShort = 5, kInt8 = 6, kUInt8 = 7, kDouble = 8, kLong = 9,
+      kULong = 0xA, kInt = 0xB, kTagSegment = 0xC, kAltSegment = 0xD,
+      kAltBank = 0xE, kComposite = 0xF, kBank = 0x10, kSegment = 0x20
+    };
     UInt_t    pos_;      // First word of payload
     UInt_t    len_;      // pos_ + len_ = first word after payload
-    UInt_t    tag_;      // Bank tag
-    UInt_t    otag_;     // Bank tag of "outer" bank if bank of banks
-    UInt_t    dtyp_;     // Data type
-    UInt_t    npad_;     // Number of padding bytes at end of data
-    UInt_t    blksz_;    // Block size (multiple events per buffer)
+    UShort_t  tag_;      // Bank tag
+    UShort_t  otag_;     // Bank tag of "outer" bank if bank of banks
+    Byte_t    dtyp_;     // Data type
+    Byte_t    num_;      // Application-specific counter (e.g. block size)
+    Byte_t    npad_;     // Number of padding bytes at end of data
     EBankErr  status_;   // Decoding status
+
+    BankInfo() : pos_{0}, len_{0}, tag_{0}, otag_{0}, dtyp_{0}, num_{0},
+                 npad_{0}, status_{kOK} {}
+    // Decode bank header, including nested banks
+    Int_t  Fill( const UInt_t* evbuf, UInt_t pos, UInt_t len, bool recurse = true );
+    // Decode segment/tag segment header
+    Int_t  FillSegment( const UInt_t* evbuf, UInt_t pos, UInt_t len, UInt_t dtype );
+
+    explicit operator bool() const {
+      return status_ == kOK && (IsContainer() || len_ > 0);
+    }
+    bool operator!() const { return !((bool)*this); }
+
+    Bool_t IsBank()      const { return dtyp_ == kBank || dtyp_ == kAltBank; }
+    Bool_t IsComposite() const { return dtyp_ == kComposite; }
+    Bool_t IsSegment()   const { return dtyp_ == kSegment ||
+      dtyp_ == kTagSegment || dtyp_ == kAltSegment; }
+    Bool_t IsContainer() const { return IsBank() or IsSegment() or IsComposite(); }
+    const char* Errtxt() const;
+    const char* Typtxt() const;
+
+    size_t GetDataSize() const {
+      // Size of data in bytes/element
+      switch( dtyp_ ) {
+        case kLong:  case kULong: case kDouble:
+          return 8;
+        case kUInt:  case kFloat: case kInt: case kUnknown:
+          return 4;
+        case kShort: case kUShort:
+          return 2;
+        case kChar:  case kInt8:  case kUInt8:
+          return 1;
+        default:
+          return 0;
+      }
+    }
+    UInt_t GetDataType() const { return dtyp_; }
   };
-  static BankInfo GetBank( const UInt_t* evbuf, UInt_t pos, UInt_t len ) {
+  static BankInfo GetBank( const UInt_t* evbuf, UInt_t pos, UInt_t len,
+                           bool recurse = true) {
     BankInfo ifo;
-    ifo.Fill(evbuf, pos, len);
+    ifo.Fill(evbuf, pos, len, recurse);
+    return ifo;
+  }
+  static BankInfo GetSegment( const UInt_t* evbuf, UInt_t pos, UInt_t len,
+                              UInt_t dtype ) {
+    BankInfo ifo;
+    ifo.FillSegment(evbuf, pos, len, dtype);
     return ifo;
   }
 
@@ -110,6 +149,47 @@ public:
     if( !dat ) return {};
     return GetBank(dat);
   }
+
+  // Iterator over payload data contained in a bank or subdivisions thereof,
+  // such as other banks or segments. Dereferencing the iterator returns a
+  // BankInfo object that contains the parameters of the current payload chunk.
+  class BankDataIterator {
+  public:
+    BankDataIterator( const UInt_t* evbuf, UInt_t pos, UInt_t len )
+      : evbuf_(evbuf), startpos_(pos), len_(len), endpos_(0) { reset(); }
+    BankDataIterator( const UInt_t* evbuf, const BankDat_t& bankdat )
+      : BankDataIterator( evbuf, bankdat.pos, bankdat.len ) {}
+    BankDataIterator() = delete;
+
+    // Positioning
+    BankDataIterator& operator++();
+    BankDataIterator operator++(int) &
+      { BankDataIterator clone(*this); ++*this; return clone; }
+    void reset();
+
+    // Status
+    explicit operator bool() const { return current().pos_ < endpos_; }
+    bool operator!() const { return !static_cast<bool>(*this); }
+
+    // Current value
+    const BankInfo* operator->() const { return &current(); }
+    const BankInfo& operator* () const { return current(); }
+    const BankInfo& header() const { return banks_.at(0); }
+    const UInt_t*   ptr()    const { return evbuf_ + current().pos_; }
+
+  private:
+    const UInt_t* const    evbuf_;
+    const UInt_t           startpos_;
+    const UInt_t           len_;
+    UInt_t                 endpos_;
+    std::vector<BankInfo>  banks_;
+
+    const BankInfo& current() const {
+      assert(!banks_.empty());
+      return banks_.back();
+    }
+    void parse_container_header( UInt_t nextpos );
+  };
 
 protected:
   virtual Int_t  LoadIfFlagData(const UInt_t* evbuffer);
@@ -153,28 +233,29 @@ protected:
 public:
   class TBOBJ {
   public:
-     TBOBJ() : blksize(0), tag(0), nrocs(0), len(0), tsrocLen(0), evtNum(0),
-               runInfo(0), start(nullptr), evTS(nullptr), evType(nullptr),
+     TBOBJ() : len(0), tag(0), blksize(0), nrocs(0), EBid(0), tsrocLen(0),
+               evtNum(0), runInfo(0), evTS(nullptr), evType(nullptr),
                TSROC(nullptr) {}
      void     Clear() { memset(this, 0, sizeof(*this)); }
      uint32_t Fill( const uint32_t* evbuffer, uint32_t blkSize, uint32_t tsroc );
      bool     withTimeStamp()   const { return (tag & 1) != 0; }
      bool     withRunInfo()     const { return (tag & 2) != 0; }
-     bool     withTriggerBits() const { return (tsrocLen > 2*blksize);}
-     uint64_t GetEvTS( size_t i ) {
+     bool     withRunData()     const { return (tag & 4) == 0; } // = trigger bits?
+     bool     withTriggerBits() const { return (tsrocLen > 2U*blksize);}
+     uint64_t GetEvTS( size_t i ) const {
        uint64_t ts{0};
        if( evTS && i < blksize )
          memcpy(&ts, evTS + 2 * i, sizeof(ts));
        return ts;
      }
-     uint32_t blksize;          /* total number of triggers in the Bank */
-     uint16_t tag;              /* Trigger Bank Tag ID = 0xff2x */
-     uint16_t nrocs;            /* Number of ROC Banks in the Event Block (val = 1-256) */
      uint32_t len;              /* Total Length of the Trigger Bank - including Bank header */
+     uint16_t tag;              /* Trigger Bank Tag ID = 0xff2x */
+     uint8_t  blksize;          /* total number of triggers in the Bank (1-255) */
+     uint8_t  nrocs;            /* Number of ROC Banks in the Event Block (1-255) */
+     uint16_t EBid;             /* Event builder ID (12 bits) */
      uint32_t tsrocLen;         /* Number of words in TSROC array */
      uint64_t evtNum;           /* Starting Event # of the Block */
      uint64_t runInfo;          /* Run Info Data (optional) */
-     const uint32_t *start;     /* Pointer to start of the Trigger Bank */
      const uint32_t *evTS;      /* Pointer to array of 64-bit timestamps (optional) */
      const uint16_t *evType;    /* Pointer to array of Event Types */
      const uint32_t *TSROC;     /* Pointer to Trigger Supervisor ROC segment data */
