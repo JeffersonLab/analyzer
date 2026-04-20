@@ -59,6 +59,7 @@ set(src
   THaSlotData.cxx
   THaUsrstrutils.cxx
   VmeModule.cxx
+  Scaler9250.cxx
   )
 if(ONLINE_ET)
   set(ONLIBS ET::ET)
