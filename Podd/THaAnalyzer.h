@@ -41,6 +41,7 @@ public:
 
   virtual Int_t  AddInterStage( Podd::InterStageModule* module );
   virtual Int_t  AddPostProcess( THaPostProcess* module );
+  virtual Int_t  AddEvtTypeHandler( THaEvtTypeHandler* handler );
   virtual void   Close();
   virtual Int_t  Init( THaRunBase* run );
           Int_t  Init( THaRunBase& run )    { return Init( &run ); }
