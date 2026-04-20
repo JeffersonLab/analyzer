@@ -40,7 +40,7 @@ set(src
   THaVarList.cxx               THaVertexModule.cxx          THaVform.cxx
   THaVhist.cxx                 TimeCorrectionModule.cxx     Variable.cxx
   VariableArrayVar.cxx         VectorObjMethodVar.cxx       VectorObjVar.cxx
-  VectorVar.cxx
+  VectorVar.cxx                Fadc250ScalerEvtHandler.cxx
   )
 if(ONLINE_ET)
   list(APPEND src THaOnlRun.cxx)
