@@ -103,6 +103,7 @@
 #pragma link C++ class THaSAProtonEP+;
 #pragma link C++ class THaEvtTypeHandler+;
 #pragma link C++ class THaScalerEvtHandler+;
+#pragma link C++ class Fadc250ScalerEvtHandler+;
 #pragma link C++ class THaEpicsEvtHandler+;
 #pragma link C++ class THaEvt125Handler+;
 #pragma link C++ class Podd::MCHitInfo+;
