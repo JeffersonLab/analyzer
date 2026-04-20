@@ -47,6 +47,26 @@ namespace Podd {
   template<typename Container>
   static auto SSIZE( const Container& c ) { return std::ssize(c); }
 
+  // Force safe conversion to int from any integer
+  template<typename T> requires (std::is_integral_v<T> and std::is_unsigned_v<T>)
+  int ToInt( T uint )
+  {
+    if( std::cmp_greater(uint, std::numeric_limits<int>::max()) ) [[unlikely]]
+      throw std::out_of_range("Unsigned integer out of int range");
+    return static_cast<int>(uint);
+  }
+  template<typename T> requires (std::is_integral_v<T> and std::is_signed_v<T>)
+  int ToInt( T sint )
+  {
+    if( sint > std::numeric_limits<int>::max() ||
+        sint < std::numeric_limits<int>::min() ) [[unlikely]]
+      throw std::out_of_range("Unsigned integer out of int range");
+    return static_cast<int>(sint);
+  }
+  // Trivial case
+  template<typename T> requires std::is_same_v<T,int>
+  int ToInt( T sint ) { return sint; }
+
   //___________________________________________________________________________
   template< typename VectorElem >
   void NthCombination( UInt_t n, const std::vector<std::vector<VectorElem>>& vec,
