@@ -585,6 +585,7 @@ Int_t CodaDecoder::BankInfo::FillSegment( const UInt_t* evbuf, UInt_t pos,
       npad  = 0;  // not available, use caution, see CODA documentation
       dtyp  = (*p & 0x000F0000) >> 16;
       slen  = (*p & 0x0000FFFF);
+      break;
     default:
       return status_ = kUnsupType;
   }
