@@ -229,7 +229,7 @@ Bool_t THaRun::ProvidesInitInfo()
 //_____________________________________________________________________________
 Int_t THaRun::PrescanFile()
 {
-  static const char* const here = "THaRun::PrescanFile";
+  static const char* const here = "PrescanFile";
   // Scan at least 'minscan' number of events regardless of info required
   const auto minscan = TMath::Min(fMinScan, fMaxScan);
 
@@ -275,7 +275,7 @@ Int_t THaRun::PrescanFile()
            << evdata->GetEvLength() * sizeof(decltype(*GetEvBuffer())) << endl;
   }//end while
 
-  if( status != READ_OK )
+  if( status != READ_OK && status != READ_EOF )
     Error(here, "Failed to read CODA file at event %u", nev);
   return status;
 }
