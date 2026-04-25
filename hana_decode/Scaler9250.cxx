@@ -28,6 +28,7 @@ void Scaler9250::Init()
   fNumChan = 16;
   fWordsExpect = fNumChan;
   GenInit();
+  fModelNum = 9250;
 }
 
 }

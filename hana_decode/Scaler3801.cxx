@@ -25,7 +25,8 @@ void Scaler3801::Init()
 {
   fNumChan = 32;
   fWordsExpect = 32;
-  GenScaler::GenInit();
+  GenInit();
+  fModelNum = 3801;
 }
 
 }
