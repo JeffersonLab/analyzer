@@ -89,6 +89,7 @@ void Module::Clear( Option_t* opt )
     fMultiBlockMode = false;
     fBlockIsDone = false;
   }
+  fWordsSeen = 0;
 }
 
 //_____________________________________________________________________________
