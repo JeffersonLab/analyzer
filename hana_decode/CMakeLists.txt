@@ -60,6 +60,7 @@ set(src
   THaUsrstrutils.cxx
   VmeModule.cxx
   Scaler9250.cxx
+  TIClockModule.cxx
   )
 if(ONLINE_ET)
   set(ONLIBS ET::ET)
