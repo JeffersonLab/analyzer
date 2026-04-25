@@ -1,13 +1,12 @@
-#ifndef Scaler9250_
-#define Scaler9250_
+#ifndef Podd_Scaler9250_
+#define Podd_Scaler9250_
 
 /////////////////////////////////////////////////////////////////////
 //
 //   Scaler9250
-//   FADC250 scalers
+//   FADC250 scalers bank data (bank 9250)
 //
-//   Apr 2026
-//   TODO this is a very temporary class that will disappear shortly
+//   Ole Hansen Apr 2026
 //
 /////////////////////////////////////////////////////////////////////
 
@@ -28,8 +27,7 @@ private:
 
    static TypeIter_t fgThisType;
 
-   ClassDefOverride(Scaler9250,0)  // FADC250 scalers
-
+   ClassDefOverride(Scaler9250,0)  // FADC250 scaler bank data
 };
 
 }
