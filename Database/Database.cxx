@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "Database.h"
+#include "Helper.h"      // for ToInt
 #include "TDatime.h"     // for TDatime, operator!=, operator==, operator>=
 #include "TError.h"      // for Error, Warning, Info
 #include "TObjArray.h"   // for TObjArray
@@ -390,22 +391,6 @@ Int_t IsDBkey( const string& line, const char* key, string& text )
 }
 
 //_____________________________________________________________________________
-Int_t ChopPrefix( string& s )
-{
-  // Remove trailing level from prefix. Example "L.vdc." -> "L."
-  // Return remaining number of dots, or zero if empty/invalid prefix
-
-  if( auto len = s.size(); len >= 2 ) {
-    if( auto pos = s.rfind('.', len-2); pos != string::npos ) {
-      s.erase(pos + 1);
-      return static_cast<Int_t>(ranges::count(s, '.'));
-    }
-  }
-  s.clear();
-  return 0;
-}
-
-//_____________________________________________________________________________
 bool IsTag( const char* buf )
 {
   // Return true if the string in 'buf' matches regexp ".*\[.+\].*",
@@ -506,6 +491,22 @@ void prepare_line( string& linbuf, bool& comment, bool& continued,
 }
 
 } // end anonymous namespace
+
+//_____________________________________________________________________________
+Int_t ChopPrefix( string& s )
+{
+  // Remove trailing level from prefix. Example "L.vdc." -> "L."
+  // Return remaining number of dots, or zero if empty/invalid prefix
+
+  if( auto len = s.size(); len >= 2 ) {
+    if( auto pos = s.rfind('.', len-2); pos != string::npos ) {
+      s.erase(pos + 1);
+      return ToInt(ranges::count(s, '.'));
+    }
+  }
+  s.clear();
+  return 0;
+}
 
 //_____________________________________________________________________________
 Int_t ReadDBline( FILE* file, char* buf, Int_t bufsiz, string& line )
