@@ -40,6 +40,9 @@ namespace Decoder {
     void LoadNormScaler(GenScaler *scal);  // loads pointer to norm. scaler
     void DebugPrint(std::ofstream *file=nullptr) const;
 
+    const std::vector<UInt_t>&   GetCounts() const { return fDataArray; }
+    const std::vector<Double_t>& GetRates()  const { return fRate; }
+
     // Loads sldat
     virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer, const UInt_t *pstop );
     // Load slot for bank structures
