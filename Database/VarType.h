@@ -41,6 +41,7 @@ namespace Vars {
 void         ClearCache();
 const char*  GetEnumName( VarType type );
 const char*  GetTypeName( VarType type );
+const char*  GetBranchTypeChar( VarType type );
 size_t       GetTypeSize( VarType type );
 VarType      FindType( const std::type_info& tinfo );
 }

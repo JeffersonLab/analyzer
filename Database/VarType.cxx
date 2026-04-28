@@ -162,5 +162,65 @@ size_t GetTypeSize( const VarType type )
   return var_type_info[type].size;
 }
 
+//_____________________________________________________________________________
+const char* GetBranchTypeChar( const VarType type )
+{
+  // Return character for indicating data type of a ROOT TTree branch.
+  // Never returns nullptr. If empty string, the type is not POD.
+
+  //TODO does this make sense for the 2P variables?
+  switch( type ) {
+    case kDouble:
+    case kDoubleV:
+    case kDoubleM:
+    case kDoubleP:
+    case kDouble2P:
+      return "/D";
+    case kFloat:
+    case kFloatV:
+    case kFloatM:
+    case kFloatP:
+    case kFloat2P:
+      return "/F";
+    case kLong:
+    case kLongP:
+    case kLong2P:
+      return "/L";
+    case kULong:
+    case kULongP:
+    case kULong2P:
+      return "/l";
+    case kInt:
+    case kIntV:
+    case kIntM:
+    case kIntP:
+    case kInt2P:
+      return "/I";
+    case kUInt:
+    case kUIntV:
+    case kUIntP:
+    case kUInt2P:
+      return "/i";
+    case kShort:
+    case kShortP:
+    case kShort2P:
+      return "/S";
+    case kUShort:
+    case kUShortP:
+    case kUShort2P:
+      return "/s";
+    case kChar:
+    case kCharP:
+    case kChar2P:
+      return "/B";
+    case kUChar:
+    case kUCharP:
+    case kUChar2P:
+      return "/b";
+    default:
+      return "";
+  }
+}
+
 } // namespace Vars
 
