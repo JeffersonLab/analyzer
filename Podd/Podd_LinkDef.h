@@ -102,7 +102,6 @@
 #pragma link C++ class THaPhotoReaction+;
 #pragma link C++ class THaSAProtonEP+;
 #pragma link C++ class THaEvtTypeHandler+;
-#pragma link C++ class THaScalerEvtHandler+;
 #pragma link C++ class THaEpicsEvtHandler+;
 #pragma link C++ class THaEvt125Handler+;
 #pragma link C++ class Podd::MCHitInfo+;
@@ -118,6 +117,7 @@
 #pragma link C++ class Podd::MultiFileRun+;
 #pragma link C++ class Podd::MultiFileRun::StreamInfo+;
 #pragma link C++ class Podd::MultiFileRun::FileInfo+;
+#pragma link C++ class Podd::ScalerEvtHandler+;
 #pragma link C++ class DAQInfoExtra+;
 #pragma link C++ class DAQconfig+;
 
