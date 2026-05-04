@@ -90,6 +90,26 @@ inline size_t ListToVector( TList* lst, vector<T*>& vec )
 }
 
 //_____________________________________________________________________________
+// Remove all elements in vector<T*> that are also in given TList.
+// Returns number of elements removed.
+template<typename T>
+size_t RemoveExternals( vector<T*>& vec, TList* lst )
+{
+  if( !lst || lst->IsEmpty() )
+    return 0;
+  size_t nremoved = 0;
+  for( auto it = vec.begin(); it != vec.end(); ) {
+    if( lst->FindObject(*it) ) {
+      it = vec.erase(it); // Remove from vector, but do not delete object
+      ++nremoved;
+    } else {
+      ++it;
+    }
+  }
+  return nremoved;
+}
+
+//_____________________________________________________________________________
 namespace {
 inline string CurrentTime()
 {
@@ -162,9 +182,14 @@ THaAnalyzer::~THaAnalyzer()
   // Destructor.
 
   THaAnalyzer::Close();
+  // Delete all objects owned by this analyzer instance
   DeleteContainer(fPostProcess);
-  DeleteContainer(fEvtHandlers);
   DeleteContainer(fInterStage);
+  // After Close(), these vectors contain the objects not copied from the gHa* lists
+  DeleteContainer(fPhysics);
+  DeleteContainer(fApps);
+  fSpectrometers.clear(); // objects already deleted in previous line
+  DeleteContainer(fEvtHandlers);
   delete fExtra; fExtra = nullptr;
   delete fBench;
   if( fgAnalyzer == this )
@@ -304,11 +329,14 @@ void THaAnalyzer::Close()
   for( auto* postProc : fPostProcess)
     postProc->Close();
 
-  // After Close(), will need to Init() again, where these lists will be filled
-  fApps.clear();
-  fSpectrometers.clear();
-  fPhysics.clear();
-  fEvtHandlers.clear();
+  // Remove objects that were imported from the gHa* global lists from the
+  // internal vectors of analysis objects. The global lists are externally
+  // managed. The objects in the vectors are owned by THaAnalyzer.
+  // The global lists exist only for backward compatibility at this point.
+  RemoveExternals(fApps, gHaApps);
+  RemoveExternals(fSpectrometers, gHaApps);
+  RemoveExternals(fPhysics, gHaPhysics);
+  RemoveExternals(fEvtHandlers, gHaEvtHandlers);
 
   if( gHaRun && *gHaRun == *fRun )
     gHaRun = nullptr;
