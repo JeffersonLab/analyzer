@@ -152,7 +152,7 @@ THaAnalyzer::THaAnalyzer()
   , fDoPhysics(true)
   , fDoOtherEvents(true)
   , fDoSlowControl(true)
-  , fUseAltEvType(false)
+  , fUseAltEvType(true)
   , fFirstPhysics(true)
   , fExtra(nullptr)
 {

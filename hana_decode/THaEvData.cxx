@@ -92,6 +92,7 @@ THaEvData::THaEvData() :
   fSlotClear.reserve(MAXROCSLOT/4);
   fgInstances.SetBitNumber(fInstance);
   fInstance++;
+  EnableAltEvType(true);
 }
 
 //_____________________________________________________________________________
