@@ -65,6 +65,7 @@ public:
   const char*    GetSummaryFileName()  const  { return fSummaryFileName.Data(); }
   TFile*         GetOutFile()          const  { return fFile; }
   Int_t          GetCompressionLevel() const  { return fCompress; }
+  ULong64_t      GetNumEvents()        const  { return fNev; }
   THaEvent*      GetEvent()            const  { return fEvent; }
   THaEvData*     GetDecoder()          const;
   const std::vector<THaApparatus*>&
