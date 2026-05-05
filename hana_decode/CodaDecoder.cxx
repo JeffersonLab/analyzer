@@ -36,6 +36,7 @@
 #include <utility>            // for pair, move
 
 using namespace std;
+using namespace Podd;
 
 namespace Decoder {
 
@@ -160,7 +161,7 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
 
   // Determine event type
   if (fDataVersion == 2) {
-    event_type = evbuffer[1]>>16;
+    event_type = bitval(evbuffer[1],16,31);
   } else {  // CODA version 3
     interpretCoda3(evbuffer);  // this defines event_type
   }
@@ -185,6 +186,27 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
                   << "  event_type " << event_type
                   << "  run time "   << fRunTime
                   << endl;
+    }
+    fRunLength = fRunUptime = 0;
+    fEndEventCount = fHiResRunLen = fLastEvtTime = 0;
+    fLastTS = evbuffer[2];
+  }
+
+  else if( !PrescanModeEnabled() &&
+           event_type >= GO_EVTYPE && event_type <= END_EVTYPE ) {
+    if( event_type == GO_EVTYPE ) {
+      fLastTS = evbuffer[2];
+    }
+    else if( event_type == PAUSE_EVTYPE ) {
+      if( fLastTS > 0 )
+        fRunUptime += evbuffer[2] - fLastTS;
+      fLastTS = -1;
+    }
+    else if( event_type == END_EVTYPE ) {
+      if( fLastTS > 0 )
+        fRunUptime += evbuffer[2] - fLastTS; // total time not stopped
+      fRunLength = evbuffer[2] - fRunTime;   // total time Prestart - End
+      fEndEventCount = evbuffer[4];          // number of physics events
     }
   }
 
@@ -228,6 +250,9 @@ Int_t CodaDecoder::LoadEvent( const UInt_t* evbuffer )
           event_type = tsEvType;
         }
       }
+      if( fLastEvtTime > 0 )
+        fHiResRunLen += evt_time - fLastEvtTime;
+      fLastEvtTime = evt_time;
       ret = physics_decode(evbuffer);
     }
   }
@@ -338,9 +363,9 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer)
   tbank.Clear();
   tsEvType = 0;
 
-  bank_tag   = (evbuffer[1] & 0xffff0000) >> 16;
-  data_type  = (evbuffer[1] & 0x3f00) >> 8;
-  block_size = evbuffer[1] & 0xff;
+  bank_tag   = bitval(evbuffer[1], 16, 31);
+  data_type  = bitval(evbuffer[1], 8, 13);
+  block_size = bitval(evbuffer[1], 0, 7);
 
   event_type = InterpretBankTag(bank_tag);
 
@@ -372,6 +397,9 @@ UInt_t CodaDecoder::InterpretBankTag( UInt_t tag )
       case 0xffd2:
         evtyp = GO_EVTYPE;
         break;
+      case 0xffd3:
+        evtyp = PAUSE_EVTYPE;
+        break;
       case 0xffd4:
         evtyp = END_EVTYPE;
         break;
@@ -389,8 +417,8 @@ UInt_t CodaDecoder::InterpretBankTag( UInt_t tag )
     }
   } else {              // User event type
     evtyp = tag;        // ET-insertions
-    if( evtyp <= MAX_PHYS_EVTYPE || evtyp == PRESTART_EVTYPE ||
-        evtyp == GO_EVTYPE || evtyp == END_EVTYPE ) {
+    if( evtyp <= MAX_PHYS_EVTYPE ||
+        (evtyp >= PRESTART_EVTYPE && evtyp <= END_EVTYPE) ) {
       // FIXME: This is not a CODA3 error, but the result of our internal
       //  legacy event type numbering. But we can't go with it until we
       //  rewrite the downstream code
@@ -1119,7 +1147,8 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
           if( update_nextidx )
             nextidx = i+1;
           break;
-        } else if( update_nextidx ) {
+        }
+        if( update_nextidx ) {
           nextidx = i;
           update_nextidx = false;
         }

@@ -48,7 +48,7 @@ public:
   // Set the EPICS event type
   void      SetEpicsEvtType( UInt_t itype) { fEpicsEvtType = itype; };
 
-  void      SetEvTime( ULong64_t evtime ) { evt_time = evtime; }
+  void      SetEvTime( ULong64_t evtime ) { evt_time = evtime; } //FIXME meeded?
 
   // Basic access to the decoded data
   UInt_t    GetEvType()      const { return event_type; }
@@ -60,6 +60,9 @@ public:
   Int_t     GetDataVersion() const { return fDataVersion; }
   // Run time/date. Time of prestart event (UNIX time).
   Long64_t  GetRunTime()     const { return fRunTime; }
+  ULong64_t GetRunDuration() const { return fRunLength; }
+  ULong64_t GetRunUptime()   const { return fRunUptime; }
+  ULong64_t GetHiResRunLen() const { return fHiResRunLen; }
   UInt_t    GetRunType()     const { return run_type; }
   UInt_t    GetRocLength( UInt_t crate ) const;   // Get the ROC length
 
@@ -213,11 +216,16 @@ protected:
   std::ofstream *fDebugFile;  // debug output
 
   UInt_t event_type, event_length;
-  ULong64_t event_num, raw_event_num;
+  ULong64_t event_num, raw_event_num, fEndEventCount;
   UInt_t run_num, run_type, data_type, trigger_bits;
   Int_t  evscaler;
-  Long64_t  fRunTime; // Run start time (Unix time)
-  ULong64_t evt_time; // Event time (for CODA 3.* this is a 250 Mhz clock)
+  Long64_t  fRunTime;     // Run start time (Unix time)
+  Long64_t  fLastTS;      // Last control event time stamp
+  ULong64_t fRunLength;   // Overall run duration (seconds)
+  ULong64_t fRunUptime;   // Active run duration (not stopped) (seconds)
+  ULong64_t fHiResRunLen; // High-resolution run length (4 ns LSB)
+  ULong64_t fLastEvtTime; // Previous physics event time
+  ULong64_t evt_time;     // Event time (for CODA 3.* this is a 250 Mhz clock)
 
   std::vector<UShort_t> fSlotUsed;    // Indices of crateslot[] used
   std::vector<UShort_t> fSlotClear;   // Indices of crateslot[] to clear
