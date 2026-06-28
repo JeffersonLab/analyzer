@@ -264,6 +264,9 @@ UInt_t PipeliningModule::LoadNextEvBuffer( THaSlotData* sldat )
 {
   // In multi-block mode, load the next event from the current block
 
+  if( fBlockIsDone )
+    return 0;
+
   const UInt_t ii = index_buffer;
   assert( ii+1 < evtblk.size() );
 

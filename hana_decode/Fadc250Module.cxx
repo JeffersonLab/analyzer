@@ -144,13 +144,15 @@ void Fadc250Module::Clear( Option_t* opt )
 {
   // Clear event-by-event data
   PipeliningModule::Clear(opt);
-  fadc_data.clear();
-  ClearDataVectors();
-  // Initialize data_type_def to FILLER and data types to false
-  data_type_def = 15;
-  // Initialize data types to false
-  data_type_4 = data_type_6 = data_type_7 = data_type_8 = data_type_9 = data_type_10 = false;
-  block_header_found = block_trailer_found = event_header_found = slots_match = false;
+  if( !fBlockIsDone ) {
+    fadc_data.clear();
+    ClearDataVectors();
+    // Initialize data_type_def to FILLER and data types to false
+    data_type_def = 15;
+    // Initialize data types to false
+    data_type_4 = data_type_6 = data_type_7 = data_type_8 = data_type_9 = data_type_10 = false;
+    block_header_found = block_trailer_found = event_header_found = slots_match = false;
+  }
 }
 
 //_____________________________________________________________________________
