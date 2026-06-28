@@ -265,10 +265,13 @@ Int_t THaSlotData::loadData(const char* type, UInt_t chan, UInt_t dat, UInt_t ra
     } else {
       if (idxlist[chan]+numMaxHits[chan]==firstfreedataidx) {
 	compressdataindex(numhitperchan);
-	dataindex[idxlist[chan]+numHits[chan]]=numraw;
+        if (idxlist[chan]+numHits[chan]!=firstfreedataidx)
+          goto relocate; // if reshuffled, this chan may no longer be at the end
+	dataindex[firstfreedataidx]=numraw;
 	numMaxHits[chan]+=numhitperchan;
 	firstfreedataidx+=numhitperchan;
       } else {
+relocate:
 	compressdataindex(numMaxHits[chan]+numhitperchan);
 	numholesdataidx+=numMaxHits[chan];
 	for (UInt_t i=0; i<numHits[chan]; i++  ) {
@@ -414,6 +417,7 @@ void THaSlotData::compressdataindexImpl( UInt_t numidx )
 	firstfreedataidx=firstfreedataidx+numMaxHits[chan];
       }
       dataindex = std::move(tmp);
+      numholesdataidx = 0;
       return;
     }
   }
