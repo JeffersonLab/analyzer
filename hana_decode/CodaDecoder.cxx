@@ -249,6 +249,8 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
   // Decode each ROC
   // From this point onwards there is no diff between CODA 2.* and CODA 3.*
 
+  // In multiblock mode, keep going until all ROCs report fBlockIsDone = true
+  fBlockIsDone = true;
   for( UInt_t i = 0; i < nroc; i++ ) {
 
     UInt_t iroc = irn[i];
@@ -273,6 +275,7 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
         *fDebugFile << "\nCodaDecode::Calling bank_decode "
                     << iroc << "  " << ipt << "  " << iptmax
                     << endl;
+      bool banks_done = fBlockIsDone;
       try {
         status = bank_decode(iroc, evbuffer, ipt, iptmax);
       }
@@ -282,6 +285,7 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
       }
       if( status != HED_OK )
         return status;
+      fBlockIsDone &= banks_done;
     }
 
     if( !fMap->isAllBanks(iroc) ) {
@@ -290,6 +294,7 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
                     << iroc << "  " << ipt << "  " << iptmax
                     << endl;
 
+      bool banks_done = fBlockIsDone;
       try {
         status = roc_decode(iroc, evbuffer, ipt, iptmax);
       }
@@ -299,6 +304,7 @@ Int_t CodaDecoder::physics_decode( const UInt_t* evbuffer )
       }
       if( status != HED_OK )
         return status;
+      fBlockIsDone &= banks_done;
     }
   }
   // Print summary of discovered banks
@@ -899,6 +905,7 @@ Int_t CodaDecoder::LoadFromMultiBlock()
       crateslot[i]->clearEvent();  // CHECKME: Do in loop below?
   }
 
+  fBlockIsDone = true; // tentatively assume end of block
   for( UInt_t i = 0; i < nroc; i++ ) {
     UInt_t roc = irn[i];
     for( auto slot : fMap->GetUsedSlots(roc) ) {
@@ -930,9 +937,9 @@ Int_t CodaDecoder::LoadFromMultiBlock()
         }
       }
       sd->LoadNextEvBuffer();
-      // Presumes that all multiblock modules have the same global block size (see check above)
-      if( sd->BlockIsDone() )
-        fBlockIsDone = true;
+      // Keep going until no modules have cached events left
+      if( !sd->BlockIsDone() )
+        fBlockIsDone = false;
     }
   }
   return HED_OK;
@@ -955,7 +962,7 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
   synchmiss = false;
   synchextra = false;
   buffmode = false;
-  fBlockIsDone = false;
+  fBlockIsDone = true;
 
   if( ipt+1 >= istop )
     return HED_OK;
@@ -1040,8 +1047,8 @@ Int_t CodaDecoder::roc_decode( UInt_t roc, const UInt_t* evbuffer,
 
         if( sd->IsMultiBlockMode() )
           fMultiBlockMode = true;
-        if( sd->BlockIsDone() )
-          fBlockIsDone = true;
+        if( !sd->BlockIsDone() )
+          fBlockIsDone = false;
 
         if( fDebugFile )
           *fDebugFile << "CodaDecode:: roc_decode:: after LoadIfSlot "
@@ -1098,7 +1105,8 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
     *fDebugFile << "CodaDecode:: bank_decode  ... " << roc << "   " << ipt
                 << "  " << istop << endl;
 
-  fBlockIsDone = false;
+  fBlockIsDone = true;
+  bool found_roc_banks = false;
   UInt_t pos = ipt+1;  // ipt points to ROC ID word
   while (pos < istop) {
     UInt_t len = evbuffer[pos];
@@ -1113,13 +1121,22 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
     assert( find(ALL(bankdat), key) == bankdat.end());
     // If len == 0, bug in CODA or corrupt input
     assert( len > 0 );
-    if( len > 0 )
+    if( len > 1 ) {
       bankdat.emplace_back(key, pos + 2, len - 1);
+      found_roc_banks = true;
+    }
     pos += len+1;
   }
 
   if( fDebug > 1 )
     PrintBankInfo();
+
+  if( !found_roc_banks ) {
+    if( fDoBench ) fBench->Stop("bank_decode");
+    Warning("bank_decode", "No banks found for ROC %u in event %u. "
+            "Consult DAQ expert.", roc, event_num);
+    return HED_OK;
+  }
 
   for( auto slot : fMap->GetUsedSlots(roc) ) {
     assert(fMap->slotUsed(roc,slot));
@@ -1135,8 +1152,8 @@ Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
     sd->LoadBank(evbuffer, theBank->pos, theBank->len);
     if( sd->IsMultiBlockMode() )
       fMultiBlockMode = true;
-    if( sd->BlockIsDone() )
-      fBlockIsDone = true;
+    if( !sd->BlockIsDone() )
+      fBlockIsDone = false;
   }
 
   if( fDoBench ) fBench->Stop("bank_decode");
