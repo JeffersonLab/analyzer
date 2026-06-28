@@ -24,6 +24,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
+#include <cstring>
 
 using namespace std;
 
@@ -63,16 +64,15 @@ void THaSlotData::define(UInt_t cra, UInt_t slo, UInt_t nchan,
   didini = true;
   fNchan = nchan;
   numhitperchan=nhitperchan;
-  numHits.resize(fNchan);
+  numHits.assign(fNchan, 0);
   chanlist.resize(fNchan);
   idxlist.resize(fNchan);
   chanindex.resize(fNchan);
   rawData.resize(fNchan);
   data.resize(fNchan);
-  dataindex.resize(fNchan);
+  dataindex.resize(fNchan * numhitperchan);
   numMaxHits.resize(fNchan);
   numchanhit = numraw = firstfreedataidx = numholesdataidx= 0;
-  numHits.assign(numHits.size(),0);
 }
 
 //_____________________________________________________________________________
@@ -173,7 +173,7 @@ UInt_t THaSlotData::LoadIfSlot( const UInt_t* evbuffer, const UInt_t *pstop) {
     *fDebugFile << "THaSlotData::LoadIfSlot:  "
                 << dec << crate << "  " << slot
                 << "   p " << hex << evbuffer << "  " << *evbuffer
-                << "  " << dec << ((UInt_t(*evbuffer)) >> 27)
+                << "  " << dec << (*evbuffer >> 27)
                 << hex << "  " << pstop << "  " << fModule.get()
                 << dec << endl;
   if ( !fModule->IsSlot( *evbuffer ) ) {
@@ -267,16 +267,18 @@ Int_t THaSlotData::loadData(const char* type, UInt_t chan, UInt_t dat, UInt_t ra
 	compressdataindex(numhitperchan);
         if (idxlist[chan]+numHits[chan]!=firstfreedataidx)
           goto relocate; // if reshuffled, this chan may no longer be at the end
+append:
 	dataindex[firstfreedataidx]=numraw;
 	numMaxHits[chan]+=numhitperchan;
 	firstfreedataidx+=numhitperchan;
       } else {
 relocate:
 	compressdataindex(numMaxHits[chan]+numhitperchan);
+        if (idxlist[chan]+numMaxHits[chan]==firstfreedataidx)
+          goto append; // if reshuffled, this chan may now be at the end)
 	numholesdataidx+=numMaxHits[chan];
-	for (UInt_t i=0; i<numHits[chan]; i++  ) {
-	  dataindex[firstfreedataidx+i]=dataindex[idxlist[chan]+i];
-	}
+        memmove(&dataindex[firstfreedataidx], &dataindex[idxlist[chan]],
+                numHits[chan] * sizeof(UInt_t));
 	dataindex[firstfreedataidx+numHits[chan]]=numraw;
 	idxlist[chan]=firstfreedataidx;
 	numMaxHits[chan]+=numhitperchan;
@@ -406,15 +408,16 @@ void THaSlotData::compressdataindexImpl( UInt_t numidx )
     }
     if( nidx <= alloci ) {
       // reshuffle, lots of holes
-      VectorUIntNI tmp(alloci);
+      VectorUIntNI tmp;
+      tmp.reserve(dataindex.capacity());
+      tmp.resize(alloci);
       firstfreedataidx=0;
       for (UInt_t i=0; i<numchanhit; i++) {
 	UInt_t chan=chanlist[i];
-	for (UInt_t j=0; j<numHits[chan]; j++) {
-	  tmp[firstfreedataidx+j]=dataindex[idxlist[chan]+j];
-	}
+        memcpy(&tmp[firstfreedataidx], &dataindex[idxlist[chan]],
+               numHits[chan] * sizeof(UInt_t));
 	idxlist[chan] = firstfreedataidx;
-	firstfreedataidx=firstfreedataidx+numMaxHits[chan];
+        firstfreedataidx += numMaxHits[chan];
       }
       dataindex = std::move(tmp);
       numholesdataidx = 0;
@@ -422,11 +425,7 @@ void THaSlotData::compressdataindexImpl( UInt_t numidx )
     }
   }
   // If we didn't reshuffle, grow the array instead
-  alloci *= 2;
-  if( firstfreedataidx+numidx > alloci )
-    // Still too small?
-    alloci = 2*(firstfreedataidx+numidx);
-  // FIXME one should check that it doesnt grow too much
+  do { alloci *= 2; } while( alloci <= firstfreedataidx + numidx );
   dataindex.resize(alloci);
 }
 
