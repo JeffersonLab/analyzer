@@ -264,7 +264,7 @@ UInt_t PipeliningModule::LoadNextEvBuffer( THaSlotData* sldat )
 {
   // In multi-block mode, load the next event from the current block
 
-  UInt_t ii = index_buffer;
+  const UInt_t ii = index_buffer;
   assert( ii+1 < evtblk.size() );
 
   // ibeg = event header, iend = one past last word of this event ( = next
@@ -282,24 +282,27 @@ UInt_t PipeliningModule::LoadNextEvBuffer( THaSlotData* sldat )
   }
 
   // Load slot starting with block header at ibeg
+  UInt_t nwords = 0;
   try {
-    ii = LoadSlot(sldat, fBuffer.data(), ibeg, iend-ibeg);
+    nwords = LoadSlot(sldat, fBuffer.data(), ibeg, iend-ibeg);
   }
 
   catch( ... ) {
     // In case the calling code wants to continue, put the buffer back in a
     // consistent state
-    if( ii != 0 ) std::swap(fBlockHeader, fBuffer[ibeg]);
+    if( ii != 0 )
+      std::swap(fBlockHeader, fBuffer[ibeg]);
     throw;
   }
-  if( ii != 0 ) std::swap(fBlockHeader, fBuffer[ibeg]);
+  if( ii != 0 )
+    std::swap(fBlockHeader, fBuffer[ibeg]);
 
   // Next cached buffer. Set flag if we've exhausted the cache.
   ++index_buffer;
   if( index_buffer+1 >= evtblk.size() )
     fBlockIsDone = true;
 
-  return ii;
+  return nwords;
 }
 
 //_____________________________________________________________________________
