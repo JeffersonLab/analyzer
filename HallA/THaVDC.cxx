@@ -639,7 +639,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
         // This test is true if an existing track has exactly the same clusters
         // as the current one (defined by lowerPoint/upperPoint)
         if( theTrack && theTrack->GetCreator() == this &&
-            *thisID == *theTrack->GetID() ) {
+            thisID->THaVDCTrackID::operator==(*theTrack->GetID()) ) {
           found = true;
           break;
         }
