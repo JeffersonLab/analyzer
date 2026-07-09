@@ -28,6 +28,7 @@ if(ONLINE_ET)
       include(FetchBuildET)
     endif()
   endif()
+  config_add_dependency(ET 16)
 endif()
 
 #----------------------------------------------------------------------------
